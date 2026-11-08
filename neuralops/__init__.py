@@ -166,9 +166,14 @@ if TYPE_CHECKING:
 import importlib.metadata
 
 try:
-    __version__ = importlib.metadata.version("neuralops")
-except importlib.metadata.PackageNotFoundError:
     from neuralops._version import __version__
+except ImportError:
+    try:
+        import importlib.metadata
+
+        __version__ = importlib.metadata.version("neuralops")
+    except Exception:
+        __version__ = "2.1.0"
 
 _TORCH_FREE_SYMBOLS = frozenset({"__version__", "__doc__", "__all__"})
 try:

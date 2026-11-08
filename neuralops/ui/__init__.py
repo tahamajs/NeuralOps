@@ -16,4 +16,11 @@ from __future__ import annotations
 __all__ = ["build_ui_parser", "cmd_ui", "create_app"]
 
 from neuralops.ui.cli import build_ui_parser, cmd_ui
-from neuralops.ui.server import create_app
+
+
+def __getattr__(name: str):
+    if name == "create_app":
+        from neuralops.ui.server import create_app
+
+        return create_app
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

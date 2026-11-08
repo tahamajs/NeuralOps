@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-11-08
+
+### Breaking Changes
+- **Trust Remote Code Default (Security):** `trust_remote_code` now defaults to `False` in all model loaders, pipelines, and CLI invocations. Remote untrusted code execution from HuggingFace requires explicit `--trust-remote-code` or `NEURALOPS_TRUST_REMOTE_CODE=1`.
+- **Random Model Fallback Removal:** `TextGenerationPipeline` and evaluators fail closed with `RuntimeError` on tokenizer/model failure instead of silently continuing with random weights or synthetic token IDs.
+- **Serving Security Defaults:** `neuralops serve` binds strictly to `127.0.0.1` by default and enforces token authentication.
+- **Invalid `--benchmark` Argument Handling:** `--benchmark <invalid>` raises `ValueError` with a list of valid names instead of silently executing all benchmarks.
+- **CLI Alias Decoupling:** `neuralops benchmark` is now a dedicated command group (`run`, `plan`, `list`, `info`, `compare`, `resume`) instead of an alias for `run`. Use `neuralops benchmark run` or `neuralops run` to launch benchmarks.
+- **Adapter Return Shape Modernization:** Benchmark adapters return canonical, strongly-typed `BenchmarkResult` objects rather than unstructured dictionaries or legacy `"PASS"`/`"FAIL"` status strings.
+- **Benchmark Manifest Schema URL Key:** The manifest metadata key is standardized to `"$schema"` (was empty string `""`).
+
 ### Fixed
 - **Elimination of Deferred Silent Error Swallowing (AGT-55, F-84 completion):**
   - **TextGenerationPipeline Decoded Output:** Replaced silent fallback to `str(seq.tolist())` with explicit `RuntimeError` raising when tokenizer decode fails, preventing integer token ID lists from masquerading as generated text. Replaced silent device transfer and tokenizer loading swallows with structured warning logs.

@@ -6,7 +6,7 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 #
-# NeuralOps examples suite (v2.0.6)
+# NeuralOps examples suite (v2.1.0)
 
 # NeuralOps Examples Suite
 

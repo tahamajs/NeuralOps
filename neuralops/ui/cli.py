@@ -19,8 +19,6 @@ import threading
 import webbrowser
 from typing import Optional
 
-import uvicorn
-
 
 def _add_ui_arguments(parser: argparse.ArgumentParser) -> None:
     """Add standard UI runtime arguments to parser."""
@@ -156,6 +154,15 @@ def cmd_ui(args: argparse.Namespace) -> int:
         timer.start()
 
     from neuralops.ui.server import create_app
+
+    try:
+        import uvicorn
+    except ImportError:
+        print(
+            "Error: 'uvicorn' is required to launch the Web UI. Install with: pip install 'neuralops[ui]'",
+            file=sys.stderr,
+        )
+        return 1
 
     app = create_app(auth_credentials=auth_creds)
 

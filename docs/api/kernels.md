@@ -2,7 +2,7 @@
 
 NeuralOps implements **26 canonical Triton JIT kernel modules (housing 62 unified JIT operators across 4 architectural tiers)** and **112 Native CUDA C++ Packages (housing 114 native implementations)** delivering fused subquadratic sequence modeling, paged state management, and fused training objectives.
 
-[![Release](https://img.shields.io/badge/release-v2.0.6-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v2.0.6)
+[![Release](https://img.shields.io/badge/release-v2.1.0-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v2.1.0)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Benchmark%20Ledger-Hooshaai%2Fneuralops--results-ffcc00)](https://huggingface.co/datasets/Hooshaai/neuralops-results)
 [![Interactive Roofline](https://img.shields.io/badge/%E2%9A%A1%20Interactive%20Roofline-RTX%204070-blue)](../roofline_interactive.html)
 [![Hardware Verified](https://img.shields.io/badge/Hardware%20Verified-RTX%204070%20(SM%208.9)-76B900?logo=nvidia&logoColor=white)](https://huggingface.co/datasets/Hooshaai/neuralops-results)

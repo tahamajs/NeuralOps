@@ -6,9 +6,9 @@ Only the latest production release receives active security patches:
 
 | Version | Supported | Notes |
 | :--- | :---: | :--- |
-| **2.0.x** | :white_check_mark: Active | Current active production release (Unified 3-level dispatch, 203 modules, AGT suite) |
-| 1.9.x | :warning: Maintenance | Security fixes only |
-| $\le$ 1.8.x | :x: End of Life | Upgrade to latest `v2.x` recommended |
+| **2.1.x** | :white_check_mark: Active | Current active production release (Unified 3-level dispatch, 203 modules, AGT suite) |
+| 2.0.x | :warning: Maintenance | Security fixes only |
+| $\le$ 1.9.x | :x: End of Life | Upgrade to latest `v2.x` recommended |
 
 ---
 

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-11-08
+
+### Breaking Changes
+- **Trust Remote Code Default (Security):** `trust_remote_code` now defaults to `False` in all model loaders, pipelines, and CLI invocations. Remote untrusted code execution from HuggingFace requires explicit `--trust-remote-code` or `NEURALOPS_TRUST_REMOTE_CODE=1`.
+- **Random Model Fallback Removal:** `TextGenerationPipeline` and evaluators fail closed with `RuntimeError` on tokenizer/model failure instead of silently continuing with random weights or synthetic token IDs.
+- **Serving Security Defaults:** `neuralops serve` binds strictly to `127.0.0.1` by default and enforces token authentication.
+- **Invalid `--benchmark` Argument Handling:** `--benchmark <invalid>` raises `ValueError` with a list of valid names instead of silently executing all benchmarks.
+- **CLI Alias Decoupling:** `neuralops benchmark` is now a dedicated command group (`run`, `plan`, `list`, `info`, `compare`, `resume`) instead of an alias for `run`. Use `neuralops benchmark run` or `neuralops run` to launch benchmarks.
+- **Adapter Return Shape Modernization:** Benchmark adapters return canonical, strongly-typed `BenchmarkResult` objects rather than unstructured dictionaries or legacy `"PASS"`/`"FAIL"` status strings.
+- **Benchmark Manifest Schema URL Key:** The manifest metadata key is standardized to `"$schema"` (was empty string `""`).
+
 ### Fixed
 - **Elimination of Deferred Silent Error Swallowing (AGT-55, F-84 completion):**
   - **TextGenerationPipeline Decoded Output:** Replaced silent fallback to `str(seq.tolist())` with explicit `RuntimeError` raising when tokenizer decode fails, preventing integer token ID lists from masquerading as generated text. Replaced silent device transfer and tokenizer loading swallows with structured warning logs.
@@ -21,9 +32,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Regression Tests:** Added `tests/benchmarks/test_manifest_schema_key.py` and `tests/test_info_without_torch.py` (both 100% passed).
 
 ### Added
+- **Multi-Phase Benchmark Matrix Orchestrator (AGT-59, Roadmap Gap 6):**
+  - **Multi-Axis Grid Orchestrator (`matrix.py`):** Authored `BenchmarkMatrixOrchestrator` and procedural helper `run_benchmark_matrix` in `neuralops.benchmarks.matrix`. Supports parameter sweeps across sequence lengths ($T \in \{128, 512, 1024, 2048\}$), batch sizes ($B \in \{1, 2, 4, 8\}$), hidden dimensions ($D \in \{64, 128, 256, 512\}$), dtypes (FP16, BF16, FP32), and causal masking modes.
+  - **Cold-Cache Flushing & Hardware Timing:** Implemented `ColdCacheFlusher` allocating an L2 cache eviction buffer (up to 256 MB) to prevent cache hit contamination during timed iterations. Uses device synchronous event timing and percentile distributions (median, p10, p90, mean, std).
+  - **Derived Metric Generation:** Automatically computes tokens/sec throughput ($\frac{B \times T}{\text{latency}}$), arithmetic intensity/TFLOPs, effective memory bandwidth (GB/s), and speedup vs baseline reference.
+  - **Workload Categorization & Gating:** Classifies cells into `prefill` ($T \ge 512$), `decode` ($B=1, T \ge 1024$), and `micro` regimes. Implements speedup regression gating flagging any prefill kernel with speedup $< 0.90\times$.
+  - **CLI Command Wiring:** Added `neuralops matrix` subcommand to canonical CLI with options for `--modules`, `--seq-lens`, `--batch-sizes`, `--hidden-dims`, `--dtypes`, `--causal`, `--device`, `--warmup`, `--iters`, `--flush-l2`, `--output-dir`, `--plan/--dry-run`, and `--json`.
+  - **Persistence & Regression Suite:** Implemented automatic output logging to `matrix_results.jsonl`, `summary.json`, and `matrix_summary.csv`. Added test suite `tests/benchmarks/test_matrix_runner.py` (5 passed).
+- **Benchmark Command Group & Alias Collision Resolution (AGT-59, Roadmap Gaps 2 & 6):**
+  - **Dedicated Benchmark Command Group:** Removed the overloaded `aliases=["benchmark"]` from `run` subparser and established a clean, dedicated `benchmark` command group delegating to subcommands: `run`, `plan`, `list`, `info`, `compare`, and `resume`.
+  - **Breaking Change Migration:** Users running `neuralops benchmark [options]` expecting `run` must now use `neuralops benchmark run [options]` or `neuralops run [options]`.
+  - **Non-CUDA Execution Safety:** Guaranteed that `neuralops benchmark list`, `neuralops benchmark info <name>`, and `neuralops benchmark plan --benchmark <name> --device cpu` execute cleanly on CPU-only hosts without initializing CUDA or failing closed.
+  - **Compare Subcommand & Numerical Gate:** Wired `neuralops compare --baseline <path> --candidate <path> [--metric <metric>] [--max-regression-pct <pct>]` calling `neuralops.benchmarks.regression_gate:compare_results`. Exits 0 within tolerance and exits 4 (`FAIL_NUMERICS`) on regression.
+  - **Dry-Run Plan Inspection:** Added `--dry-run` to `neuralops run`, allowing dry-run grid estimation without allocating GPU tensors while preserving AGT-07 `--benchmark` single-module selection contracts.
+  - **Regression Test Suite:** Authored `tests/benchmarks/test_compare_cli.py` (4/4 passed) verifying non-CUDA benchmark listing, benchmark info routing without falling into `handle_run`, and compare 0/4 exit codes.
+- **Subprocess Isolation & Watchdog Runner (AGT-58, Roadmap Gap 5):**
+  - **Subprocess Isolation:** Isolated benchmark execution into dedicated worker subprocesses using `multiprocessing.get_context("spawn")`, ensuring abnormal process termination (SIGSEGV, SIGABRT, hard exits) cannot terminate the master orchestrator sweep.
+  - **Watchdog Timeout Enforcement:** Implemented strict per-benchmark timeout enforcement with SIGTERM/SIGKILL escalation in `neuralops.benchmarks.executor:execute_single`, cleanly recording `status="timeout"` and updating `timed_out=True` upon overrun.
+  - **Structured Failure Telemetry:** Guaranteed that crash exit codes and unhandled exception tracebacks are recorded persistently to `events.jsonl` and embedded in canonical `BenchmarkResult` instances.
+  - **Regression Suite:** Authored `tests/benchmarks/test_orchestrator_isolation.py` verifying crash isolation, timeout enforcement, and exception traceback capture.
+- **Complete Kernel Registration in BENCHMARK_REGISTRY (AGT-57, Roadmap Gap 4):**
+  - **Comprehensive Physical Inventory:** Registered all 369 physical modules and kernels (131 attention mechanisms, 72 compressors, 140 CUDA package units, and 26 canonical Triton kernels) in `BENCHMARK_REGISTRY` with explicit `default_timeout_s=1800`.
+  - **Dynamic List & Discovery Alignment:** Updated `neuralops.cli.list_cmd` and discovery routines to query `BENCHMARK_REGISTRY` dynamically, ensuring consistent target reporting across commands.
+  - **Regression Suite:** Authored `tests/benchmarks/test_registry_completeness.py` verifying coverage, canonical naming, and timeout contracts across all 369 targets.
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
+- **Benchmark Subcommand Group & Alias Decoupling (AGT-59, Roadmap Gap 2):**
+  - Disentangled the `benchmark` CLI alias from `run`, establishing `neuralops benchmark` as a dedicated subcommand group delegating to `run`, `plan`, `list`, `info`, `compare`, and `resume`.
+  - Resolved the alias collision where running `neuralops benchmark list` or `neuralops benchmark info <name>` fell into `handle_run` and raised CUDA availability errors on CPU-only machines.
+  - Fully preserved backward compatibility for `neuralops run --benchmark <name>` (AGT-07 contract).
+- **Benchmark Adapter Modernization & Unified Return Type (AGT-56, Roadmap Gap 3):**
+  - **BaseBenchmarkAdapter Lifecycle Integration:** All concrete benchmark adapters (`CUDAKernelAdapter`, `TritonKernelAdapter`, `CompressorModuleAdapter`, and newly added `AttentionBenchmarkAdapter`) strictly inherit from `BaseBenchmarkAdapter` and execute the fail-closed 6-gate lifecycle (capability check -> input generation -> reference -> candidate -> numerics -> timing).
+  - **Unified Return Shape (`BenchmarkResult`):** Standardized all adapter execution returns to canonical `BenchmarkResult` instances with strongly-typed `BenchmarkStatus` values (`SUCCESS`, `FAILED`, `FAIL_NUMERICS`, `DEPENDENCY_ERROR`), eliminating all raw dictionary shapes and legacy `"PASS"`/`"FAIL"` status strings across adapters.
+  - **Real Batch Calibration:** Refactored `CompressorModuleAdapter` to compute relative Frobenius distortion and SQNR exclusively on real calibration batches (`calibration_batch`), strictly upholding AGENTS.md §0.2 zero fake metrics policy.
+  - **Attention Benchmark Adapter:** Authored `AttentionBenchmarkAdapter` in `neuralops.benchmarks.adapters.attention` wrapping `ATTENTION_REGISTRY` modules with causal/non-causal invariance verification and autograd backward gradient checking.
+  - **Regression & Unified Tests:** Added `tests/benchmarks/test_adapters_unified.py` and updated `tests/benchmarks/test_gpu_benchmark_integrity.py` to assert unified `BenchmarkResult` return shapes across all adapters.
 - **Canonical CLI Unification & Shadow CLI Deprecation (AGT-54, Decision 3, F-48, F-50):**
   - **Canonical Parser:** `neuralops.benchmarks.cli:main` is established as the sole canonical entry point for all CLI console scripts (`neuralops`, `neuralops-cli`, `nops`, `nops-cli`) and `python -m neuralops`.
   - **Shadow Entry Points:** Converted `neuralops/cli/main.py` and `neuralops/cli/core/app.py` into thin backward-compatibility shims that emit `DeprecationWarning` and delegate directly to `neuralops.benchmarks.cli:main`.

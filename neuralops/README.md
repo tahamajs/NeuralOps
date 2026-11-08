@@ -1,6 +1,6 @@
 # 🧬 NeuralOps Core Package (`neuralops`)
 
-NeuralOps v2.0.6 is the high-performance core Python engine of the NeuralOps ecosystem, purpose-built for subquadratic attention research, in-place neural architecture surgery, mathematical model compression, and hardware-accelerated operator execution across NVIDIA GPUs, Apple Silicon Metal (MPS), and modern multicore CPUs.
+NeuralOps v2.1.0 is the high-performance core Python engine of the NeuralOps ecosystem, purpose-built for subquadratic attention research, in-place neural architecture surgery, mathematical model compression, and hardware-accelerated operator execution across NVIDIA GPUs, Apple Silicon Metal (MPS), and modern multicore CPUs.
 
 This directory contains the core library source tree.
 

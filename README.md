@@ -7,7 +7,7 @@
 ### **High-Performance Attention Surgery, SVD Compression & Hardware-Aware Kernel Ecosystem**
 
 [![PyPI version](https://img.shields.io/pypi/v/neuralops.svg?color=blue&label=pypi%20neuralops)](https://pypi.org/project/neuralops/)
-[![Release](https://img.shields.io/badge/release-v2.0.6-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v2.0.6)
+[![Release](https://img.shields.io/badge/release-v2.1.0-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v2.1.0)
 [![Python Versions](https://img.shields.io/pypi/pyversions/neuralops.svg)](https://pypi.org/project/neuralops/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/neuralops.svg)](https://pypi.org/project/neuralops/)
@@ -81,7 +81,7 @@ flowchart TD
 
 The dispatch hierarchy is strictly conservative: a source file is not counted as an accelerated result unless the operation actually dispatches, passes mathematical parity checks, and produces cold-cache measured latency without silent failure.
 
-### 🚀 GPU Verified on RTX 3090 (v2.0.6-gpu-verified)
+### 🚀 GPU Verified on RTX 3090 (v2.1.0-gpu-verified)
 
 The following empirical verification table records physical hardware execution on the Sharif University HPC cluster (`GPU-3090-1`, NVIDIA GeForce RTX 3090 24GB, CUDA 11.3, GCC 8.2):
 
@@ -142,9 +142,9 @@ result = pipe("Deep learning hardware acceleration requires", max_new_tokens=50,
 print(result)
 ```
 
-### 🧬 NeuralOps 2.0.6 Transformation Platform & Recipe Language
+### 🧬 NeuralOps 2.1.0 Transformation Platform & Recipe Language
 
-NeuralOps 2.0.6 introduces a declarative, typed, versioned, validated, and reproducible transformation platform:
+NeuralOps 2.1.0 introduces a declarative, typed, versioned, validated, and reproducible transformation platform:
 
 1. **Declarative Recipe Language (`neuralops.recipe`)**: Define end-to-end model transformations as versioned YAML specifications with canonical SHA-256 content hashing.
 2. **Operation Contracts (`neuralops.ops`)**: 15 versioned operations with typed inputs, preconditions, postconditions, and declared mutations.
@@ -2511,7 +2511,7 @@ For detailed documentation, arguments, and individual CLI commands, see [`exampl
 
 The `neuralops` package is verified against strict packaging standards prior to every release:
 
-- [x] **Package Distribution**: Published on PyPI as [`neuralops v2.0.6`](https://pypi.org/project/neuralops/).
+- [x] **Package Distribution**: Published on PyPI as [`neuralops v2.1.0`](https://pypi.org/project/neuralops/).
 - [x] **Trusted Publishing & Provenance**: Automated publish workflow using GitHub Actions OIDC (`actions/attest-build-provenance@v2` + `pypa/gh-action-pypi-publish@release/v1`) with cryptographic PEP 740 Sigstore provenance attestations.
 - [x] **Metadata Linter**: `twine check dist/*` passes with 0 warnings, 0 errors.
 - [x] **Wheel Hygiene**: Pure Python + Triton wheel (`neuralops-2.0.6-py3-none-any.whl`, size ~3.6 MB). Scratch files, test logs, and raw checkpoint weights are excluded via `pyproject.toml`.
@@ -2532,7 +2532,7 @@ NeuralOps enforces `pyproject.toml` as the single canonical source of truth for 
 
 | NeuralOps Version | Python Versions | PyTorch Versions | Triton Versions | CUDA Versions | Supported OS |
 | :---: | :---: | :---: | :---: | :---: | :--- |
-| **v2.0.6** (Current) | `3.10`, `3.11`, `3.12` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
+| **v2.1.0** (Current) | `3.10`, `3.11`, `3.12` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
 | **v2.0.0** | `3.10`, `3.11`, `3.12` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
 | **v1.9.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
 | **v1.6.0** | `3.10`, `3.11`, `3.12`, `3.14` | `2.1.0` – `2.11.0+` | `3.0.0` – `3.6.0+` | `11.8`, `12.1`–`12.8`, `13.0`–`13.2` | Linux (Ubuntu, Debian, RHEL), macOS 13+, Windows 10/11 (WSL2) |
