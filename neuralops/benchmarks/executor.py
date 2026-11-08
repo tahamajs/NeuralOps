@@ -36,10 +36,6 @@ sys.path = [
 
 import torch
 
-from neuralops.benchmarks.adapters.classification import ClassificationAdapter
-from neuralops.benchmarks.adapters.perplexity import PerplexityAdapter
-from neuralops.benchmarks.adapters.ruler import RulerAdapter
-from neuralops.benchmarks.adapters.zeroshot import SUPPORTED_ZEROSHOT_DATASETS, ZeroShotAdapter
 from neuralops.benchmarks.discovery import discover_modules
 from neuralops.benchmarks.result import BenchmarkResult
 from neuralops.benchmarks.run_logging import setup_run_logger
@@ -91,6 +87,8 @@ def _select_adapter(
 
     ds_lower = dataset.lower()
     if ds_lower in PERPLEXITY_DATASETS:
+        from neuralops.benchmarks.adapters.perplexity import PerplexityAdapter
+
         return PerplexityAdapter(
             module_name=module_name,
             module_type=module_type,
@@ -105,6 +103,8 @@ def _select_adapter(
             **kwargs,
         )
     elif "ruler" in ds_lower or "niah" in ds_lower:
+        from neuralops.benchmarks.adapters.ruler import RulerAdapter
+
         return RulerAdapter(
             module_name=module_name,
             module_type=module_type,
@@ -117,7 +117,9 @@ def _select_adapter(
             seed=seed,
             **kwargs,
         )
-    elif ds_lower in SUPPORTED_ZEROSHOT_DATASETS or any(k in ds_lower for k in ("arc", "hellaswag", "mmlu", "gsm8k")):
+    elif any(k in ds_lower for k in ("arc", "hellaswag", "mmlu", "gsm8k", "truthfulqa", "winogrande")):
+        from neuralops.benchmarks.adapters.zeroshot import ZeroShotAdapter
+
         return ZeroShotAdapter(
             module_name=module_name,
             module_type=module_type,
@@ -132,6 +134,8 @@ def _select_adapter(
             **kwargs,
         )
     else:
+        from neuralops.benchmarks.adapters.classification import ClassificationAdapter
+
         return ClassificationAdapter(
             module_name=module_name,
             module_type=module_type,

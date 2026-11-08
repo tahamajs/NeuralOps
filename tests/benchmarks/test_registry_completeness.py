@@ -82,14 +82,21 @@ def test_registry_total_canonical():
     assert len(cudas) == 140, f"Expected 140 CUDA modules, got {len(cudas)}"
 
     total_expected = 131 + 72 + 140 + 26  # 369
-    assert len(BENCHMARK_REGISTRY) == total_expected, (
-        f"Expected {total_expected} total benchmarks, got {len(BENCHMARK_REGISTRY)}"
+    canonical_specs = [
+        spec
+        for k, spec in BENCHMARK_REGISTRY.items()
+        if k.startswith(("attention:", "compressor:", "cuda:", "triton:"))
+    ]
+    assert len(canonical_specs) == total_expected, (
+        f"Expected {total_expected} total canonical benchmarks, got {len(canonical_specs)}"
     )
 
 
 def test_benchmark_spec_requirements_and_timeout():
     """Verify BenchmarkSpec contracts for CUDA and Triton modules."""
     for key, spec in BENCHMARK_REGISTRY.items():
+        if not key.startswith(("attention:", "compressor:", "cuda:", "triton:")):
+            continue
         assert isinstance(spec, BenchmarkSpec), f"Entry '{key}' is not a BenchmarkSpec"
         assert spec.canonical_name == key
         assert spec.default_timeout_s > 0

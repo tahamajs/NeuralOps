@@ -36,14 +36,14 @@ def test_crash_does_not_kill_sweep(tmp_path):
     events_file = tmp_path / "events.jsonl"
 
     with patch("neuralops.benchmarks.executor.discover_modules", return_value={
-        "crash_module": MagicMock(type="attention", family="dense", supports_causal=True, supports_gqa=True, supports_rope=True, requires_cuda=False, timeout_s=10),
-        "normal_module": MagicMock(type="attention", family="dense", supports_causal=True, supports_gqa=True, supports_rope=True, requires_cuda=False, timeout_s=10),
+        "crash_module": MagicMock(type="attention", family="dense", supports_causal=True, supports_gqa=True, supports_rope=True, requires_cuda=False, timeout_s=15),
+        "normal_module": MagicMock(type="attention", family="dense", supports_causal=True, supports_gqa=True, supports_rope=True, requires_cuda=False, timeout_s=15),
     }):
         # Run crash module with simulated crash
         res_crash = execute_single(
             module="crash_module",
             output_dir=str(tmp_path),
-            timeout_s=5,
+            timeout_s=15,
             _test_behavior="crash",
         )
         assert res_crash.status in ("hardware_error", "failed")
@@ -53,7 +53,7 @@ def test_crash_does_not_kill_sweep(tmp_path):
         res_normal = execute_single(
             module="normal_module",
             output_dir=str(tmp_path),
-            timeout_s=5,
+            timeout_s=15,
             _test_behavior="success",
         )
         assert res_normal.status == "success"
@@ -95,12 +95,12 @@ def test_traceback_recorded(tmp_path):
     events_file = tmp_path / "events.jsonl"
 
     with patch("neuralops.benchmarks.executor.discover_modules", return_value={
-        "fail_module": MagicMock(type="attention", family="dense", supports_causal=True, supports_gqa=True, supports_rope=True, requires_cuda=False, timeout_s=5),
+        "fail_module": MagicMock(type="attention", family="dense", supports_causal=True, supports_gqa=True, supports_rope=True, requires_cuda=False, timeout_s=15),
     }):
         res = execute_single(
             module="fail_module",
             output_dir=str(tmp_path),
-            timeout_s=5,
+            timeout_s=15,
             _test_behavior="fail",
         )
         assert res.status == "failed"

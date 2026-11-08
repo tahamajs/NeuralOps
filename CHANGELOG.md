@@ -21,6 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Regression Tests:** Added `tests/benchmarks/test_manifest_schema_key.py` and `tests/test_info_without_torch.py` (both 100% passed).
 
 ### Added
+- **Subprocess Isolation & Watchdog Runner (AGT-58, Roadmap Gap 5):**
+  - **Subprocess Isolation:** Isolated benchmark execution into dedicated worker subprocesses using `multiprocessing.get_context("spawn")`, ensuring abnormal process termination (SIGSEGV, SIGABRT, hard exits) cannot terminate the master orchestrator sweep.
+  - **Watchdog Timeout Enforcement:** Implemented strict per-benchmark timeout enforcement with SIGTERM/SIGKILL escalation in `neuralops.benchmarks.executor:execute_single`, cleanly recording `status="timeout"` and updating `timed_out=True` upon overrun.
+  - **Structured Failure Telemetry:** Guaranteed that crash exit codes and unhandled exception tracebacks are recorded persistently to `events.jsonl` and embedded in canonical `BenchmarkResult` instances.
+  - **Regression Suite:** Authored `tests/benchmarks/test_orchestrator_isolation.py` verifying crash isolation, timeout enforcement, and exception traceback capture.
+- **Complete Kernel Registration in BENCHMARK_REGISTRY (AGT-57, Roadmap Gap 4):**
+  - **Comprehensive Physical Inventory:** Registered all 369 physical modules and kernels (131 attention mechanisms, 72 compressors, 140 CUDA package units, and 26 canonical Triton kernels) in `BENCHMARK_REGISTRY` with explicit `default_timeout_s=1800`.
+  - **Dynamic List & Discovery Alignment:** Updated `neuralops.cli.list_cmd` and discovery routines to query `BENCHMARK_REGISTRY` dynamically, ensuring consistent target reporting across commands.
+  - **Regression Suite:** Authored `tests/benchmarks/test_registry_completeness.py` verifying coverage, canonical naming, and timeout contracts across all 369 targets.
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
