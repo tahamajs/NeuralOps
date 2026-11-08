@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
+- **Canonical CLI Unification & Shadow CLI Deprecation (AGT-54, Decision 3, F-48, F-50):**
+  - **Canonical Parser:** `neuralops.benchmarks.cli:main` is established as the sole canonical entry point for all CLI console scripts (`neuralops`, `neuralops-cli`, `nops`, `nops-cli`) and `python -m neuralops`.
+  - **Shadow Entry Points:** Converted `neuralops/cli/main.py` and `neuralops/cli/core/app.py` into thin backward-compatibility shims that emit `DeprecationWarning` and delegate directly to `neuralops.benchmarks.cli:main`.
+  - **F-50 Broken Imports Fixed:** In `neuralops/cli/core/commands/system.py`, fixed broken imports to reference `neuralops.cli.doctor`, `neuralops.cli.info`, and `neuralops.export.runtime_compat:check_compatibility`.
+  - **Regression Tests:** Extended `tests/cli/test_cli_canonical.py` with `test_no_shadow_cli_imports_missing_modules` and `test_shadow_cli_shims_emit_deprecation_warning`.
 - **Exclusion of Template Attention from Canonical Counts & Logging of Triton Fallbacks (F-25, F-26):**
   - **Template Class Non-Canonical Registration (F-25):** Re-registered `YourCustomAttention` (`template_attention`) in `neuralops.layers.experimental.template_attention` with `is_alias=True`, removing it from `ATTENTION_REGISTRY.canonical_keys()` and `distinct_classes()`. The distinct attention class count correctly adjusts from 116 to 115, ensuring educational template modules do not inflate physical registry counts.
   - **Triton Fallback Observability (F-26):** Verified that bare unlogged `except Exception: pass` blocks in `neuralops/compression/low_rank/a3_compressor.py`, `neuralops/layers/hybrid/tri_branch_hybrid_attention.py`, and `neuralops/layers/modern/mla_attention.py` are eliminated and replaced by structured debug logging (`logger.debug("...", exc_info=True)`) or mathematical fallbacks, while preserving Triton-to-PyTorch runtime fallback semantics.
