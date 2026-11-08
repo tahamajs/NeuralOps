@@ -24,6 +24,7 @@ import platform
 import sys
 import time
 from pathlib import Path
+from typing import Any, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -138,25 +139,22 @@ complete -c nops -f {cmds_fish}
     return f"# Unsupported shell: {shell}. Supported: bash, zsh, fish"
 
 
-def _build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="neuralops",
-        description="Unified CLI & benchmarking tool for 203 attention & compressor modules.",
-    )
-    parser.add_argument("--version", "-v", action="version", version=f"NeuralOps v{__version__}")
-    parser.add_argument("--json", action="store_true", help="Format stdout as structured JSON where applicable")
-    parser.add_argument("--quiet", "-q", action="store_true", help="Suppress non-essential progress and headers")
-    parser.add_argument("--verbose", action="store_true", help="Print verbose execution traces and telemetry")
-    parser.add_argument(
-        "--install-completion",
-        choices=["bash", "zsh", "fish"],
-        default=None,
-        help="Generate shell auto-completion script",
-    )
-    subparsers = parser.add_subparsers(dest="subcommand", help="Subcommand to run")
+class _DeprecatedHfTokenAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        raise argparse.ArgumentError(
+            self,
+            "--hf-token is deprecated and refused for security. "
+            "Passing tokens via argv exposes credentials in process listings and shell history. "
+            "Set the HF_TOKEN environment variable instead.",
+        )
 
-    run_p = subparsers.add_parser("run", aliases=["benchmark"], help="Run benchmark(s)")
+
+def _add_run_options(run_p: argparse.ArgumentParser) -> None:
+    """Populate execution flags on benchmark runner parser."""
     run_p.add_argument("--verbose", action="store_true", help="Print each operation gate and timing result")
+    run_p.add_argument(
+        "--dry-run", action="store_true", help="Perform plan and validation without allocating large tensors or executing full runs"
+    )
     run_p.add_argument(
         "--benchmark",
         type=str,
@@ -345,16 +343,6 @@ def _build_parser() -> argparse.ArgumentParser:
         default=False,
         help="[Deprecated] Redundant alias ensuring trust_remote_code is disabled (default: False)",
     )
-
-    class _DeprecatedHfTokenAction(argparse.Action):
-        def __call__(self, parser, namespace, values, option_string=None):
-            raise argparse.ArgumentError(
-                self,
-                "--hf-token is deprecated and refused for security. "
-                "Passing tokens via argv exposes credentials in process listings and shell history. "
-                "Set the HF_TOKEN environment variable instead.",
-            )
-
     run_p.add_argument(
         "--hf-token",
         action=_DeprecatedHfTokenAction,
@@ -383,11 +371,9 @@ def _build_parser() -> argparse.ArgumentParser:
     run_p.add_argument("recipe_cmd", nargs="?", default=None, help="Optional subcommand, e.g. 'recipe'")
     run_p.add_argument("recipe_file", nargs="?", default=None, help="Recipe file when recipe_cmd is 'recipe'")
 
-    resume_p = subparsers.add_parser("resume", help="Resume interrupted sweep")
-    resume_p.add_argument("--output-dir", type=str, default="results", help="Output directory of interrupted run")
-    resume_p.add_argument("--run-id", type=str, default=None, help="Run ID to resume")
 
-    plan_p = subparsers.add_parser("plan", help="Dry-run and estimate execution grid")
+def _add_plan_options(plan_p: argparse.ArgumentParser) -> None:
+    """Populate execution grid planning flags."""
     plan_p.add_argument(
         "--benchmark",
         type=str,
@@ -460,7 +446,9 @@ def _build_parser() -> argparse.ArgumentParser:
     plan_p.add_argument("--ranks", type=str, default=None)
     plan_p.add_argument("--yes", action="store_true", help="Confirm execution without prompt")
 
-    list_p = subparsers.add_parser("list", help="List registered modules with capability filters")
+
+def _add_list_options(list_p: argparse.ArgumentParser) -> None:
+    """Populate catalog filter flags."""
     list_p.add_argument("--type", choices=["attention", "compressor", "kernels", "all"], default="all")
     list_p.add_argument("--family", type=str, default=None, help="Filter mechanisms by mathematical family")
     list_p.add_argument(
@@ -469,17 +457,154 @@ def _build_parser() -> argparse.ArgumentParser:
     list_p.add_argument("--supports", choices=["causal", "gqa", "rope", "cuda"], default=None)
     list_p.add_argument("--json", action="store_true", help="Output catalog as formatted JSON")
 
+
+def _add_compare_options(comp_gate_p: argparse.ArgumentParser) -> None:
+    """Populate benchmark result comparison and regression detection flags."""
+    comp_gate_p.add_argument("--baseline", type=str, required=True, help="Path to baseline benchmark result JSON")
+    comp_gate_p.add_argument("--candidate", type=str, required=True, help="Path to candidate benchmark result JSON")
+    comp_gate_p.add_argument("--metric", type=str, default="latency_ms", help="Target metric name to evaluate")
+    comp_gate_p.add_argument(
+        "--max-regression-pct",
+        type=float,
+        default=None,
+        help="Maximum allowed numerical regression percentage (e.g. 5.0 for 5%%)",
+    )
+    comp_gate_p.add_argument(
+        "--max-regression",
+        type=float,
+        default=None,
+        help="Maximum allowed numerical regression delta",
+    )
+    comp_gate_p.add_argument("--json", action="store_true", help="Format output as JSON")
+
+
+def _add_info_options(info_p: argparse.ArgumentParser) -> None:
+    """Populate info inspection flags."""
+    info_p.add_argument("name", nargs="?", default=None, help="Optional module or benchmark name to inspect")
+    info_p.add_argument("--json", action="store_true", help="Format output as JSON")
+
+
+def _add_resume_options(resume_p: argparse.ArgumentParser) -> None:
+    """Populate resume sweep flags."""
+    resume_p.add_argument("--output-dir", type=str, default="results", help="Output directory of interrupted run")
+    resume_p.add_argument("--run-id", type=str, default=None, help="Run ID to resume")
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="neuralops",
+        description="Unified CLI & benchmarking tool for 203 attention & compressor modules.",
+    )
+    parser.add_argument("--version", "-v", action="version", version=f"NeuralOps v{__version__}")
+    parser.add_argument("--json", action="store_true", help="Format stdout as structured JSON where applicable")
+    parser.add_argument("--quiet", "-q", action="store_true", help="Suppress non-essential progress and headers")
+    parser.add_argument("--verbose", action="store_true", help="Print verbose execution traces and telemetry")
+    parser.add_argument(
+        "--install-completion",
+        choices=["bash", "zsh", "fish"],
+        default=None,
+        help="Generate shell auto-completion script",
+    )
+    subparsers = parser.add_subparsers(dest="subcommand", help="Subcommand to run")
+
+    run_p = subparsers.add_parser("run", help="Run benchmark(s)")
+    _add_run_options(run_p)
+
+    resume_p = subparsers.add_parser("resume", help="Resume interrupted sweep")
+    _add_resume_options(resume_p)
+
+    plan_p = subparsers.add_parser("plan", help="Dry-run and estimate execution grid")
+    _add_plan_options(plan_p)
+
+    list_p = subparsers.add_parser("list", help="List registered modules with capability filters")
+    _add_list_options(list_p)
+
     comp_gate_p = subparsers.add_parser(
         "compare", help="Compare benchmark run results against baseline for regression detection"
     )
-    comp_gate_p.add_argument("--baseline", type=str, required=True, help="Path to baseline benchmark result JSON")
-    comp_gate_p.add_argument("--candidate", type=str, required=True, help="Path to candidate benchmark result JSON")
-    comp_gate_p.add_argument("--metric", type=str, required=True, help="Target metric name to evaluate")
-    comp_gate_p.add_argument("--max-regression", type=float, required=True, help="Maximum allowed numerical regression")
-    comp_gate_p.add_argument("--json", action="store_true", help="Format output as JSON")
+    _add_compare_options(comp_gate_p)
+
+    bench_p = subparsers.add_parser(
+        "benchmark",
+        help="Dedicated benchmark command group (run, plan, list, info, compare, resume)",
+    )
+    bench_sub = bench_p.add_subparsers(
+        dest="benchmark_subcommand",
+        help="Benchmark action to perform",
+    )
+    bench_run = bench_sub.add_parser("run", help="Run benchmark(s)")
+    _add_run_options(bench_run)
+
+    bench_plan = bench_sub.add_parser("plan", help="Dry-run and estimate execution grid")
+    _add_plan_options(bench_plan)
+
+    bench_list = bench_sub.add_parser("list", help="List registered modules with capability filters")
+    _add_list_options(bench_list)
+
+    bench_info = bench_sub.add_parser("info", help="Display benchmark target info or system hardware status")
+    _add_info_options(bench_info)
+
+    bench_compare = bench_sub.add_parser(
+        "compare", help="Compare benchmark run results against baseline for regression detection"
+    )
+    _add_compare_options(bench_compare)
+
+    bench_resume = bench_sub.add_parser("resume", help="Resume interrupted sweep")
+    _add_resume_options(bench_resume)
 
     verify_p = subparsers.add_parser("verify", help="Check system hardware and package requirements")
     verify_p.add_argument("--json", action="store_true", help="Format output as JSON")
+
+    matrix_p = subparsers.add_parser(
+        "matrix", help="Orchestrate multi-dimensional benchmark grid (B, T, D, dtypes, causal modes)"
+    )
+    matrix_p.add_argument(
+        "--modules",
+        "--module",
+        dest="modules",
+        type=str,
+        default="attention:full_attention",
+        help="Comma-separated module names (e.g. attention:cosformer,attention:gated_delta_net)",
+    )
+    matrix_p.add_argument(
+        "--seq-lens", type=str, default="128,512,1024,2048", help="Comma-separated sequence lengths"
+    )
+    matrix_p.add_argument("--batch-sizes", type=str, default="1,2,4,8", help="Comma-separated batch sizes")
+    matrix_p.add_argument(
+        "--hidden-dims", type=str, default="64,128,256,512", help="Comma-separated hidden dimensions"
+    )
+    matrix_p.add_argument(
+        "--dtypes", type=str, default="float32", help="Comma-separated dtypes (fp32, fp16, bf16)"
+    )
+    matrix_p.add_argument(
+        "--causal", action="store_true", default=None, help="Force causal masking for all grid points"
+    )
+    matrix_p.add_argument(
+        "--no-causal", action="store_true", default=None, help="Force bidirectional (non-causal) masking"
+    )
+    matrix_p.add_argument(
+        "--causal-modes", type=str, default=None, help="Comma-separated boolean modes, e.g. 'true,false'"
+    )
+    matrix_p.add_argument("--device", type=str, default="cpu", help="Device (cpu, cuda, mps)")
+    matrix_p.add_argument("--warmup", type=int, default=5, help="Warmup iterations")
+    matrix_p.add_argument("--iters", type=int, default=20, help="Timed iterations")
+    matrix_p.add_argument(
+        "--flush-l2", action="store_true", default=True, help="Evict L2 cache before each timing cycle"
+    )
+    matrix_p.add_argument(
+        "--no-flush-l2", dest="flush_l2", action="store_false", help="Disable L2 cache eviction"
+    )
+    matrix_p.add_argument(
+        "--output-dir", type=str, default="results/matrix", help="Output directory for matrix runs"
+    )
+    matrix_p.add_argument(
+        "--plan",
+        "--dry-run",
+        dest="dry_run",
+        action="store_true",
+        help="Print grid parameter points without executing",
+    )
+    matrix_p.add_argument("--json", action="store_true", help="Output results in JSON format")
 
     exp_p = subparsers.add_parser("export", help="Export model to production artifact format")
     exp_p.add_argument("--model", type=str, required=True, help="Base model identifier or path")
@@ -499,7 +624,7 @@ def _build_parser() -> argparse.ArgumentParser:
     doctor_p.add_argument("--json", action="store_true", help="Format output as JSON")
 
     info_p = subparsers.add_parser("info", help="Print system, GPU, and registry summary information")
-    info_p.add_argument("--json", action="store_true", help="Format output as JSON")
+    _add_info_options(info_p)
 
     search_p = subparsers.add_parser(
         "search", help="Automated Fisher-information & Pareto rank allocation search (AutoSVD)"
@@ -979,12 +1104,91 @@ def handle_compare(args: argparse.Namespace) -> int:
 
     baseline = Path(args.baseline)
     candidate = Path(args.candidate)
-    metric = str(args.metric)
-    max_regression = float(args.max_regression)
+    metric = str(getattr(args, "metric", "latency_ms"))
+    if getattr(args, "max_regression_pct", None) is not None:
+        max_regression = float(args.max_regression_pct)
+        fail_code = 4
+    elif getattr(args, "max_regression", None) is not None:
+        max_regression = float(args.max_regression)
+        fail_code = 1
+    else:
+        max_regression = 0.0
+        fail_code = 4
 
     res = compare_results(baseline, candidate, metric, max_regression)
     print(json.dumps(res, indent=2))
-    return 0 if res.get("status") == "PASS" else 1
+    return 0 if res.get("status") == "PASS" else fail_code
+
+
+def handle_info(args: argparse.Namespace) -> int:
+    """Display system overview, hardware runtime info, or target benchmark architecture info."""
+    name = getattr(args, "name", None)
+    if name:
+        import json
+        from neuralops.benchmarks.registry import BENCHMARK_REGISTRY
+
+        clean_name = name.split(":", 1)[1] if ":" in name else name
+        bspec = BENCHMARK_REGISTRY.get(name) or BENCHMARK_REGISTRY.get(clean_name)
+        if bspec:
+            if getattr(args, "json", False):
+                print(
+                    json.dumps(
+                        {
+                            "canonical_name": bspec.canonical_name,
+                            "category": bspec.category,
+                            "target_name": bspec.target_name,
+                            "requires_cuda": bspec.requires_cuda,
+                            "requires_triton": bspec.requires_triton,
+                            "supports_causal": bspec.supports_causal,
+                            "supports_backward": bspec.supports_backward,
+                            "supports_gqa": bspec.supports_gqa,
+                            "supports_rope": bspec.supports_rope,
+                            "default_timeout_s": bspec.default_timeout_s,
+                        },
+                        indent=2,
+                    )
+                )
+            else:
+                print(f"Benchmark: {bspec.canonical_name}")
+                print(f"Category: {bspec.category}")
+                print(f"Target: {bspec.target_name}")
+                print(f"Requires CUDA: {bspec.requires_cuda}")
+                print(f"Requires Triton: {bspec.requires_triton}")
+                print(f"Supports Causal: {bspec.supports_causal}")
+                print(f"Default Timeout: {bspec.default_timeout_s}s")
+            return 0
+
+        try:
+            import warnings
+
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                from neuralops.core.inspector import inspect_architecture, render_architecture_card
+
+                spec = inspect_architecture(clean_name)
+                if getattr(args, "json", False):
+                    print(json.dumps(spec.to_dict(), indent=2))
+                else:
+                    print(render_architecture_card(spec))
+                return 0
+        except Exception:
+            pass
+
+        print(f"Error: Target '{name}' not found in registry.")
+        return 1
+
+    from neuralops.cli.info import cmd_info
+
+    return cmd_info(args)
+
+
+def handle_resume(args: argparse.Namespace) -> int:
+    """Resume interrupted benchmark sweep."""
+    from neuralops.benchmarks.api import Runner
+
+    runner = Runner(output_dir=getattr(args, "output_dir", "results"), resume=True)
+    runner.resume()
+    return 0
 
 
 def handle_plan(args: argparse.Namespace) -> None:
@@ -1150,6 +1354,76 @@ def handle_results(args: argparse.Namespace) -> None:
         print(df.to_string(index=False))
 
 
+def handle_matrix(args: argparse.Namespace) -> int:
+    """Handle 'neuralops benchmark matrix' multi-dimensional execution."""
+    import json
+    from neuralops.benchmarks.matrix import run_benchmark_matrix
+
+    def _parse_ints(val: Optional[str]) -> Optional[List[int]]:
+        if not val:
+            return None
+        return [int(x.strip()) for x in val.split(",") if x.strip()]
+
+    def _parse_strs(val: Optional[str]) -> Optional[List[str]]:
+        if not val:
+            return None
+        return [x.strip() for x in val.split(",") if x.strip()]
+
+    def _parse_bools(val: Optional[str]) -> Optional[List[bool]]:
+        if not val:
+            return None
+        return [x.strip().lower() in ("true", "1", "yes") for x in val.split(",") if x.strip()]
+
+    causal_modes = None
+    if getattr(args, "causal", None) is True:
+        causal_modes = [True]
+    elif getattr(args, "no_causal", None) is True:
+        causal_modes = [False]
+    elif getattr(args, "causal_modes", None):
+        causal_modes = _parse_bools(args.causal_modes)
+
+    modules = _parse_strs(args.modules)
+    seq_lens = _parse_ints(args.seq_lens)
+    batch_sizes = _parse_ints(args.batch_sizes)
+    hidden_dims = _parse_ints(args.hidden_dims)
+    dtypes = _parse_strs(args.dtypes)
+
+    norm_dtypes = []
+    if dtypes:
+        for dt in dtypes:
+            dt_clean = dt.lower().replace("fp", "float").replace("bf", "bfloat")
+            if dt_clean in ("float16", "bfloat16", "float32"):
+                norm_dtypes.append(dt_clean)
+            else:
+                norm_dtypes.append(dt)
+
+    result = run_benchmark_matrix(
+        modules=modules,
+        seq_lens=seq_lens,
+        batch_sizes=batch_sizes,
+        hidden_dims=hidden_dims,
+        dtypes=norm_dtypes or None,
+        causal_modes=causal_modes,
+        device=args.device,
+        output_dir=args.output_dir,
+        dry_run=args.dry_run,
+        warmup=args.warmup,
+        iters=args.iters,
+        flush_l2=args.flush_l2,
+    )
+
+    if args.json:
+        print(json.dumps(result, indent=2))
+    else:
+        if args.dry_run:
+            print(f"[✓] Benchmark Matrix Plan: {result['total_points']} grid points scheduled.")
+        else:
+            print(f"[✓] Benchmark Matrix Completed: {result['passed_cells']}/{result['total_cells']} passed.")
+            if result.get("speedup_gate_failures", 0) > 0:
+                print(f"[!] Warning: {result['speedup_gate_failures']} speedup regression gate failure(s).")
+    return 0
+
+
 def apply_config_to_args(args: argparse.Namespace) -> None:
     """Deeply apply all settings from the config preset file to the args namespace."""
     config_path = getattr(args, "config", None)
@@ -1201,6 +1475,10 @@ def resolve_benchmark_selector(selector: str) -> list[str]:
 
 def handle_run(args: argparse.Namespace) -> None:
     apply_config_to_args(args)
+
+    if getattr(args, "dry_run", False):
+        handle_plan(args)
+        return
 
     req_dev = getattr(args, "device", None)
     if req_dev and req_dev.startswith("cuda"):
@@ -2008,21 +2286,24 @@ def _dispatch(args: argparse.Namespace) -> int:
         return 0
     elif args.subcommand == "verify":
         return handle_verify(args)
+    elif args.subcommand == "matrix":
+        return handle_matrix(args)
     elif args.subcommand == "compare":
         return handle_compare(args)
 
-    elif args.subcommand in ("run", "benchmark"):
+    elif args.subcommand == "benchmark":
         action = (
-            getattr(args, "action", None) or getattr(args, "recipe_cmd", None) or getattr(args, "bench_command", None)
+            getattr(args, "benchmark_subcommand", None)
+            or getattr(args, "action", None)
+            or getattr(args, "recipe_cmd", None)
+            or getattr(args, "bench_command", None)
         )
         if action == "recipe":
             args.recipe_action = "benchmark"
             args.file = getattr(args, "recipe_file", None)
             return handle_recipe(args)
         elif action == "info":
-            from neuralops.cli.info import cmd_info
-
-            return cmd_info()
+            return handle_info(args)
         elif action == "list":
             return handle_list(args)
         elif action == "plan":
@@ -2032,12 +2313,25 @@ def _dispatch(args: argparse.Namespace) -> int:
             return handle_verify(args)
         elif action == "compare":
             return handle_compare(args)
+        elif action == "resume":
+            return handle_resume(args)
         elif action in ("run", None):
+            if action is None and getattr(args, "benchmark_subcommand", None) is None and getattr(args, "action", None) is None:
+                print("Usage: neuralops benchmark {run,plan,list,info,compare,resume} [options]")
+                return 0
             handle_run(args)
             return 0
         else:
             handle_run(args)
             return 0
+    elif args.subcommand == "run":
+        action = getattr(args, "recipe_cmd", None)
+        if action == "recipe":
+            args.recipe_action = "benchmark"
+            args.file = getattr(args, "recipe_file", None)
+            return handle_recipe(args)
+        handle_run(args)
+        return 0
     elif args.subcommand == "export":
         handle_export(args)
     elif args.subcommand == "search":
@@ -2051,10 +2345,7 @@ def _dispatch(args: argparse.Namespace) -> int:
     elif args.subcommand == "benchmark-fused":
         return handle_benchmark_fused(args)
     elif args.subcommand == "resume":
-        from neuralops.benchmarks.api import Runner
-
-        runner = Runner(output_dir=args.output_dir, resume=True)
-        runner.resume()
+        return handle_resume(args)
     elif args.subcommand == "transplant":
         import copy
 
@@ -2260,9 +2551,7 @@ def _dispatch(args: argparse.Namespace) -> int:
 
         return cmd_doctor()
     elif args.subcommand == "info":
-        from neuralops.cli.info import cmd_info
-
-        return cmd_info()
+        return handle_info(args)
     elif args.subcommand == "validate":
         import json
 

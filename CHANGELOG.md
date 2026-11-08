@@ -21,6 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Regression Tests:** Added `tests/benchmarks/test_manifest_schema_key.py` and `tests/test_info_without_torch.py` (both 100% passed).
 
 ### Added
+- **Multi-Phase Benchmark Matrix Orchestrator (AGT-59, Roadmap Gap 6):**
+  - **Multi-Axis Grid Orchestrator (`matrix.py`):** Authored `BenchmarkMatrixOrchestrator` and procedural helper `run_benchmark_matrix` in `neuralops.benchmarks.matrix`. Supports parameter sweeps across sequence lengths ($T \in \{128, 512, 1024, 2048\}$), batch sizes ($B \in \{1, 2, 4, 8\}$), hidden dimensions ($D \in \{64, 128, 256, 512\}$), dtypes (FP16, BF16, FP32), and causal masking modes.
+  - **Cold-Cache Flushing & Hardware Timing:** Implemented `ColdCacheFlusher` allocating an L2 cache eviction buffer (up to 256 MB) to prevent cache hit contamination during timed iterations. Uses device synchronous event timing and percentile distributions (median, p10, p90, mean, std).
+  - **Derived Metric Generation:** Automatically computes tokens/sec throughput ($\frac{B \times T}{\text{latency}}$), arithmetic intensity/TFLOPs, effective memory bandwidth (GB/s), and speedup vs baseline reference.
+  - **Workload Categorization & Gating:** Classifies cells into `prefill` ($T \ge 512$), `decode` ($B=1, T \ge 1024$), and `micro` regimes. Implements speedup regression gating flagging any prefill kernel with speedup $< 0.90\times$.
+  - **CLI Command Wiring:** Added `neuralops matrix` subcommand to canonical CLI with options for `--modules`, `--seq-lens`, `--batch-sizes`, `--hidden-dims`, `--dtypes`, `--causal`, `--device`, `--warmup`, `--iters`, `--flush-l2`, `--output-dir`, `--plan/--dry-run`, and `--json`.
+  - **Persistence & Regression Suite:** Implemented automatic output logging to `matrix_results.jsonl`, `summary.json`, and `matrix_summary.csv`. Added test suite `tests/benchmarks/test_matrix_runner.py` (5 passed).
+- **Compare CLI Subcommand (AGT-59, Roadmap Gap 6):**
+  - Added dedicated `compare` subcommand (`neuralops compare --baseline <path> --candidate <path> [--metric <metric>] [--max-regression-pct <pct>]`) interfacing directly with `neuralops.benchmarks.regression_gate:compare_results`.
+  - Exits with status code 0 when performance changes remain within tolerance, and status code 4 (`FAIL_NUMERICS`) when regression exceeds the specified threshold.
 - **Subprocess Isolation & Watchdog Runner (AGT-58, Roadmap Gap 5):**
   - **Subprocess Isolation:** Isolated benchmark execution into dedicated worker subprocesses using `multiprocessing.get_context("spawn")`, ensuring abnormal process termination (SIGSEGV, SIGABRT, hard exits) cannot terminate the master orchestrator sweep.
   - **Watchdog Timeout Enforcement:** Implemented strict per-benchmark timeout enforcement with SIGTERM/SIGKILL escalation in `neuralops.benchmarks.executor:execute_single`, cleanly recording `status="timeout"` and updating `timed_out=True` upon overrun.
@@ -33,6 +43,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Operational Protocols (AGENTS.md):** Injected 6 critical operational standards into `AGENTS.md` covering §1.5 Multi-Agent & Delegation Protocol, §1.6 Local State & Database Hygiene, §3.3 Reporting Deferred Tasks (GPU/HPC Only), §5.0 Strict Scope Discipline, §6.3 Error Traceback Mandate, and §8.2 Active Self-Monitoring.
 
 ### Changed
+- **Benchmark Subcommand Group & Alias Decoupling (AGT-59, Roadmap Gap 2):**
+  - Disentangled the `benchmark` CLI alias from `run`, establishing `neuralops benchmark` as a dedicated subcommand group delegating to `run`, `plan`, `list`, `info`, `compare`, and `resume`.
+  - Resolved the alias collision where running `neuralops benchmark list` or `neuralops benchmark info <name>` fell into `handle_run` and raised CUDA availability errors on CPU-only machines.
+  - Fully preserved backward compatibility for `neuralops run --benchmark <name>` (AGT-07 contract).
 - **Benchmark Adapter Modernization & Unified Return Type (AGT-56, Roadmap Gap 3):**
   - **BaseBenchmarkAdapter Lifecycle Integration:** All concrete benchmark adapters (`CUDAKernelAdapter`, `TritonKernelAdapter`, `CompressorModuleAdapter`, and newly added `AttentionBenchmarkAdapter`) strictly inherit from `BaseBenchmarkAdapter` and execute the fail-closed 6-gate lifecycle (capability check -> input generation -> reference -> candidate -> numerics -> timing).
   - **Unified Return Shape (`BenchmarkResult`):** Standardized all adapter execution returns to canonical `BenchmarkResult` instances with strongly-typed `BenchmarkStatus` values (`SUCCESS`, `FAILED`, `FAIL_NUMERICS`, `DEPENDENCY_ERROR`), eliminating all raw dictionary shapes and legacy `"PASS"`/`"FAIL"` status strings across adapters.
