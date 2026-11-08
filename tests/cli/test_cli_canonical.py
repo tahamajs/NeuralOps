@@ -136,3 +136,41 @@ def test_tui_subcommand_reaches_terminal_ui(monkeypatch):
     assert ret == 0
     assert called.get("inspect_target") == "gated_delta_net"
     assert called.get("snapshot") is True
+
+
+def test_no_shadow_cli_imports_missing_modules():
+    """Verify all CLI modules across packages import without ModuleNotFoundError (F-50)."""
+    cli_modules = [
+        "neuralops.benchmarks.cli",
+        "neuralops.cli.doctor",
+        "neuralops.cli.info",
+        "neuralops.cli.main",
+        "neuralops.cli.core.app",
+        "neuralops.cli.core.commands.system",
+        "neuralops.cli.core.commands.benchmark",
+        "neuralops.cli.core.commands.model",
+        "neuralops.cli.core.commands.module",
+        "neuralops.cli.core.commands.results",
+        "neuralops.export.runtime_compat",
+    ]
+    for mod_name in cli_modules:
+        try:
+            mod = importlib.import_module(mod_name)
+            assert mod is not None
+        except ModuleNotFoundError as exc:
+            pytest.fail(f"Module {mod_name} failed to import due to missing dependency/module: {exc}")
+
+
+def test_shadow_cli_shims_emit_deprecation_warning():
+    """Verify that accessing shadow CLIs emits a clear DeprecationWarning and delegates to canonical parser."""
+    import warnings
+    from neuralops.cli import main as shadow_main
+    from neuralops.cli.core import app as shadow_app
+
+    with pytest.deprecated_call(match="deprecated and will be removed in v3.0.0"):
+        parser1 = shadow_main.build_main_parser()
+        assert parser1 is not None
+
+    with pytest.deprecated_call(match="deprecated and will be removed in v3.0.0"):
+        parser2 = shadow_app.build_app_parser()
+        assert parser2 is not None
