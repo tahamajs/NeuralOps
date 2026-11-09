@@ -221,10 +221,8 @@ class SparseGPTCompressor(BaseCompressor):
             if act_flat.shape[-1] == d_in:
                 _, H_inv = compute_empirical_hessian(act_flat, damping=self.percdamp, device=device)
             else:
-                2.0 * torch.eye(d_in, device=device)
                 H_inv = 0.5 * torch.eye(d_in, device=device)
         else:
-            2.0 * torch.eye(d_in, device=device)
             H_inv = 0.5 * torch.eye(d_in, device=device)
 
         H_inv = H_inv.to(device=device, dtype=torch.float32)

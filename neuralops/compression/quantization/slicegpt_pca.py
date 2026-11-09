@@ -430,7 +430,7 @@ class SliceGPTPCACompressor(BaseCompressor):
                             try:
                                 self.model(dummy_ids)
                             except Exception:
-                                first_lin = next((m for m in self.model.modules() if isinstance(m, nn.Linear)), None)
+                                first_lin = next((m for m in self.model.modules() if hasattr(m, "in_features")), None)
                                 in_f = getattr(first_lin, "in_features", 768) if first_lin else 768
                                 self.model(torch.randn(1, 16, in_f, device=self.target_device))
                     except Exception as ex_synth:
@@ -698,7 +698,7 @@ class SliceGPTPCACompressor(BaseCompressor):
                     try:
                         self.model(input_ids=dummy_input)
                     except Exception:
-                        first_lin = next((m for m in self.model.modules() if isinstance(m, nn.Linear)), None)
+                        first_lin = next((m for m in self.model.modules() if hasattr(m, "in_features")), None)
                         in_f = getattr(first_lin, "in_features", 768) if first_lin else 768
                         self.model(torch.randn(1, 8, in_f, device=self.target_device))
         except Exception as ex_sanity:

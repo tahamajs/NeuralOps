@@ -398,8 +398,22 @@ class SVDLinearCompressor(BaseCompressor):
             self.model.eval()
             with torch.no_grad():
                 d = next(self.model.parameters()).device
-                dummy = torch.randint(0, 100, (1, 16), device=d)
-                self.model(dummy)
+                cfg = getattr(self.model, "config", None)
+                vocab = getattr(cfg, "vocab_size", None)
+                if vocab is not None:
+                    dummy = torch.randint(0, min(vocab, 100), (1, 16), device=d)
+                    try:
+                        self.model(dummy)
+                    except Exception:
+                        self.model(input_ids=dummy)
+                else:
+                    first_lin = next(
+                        (m for m in self.model.modules() if hasattr(m, "in_features")),
+                        None,
+                    )
+                    hidden = getattr(first_lin, "in_features", 768) if first_lin else 768
+                    dt = next(self.model.parameters()).dtype
+                    self.model(torch.randn(1, 16, hidden, device=d, dtype=dt))
             forward_check_success = True
         except Exception as e:
             logger.debug("SVDLinear post-compression forward sanity check exception: %s", e)
