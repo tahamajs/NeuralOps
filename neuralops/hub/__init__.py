@@ -19,11 +19,19 @@ from neuralops.hub.bert_zoo import (
     list_pretrained_bert_models,
     load_pretrained_bert,
 )
+from neuralops.hub.compressor_zoo import (
+    generate_compressor_model_card_markdown,
+    list_pretrained_compressed_bert_models,
+    load_pretrained_compressed_bert,
+)
 from neuralops.hub.uploader import AsyncHFHubUploader
 
 __all__ = [
     "load_pretrained_bert",
     "list_pretrained_bert_models",
     "generate_bert_model_card_markdown",
+    "load_pretrained_compressed_bert",
+    "list_pretrained_compressed_bert_models",
+    "generate_compressor_model_card_markdown",
     "AsyncHFHubUploader",
 ]

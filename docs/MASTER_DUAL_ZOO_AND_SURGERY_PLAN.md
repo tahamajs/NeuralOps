@@ -1,7 +1,7 @@
-# 🏛️ NeuralOps Master Dual-Zoo & Empirical Selection Plan
-## Exhaustive Multi-Phase GPU Screening, Surgery Architecture Upgrades, Pareto Selection & End-to-End Distillation for BERT-131 & Qwen-Generative Zoos
+# 🏛️ NeuralOps Master Dual-Zoo (Attention & Compression) & Empirical Selection Plan
+## Exhaustive Multi-Phase GPU Screening, Surgery Architecture Upgrades, Compression Engines, Downstream GLUE/WikiText Evaluation & End-to-End Distillation for BERT (131 Attentions + 82 Compressors) & Qwen-Generative Zoos
 
-**Document ID:** `NOP-MASTER-ZOO-SELECTION-v7.0-CONSOLIDATED`
+**Document ID:** `NOP-MASTER-ZOO-SELECTION-v8.0-CONSOLIDATED`
 **Status:** Authoritative Canonical Multi-Phase Empirical Roadmap & Code-Reuse Specification
 **Current Package Alignment:** NeuralOps `v2.1.0`
 **Author Attribution:** `taha <tahamaj4@gmail.com>`
@@ -10,21 +10,36 @@
 ---
 
 ### Target Foundation Backbones
-- **Track A (NLU & Bidirectional Encoder Zoo):**
-  - Model: `bert-base-uncased` (110M parameters, 12 layers, 768 hidden dimension, 12 attention heads, 30,522 vocabulary size)
-  - Dataset: `WikiText-2` (`wikitext-2-raw-v1`, chunked into contiguous sequence length $S = 128$)
-  - Objective: Deterministic 15% Masked Language Modeling Pseudo-Perplexity ($\text{MLM-PPL}$) & Masked Token Accuracy
-  - Scope: All 131 canonical subquadratic, linear, SVD, SSM, and hybrid attention mechanisms
-  - Target Organization: `Hooshaai` (Official Research Laboratory Organization on Hugging Face Hub)
-  - Checkpoint Namespaces: `Hooshaai/bert-{slug}-wiki`
 
-- **Track B (Modern Generative LM & Constant $O(1)$ KV-Cache Scaling Zoo):**
-  - Model: `Qwen/Qwen2.5-0.5B` (490M parameters, 24 layers, 896 hidden dimension, Grouped-Query Attention 14 Query heads to 2 Key/Value heads, head dimension 64, 32k context window)
-  - Edge Mobile Baseline: `SmolLM2-135M` (135M parameters, 30 layers, 576 hidden dimension, 9 Query heads to 3 KV heads, 8k context window)
-  - Dataset: `WikiText-103` (`wikitext-103-raw-v1`, chunked into sequence lengths $S \in \{512, 1024, 2048, 4096\}$) & `SST-2`
-  - Objective: Autoregressive Next-Token Causal Perplexity & Long-Context Constant $O(1)$ Memory Saturation
-  - Scope: Top-20 Pareto-Optimal Linear & Subquadratic Attention Champions
-  - Checkpoint Namespaces: `Hooshaai/qwen-2.5-0.5b-{slug}-wiki`
+#### 1. Track A: Pretrained BERT Encoder Foundation (110M Parameters)
+- **Track A-Attn (BERT Attention Zoo):**
+  - Backbone: `bert-base-uncased` (110M parameters, 12 layers, 768 hidden dimension, 12 attention heads, 30,522 vocabulary size)
+  - Dataset: `WikiText-2` (`wikitext-2-raw-v1`, contiguous sequence length $S = 128$)
+  - Objective: Deterministic 15% Masked Language Modeling Pseudo-Perplexity ($\text{MLM-PPL}$) & Masked Token Accuracy
+  - Scope: All 131 canonical subquadratic, linear, SVD, SSM, and hybrid attention mechanisms (110 verified on GPU)
+  - Target Organization: `Hooshaai` on Hugging Face Hub (`Hooshaai/bert-{slug}-wiki`)
+- **Track A-Comp (BERT Compressor Zoo):**
+  - Backbone: `bert-base-uncased` (110M parameters)
+  - Dataset: `WikiText-2` & `GLUE SST-2`
+  - Objective: Parameter Reduction Ratio $R = P_{\text{orig}} / P_{\text{comp}} > 1.00x$, Zero-Shot Reconstruction Error, Post-KD $\text{MLM-PPL}$ and SST-2 Accuracy
+  - Scope: All 82 canonical compression engines (SVD, activation-whitened low-rank, dynamic rank, pruning, quantization, tensor decomposition)
+  - Target Organization: `Hooshaai` on Hugging Face Hub (`Hooshaai/bert-comp-{slug}-wiki`)
+- **Downstream Teacher Task Calibration:**
+  - Task: GLUE SST-2 Sentiment Classification
+  - Teacher Head: Pre-fine-tuned `BertForSequenceClassification` (`models/bert_sst2_teacher`, ~92% accuracy)
+  - Principle: Guarantees that student-to-teacher accuracy and F1 degradation/recovery are physically and statistically meaningful.
+
+#### 2. Track B: Modern Generative Causal LM Foundation (490M & 135M Parameters)
+- **Track B-Attn (Qwen Attention Zoo):**
+  - Model: `Qwen/Qwen2.5-0.5B` (490M parameters, 24 layers, 896 hidden dimension, GQA 14:2 heads, head dimension 64, 32k context window)
+  - Auxiliary Mobile Baseline: `SmolLM2-135M` (135M parameters, 30 layers, 576 hidden dimension)
+  - Architecture: `hybrid_3_1` (interleaving 3 linear attention layers with 1 full attention anchor) and full linear replacement
+  - Objective: Autoregressive Next-Token Causal Perplexity with Top-K Sparse Logit KD (`topk=64`)
+  - Target Organization: `Hooshaai` on Hugging Face Hub (`Hooshaai/qwen-2.5-0.5b-{slug}-wiki`)
+- **Track B-Comp (Qwen Compressor Zoo):**
+  - Model: `Qwen/Qwen2.5-0.5B`
+  - Scope: Low-rank SVD decomposition, KV-cache compression, and channel pruning
+  - Target Organization: `Hooshaai` on Hugging Face Hub (`Hooshaai/qwen-comp-{slug}-wiki`)
 
 ---
 
@@ -70,37 +85,44 @@
    - 3.5 [Fast Tensor-Core Gram Covariance Matching (Pillar 4)](#35-fast-tensor-core-gram-covariance-matching-pillar-4)
    - 3.6 [Dynamic Masked-Token Distillation & 6.6x FLOPs Reduction](#36-dynamic-masked-token-distillation--66x-flops-reduction)
    - 3.7 [Warmup-Stable-Decay (WSD) Learning Rate Scheduling](#37-warmup-stable-decay-wsd-learning-rate-scheduling)
+   - 3.8 [Parameter Reduction Ratio & Singular Value Truncation](#38-parameter-reduction-ratio--singular-value-truncation)
+   - 3.9 [Downstream Teacher Task Calibration & GLUE SST-2 Accuracy Baseline](#39-downstream-teacher-task-calibration--glue-sst-2-accuracy-baseline)
 4. [The Dual-Track Architecture: Tracks A & B Specifications](#4-the-dual-track-architecture-tracks-a--b-specifications)
-   - 4.1 [Track A: Pretrained BERT-Base-Uncased Attention Zoo](#41-track-a-pretrained-bert-base-uncased-attention-zoo)
-   - 4.2 [Track B: Qwen2.5-0.5B Modern Generative Causal LM Zoo](#42-track-b-qwen25-05b-modern-generative-causal-lm-zoo)
-   - 4.3 [Comparative Paradigm Matrix: Encoder MLM vs Causal Autoregressive LM](#43-comparative-paradigm-matrix-encoder-mlm-vs-causal-autoregressive-lm)
+   - 4.1 [Track A-Attn: Pretrained BERT Attention Zoo (131 Modules)](#41-track-a-attn-pretrained-bert-attention-zoo)
+   - 4.2 [Track A-Comp: Pretrained BERT Compressor Zoo (82 Engines)](#42-track-a-comp-pretrained-bert-compressor-zoo)
+   - 4.3 [Track B-Attn: Qwen2.5-0.5B Generative LM Attention Zoo](#43-track-b-attn-qwen25-05b-generative-lm-attention-zoo)
+   - 4.4 [Track B-Comp: Qwen2.5-0.5B Generative LM Compressor Zoo](#44-track-b-comp-qwen25-05b-generative-lm-compressor-zoo)
+   - 4.5 [Comparative Paradigm Matrix: Encoder MLM vs Downstream GLUE vs Causal LM](#45-comparative-paradigm-matrix-encoder-mlm-vs-downstream-glue-vs-causal-lm)
 5. [The 14-Phase Forensic Empirical Screening & Distillation Funnel](#5-the-14-phase-forensic-empirical-screening--distillation-funnel)
-   - 5.1 [Phase 0: Hardware Telemetry, PBS Queue Configuration & Invariant Audit](#51-phase-0-hardware-telemetry-pbs-queue-configuration--invariant-audit)
-   - 5.2 [Phase 1: Core Model Surgery Engine Modernization](#52-phase-1-core-model-surgery-engine-modernization)
-   - 5.3 [Phase 2: Teacher Baseline Telemetry (BERT MLM & Qwen CLM)](#53-phase-2-teacher-baseline-telemetry-bert-mlm--qwen-clm)
-   - 5.4 [Phase 3: GPU Zero-Shot Instantiation & Stability Screening (131 Modules)](#54-phase-3-gpu-zero-shot-instantiation--stability-screening-131-modules)
-   - 5.5 [Phase 4: Stage 0 Closed-Form Ridge Calibration Profiling & Metric Delta](#55-phase-4-stage-0-closed-form-ridge-calibration-profiling--metric-delta)
+   - 5.1 [Phase 0: Dual Key Discovery (131 Attentions + 82 Compressors)](#51-phase-0-dual-key-discovery)
+   - 5.2 [Phase 1: Core Model Surgery & Compression Engine Modernization](#52-phase-1-core-model-surgery--compression-engine-modernization)
+   - 5.3 [Phase 2: Teacher Baseline Telemetry (BERT MLM, GLUE SST-2 & Qwen CLM)](#53-phase-2-teacher-baseline-telemetry)
+   - 5.4 [Phase 3: GPU Zero-Shot Instantiation & Stability Screening](#54-phase-3-gpu-zero-shot-instantiation--stability-screening)
+   - 5.5 [Phase 4: Stage 0 Closed-Form Ridge & Whitening Alignment](#55-phase-4-stage-0-closed-form-ridge--whitening-alignment)
    - 5.6 [Phase 5: 60-Second Pilot KD Screening & Pareto Frontier Analysis](#56-phase-5-60-second-pilot-kd-screening--pareto-frontier-analysis)
-   - 5.7 [Phase 6: Attention Mechanism Selection & Classification](#57-phase-6-attention-mechanism-selection--classification)
-   - 5.8 [Phase 7: Full 5-Minute (300s) 3-Stage 6-Pillar KD Distillation Production](#58-phase-7-full-5-minute-300s-3-stage-6-pillar-kd-distillation-production)
+   - 5.7 [Phase 6: Attention & Compression Classification](#57-phase-6-attention--compression-classification)
+   - 5.8 [Phase 7: Full 5-Minute (300s) KD Distillation Production](#58-phase-7-full-5-minute-300s-kd-distillation-production)
    - 5.9 [Phase 8: Asynchronous Background HF Hub Upload & Storage Protection](#59-phase-8-asynchronous-background-hf-hub-upload--storage-protection)
    - 5.10 [Phase 9: Self-Contained Zero-Dependency Checkpoint Validation](#510-phase-9-self-contained-zero-dependency-checkpoint-validation)
-   - 5.11 [Phase 10: Track B — Qwen2.5-0.5B Causal LM Distillation Sweep](#511-phase-10-track-b--qwen25-05b-causal-lm-distillation-sweep)
+   - 5.11 [Phase 10: Track B — Qwen2.5-0.5B Attention & Compression Sweep](#511-phase-10-track-b--qwen25-05b-attention--compression-sweep)
    - 5.12 [Phase 11: Multi-Format Universal Packaging (GGUF, Ollama, vLLM / SGLang)](#512-phase-11-multi-format-universal-packaging-gguf-ollama-vllm--sglang)
-   - 5.13 [Phase 12: Interactive Gradio Attention Arena (HF Spaces)](#513-phase-12-interactive-gradio-attention-arena-hf-spaces)
+   - 5.13 [Phase 12: Interactive Gradio Attention & Compression Arena (HF Spaces)](#513-phase-12-interactive-gradio-attention--compression-arena-hf-spaces)
    - 5.14 [Phase 13: End-User Client API & CLI Command Interfaces](#514-phase-13-end-user-client-api--cli-command-interfaces)
    - 5.15 [Phase 14: Master Benchmark Ledger Synchronization & Paper Tables](#515-phase-14-master-benchmark-ledger-synchronization--paper-tables)
-6. [Complete Catalog of All 131 Canonical Attention Units Across 14 Families](#6-complete-catalog-of-all-131-canonical-attention-units-across-14-families)
+6. [Complete Catalog of All 131 Attention Units & 82 Compression Engines](#6-complete-catalog-of-all-131-attention-units--82-compression-engines)
 7. [Hardware, VRAM & Compute Budget Allocation on Sharif HPC RTX 3090](#7-hardware-vram--compute-budget-allocation-on-sharif-hpc-rtx-3090)
 8. [Complete Production Execution Scripts & Implementation Modules](#8-complete-production-execution-scripts--implementation-modules)
    - 8.1 [Universal BERT Attention Adapter (`neuralops/layers/bert_adapter.py`)](#81-universal-bert-attention-adapter-neuralopslayersbert_adapterpy)
    - 8.2 [Universal Qwen Attention Adapter (`neuralops/layers/qwen_adapter.py`)](#82-universal-qwen-attention-adapter-neuralopslayersqwen_adapterpy)
    - 8.3 [Centered Ridge Output Calibration (`neuralops/core/_attention_surgery.py`)](#83-centered-ridge-output-calibration-neuralopscore_attention_surgerypy)
-   - 8.4 [100% GPU-Saturated 5-Minute Master KD Engine (`bert_zoo_train_wiki.py`)](#84-100-gpu-saturated-5-minute-master-kd-engine-bert_zoo_train_wikipy)
-   - 8.5 [Asynchronous HF Hub Uploader Daemon (`neuralops/hub/uploader.py`)](#85-asynchronous-hf-hub-uploader-daemon-neuralopshubuploaderpy)
-   - 8.6 [Client-Facing Model Loader API (`neuralops/hub/bert_zoo.py`)](#86-client-facing-model-loader-api-neuralopshubbert_zoopy)
-   - 8.7 [Sharif HPC Torque PBS Job Submission Script (`job_bert_131_wikitext_hf_zoo.pbs`)](#87-sharif-hpc-torque-pbs-job-submission-script-job_bert_131_wikitext_hf_zoopbs)
-   - 8.8 [Interactive Hugging Face Gradio Space Application (`app.py`)](#88-interactive-hugging-face-gradio-space-application-apppy)
+   - 8.4 [Pretrained BERT Attention Distillation Engine (`bert_zoo_train_wiki.py`)](#84-pretrained-bert-attention-distillation-engine-bert_zoo_train_wikipy)
+   - 8.5 [Pretrained BERT Compressor Distillation Engine (`bert_compressor_zoo_train_wiki.py`)](#85-pretrained-bert-compressor-distillation-engine-bert_compressor_zoo_train_wikipy)
+   - 8.6 [Teacher Downstream SST-2 Fine-Tuning Engine (`train_bert_teacher_sst2.py`)](#86-teacher-downstream-sst-2-fine-tuning-engine-train_bert_teacher_sst2py)
+   - 8.7 [Qwen Modern Generative Zoo Engine (`qwen_zoo_train_mix.py`)](#87-qwen-modern-generative-zoo-engine-qwen_zoo_train_mixpy)
+   - 8.8 [Qwen Compressor Zoo Engine (`qwen_compressor_zoo_train_mix.py`)](#88-qwen-compressor-zoo-engine-qwen_compressor_zoo_train_mixpy)
+   - 8.9 [Asynchronous HF Hub Uploader Daemon (`bert_zoo_upload_hf.py`)](#89-asynchronous-hf-hub-uploader-daemon-bert_zoo_upload_hfpy)
+   - 8.10 [Client-Facing Model Loader APIs (`bert_zoo.py` & `compressor_zoo.py`)](#810-client-facing-model-loader-apis-bert_zoopy--compressor_zoopy)
+   - 8.11 [Sharif HPC Torque PBS Job Submission Scripts](#811-sharif-hpc-torque-pbs-job-submission-scripts)
 9. [Automated Failure Recovery Matrix & Postmortem Protocols](#9-automated-failure-recovery-matrix--postmortem-protocols)
 10. [AGENTS.md Verification Protocols & Completion Gates](#10-agentsmd-verification-protocols--completion-gates)
 
@@ -564,31 +586,66 @@ Differential peak rates:
 - Pretrained backbone parameters: $\eta_{\max, \text{backbone}} = 5.0 \times 10^{-5}$
 
 ---
+
+### 3.8 Parameter Reduction Ratio & Singular Value Truncation
+
+For low-rank and SVD-based model compression engines in NeuralOps (`direct_svd`, `auto_svd`, `dynamic_rank`, `erc_svd`, `salr`, `saes_svd_v2`, `swift_svd`, `hybrid_svd_layer`), each 2D weight matrix $W \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$ is factorized into low-rank components $U_r \in \mathbb{R}^{d_{\text{out}} \times r}$ and $V_r \in \mathbb{R}^{r \times d_{\text{in}}}$:
+
+$$W \approx U_r V_r, \quad r \ll \min(d_{\text{in}}, d_{\text{out}})$$
+
+1. **Parameter Reduction Ratio ($R$):**
+   The physical parameter reduction ratio $R$ is defined as:
+   $$\boxed{R = \frac{P_{\text{orig}}}{P_{\text{comp}}} = \frac{d_{\text{out}} \cdot d_{\text{in}}}{r \cdot (d_{\text{out}} + d_{\text{in}})}}$$
+   For BERT-base linear projections ($d_{\text{in}} = d_{\text{out}} = 768$) with rank $r = 128$:
+   $$R = \frac{768 \times 768}{128 \times (768 + 768)} = \frac{589,824}{196,608} = \mathbf{3.00\times \text{ reduction (66.7\% savings)}}$$
+   Across the entire model, factoring attention and MLP layers yields an overall model compression ratio of $R \approx 2.21\times$ ($109.5\text{M} \to 49.5\text{M}$ parameters).
+
+2. **Eckart-Young-Mirsky Optimality & Relative Reconstruction Error:**
+   By the Eckart-Young-Mirsky theorem, truncated SVD provides the unique optimal rank-$r$ approximation in Frobenius and spectral norms:
+   $$\min_{\text{rank}(A) \le r} \| W - A \|_F = \| W - U_r \Sigma_r V_r^\top \|_F = \sqrt{\sum_{i=r+1}^{\min(d_{\text{in}}, d_{\text{out}})} \sigma_i^2}$$
+   The relative reconstruction error is evaluated layerwise without fake identity substitution:
+   $$\epsilon_{\text{recon}} = \frac{\| W - U_r V_r \|_F}{\| W \|_F}$$
+
+---
+
+### 3.9 Downstream Teacher Task Calibration & GLUE SST-2 Accuracy Baseline
+
+A critical empirical principle mandated by `AGENTS.md` and user directives is **meaningful, non-vacuous evaluation** (`معنادار بودن مقایسه`):
+- For language modeling, vanilla `bert-base-uncased` has a pretrained Masked Language Modeling head (`BertForMaskedLM`), achieving physical baseline metrics on WikiText-2:
+  $$\text{Vanilla BERT MLM-PPL} = 10.4837, \quad \text{Masked Token Accuracy} = 59.92\%$$
+- For downstream sequence classification (e.g. GLUE SST-2), raw `bert-base-uncased` has an uninitialized, randomly instantiated classification head (`classifier.weight` and `classifier.bias`), yielding chance-level accuracy:
+  $$\text{Untrained Head SST-2 Accuracy} = \mathbf{49.08\%} \quad (\text{random coin-flip})$$
+- **Mandatory Pre-Distillation Fine-Tuning:**
+  To make student-teacher distillation and downstream comparison scientifically rigorous, the teacher model is fine-tuned on GLUE SST-2 for 2 epochs on NVIDIA RTX 3090 silicon, achieving the authoritative high-accuracy teacher checkpoint:
+  $$\boxed{\text{Fine-Tuned Teacher SST-2 Accuracy} = \mathbf{91.63\%} \quad (\text{Loss: } 0.2101, \text{ Samples: } 872)}$$
+  Saved to: `models/bert_sst2_teacher`.
+  Every compressed model and transplanted attention mechanism is then evaluated and healed against this 91.63% teacher, measuring physical recovery from post-surgery drop (e.g. $52.0\% \to 91.1\%$).
+
+---
+
 ## 4. The Dual-Track Architecture: Tracks A & B Specifications
 
-The NeuralOps Model Zoo implements an intentional dual-track architecture designed to satisfy both classical natural language understanding (NLU) representations and high-throughput modern generative text decoding.
+The NeuralOps Model Zoo implements an intentional dual-track architecture designed to satisfy both classical natural language understanding (NLU) representations and high-throughput modern generative text decoding, with parallel first-class tracks for **Attention Surgery** and **Model Compression**:
 
 ```text
-┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                NEURALOPS DUAL-TRACK ARCHITECTURE                                 │
-├─────────────────────────────────────────────┬────────────────────────────────────────────────────┤
-│ TRACK A: Encoder Foundation (Immediate)     │ TRACK B: Modern Generative LM (Expansion)          │
-├─────────────────────────────────────────────┼────────────────────────────────────────────────────┤
-│ • Model: bert-base-uncased (110M params)    │ • Model: Qwen/Qwen2.5-0.5B (490M params)           │
-│ • Topology: 12 Layers, 768 Dim, 12 Heads    │ • Topology: 24 Layers, 896 Dim, GQA 14:2 Heads     │
-│ • Task: Masked LM (Bidirectional Encoder)   │ • Task: Autoregressive Causal LM (Decoder-Only)    │
-│ • Dataset: WikiText-2 (seq_len = 128)       │ • Dataset: WikiText-103 (seq_len = 512 to 32k)     │
-│ • State Complexity: Standard O(S)           │ • State Complexity: Constant O(1) Memory!          │
-│ • Scope: All 131 Canonical Mechanisms       │ • Scope: Top-20 High-Speed Linear Champions        │
-│ • Target Hub Org: Hooshaai                  │ • Target Hub Org: Hooshaai                         │
-│ • Primary Metric: Masked LM Perplexity      │ • Primary Metric: Autoregressive Causal PPL        │
-│ • Secondary Evaluation: SST-2 / GLUE Acc    │ • Secondary Evaluation: Needle-in-Haystack (32k)   │
-└─────────────────────────────────────────────┴────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                           NEURALOPS DUAL-TRACK ARCHITECTURE                                            │
+├──────────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────────┤
+│ TRACK A: Encoder Foundation (BERT 110M)                  │ TRACK B: Modern Generative LM (Qwen 490M / SmolLM 135M)     │
+├──────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────┤
+│ • Backbone: bert-base-uncased (110M params, 12L, 768D)  │ • Backbone: Qwen/Qwen2.5-0.5B (490M params, 24L, 896D)      │
+│ • Track A-Attn: 131 Canonical Attention Mechanisms       │ • Track B-Attn: Top-20 High-Speed Linear Champions          │
+│ • Track A-Comp: 82 Canonical Compression Engines         │ • Track B-Comp: Low-Rank SVD & KV-Cache Compression         │
+│ • Datasets: WikiText-2 (seq_len=128) & GLUE SST-2        │ • Datasets: WikiText-103 (seq_len=512 to 32k) & SST-2       │
+│ • Teacher Baseline: MLM PPL 10.48, SST-2 Acc 91.63%      │ • State Complexity: Constant O(1) Memory Saturation         │
+│ • Checkpoint Namespaces: Hooshaai/bert-{slug}-wiki       │ • Checkpoint Namespaces: Hooshaai/qwen-2.5-0.5b-{slug}-wiki │
+│                          Hooshaai/bert-comp-{slug}-wiki  │                          Hooshaai/qwen-comp-{slug}-wiki     │
+└──────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### 4.1 Track A: Pretrained BERT-Base-Uncased Attention Zoo
+### 4.1 Track A-Attn: Pretrained BERT Attention Zoo (131 Modules)
 
 #### Mathematical Topology & Configuration
 - **Base Architecture:** `bert-base-uncased` (Devlin et al., 2018)
@@ -614,7 +671,32 @@ Every single attention mechanism ($k \in \{1, \dots, 131\}$) in `ATTENTION_REGIS
 
 ---
 
-### 4.2 Track B: Qwen2.5-0.5B Modern Generative Causal LM Zoo
+### 4.2 Track A-Comp: Pretrained BERT Compressor Zoo (82 Engines)
+
+While Track A-Attn transplants attention mechanisms to achieve subquadratic sequence scaling, **Track A-Comp compresses model parameters, memory footprint, and GEMM arithmetic complexity** across all 82 compression engines in `COMPRESSOR_REGISTRY`.
+
+#### Mathematical Topology & Compression Scope
+- **Base Architecture:** `bert-base-uncased` (109.5M parameters)
+- **Target Compression Layers:**
+  1. Attention Linear Projections: `query`, `key`, `value`, `output.dense`
+  2. Feedforward MLP Projections: `intermediate.dense` ($768 \to 3072$) and `output.dense` ($3072 \to 768$)
+- **Compression Paradigms Covered:**
+  - **Truncated & Dynamic SVD:** `direct_svd`, `auto_svd`, `dynamic_rank`, `erc_svd`, `saes_svd_v2`, `swift_svd`, `hybrid_svd_layer`
+  - **Activation-Aware & Whitened Low-Rank:** `asvd`, `adasvd_compressor`, `salr`, `svd_llm_compressor`, `slicegpt`, `rotational_slicegpt_int4`
+  - **Structured Pruning & Sparsity:** `admm_pruner`, `ast_pruner`, `flap`, `wanda`, `proxsparse`, `mamba_shedder`
+  - **Quantization & Microscaling:** `fp8`, `quarot`, `smoothquant`, `gptq`, `awq`, `astro_quantizer`, `kmeans_quantize`
+  - **Tensor Decompositions:** `kronecker_compressor`, `tt_compressor`, `uniql_compressor`
+- **Distillation Curriculum:** 2-Stage Multi-Pillar Knowledge Distillation (300s budget):
+  - **Stage 1 (Frozen-Backbone Alignment):** Only compressed factor matrices and projection adapters are trained with AdamW ($lr = 1.0 \times 10^{-3}$) using hidden MSE and Fast Gram Covariance.
+  - **Stage 2 (Differential-LR Full-Model Healing):** All parameters unfrozen with differential learning rates ($\eta_{\text{comp}} = 3.0 \times 10^{-4}$, $\eta_{\text{backbone}} = 3.0 \times 10^{-5}$) under 6-pillar KD.
+- **Downstream Dual Evaluation:**
+  - Masked LM PPL & accuracy on WikiText-2
+  - Downstream classification accuracy on GLUE SST-2 against the fine-tuned teacher ($91.63\%$).
+- **Hugging Face Hub Repositories:** `Hooshaai/bert-comp-{slug}-wiki`
+
+---
+
+### 4.3 Track B-Attn: Qwen2.5-0.5B Modern Generative Causal LM Zoo
 
 While Track A provides the foundational empirical baseline across all 131 mechanisms, encoder models cannot autoregressively generate open-ended text. Modern Large Language Models (LLMs) operate as causal autoregressive decoders, where standard softmax attention suffers from the quadratic KV-cache memory bottleneck:
 $$\text{KV Cache Memory}(S) = 2 \times L \times H_{KV} \times d \times S \times \text{sizeof}(\text{FP16}) = \mathcal{O}(S)$$
@@ -635,7 +717,7 @@ $$\text{Recurrent State Memory} = L \times H \times (d \times d) \times \text{si
 - **Layer Normalization:** RMSNorm (Root Mean Square Normalization)
 
 #### Scope of Track B Champions
-Track B does not attempt to train all 131 mechanisms; instead, it focuses exclusively on the **Top-20 Pareto Champions** identified in Phase 5 & Phase 6:
+Track B focuses on the **Top-20 Pareto Champions** identified in Phase 5 & Phase 6:
 1. `gated_delta_net` (Gated DeltaNet with dynamic data-dependent retention gates)
 2. `gla_attention` (Gated Linear Attention with chunk-parallel associative scan)
 3. `cosformer` (Linear Cosine reweighting with strictly positive kernel representations)
@@ -655,19 +737,28 @@ For resource-constrained edge devices (e.g. Raspberry Pi, mobile NPU, Apple Sili
 
 ---
 
-### 4.3 Comparative Paradigm Matrix: Encoder MLM vs Causal Autoregressive LM
+### 4.4 Track B-Comp: Qwen2.5-0.5B Modern Generative Compressor Zoo
 
-| Evaluation Dimension | Track A: BERT-131 Encoder Zoo | Track B: Qwen2.5-0.5B Causal LM Zoo |
-|---|---|---|
-| **Architectural Family** | Bidirectional Encoder ($x_i \leftrightarrow x_j$) | Causal Autoregressive Decoder ($x_i \leftarrow x_{<i}$) |
-| **Masking Topology** | Fully bidirectional mask matrix ($M_{i,j} = 1$) | Lower-triangular causal mask ($M_{i,j} = 1 \iff j \le i$) |
-| **Target Task** | Masked Language Modeling & Feature Extraction | Next-Token Prediction & Text Generation |
-| **Perplexity Formula** | $\text{MLM-PPL} = \exp(\mathcal{L}_{\text{MLM}}(\mathcal{M}))$ on 15% masked tokens | $\text{CLM-PPL} = \exp\left( -\frac{1}{S} \sum_{i=1}^S \log P(x_i \mid x_{<i}) \right)$ |
-| **Downstream Benchmarks** | GLUE Benchmark (SST-2, MNLI, QNLI, MRPC) | MMLU, GSM8k, HumanEval, Needle-in-Haystack |
-| **State Complexity** | $\mathcal{O}(S)$ full sequence processing | $\mathcal{O}(1)$ constant memory during generation |
-| **KV-Cache Scaling** | None (non-autoregressive sequence encoder) | Eliminates quadratic KV cache ($S = 32\text{k}$ without OOM) |
-| **Hardware Saturation** | 100% RTX 3090 SM load via large batch ($B=128$) | High arithmetic intensity via long context ($S=4096$) |
-| **Hub Repositories** | `Hooshaai/bert-{slug}-wiki` (131 models) | `Hooshaai/qwen-2.5-0.5b-{slug}-wiki` (20 models) |
+Paralleling the Attention Zoo, Track B-Comp applies verified compression engines to `Qwen/Qwen2.5-0.5B`:
+1. **Low-Rank SVD & Whitened Projection:** Factorizing the wide SwiGLU MLP layers ($4,864 \to 896$) and attention projections into low-rank representations, reducing parameter count from 494M down to ~260M ($1.9\times$ reduction).
+2. **KV-Cache Memory Compressors:** Compressing autoregressive KV-cache representations via `kvtc_compressor`, `delta_kv`, and `hybridkv_compressor`, eliminating memory wall stalls at long contexts ($S = 32\text{k}$).
+3. **Sparse & Quantized Inference:** Combining structured 2:4 sparsity with FP8 microscaling for TensorRT-LLM and vLLM deployment.
+4. **Hub Checkpoint Namespaces:** `Hooshaai/qwen-comp-{slug}-wiki`
+
+---
+
+### 4.5 Comparative Paradigm Matrix: Encoder MLM vs Downstream GLUE vs Causal LM
+
+| Evaluation Dimension | Track A-Attn: BERT Attention Zoo | Track A-Comp: BERT Compressor Zoo | Track B-Attn: Qwen Attention Zoo | Track B-Comp: Qwen Compressor Zoo |
+|---|---|---|---|---|
+| **Base Model** | `bert-base-uncased` (110M) | `bert-base-uncased` (110M) | `Qwen/Qwen2.5-0.5B` (490M) | `Qwen/Qwen2.5-0.5B` (490M) |
+| **Architectural Focus** | In-place attention surgery | Low-rank SVD / Pruning / Quant | Linear attention / SSM surgery | MLP SVD / KV-cache compression |
+| **Scope** | 131 Canonical Modules | 82 Canonical Engines | Top-20 High-Speed Champions | Top-10 Generative Compressors |
+| **Masking Topology** | Bidirectional ($M_{i,j} = 1$) | Bidirectional ($M_{i,j} = 1$) | Lower-triangular Causal | Lower-triangular Causal |
+| **Primary Metric** | MLM-PPL & Acc on WikiText-2 | Param Reduction $R$ & MLM-PPL | Causal Next-Token PPL | Compression $R$ & Causal PPL |
+| **Downstream Benchmark**| GLUE SST-2 (Teacher: 91.63%) | GLUE SST-2 (Teacher: 91.63%) | GLUE SST-2 & Needle (32k) | GLUE SST-2 & Generation Latency |
+| **State Complexity** | $\mathcal{O}(S)$ | $\mathcal{O}(S)$ (slashed params) | $\mathcal{O}(1)$ Constant Memory | $\mathcal{O}(1)$ Constant Memory |
+| **Hub Repositories** | `Hooshaai/bert-{slug}-wiki` | `Hooshaai/bert-comp-{slug}-wiki`| `Hooshaai/qwen-2.5-0.5b-{slug}-wiki`| `Hooshaai/qwen-comp-{slug}-wiki` |
 
 ---
 ## 5. The 14-Phase Forensic Empirical Screening & Distillation Funnel

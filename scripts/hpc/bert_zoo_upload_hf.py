@@ -44,7 +44,6 @@ def upload_directory(
 
     attn_key = target_dir.name
     slug = attn_key.replace("_", "-")
-    repo_id = f"{hf_org}/bert-{slug}-wiki"
 
     # Read metrics if present
     metrics_file = target_dir / "training_metrics.json"
@@ -54,6 +53,19 @@ def upload_directory(
             metrics = json.loads(metrics_file.read_text())
         except Exception:
             pass
+
+    is_compressor = "compressor" in str(target_dir) or "compressor" in metrics or "param_reduction" in metrics
+    is_qwen = "qwen" in str(target_dir) or "qwen" in metrics or "model" in metrics and "qwen" in str(metrics["model"]).lower()
+
+    if is_compressor:
+        if is_qwen:
+            repo_id = f"{hf_org}/qwen-comp-{slug}-wiki"
+        else:
+            repo_id = f"{hf_org}/bert-comp-{slug}-wiki"
+    elif is_qwen:
+        repo_id = f"{hf_org}/qwen-2.5-0.5b-{slug}-wiki"
+    else:
+        repo_id = f"{hf_org}/bert-{slug}-wiki"
 
     logger.info("[%s] Uploading to %s...", attn_key, repo_id)
 

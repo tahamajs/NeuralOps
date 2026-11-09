@@ -1,0 +1,77 @@
+#!/bin/bash
+#PBS -N bert_compressor_zoo
+#PBS -q N3090
+#PBS -l nodes=1:ppn=8:gpus=1
+#PBS -l walltime=14:00:00
+#PBS -l mem=48gb
+#PBS -o /home/tahamajlesi.ut/NeuralOps/results/compressor_zoo/pbs_stdout.log
+#PBS -e /home/tahamajlesi.ut/NeuralOps/results/compressor_zoo/pbs_stderr.log
+
+set -euo pipefail
+
+WORK_DIR="/home/tahamajlesi.ut/NeuralOps"
+CONDA_ENV="/home/tahamajlesi.ut/.conda/envs/neuralops_cu113"
+PYTHON="${CONDA_ENV}/bin/python3"
+OUT_DIR="${WORK_DIR}/results/compressor_zoo"
+
+mkdir -p "${OUT_DIR}/upload_logs"
+cd "${WORK_DIR}"
+
+export LD_LIBRARY_PATH=/share/apps/gcc/gcc-8.2.0/lib64:/usr/local/cuda-11.3/lib64:${LD_LIBRARY_PATH:-}
+export PYTHONPATH=${WORK_DIR}:${PYTHONPATH:-}
+export HF_HUB_OFFLINE=1
+
+echo "================================================================="
+echo "NeuralOps Pretrained BERT Compressor Zoo Pipeline"
+echo "Host: $(hostname) | Date: $(date)"
+echo "GPU: $(nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader)"
+echo "================================================================="
+
+${PYTHON} -c "import torch; print('PyTorch:', torch.__version__, '| CUDA Device:', torch.cuda.get_device_name(0))"
+${PYTHON} -c "from neuralops.core.registry import COMPRESSOR_REGISTRY; print('Compressor Registry Count:', len(COMPRESSOR_REGISTRY))"
+
+if [ -z "${HF_TOKEN:-}" ]; then
+    echo "WARNING: HF_TOKEN is unset in environment. Checkpoints will be staged locally." >&2
+fi
+
+echo ""
+echo "=== Phase 0: Dynamic Compressor Key Discovery ==="
+${PYTHON} scripts/benchmarks/compressor_zoo_discover_keys.py \
+    --output "${OUT_DIR}/registry_keys.json" \
+    --identity_output "${OUT_DIR}/identity_keys.json" \
+    --failed_output "${OUT_DIR}/failed_keys.json" \
+    --device cuda
+
+echo ""
+echo "=== Phase 1: Teacher Fine-Tuning Baseline on GLUE SST-2 ==="
+if [ ! -d "models/bert_sst2_teacher" ]; then
+    ${PYTHON} scripts/benchmarks/train_bert_teacher_sst2.py \
+        --epochs 2 \
+        --batch_size 128 \
+        --save_dir models/bert_sst2_teacher \
+        --metrics_out "${OUT_DIR}/teacher_sst2_metrics.json" \
+        --device cuda
+fi
+
+echo ""
+echo "=== Phase 2: 100% GPU-Saturated 5-Min Compressor KD Engine + Async Upload ==="
+${PYTHON} scripts/benchmarks/bert_compressor_zoo_train_wiki.py \
+    --keys_json          "${OUT_DIR}/registry_keys.json" \
+    --model              bert-base-uncased \
+    --dataset            wikitext-2-raw-v1 \
+    --seq_len            128 \
+    --batch_size         128 \
+    --grad_accum         2 \
+    --train_secs         300 \
+    --out_dir            "${OUT_DIR}" \
+    --metrics_log        "${OUT_DIR}/metrics.jsonl" \
+    --hf_org             Hooshaai \
+    --hf_upload          1 \
+    --keep_local_weights 0 \
+    --device             cuda
+
+echo ""
+echo "================================================================="
+echo "Pipeline completed at $(date)."
+echo "Metrics ledger written to: ${OUT_DIR}/metrics.jsonl"
+echo "================================================================="

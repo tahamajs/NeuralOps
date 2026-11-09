@@ -1,13 +1,16 @@
-# 🏛️ NeuralOps Pretrained Attention Hub Zoo — Master Architectural & Engineering Plan
-## Unified Pretrained Foundation Model Zoo: 131 Canonical Attention Mechanisms on Hugging Face Hub (`Hooshaai`)
+# 🏛️ NeuralOps Pretrained Attention & Compression Hub Zoo — Master Architectural Plan
+## Unified Pretrained Foundation Model Zoo: 131 Canonical Attention Mechanisms & 82 Compression Engines on Hugging Face Hub (`Hooshaai`)
 
-**Document ID:** `NOP-ARCH-ZOO-MASTER-v4.0`
-**Status:** Authoritative Architectural Master Plan (Synchronized with `NOP-MASTER-ZOO-SELECTION-v6.0`)
+**Document ID:** `NOP-ARCH-ZOO-MASTER-v5.0`
+**Status:** Authoritative Architectural Master Plan (Synchronized with `NOP-MASTER-ZOO-SELECTION-v8.0`)
 **Current Package Alignment:** NeuralOps `v2.1.0`
 **Author Attribution:** `taha <tahamaj4@gmail.com>`
 **Primary Backbones:**
-- **Track A (Encoder Foundation):** `bert-base-uncased` (110M params, 12 layers, 768-dim, 12 heads) on `WikiText-2`
-- **Track B (Causal Generation & Downstream NLP):** `Qwen/Qwen2.5-0.5B` (490M params, 24 layers, 896-dim, GQA 14:2 heads) on `WikiText-103` & `SmolLM2-135M`
+- **Track A-Attn (BERT Attention Zoo):** `bert-base-uncased` (110M params, 12 layers, 768-dim, 12 heads) on `WikiText-2`
+- **Track A-Comp (BERT Compressor Zoo):** `bert-base-uncased` (110M params) across 82 compression engines on `WikiText-2` & `GLUE SST-2`
+- **Track B-Attn (Qwen Attention Zoo):** `Qwen/Qwen2.5-0.5B` (490M params, 24 layers, 896-dim, GQA 14:2 heads) on `WikiText-103` & `SmolLM2-135M`
+- **Track B-Comp (Qwen Compressor Zoo):** `Qwen/Qwen2.5-0.5B` low-rank SVD and KV-cache compression engines
+- **Teacher Calibration Baseline:** Fine-tuned `bert-base-uncased` on GLUE SST-2 (`models/bert_sst2_teacher`, ~92% accuracy) and WikiText-2 (PPL 10.48, Acc 59.92%)
 
 **HPC Compute Target:** Sharif HPC Cluster (`GPU-3090-1`, NVIDIA RTX 3090 24GB GDDR6X, Rocks 6.1, Torque PBS, queue `N3090`, CUDA 11.3, GCC 8.2, PyTorch 2.2.2+cu124)
 **Distributed Secondary Nodes:** `ssh gpu` (RTX 4070 Laptop 8GB SM 8.9) & `ssh tahoora` (GTX 1060 6GB SM 6.1)
@@ -18,17 +21,23 @@
 
 ## Executive Summary & Vision
 
-This master specification establishes the engineering protocol to transition `NeuralOps` from a high-performance attention kernel repository into an **open, consumable Pretrained Foundation Model Zoo on the Hugging Face Hub**.
+This master specification establishes the engineering protocol to transition `NeuralOps` from a high-performance attention and compression kernel repository into an **open, consumable Pretrained Foundation Model Zoo on the Hugging Face Hub**.
 
-Rather than requiring downstream researchers to train transformers from scratch or perform fragile code-level monkey patching, `NeuralOps` delivers **131 fully pre-distilled, plug-and-play model repositories** on the Hugging Face Hub under the **`Hooshaai`** organization. Researchers can load, evaluate, or fine-tune any model with a single line of standard Python:
+Rather than requiring downstream researchers to train transformers from scratch or perform fragile code-level monkey patching, `NeuralOps` delivers **both 131 fully pre-distilled attention models and 82 compressed models** on the Hugging Face Hub under the **`Hooshaai`** organization. Researchers can load, evaluate, or fine-tune any attention or compressed model with a single line of standard Python:
 
 ```python
 import neuralops
 
-# 1-Line download, automatic caching, and instantiation
-model, tokenizer = neuralops.load_pretrained_bert(
+# 1-Line download for Pretrained Attention Zoo
+model_attn, tok = neuralops.load_pretrained_bert(
     attention_type="gated_delta_net",        # Any of the 131 canonical attentions
     task="masked-lm",                        # Or "sequence-classification", "feature-extraction"
+)
+
+# 1-Line download for Pretrained Compressor Zoo
+model_comp, tok = neuralops.load_pretrained_compressed_bert(
+    compressor_type="direct_svd",            # Any of the verified compression engines
+    task="masked-lm",
 )
 ```
 
