@@ -560,20 +560,8 @@ class TTCompressor(BaseCompressor):
             target_attention_only = _cfg_get(comp_cfg, "target_attention_only", target_attention_only)
             strict_rank = _cfg_get(comp_cfg, "strict_rank", strict_rank)
 
-        for k, caster in (
-            ("rank", int),
-            ("tt_rank", int),
-            ("num_factors", int),
-            ("max_error", float),
-            ("energy_threshold", float),
-            ("strict_rank", bool),
-            ("target_attention_only", bool),
-        ):
-            if k in kwargs and kwargs[k] is not None:
-                if k == "rank":
-                    rank = caster(kwargs[k])
-                else:
-                    locals_dict = None
+        if "rank" in kwargs and kwargs["rank"] is not None:
+            rank = int(kwargs["rank"])
         if "max_error" in kwargs and kwargs["max_error"] is not None:
             max_error = float(kwargs["max_error"])
         if "num_factors" in kwargs and kwargs["num_factors"] is not None:
@@ -781,9 +769,21 @@ class TTCompressor(BaseCompressor):
             with torch.no_grad():
                 device = next(self.model.parameters()).device
                 cfg = getattr(self.model, "config", None)
-                vocab = getattr(cfg, "vocab_size", None) or 100
-                dummy = torch.randint(0, min(vocab, 100), (1, 8), device=device)
-                self.model(dummy)
+                vocab = getattr(cfg, "vocab_size", None)
+                if vocab is not None:
+                    dummy = torch.randint(0, min(vocab, 100), (1, 8), device=device)
+                    try:
+                        self.model(dummy)
+                    except Exception:
+                        self.model(input_ids=dummy)
+                else:
+                    first_lin = next(
+                        (m for m in self.model.modules() if hasattr(m, "in_features")),
+                        None,
+                    )
+                    hidden = getattr(first_lin, "in_features", 768) if first_lin else 768
+                    dt = next(self.model.parameters()).dtype
+                    self.model(torch.randn(1, 8, hidden, device=device, dtype=dt))
         except Exception as e:
             logger.warning("TT forward sanity failed: %s", e)
             forward_ok = False

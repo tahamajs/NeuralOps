@@ -492,9 +492,21 @@ class ToMoECompressor(BaseCompressor):
         low = name.lower()
         return any(kw in low for kw in self.PROTECTED_KEYWORDS)
 
-    def _is_target(self, name: str) -> bool:
+    def _is_target(self, name: str, module: nn.Module | None = None) -> bool:
         if self._is_protected(name):
             return False
+        if module is not None:
+            base_mod = getattr(module, "base_layer", module)
+            cls_name = base_mod.__class__.__name__.lower()
+            is_linear = isinstance(base_mod, nn.Linear)
+            is_conv1d = "conv1d" in cls_name or (hasattr(base_mod, "nx") and hasattr(base_mod, "nf"))
+            has_w_2d = (
+                hasattr(base_mod, "weight")
+                and base_mod.weight is not None
+                and getattr(base_mod.weight, "ndim", 0) == 2
+            )
+            if not (is_linear or is_conv1d or has_w_2d):
+                return False
         if not should_compress_linear(self.model, name):
             return False
         if "c_attn" in name.lower() or "in_proj" in name.lower():
@@ -570,7 +582,7 @@ class ToMoECompressor(BaseCompressor):
         seen_weight_ptrs: set[int] = set()
 
         for name, module in list(self.model.named_modules()):
-            if not self._is_target(name):
+            if not self._is_target(name, module):
                 continue
 
             base_mod = getattr(module, "base_layer", module)

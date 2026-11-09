@@ -587,17 +587,20 @@ class SwiftSVDActivationCompressor(BaseCompressor):
                 dev = next(self.model.parameters(), torch.tensor(0.0)).device
                 cfg = getattr(self.model, "config", None)
                 vocab = getattr(cfg, "vocab_size", None) if cfg else None
-                if vocab is None:
-                    vocab = 100
-                dummy = torch.randint(0, min(vocab, 100), (1, 8), device=dev)
-                try:
-                    self.model(input_ids=dummy, attention_mask=torch.ones_like(dummy))
-                except Exception:
+                if vocab is not None:
+                    dummy = torch.randint(0, min(vocab, 100), (1, 8), device=dev)
                     try:
+                        self.model(input_ids=dummy, attention_mask=torch.ones_like(dummy))
+                    except Exception:
                         self.model(dummy)
-                    except Exception as e2:
-                        logger.warning("Post-compression forward check failed: %s", e2)
-                        forward_check_success = False
+                else:
+                    first_lin = next(
+                        (m for m in self.model.modules() if hasattr(m, "in_features")),
+                        None,
+                    )
+                    hidden = getattr(first_lin, "in_features", 768) if first_lin else 768
+                    dt = next(self.model.parameters()).dtype
+                    self.model(torch.randn(1, 8, hidden, device=dev, dtype=dt))
         except Exception as e:
             logger.warning("Post-compression forward check warning: %s", e)
             forward_check_success = False

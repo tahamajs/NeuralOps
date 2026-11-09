@@ -480,23 +480,22 @@ class SubspaceProjectionCompressor(BaseCompressor):
         try:
             with torch.no_grad():
                 dev = next(self.model.parameters(), torch.tensor(0.0)).device
-                dummy = torch.randint(0, 100, (1, 8), device=dev, dtype=torch.long)
-                try:
-                    self.model(input_ids=dummy)
-                except Exception:
+                cfg = getattr(self.model, "config", None)
+                vocab = getattr(cfg, "vocab_size", None)
+                if vocab is not None:
+                    dummy = torch.randint(0, min(vocab, 100), (1, 8), device=dev, dtype=torch.long)
                     try:
-                        self.model(dummy)
+                        self.model(input_ids=dummy)
                     except Exception:
-                        cfg = getattr(self.model, "config", None)
-                        hidden = getattr(cfg, "hidden_size", None) if cfg else None
-                        if hidden is None:
-                            first_lin = next(
-                                (m for m in self.model.modules() if isinstance(m, nn.Linear)),
-                                None,
-                            )
-                            hidden = getattr(first_lin, "in_features", 8)
-                        dt = next(self.model.parameters()).dtype
-                        self.model(torch.randn(1, 8, hidden, device=dev, dtype=dt))
+                        self.model(dummy)
+                else:
+                    first_lin = next(
+                        (m for m in self.model.modules() if hasattr(m, "in_features")),
+                        None,
+                    )
+                    hidden = getattr(first_lin, "in_features", 768) if first_lin else 768
+                    dt = next(self.model.parameters()).dtype
+                    self.model(torch.randn(1, 8, hidden, device=dev, dtype=dt))
         except Exception as e:
             logger.warning("SubspaceProjection forward sanity check failed: %s", e)
             forward_check_success = False
