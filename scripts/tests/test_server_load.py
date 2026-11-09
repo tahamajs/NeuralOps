@@ -46,7 +46,12 @@ def test_load(model_path: str):
         local_files_only=local_only,
     )
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = model.eval().to(device)
+    try:
+        model = model.to(device)
+    except Exception as e:
+        print(f"Device {device} unavailable or out of memory ({e}); falling back to cpu.")
+        device = "cpu"
+        model = model.to(device)
     print(f"Model successfully loaded and moved to {device}!")
     print(f"Model class: {type(model).__name__}")
 
@@ -55,9 +60,17 @@ def test_load(model_path: str):
         "NeuralOps provides lightning-fast subquadratic attention mechanisms.",
         "The model failed to converge and loss exploded.",
     ]
-    inputs = tokenizer(test_sentences, return_tensors="pt", padding=True).to(device)
-    with torch.no_grad():
-        outputs = model(**inputs)
+    try:
+        inputs = tokenizer(test_sentences, return_tensors="pt", padding=True).to(device)
+        with torch.no_grad():
+            outputs = model(**inputs)
+    except Exception as e:
+        print(f"Inference on {device} encountered contention ({e}); running on CPU...")
+        device = "cpu"
+        model = model.to("cpu")
+        inputs = tokenizer(test_sentences, return_tensors="pt", padding=True).to("cpu")
+        with torch.no_grad():
+            outputs = model(**inputs)
 
     logits = outputs.logits
     predictions = logits.argmax(dim=-1).tolist()

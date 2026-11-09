@@ -10,6 +10,11 @@ Detailed individual diagnostic script for Group 3 compressors (keys 35-51).
 """
 import sys
 import os
+if sys.path and (sys.path[0].endswith("/tests") or sys.path[0] == "tests"):
+    sys.path.pop(0)
+if os.path.abspath(".") not in sys.path:
+    sys.path.insert(0, os.path.abspath("."))
+
 import copy
 import traceback
 import torch
