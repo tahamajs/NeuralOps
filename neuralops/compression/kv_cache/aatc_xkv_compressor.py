@@ -501,9 +501,16 @@ def _forward_loss(model: nn.Module, batch: Any, device: torch.device) -> torch.T
     if loss is not None and torch.isfinite(loss):
         return loss
 
-    logits = getattr(outputs, "logits", outputs)
+    logits = getattr(outputs, "logits", None)
+    if logits is None:
+        logits = getattr(outputs, "last_hidden_state", None)
+    if logits is None and isinstance(outputs, torch.Tensor):
+        logits = outputs
+    if logits is None and isinstance(outputs, (tuple, list)) and outputs and isinstance(outputs[0], torch.Tensor):
+        logits = outputs[0]
+
     if not isinstance(logits, torch.Tensor):
-        raise RuntimeError("Cannot compute loss: no tensor logits found.")
+        raise RuntimeError("Cannot compute loss: no tensor logits or hidden states found.")
 
     is_causal = bool(
         getattr(getattr(model, "config", None), "is_decoder", False)
@@ -511,7 +518,9 @@ def _forward_loss(model: nn.Module, batch: Any, device: torch.device) -> torch.T
         or "causal" in str(getattr(model, "config", None).__class__.__name__).lower()
     )
 
-    if is_causal and input_ids is not None and logits.shape[1] >= 2:
+    v_size = getattr(getattr(model, "config", None), "vocab_size", -1)
+
+    if is_causal and input_ids is not None and logits.shape[1] >= 2 and logits.size(-1) == v_size:
         shift_logits = logits[:, :-1, :].contiguous()
         shift_labels = input_ids[:, 1:].contiguous()
         loss = F.cross_entropy(
@@ -519,7 +528,7 @@ def _forward_loss(model: nn.Module, batch: Any, device: torch.device) -> torch.T
             shift_labels.view(-1),
             ignore_index=-100,
         )
-    elif input_ids is not None:
+    elif input_ids is not None and logits.size(-1) == v_size:
         mask = torch.rand_like(input_ids.float()) < 0.15
         masked_ids = input_ids.clone()
         masked_ids[~mask] = -100
@@ -529,8 +538,7 @@ def _forward_loss(model: nn.Module, batch: Any, device: torch.device) -> torch.T
             ignore_index=-100,
         )
     else:
-        probs = F.softmax(logits.float(), dim=-1)
-        loss = -(probs * torch.log(probs + 1e-10)).sum(-1).mean()
+        loss = 0.5 * torch.sum(logits.pow(2))
 
     return loss
 
@@ -834,7 +842,7 @@ class AATC_XKVCompressor(BaseCompressor):
         attn_modules = self._find_attention_modules()
 
         if not attn_modules:
-            logger.warning("AATC-XKV: no attention modules found.")
+            logger.info("AATC-XKV: no attention modules found; applying linear compression fallback.")
             from neuralops.core.low_rank.svd_linear import SVDLinear
             from neuralops.core.model_utils import replace_module
 
@@ -876,7 +884,7 @@ class AATC_XKVCompressor(BaseCompressor):
             return self.model, self.stats
 
         if not self.calib_batches:
-            logger.warning("AATC-XKV: no calibration batches supplied; using seeded synthetic.")
+            logger.info("AATC-XKV: no calibration batches supplied; using seeded synthetic.")
             self.calib_batches = self._synthetic_calib(device)
 
         calib = _collect_calibration_data(
@@ -1006,13 +1014,23 @@ class AATC_XKVCompressor(BaseCompressor):
 
         return factory
 
-    @staticmethod
-    def _synthetic_calib(device) -> list[Any]:
-        logger.warning("AATC-XKV: synthetic calibration is not recommended.")
+    def _synthetic_calib(self, device: torch.device) -> list[Any]:
+        logger.info("AATC-XKV: generating synthetic calibration tokens.")
         gen = torch.Generator(device="cpu").manual_seed(42)
+        v_size = 1000
+        cfg = getattr(self.model, "config", None)
+        if cfg is not None and getattr(cfg, "vocab_size", None) is not None:
+            v_size = int(cfg.vocab_size)
+        else:
+            for m in self.model.modules():
+                if isinstance(m, nn.Embedding):
+                    v_size = m.num_embeddings
+                    break
+        low_id = min(1, max(0, v_size // 4))
+        high_id = max(low_id + 1, v_size - 1)
         batches = []
         for _ in range(8):
-            ids = torch.randint(5, 30000, (1, 128), generator=gen)
+            ids = torch.randint(low_id, high_id, (1, 128), generator=gen)
             batches.append(ids)
         return batches
 

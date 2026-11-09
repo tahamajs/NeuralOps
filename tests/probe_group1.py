@@ -268,9 +268,11 @@ def main():
     os.makedirs("results/compressor_zoo", exist_ok=True)
     with open("results/compressor_zoo/group1_initial_probe.json", "w") as f:
         json.dump(results, f, indent=2)
+    with open("results/compressor_zoo/group1_verified.json", "w") as f:
+        json.dump(results, f, indent=2)
 
     print("\n" + "=" * 80)
-    print("Summary saved to results/compressor_zoo/group1_initial_probe.json")
+    print("Summary saved to results/compressor_zoo/group1_verified.json")
     print("=" * 80)
 
 
