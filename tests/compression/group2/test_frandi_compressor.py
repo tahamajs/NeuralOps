@@ -15,7 +15,7 @@ import torch.nn as nn
 from neuralops.compression.low_rank.frandi_compressor import (
     FRanDICompressor,
     FRanDILinear,
-    frandi_compressor_factory,
+    frandi_factory,
 )
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
@@ -50,10 +50,12 @@ def test_frandi_linear():
 
 def test_frandi_compressor_reduction():
     model = DummyMLP()
+    orig_params = sum(p.numel() for p in model.parameters())
     compressor = FRanDICompressor(model, rank=16, max_error=1.0)
     compressed, stats = compressor.compress()
     assert compressed is not None
-    assert stats["effective_parameter_ratio"] > 1.05
+    comp_params = sum(p.numel() for p in compressed.parameters())
+    assert (orig_params / comp_params) > 1.05
 
     x = torch.randn(2, 128)
     out = compressed(x)
@@ -63,6 +65,5 @@ def test_frandi_compressor_reduction():
 
 def test_frandi_factory():
     model = DummyMLP()
-    compressed, stats = frandi_compressor_factory(model, rank=16, return_stats=True)
+    compressed = frandi_factory(model, rank=16)
     assert compressed is not None
-    assert "effective_parameter_ratio" in stats

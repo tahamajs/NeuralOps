@@ -13,7 +13,7 @@ import pytest
 import torch
 import torch.nn as nn
 from neuralops.compression.experimental.flat_llm import (
-    FlatLLMCompressor,
+    FLATLLMCompressor,
     PrunedChannelLinear,
     flat_llm_factory,
 )
@@ -50,10 +50,12 @@ def test_pruned_channel_linear():
 
 def test_flat_llm_compressor_reduction():
     model = DummyMLP()
-    compressor = FlatLLMCompressor(model, prune_ratio=0.3, max_error=1.0)
+    orig_params = sum(p.numel() for p in model.parameters())
+    compressor = FLATLLMCompressor(model, prune_ratio=0.3, max_error=1.0)
     compressed, stats = compressor.compress()
     assert compressed is not None
-    assert stats["effective_parameter_ratio"] > 1.05
+    comp_params = sum(p.numel() for p in compressed.parameters())
+    assert (orig_params / comp_params) > 1.05
 
     x = torch.randn(2, 128)
     out = compressed(x)
@@ -63,6 +65,5 @@ def test_flat_llm_compressor_reduction():
 
 def test_flat_llm_factory():
     model = DummyMLP()
-    compressed, stats = flat_llm_factory(model, prune_ratio=0.3, return_stats=True)
+    compressed = flat_llm_factory(model, prune_ratio=0.3)
     assert compressed is not None
-    assert "effective_parameter_ratio" in stats

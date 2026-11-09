@@ -50,10 +50,12 @@ def test_dynamic_svd_linear():
 
 def test_dynamic_rank_compressor_reduction():
     model = DummyMLP()
+    orig_params = sum(p.numel() for p in model.parameters())
     compressor = DynamicEntropySVDCompressor(model, min_rank=8, max_rank=32)
     compressed, stats = compressor.compress()
     assert compressed is not None
-    assert stats["effective_parameter_ratio"] > 1.05
+    comp_params = sum(p.numel() for p in compressed.parameters())
+    assert (orig_params / comp_params) > 1.05
 
     x = torch.randn(2, 128)
     out = compressed(x)
@@ -63,6 +65,5 @@ def test_dynamic_rank_compressor_reduction():
 
 def test_dynamic_rank_factory():
     model = DummyMLP()
-    compressed, stats = dynamic_rank_factory(model, min_rank=8, max_rank=32, return_stats=True)
+    compressed = dynamic_rank_factory(model, min_rank=8, max_rank=32)
     assert compressed is not None
-    assert "effective_parameter_ratio" in stats

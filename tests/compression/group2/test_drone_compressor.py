@@ -36,10 +36,12 @@ def test_registry():
 
 def test_drone_compressor_reduction():
     model = DummyMLP()
+    orig_params = sum(p.numel() for p in model.parameters())
     compressor = DRONECompressor(model, rank=16, max_error=1.0)
     compressed, stats = compressor.compress()
     assert compressed is not None
-    assert stats["effective_parameter_ratio"] > 1.05
+    comp_params = sum(p.numel() for p in compressed.parameters())
+    assert (orig_params / comp_params) > 1.05
 
     x = torch.randn(2, 128)
     out = compressed(x)

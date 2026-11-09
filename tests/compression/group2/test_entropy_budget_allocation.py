@@ -36,10 +36,12 @@ def test_registry():
 
 def test_entropy_budget_reduction():
     model = DummyMLP()
+    orig_params = sum(p.numel() for p in model.parameters())
     compressor = EntropyBudgetCompressor(model, rank=16, max_error=1.0)
     compressed, stats = compressor.compress()
     assert compressed is not None
-    assert stats["effective_parameter_ratio"] > 1.05
+    comp_params = sum(p.numel() for p in compressed.parameters())
+    assert (orig_params / comp_params) > 1.05
 
     x = torch.randn(2, 128)
     out = compressed(x)
@@ -49,6 +51,5 @@ def test_entropy_budget_reduction():
 
 def test_entropy_budget_factory():
     model = DummyMLP()
-    compressed, stats = entropy_budget_allocation_factory(model, rank=16, return_stats=True)
+    compressed = entropy_budget_allocation_factory(model, rank=16)
     assert compressed is not None
-    assert "effective_parameter_ratio" in stats

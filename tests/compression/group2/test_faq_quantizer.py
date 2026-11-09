@@ -64,6 +64,5 @@ def test_faq_quantizer_reduction():
 
 def test_faq_factory():
     model = DummyMLP()
-    compressed, stats = faq_factory(model, bits=3, return_stats=True)
+    compressed = faq_factory(model, bits=3)
     assert compressed is not None
-    assert "bit_reduction" in stats

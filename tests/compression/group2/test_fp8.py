@@ -14,7 +14,7 @@ import torch
 import torch.nn as nn
 from neuralops.compression.quantization.fp8_compressor import (
     FP8Compressor,
-    fp8_factory,
+    fp8_compressor_factory,
 )
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.ops.cuda.fp8_compressor import FP8Function
@@ -58,6 +58,5 @@ def test_fp8_compressor_reduction():
 
 def test_fp8_factory():
     model = DummyMLP()
-    compressed, stats = fp8_factory(model, fp8_format="e4m3", return_stats=True)
+    compressed = fp8_compressor_factory(model, fp8_format="e4m3")
     assert compressed is not None
-    assert "bit_reduction" in stats

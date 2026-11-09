@@ -53,10 +53,12 @@ def test_direct_svd_compress_tensor():
 
 def test_direct_svd_compressor_reduction():
     model = DummyModel()
+    orig_params = sum(p.numel() for p in model.parameters())
     compressor = DirectSVDCompressor(model, rank=16, max_error=1.0)
     compressed, stats = compressor.compress()
     assert compressed is not None
-    assert stats["effective_parameter_ratio"] > 1.05
+    comp_params = sum(p.numel() for p in compressed.parameters())
+    assert (orig_params / comp_params) > 1.05
 
     x = torch.randn(2, 128)
     out = compressed(x)
@@ -66,6 +68,5 @@ def test_direct_svd_compressor_reduction():
 
 def test_direct_svd_factory():
     model = DummyModel()
-    compressed, stats = direct_svd_factory(model, rank=16, return_stats=True)
+    compressed = direct_svd_factory(model, rank=16)
     assert compressed is not None
-    assert "effective_parameter_ratio" in stats

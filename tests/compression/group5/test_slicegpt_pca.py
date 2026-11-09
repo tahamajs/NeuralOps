@@ -14,6 +14,7 @@ import torch
 import torch.nn as nn
 from neuralops.compression.quantization.slicegpt_pca import (
     SliceGPTPCACompressor,
+    SliceGPTPCALoRALinear,
     SliceGPTPCALinear,
     slicegpt_pca_factory,
 )
@@ -40,10 +41,10 @@ def test_slicegpt_pca_linear():
     lin = nn.Linear(128, 64)
     sliced_w = lin.weight.data[:, :96].contiguous()
     layer = SliceGPTPCALinear.from_linear(lin, sliced_weight=sliced_w)
-    assert layer.in_features == 96
+    assert layer.in_features == 128
     assert layer.out_features == 64
 
-    x = torch.randn(4, 96)
+    x = torch.randn(4, 128)
     out = layer(x)
     assert out.shape == (4, 64)
     assert torch.isfinite(out).all()

@@ -9,10 +9,11 @@
 Integration test suite verifying all 17 Group 2 Compressors (Keys 18-34).
 """
 
+from typing import Any
 import pytest
 import torch
 import torch.nn as nn
-from neuralops.core.registry import COMPRESSOR_REGISTRY
+from neuralops.core.registry import COMPRESSOR_REGISTRY, create_compressor
 
 GROUP2_KEYS = [
     "coopq_quantizer",
@@ -35,15 +36,52 @@ GROUP2_KEYS = [
 ]
 
 
-class BenchmarkMLP(nn.Module):
-    def __init__(self, in_features: int = 128, hidden: int = 256, out_features: int = 64):
+class TwoLayerMLP(nn.Module):
+    def __init__(self, hidden_size: int = 256):
         super().__init__()
-        self.fc1 = nn.Linear(in_features, hidden)
-        self.act = nn.GELU()
-        self.fc2 = nn.Linear(hidden, out_features)
+        self.fc1 = nn.Linear(hidden_size, hidden_size)
+        self.act = nn.ReLU()
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.fc2(self.act(self.fc1(x)))
+
+
+def _apply_compressor(name: str, model: nn.Module, rank: int = 32) -> tuple[nn.Module, dict[str, Any]]:
+    cls = COMPRESSOR_REGISTRY.get(name)
+    kwargs = {
+        "rank": rank,
+        "fallback_to_original": False,
+        "max_error": 1.0,
+        "target_attention_only": False,
+    }
+    if name == "fp8":
+        kwargs["fp8_format"] = "e4m3"
+    elif name == "faq_quantizer":
+        kwargs["bits"] = 3
+    elif name == "coopq_quantizer":
+        kwargs["bits"] = 4
+    elif name == "flap":
+        kwargs["sparsity"] = 0.2
+    elif name == "flat_llm":
+        kwargs["prune_ratio"] = 0.3
+
+    try:
+        comp_obj = create_compressor(name, model=model, **kwargs)
+    except Exception:
+        try:
+            comp_obj = cls(model=model, **kwargs)
+        except Exception:
+            comp_obj = cls(model, **kwargs)
+
+    res = comp_obj.compress()
+    if isinstance(res, tuple):
+        compressed = res[0]
+        stats = res[1] if len(res) > 1 else {}
+    else:
+        compressed = res
+        stats = getattr(comp_obj, "stats", {})
+    return compressed, stats
 
 
 @pytest.mark.parametrize("key", GROUP2_KEYS)
@@ -57,33 +95,15 @@ def test_group2_registration(key: str):
 @pytest.mark.parametrize("key", GROUP2_KEYS)
 def test_group2_compression_and_forward(key: str):
     """Verify compression, forward pass, output shape, finiteness, and physical reduction."""
-    cls = COMPRESSOR_REGISTRY.get(key)
-    model = BenchmarkMLP()
+    model = TwoLayerMLP(hidden_size=256)
     orig_params = sum(p.numel() for p in model.parameters())
 
-    kwargs = {}
-    if "quant" in key or key in ("fp8", "coopq_quantizer", "faq_quantizer"):
-        if key == "fp8":
-            kwargs = {"fp8_format": "e4m3"}
-        elif key == "faq_quantizer":
-            kwargs = {"bits": 3}
-        else:
-            kwargs = {"bits": 4}
-    elif key in ("flap", "flat_llm"):
-        if key == "flap":
-            kwargs = {"sparsity": 0.2, "max_error": 1.0}
-        else:
-            kwargs = {"prune_ratio": 0.3, "max_error": 1.0}
-    else:
-        kwargs = {"rank": 16, "max_error": 1.0}
-
-    compressor = cls(model, **kwargs)
-    compressed, stats = compressor.compress()
+    compressed, stats = _apply_compressor(key, model, rank=32)
 
     # Forward pass check
-    x = torch.randn(2, 128)
+    x = torch.randn(2, 256)
     out = compressed(x)
-    assert out.shape == (2, 64), f"Wrong output shape for {key}: {out.shape}"
+    assert out.shape == (2, 256), f"Wrong output shape for {key}: {out.shape}"
     assert torch.isfinite(out).all(), f"Non-finite outputs encountered in {key}"
 
     # Physical reduction check

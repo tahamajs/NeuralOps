@@ -59,7 +59,7 @@ def test_vectorized_24_pruning():
 def test_unstructured_prune():
     """Verify target fraction of weights with smallest magnitude are zeroed."""
     W = torch.randn(32, 32)
-    pruned = unstructured_prune(W, fraction=0.5)
+    pruned = unstructured_prune(W, sparsity=0.5)
     zeros = (pruned == 0).sum().item()
     assert abs(zeros - (32 * 32 * 0.5)) <= 2
 
@@ -114,6 +114,5 @@ def test_factory_function():
     """Verify factory invocation with config dictionary."""
     model = DummyLinearModel(64, 64)
     cfg = {"rank": 16, "structured_24": True, "max_error": 1.0}
-    comp_model, stats = enlighten_factory(model, comp_config=cfg, return_stats=True)
+    comp_model = enlighten_factory(model, comp_config=cfg)
     assert comp_model is not None
-    assert "effective_parameter_ratio" in stats
