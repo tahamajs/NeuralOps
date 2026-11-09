@@ -13,10 +13,9 @@ import pytest
 import torch
 import torch.nn as nn
 from neuralops.compression.low_rank.come_compressor import (
-    COMEBridge,
-    COMECompressor,
-    COMELoRALinear,
-    come_compressor_factory,
+    CoMeBridge,
+    CoMeCompressor,
+    CoMeLoRALinear,
 )
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
@@ -39,7 +38,7 @@ def test_come_registry():
 
 def test_come_linear_forward():
     lin = nn.Linear(128, 64)
-    come_layer = COMELoRALinear.from_linear(lin, lora_r=8)
+    come_layer = CoMeLoRALinear.from_linear(lin, lora_r=8)
 
     assert come_layer.in_features == 128
     assert come_layer.out_features == 64
@@ -52,7 +51,7 @@ def test_come_linear_forward():
 
 
 def test_come_bridge_forward():
-    bridge = COMEBridge(hidden_size=64, rank=16)
+    bridge = CoMeBridge(hidden_size=64, rank=16)
     x = torch.randn(2, 10, 64)
     out = bridge(x)
     assert out.shape == (2, 10, 64)
@@ -63,7 +62,7 @@ def test_come_compressor_reduction_and_forward():
     model = DummyMLP()
     orig_params = sum(p.numel() for p in model.parameters())
 
-    compressor = COMECompressor(model, rank=16, lora_r=4, max_error=1.0)
+    compressor = CoMeCompressor(model, rank=16, lora_r=4, max_error=1.0)
     compressed, stats = compressor.compress()
     assert compressed is not None
 

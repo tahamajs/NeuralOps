@@ -16,7 +16,7 @@ if sys.path and (sys.path[0].endswith("/tests") or sys.path[0] == "tests"):
 import pytest
 import torch
 import torch.nn as nn
-from neuralops.compression.svd.gfws_d_compressor import GFWSDCompressor
+from neuralops.compression.svd.gfws_d_compressor import GFWSCompressor
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
 
@@ -32,14 +32,14 @@ class DummyMLP(nn.Module):
 
 def test_gfws_registry():
     assert "gfws" in COMPRESSOR_REGISTRY
-    assert COMPRESSOR_REGISTRY.get("gfws") is GFWSDCompressor
+    assert COMPRESSOR_REGISTRY.get("gfws") is GFWSCompressor
 
 
 def test_gfws_compress_and_forward():
     model = DummyMLP()
     orig_params = sum(p.numel() for p in model.parameters())
 
-    compressor = GFWSDCompressor(model, rank=16, max_error=1.0, fallback_to_original=False)
+    compressor = GFWSCompressor(model, rank=16, max_error=1.0, fallback_to_original=False)
     compressed, stats = compressor.compress()
 
     assert compressed is not None

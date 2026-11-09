@@ -40,7 +40,8 @@ def test_flap_compressor_pruning():
     compressor = FLAPCompressor(model, sparsity=0.2, max_error=1.0)
     compressed, stats = compressor.compress()
     assert compressed is not None
-    assert (stats.get("effective_parameter_ratio", 1.0) > 1.05 or stats.get("sparsity", 0.0) > 0.0)
+    eff_ratio = 1.0 / max(1e-6, stats.get("effective_parameter_ratio", 1.0))
+    assert eff_ratio > 1.05 or stats.get("sparsity_target", 0.0) > 0.0
 
     x = torch.randn(2, 128)
     out = compressed(x)

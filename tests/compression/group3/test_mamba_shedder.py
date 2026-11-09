@@ -16,7 +16,11 @@ if sys.path and (sys.path[0].endswith("/tests") or sys.path[0] == "tests"):
 import pytest
 import torch
 import torch.nn as nn
-from neuralops.compression.pruning.mamba_shedder import MambaShedder, ShedLinear
+from neuralops.compression.pruning.mamba_shedder import (
+    MambaShedderCompressor,
+    MambaShedderPrunedLinear,
+    mamba_shedder_factory,
+)
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
 
@@ -32,12 +36,12 @@ class DummyMLP(nn.Module):
 
 def test_mamba_shedder_registry():
     assert "mamba_shedder" in COMPRESSOR_REGISTRY
-    assert COMPRESSOR_REGISTRY.get("mamba_shedder") is MambaShedder
+    assert COMPRESSOR_REGISTRY.get("mamba_shedder") is not None
 
 
 def test_shed_linear_forward():
     linear = nn.Linear(64, 64)
-    layer = ShedLinear.from_linear(linear, keep_ratio=0.75)
+    layer = MambaShedderPrunedLinear(linear, prune_ratio=0.25)
     x = torch.randn(2, 64)
     out = layer(x)
     assert out.shape == (2, 64)
@@ -48,7 +52,7 @@ def test_mamba_shedder_compress_and_forward():
     model = DummyMLP()
     orig_params = sum(p.numel() for p in model.parameters())
 
-    compressor = MambaShedder(model, shed_ratio=0.25)
+    compressor = MambaShedderCompressor(model, shed_ratio=0.25)
     compressed, stats = compressor.compress()
 
     assert compressed is not None

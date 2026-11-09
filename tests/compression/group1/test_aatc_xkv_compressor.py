@@ -14,7 +14,6 @@ import torch
 import torch.nn as nn
 from neuralops.compression.kv_cache.aatc_xkv_compressor import (
     AATC_XKVCompressor,
-    aatc_xkv_factory,
     dequantize_coefficients,
     quantize_coefficients,
     reverse_waterfilling,

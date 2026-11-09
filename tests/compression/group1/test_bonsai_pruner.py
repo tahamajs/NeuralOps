@@ -15,7 +15,6 @@ import torch.nn as nn
 from neuralops.compression.pruning.bonsai_pruner import (
     BonsaiPrunedLoRALinear,
     BonsaiPruner,
-    bonsai_pruner_factory,
 )
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
