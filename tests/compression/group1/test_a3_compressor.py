@@ -14,7 +14,7 @@ import torch
 import torch.nn as nn
 from neuralops.compression.low_rank.a3_compressor import (
     A3Compressor,
-    A3Linear,
+    A3FactorizedLinear,
     a3_compressor_factory,
 )
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -38,7 +38,7 @@ def test_a3_registry():
 
 def test_a3_linear_forward_and_reconstruction():
     lin = nn.Linear(128, 64)
-    a3_layer = A3Linear.from_linear(lin, rank=16, lora_rank=4)
+    a3_layer = A3FactorizedLinear.from_linear(lin, rank=16, lora_rank=4)
     assert a3_layer.rank == 16
     assert a3_layer.lora_rank == 4
     assert a3_layer.in_features == 128

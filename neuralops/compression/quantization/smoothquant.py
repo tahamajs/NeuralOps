@@ -214,6 +214,7 @@ class SmoothQuantCompressor(BaseCompressor):
         stats: dict[str, Any] = {
             "alpha": self.alpha,
             "bits": self.bits,
+            "bit_reduction": 32.0 / max(1, self.bits),
             "layers": [],
             "layer_errors": {},
             "layer_scales": {},

@@ -77,6 +77,7 @@ def test_coopq_compressor_full():
 
 def test_coopq_factory():
     model = DummyMLP()
-    compressed, stats = coopq_factory(model, bits=4, return_stats=True)
+    compressed = coopq_factory(model, bits=4)
     assert compressed is not None
-    assert "bit_reduction" in stats
+    assert getattr(compressed, "compression_stats", None) is not None
+    assert "bit_reduction" in compressed.compression_stats

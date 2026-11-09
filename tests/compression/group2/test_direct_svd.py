@@ -68,5 +68,5 @@ def test_direct_svd_compressor_reduction():
 
 def test_direct_svd_factory():
     model = DummyModel()
-    compressed = direct_svd_factory(model, rank=16)
+    compressed = direct_svd_factory(model, rank=16, max_error=1.0)
     assert compressed is not None

@@ -238,6 +238,7 @@ class SLiMCompressor(BaseCompressor):
             {
                 "pruned_layers": pruned_layers_count,
                 "quant_bits": self.bits,
+                "bit_reduction": 32.0 / max(1, self.bits),
                 "rank": self.rank,
                 "structured_24": self.structured_24,
                 "total_svd_energy": total_svd_energy,

@@ -13,8 +13,8 @@ import pytest
 import torch
 import torch.nn as nn
 from neuralops.compression.kv_cache.aatc_xkv_compressor import (
-    AATCKVCache,
-    AATCXKVCompressor,
+    AATC_XKVCache,
+    AATC_XKVCompressor,
     aatc_xkv_factory,
 )
 from neuralops.core.registry import COMPRESSOR_REGISTRY
