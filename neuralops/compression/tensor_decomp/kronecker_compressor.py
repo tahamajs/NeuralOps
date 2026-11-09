@@ -806,9 +806,20 @@ class KroneckerCompressor(BaseCompressor):
                 except Exception:
                     try:
                         self.model(dummy)
-                    except Exception as e2:
-                        logger.warning("Kronecker forward check failed: %s", e2)
-                        forward_check_success = False
+                    except Exception:
+                        try:
+                            in_dim = 768
+                            for m in self.model.modules():
+                                if hasattr(m, "in_features") and isinstance(m.in_features, int):
+                                    in_dim = m.in_features
+                                    break
+                            first_param = next(iter(self.model.parameters()), None)
+                            dtype = first_param.dtype if first_param is not None else torch.float32
+                            dummy_x = torch.randn(1, 8, in_dim, device=dev, dtype=dtype)
+                            self.model(dummy_x)
+                        except Exception as e2:
+                            logger.warning("Kronecker forward check failed: %s", e2)
+                            forward_check_success = False
         except Exception as e:
             logger.warning("Kronecker forward check raised: %s", e)
             forward_check_success = False

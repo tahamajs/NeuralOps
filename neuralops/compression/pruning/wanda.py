@@ -28,6 +28,22 @@ logger = logging.getLogger(__name__)
 __all__ = ["WandaCompressor", "wanda_prune_layer", "wanda_prune_model", "wanda_factory"]
 
 
+def _pytorch_wanda(
+    W: torch.Tensor,
+    sparsity: float = 0.5,
+    act_norm: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Vectorized PyTorch reference implementation for Wanda pruning (Level 3 fallback)."""
+    if act_norm is None:
+        act_norm = torch.ones(W.shape[1], device=W.device, dtype=W.dtype)
+    metric = torch.abs(W) * act_norm.unsqueeze(0)
+    n_keep = max(1, min(metric.shape[1], int(round(metric.shape[1] * (1.0 - sparsity)))))
+    _, top_idx = torch.topk(metric, k=n_keep, dim=1, largest=True)
+    mask = torch.zeros_like(W, dtype=torch.bool)
+    mask.scatter_(1, top_idx, True)
+    return W * mask.to(W.dtype)
+
+
 def wanda_prune_layer(
     module: nn.Linear,
     sparsity: float = 0.5,
@@ -35,6 +51,8 @@ def wanda_prune_layer(
     act_norm: torch.Tensor | None = None,
 ) -> tuple[nn.Linear, torch.Tensor]:
     """Prunes linear layer weights based on the Wanda importance score S_ij = |W_ij| * ||X_j||_2.
+
+    Dispatches across 3-tier hierarchy: CUDA C++ (Level 1) -> Triton JIT (Level 2) -> PyTorch (Level 3).
 
     Args:
         module: The target nn.Linear module.
@@ -64,14 +82,17 @@ def wanda_prune_layer(
             else:
                 act_norm = torch.norm(stacked.to(torch.float32), p=2, dim=0).to(W.device, dtype=W.dtype)
 
-    metric = torch.abs(W) * act_norm.unsqueeze(0)
+    try:
+        from neuralops.ops.cuda._fallback import dispatch_wanda
 
-    n_keep = max(1, min(metric.shape[1], int(round(metric.shape[1] * (1.0 - sparsity)))))
-    _, top_idx = torch.topk(metric, k=n_keep, dim=1, largest=True)
-    mask = torch.zeros_like(W, dtype=torch.bool)
-    mask.scatter_(1, top_idx, True)
+        W_pruned = dispatch_wanda(W, sparsity=sparsity, act_norm=act_norm, pytorch_fn=_pytorch_wanda)
+        mask = W_pruned != 0.0
+    except Exception as exc:
+        logger.debug("dispatch_wanda fallback to PyTorch reference: %s", exc)
+        W_pruned = _pytorch_wanda(W, sparsity=sparsity, act_norm=act_norm)
+        mask = W_pruned != 0.0
 
-    module.weight.data *= mask.to(module.weight.dtype)
+    module.weight.data.copy_(W_pruned)
     module.register_buffer("pruning_mask", mask)
     module.register_buffer("mask", mask.to(dtype=module.weight.dtype))
     return module, mask

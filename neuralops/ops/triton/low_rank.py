@@ -858,6 +858,9 @@ def quantize_to_fp8_dynamic(x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor
     return scaled.to(x.dtype).view(orig_shape), scale
 
 
+dynamic_fp8_quant_triton = quantize_to_fp8_dynamic
+
+
 def fp8_tensorcore_matmul_triton(
     a: torch.Tensor,
     b: torch.Tensor,
@@ -1327,6 +1330,7 @@ __all__ = [
     "bwd",
     "low_rank_forward",
     "quantize_to_fp8_dynamic",
+    "dynamic_fp8_quant_triton",
     "fp8_tensorcore_matmul_triton",
     "pack_int4_weights",
     "unpack_int4_weights",
@@ -2540,6 +2544,7 @@ __all__ = [
     "bwd",
     "low_rank_forward",
     "quantize_to_fp8_dynamic",
+    "dynamic_fp8_quant_triton",
     "fp8_tensorcore_matmul_triton",
     "pack_int4_weights",
     "unpack_int4_weights",

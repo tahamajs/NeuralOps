@@ -722,11 +722,12 @@ class MambaShedderCompressor(BaseCompressor):
                         cfg = getattr(self.model, "config", None)
                         hidden = getattr(cfg, "hidden_size", None) if cfg else None
                         if hidden is None:
-                            first_lin = next(
-                                (m for m in self.model.modules() if isinstance(m, nn.Linear)),
-                                None,
-                            )
-                            hidden = getattr(first_lin, "in_features", 8)
+                            for m in self.model.modules():
+                                if hasattr(m, "in_features") and isinstance(m.in_features, int):
+                                    hidden = m.in_features
+                                    break
+                        if hidden is None:
+                            hidden = 768
                         dt = next(self.model.parameters()).dtype
                         self.model(torch.randn(1, 8, hidden, device=dev, dtype=dt))
         except Exception as e:

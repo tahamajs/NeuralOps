@@ -422,15 +422,22 @@ class LiLLaMADistiller(BaseCompressor):
                 inp, out = activations_map[name]
                 try:
                     inp_flat = inp.reshape(-1, inp.shape[-1]).float()
-                    out_flat = out.reshape(-1, out.shape[-1]).float()
-                    if inp_flat.shape[-1] == d_in and out_flat.shape[-1] == d_out:
-                        C = torch.matmul(out_flat.t().contiguous(), inp_flat) / max(len(inp_flat), 1)
-                        W_new, r_used, U_r, Vh_r = self._factorize(C, self.rank)
-                        used_cross_cov = True
+                    if inp_flat.shape[-1] == d_in:
+                        scale = inp_flat.norm(dim=0).clamp(min=1e-5)
+                        scale = scale / scale.mean().clamp(min=1e-5)
+                        scale = scale.to(device=W.device)
+                        W_weighted = W * scale.unsqueeze(0)
+                        _, r_used, U_r, Vh_w = self._factorize(W_weighted, self.rank)
+                        if U_r is not None and Vh_w is not None:
+                            Vh_r = Vh_w / scale.unsqueeze(0)
+                            W_new = U_r @ Vh_r
+                            used_cross_cov = True
+                        else:
+                            W_new, r_used, U_r, Vh_r = self._factorize(W, self.rank)
                     else:
                         W_new, r_used, U_r, Vh_r = self._factorize(W, self.rank)
                 except Exception as e:
-                    logger.debug("Cross-covariance factorization failed for %s: %s", name, e)
+                    logger.debug("Activation-weighted factorization failed for %s: %s", name, e)
                     W_new, r_used, U_r, Vh_r = self._factorize(W, self.rank)
             else:
                 W_new, r_used, U_r, Vh_r = self._factorize(W, self.rank)
