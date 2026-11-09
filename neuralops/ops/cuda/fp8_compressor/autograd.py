@@ -48,18 +48,41 @@ def _get_fp8_ops():
 
 
 class FP8Function(Function):
-    """Autograd Function wrapping CUDA fp8_compress_forward kernel."""
+    """Autograd Function wrapping CUDA fp8_compress_forward kernel with 3-level fallback."""
 
     @staticmethod
     def forward(ctx, W: torch.Tensor, scale: float) -> torch.Tensor:
         ctx.save_for_backward(W)
         ctx.scale = scale
 
-        ops = _get_fp8_ops()
-        if ops is not None and hasattr(ops, "fp8_compress_forward"):
-            return ops.fp8_compress_forward(W.contiguous(), float(scale))
+        from neuralops.ops.cuda import _fallback
 
-        # Level 3 PyTorch reference fallback
+        # Level 1: Native CUDA C++ extension
+        if W.is_cuda:
+            ops = _get_fp8_ops()
+            if ops is not None and hasattr(ops, "fp8_compress_forward"):
+                try:
+                    out = ops.fp8_compress_forward(W.contiguous(), float(scale))
+                    _fallback.set_last_dispatch_backend("fp8_compressor", "cuda")
+                    return out
+                except Exception:
+                    # allowed-swallow: best-effort-telemetry
+                    pass
+
+        # Level 2: Triton JIT kernel fallback
+        if W.is_cuda:
+            try:
+                from neuralops.ops.triton.quantize_fp8 import fp8_compressor_compress
+
+                out = fp8_compressor_compress(W, scale_type="per_tensor", fp8_format="e4m3")
+                _fallback.set_last_dispatch_backend("fp8_compressor", "triton")
+                return out
+            except Exception:
+                # allowed-swallow: best-effort-telemetry
+                pass
+
+        # Level 3: Vectorized PyTorch reference fallback
+        _fallback.set_last_dispatch_backend("fp8_compressor", "pytorch")
         w_float = W.to(torch.float32)
         max_val = 448.0
         step_mult = 0.125

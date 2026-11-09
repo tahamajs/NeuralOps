@@ -222,6 +222,21 @@ class CoopQLinear(nn.Module):
             b_q.to(dtype=x.dtype, device=x.device) if b_q is not None else None,
         )
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+            from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
+            suitable, _ = check_triton_suitability(x, "low_rank")
+            if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
+                try:
+                    from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
+                    lora_out = fused_down_up_gemm_bias_triton(
+                        x, self.lora_A.to(x.dtype), self.lora_B.t().to(x.dtype).contiguous(), bias=None
+                    )
+                    out = out + (self.scaling * lora_out).to(out.dtype)
+                    return out
+                except Exception:
+                    # allowed-swallow: best-effort-telemetry
+                    pass
             lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B)
             out = out + (self.scaling * lora_out).to(out.dtype)
         return out

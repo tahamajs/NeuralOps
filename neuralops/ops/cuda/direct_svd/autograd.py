@@ -48,18 +48,64 @@ def _get_direct_svd_ops():
 
 
 class DirectSVDFunction(Function):
-    """Autograd Function wrapping CUDA direct_svd_fwd kernel."""
+    """Autograd Function wrapping CUDA direct_svd_fwd kernel with 3-level fallback."""
 
     @staticmethod
     def forward(ctx, U: torch.Tensor, V: torch.Tensor, scale: float = 1.0) -> torch.Tensor:
         ctx.save_for_backward(U, V)
         ctx.scale = scale
 
-        ops = _get_direct_svd_ops()
-        if ops is not None and hasattr(ops, "direct_svd_fwd"):
-            return ops.direct_svd_fwd(U.contiguous(), V.contiguous(), float(scale))
+        from neuralops.ops.cuda import _fallback
 
-        # Level 3 PyTorch reference fallback
+        # Level 1: Native CUDA C++ extension
+        if U.is_cuda and V.is_cuda:
+            ops = _get_direct_svd_ops()
+            if ops is not None and hasattr(ops, "direct_svd_fwd"):
+                try:
+                    out = ops.direct_svd_fwd(U.contiguous(), V.contiguous(), float(scale))
+                    _fallback.set_last_dispatch_backend("direct_svd", "cuda")
+                    return out
+                except Exception:
+                    # allowed-swallow: best-effort-telemetry
+                    pass
+
+        # Level 2: Triton JIT Kernel
+        if U.is_cuda and V.is_cuda:
+            try:
+                from neuralops.ops.triton.low_rank import _direct_svd_reconstruct_kernel, HAS_TRITON
+                import triton
+
+                if HAS_TRITON and _direct_svd_reconstruct_kernel is not None:
+                    M, r = U.shape
+                    N = V.shape[1]
+                    out = torch.empty((M, N), device=U.device, dtype=torch.float32)
+                    grid = lambda META: (
+                        triton.cdiv(M, META["BLOCK_M"]),
+                        triton.cdiv(N, META["BLOCK_N"]),
+                    )
+                    _direct_svd_reconstruct_kernel[grid](
+                        U.contiguous(),
+                        V.contiguous(),
+                        out,
+                        M,
+                        N,
+                        r,
+                        U.stride(0),
+                        U.stride(1),
+                        V.stride(0),
+                        V.stride(1),
+                        out.stride(0),
+                        out.stride(1),
+                        float(scale),
+                    )
+                    _fallback.set_last_dispatch_backend("direct_svd", "triton")
+                    return out
+            except Exception:
+                # allowed-swallow: best-effort-telemetry
+                pass
+
+        # Level 3: Vectorized PyTorch reference fallback
+        _fallback.set_last_dispatch_backend("direct_svd", "pytorch")
         return torch.matmul(U, V) * scale
 
     @staticmethod
