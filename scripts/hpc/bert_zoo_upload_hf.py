@@ -131,41 +131,71 @@ def upload_directory(
         return False
 
 
+import concurrent.futures
+
+
 def watch_and_upload(
-    watch_dir: Path,
+    watch_dirs: list[Path] | Path,
     hf_org: str,
     cleanup_weights: bool = True,
-    poll_interval: int = 30,
+    poll_interval: int = 15,
+    max_parallel_uploads: int = 3,
 ) -> None:
-    """Continuously poll watch_dir for completed models and upload them."""
-    logger.info("Watching %s for completed attention models (poll=%ds)...", watch_dir, poll_interval)
+    """Continuously poll watch_dirs for completed models and upload them in parallel via ThreadPoolExecutor."""
+    if isinstance(watch_dirs, Path):
+        dirs = [watch_dirs]
+    else:
+        dirs = list(watch_dirs)
+
+    logger.info("Watching %s for completed attention models (poll=%ds, max_parallel=%d)...", [str(d) for d in dirs], poll_interval, max_parallel_uploads)
+
+    executor = concurrent.futures.ThreadPoolExecutor(
+        max_workers=max_parallel_uploads, thread_name_prefix="hf_upload_worker"
+    )
+    in_flight: set[str] = set()
 
     while True:
-        if not watch_dir.exists():
-            time.sleep(poll_interval)
-            continue
-
-        for sub in sorted(watch_dir.iterdir()):
-            if not sub.is_dir() or sub.name.startswith((".", "upload_")):
+        for w_dir in dirs:
+            if not w_dir.exists():
                 continue
 
-            # A model is complete if training_metrics.json exists
-            is_complete = (sub / "training_metrics.json").exists()
-            already_uploaded = (sub / "upload_success.json").exists()
+            for sub in sorted(w_dir.iterdir()):
+                if not sub.is_dir() or sub.name.startswith((".", "upload_")):
+                    continue
 
-            if is_complete and not already_uploaded:
-                upload_directory(sub, hf_org, cleanup_weights=cleanup_weights)
+                task_id = str(sub.resolve())
+                if task_id in in_flight:
+                    continue
+
+                # A model is complete if training_metrics.json exists
+                is_complete = (sub / "training_metrics.json").exists()
+                already_uploaded = (sub / "upload_success.json").exists()
+
+                if is_complete and not already_uploaded:
+                    in_flight.add(task_id)
+                    logger.info("[%s] Submitting to parallel upload pool (in-flight: %d)...", sub.name, len(in_flight))
+
+                    def _run_upload(target_sub: Path = sub, t_id: str = task_id) -> None:
+                        try:
+                            upload_directory(target_sub, hf_org, cleanup_weights=cleanup_weights)
+                        except Exception as err:
+                            logger.error("[%s] Worker upload error: %s", target_sub.name, err)
+                        finally:
+                            in_flight.discard(t_id)
+
+                    executor.submit(_run_upload)
 
         time.sleep(poll_interval)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="BERT Attention Zoo Hugging Face Uploader")
-    parser.add_argument("--watch_dir", default=None, help="Directory to watch for completed models")
+    parser = argparse.ArgumentParser(description="BERT/Qwen Dual Zoo Hugging Face Parallel Uploader")
+    parser.add_argument("--watch_dir", default=None, help="Directory or comma-separated directories to watch for completed models")
     parser.add_argument("--single_dir", default=None, help="Single directory to upload directly")
     parser.add_argument("--hf_org", default="tahamajs", help="Hugging Face organization or user namespace")
     parser.add_argument("--cleanup", type=int, default=1, help="1 to delete weights after upload, 0 to keep")
-    parser.add_argument("--poll_interval", type=int, default=30, help="Polling interval in seconds")
+    parser.add_argument("--poll_interval", type=int, default=15, help="Polling interval in seconds")
+    parser.add_argument("--parallel", type=int, default=3, help="Number of concurrent parallel uploads")
     args = parser.parse_args()
 
     if args.single_dir:
@@ -177,7 +207,14 @@ def main() -> None:
         sys.exit(0 if success else 1)
 
     if args.watch_dir:
-        watch_and_upload(Path(args.watch_dir), args.hf_org, cleanup_weights=bool(args.cleanup), poll_interval=args.poll_interval)
+        dir_paths = [Path(d.strip()) for d in args.watch_dir.split(",") if d.strip()]
+        watch_and_upload(
+            dir_paths,
+            args.hf_org,
+            cleanup_weights=bool(args.cleanup),
+            poll_interval=args.poll_interval,
+            max_parallel_uploads=args.parallel,
+        )
     else:
         logger.error("Must specify either --watch_dir or --single_dir")
         sys.exit(2)

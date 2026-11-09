@@ -296,7 +296,7 @@ def main() -> None:
     parser.add_argument("--out_dir", default="results/qwen_compressor_zoo")
     parser.add_argument("--metrics_log", default="results/qwen_compressor_zoo/metrics.jsonl")
     parser.add_argument("--hf_org", default="Hooshaai")
-    parser.add_argument("--hf_upload", type=int, default=1)
+    parser.add_argument("--hf_upload", type=int, default=0, help="0 to delegate upload to decoupled login-node daemon (recommended for HPC), 1 for in-process uploader")
     parser.add_argument("--keep_local_weights", type=int, default=0)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     args = parser.parse_args()
