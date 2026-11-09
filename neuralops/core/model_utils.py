@@ -14,6 +14,7 @@ Model loading, parameter freezing, weight inspection, and buffer verification he
 from __future__ import annotations
 
 from contextlib import contextmanager
+import math
 from typing import Any
 
 import torch
@@ -39,10 +40,10 @@ def run_calibration_forward(
 
 
 ATTENTION_WEIGHT_MAP = {
-    "query": ["q_lin", "q_proj", "query"],
-    "key": ["k_lin", "k_proj", "key"],
-    "value": ["v_lin", "v_proj", "value"],
-    "out_proj": ["out_lin", "o_proj", "output", "dense"],
+    "query": ["q_lin", "q_proj", "query", "W_q", "q"],
+    "key": ["k_lin", "k_proj", "key", "W_k", "k"],
+    "value": ["v_lin", "v_proj", "value", "W_v", "v"],
+    "out_proj": ["out_lin", "o_proj", "output", "dense", "out_proj", "c_proj", "wo", "proj"],
 }
 
 
@@ -52,27 +53,139 @@ def copy_attention_weights(
     source_map: dict[str, list[str]] | None = None,
 ) -> None:
     """
-    Copy pretrained attention weights from src to dst.
-    Tries multiple possible attribute names for each projection.
+    Copy pretrained attention weights from src to dst with shape-adaptive head projection.
+    Tries dedicated dst_module.copy_weights first, then attribute-by-attribute.
     """
+    if hasattr(dst_module, "copy_weights") and callable(dst_module.copy_weights):
+        try:
+            dst_module.copy_weights(src_module)
+            return
+        except Exception:
+            pass
+
     if source_map is None:
         source_map = ATTENTION_WEIGHT_MAP
+
+    dst_aliases = {
+        "query": ["query", "q_proj", "W_q", "q_lin", "q"],
+        "key": ["key", "k_proj", "W_k", "k_lin", "k"],
+        "value": ["value", "v_proj", "W_v", "v_lin", "v"],
+        "out_proj": ["out_proj", "o_proj", "dense", "out_lin", "c_proj", "wo"],
+    }
+
+    head_dim = getattr(dst_module, "head_dim", getattr(src_module, "head_dim", None))
+
     for target_attr, src_attrs in source_map.items():
         src = None
         for attr in src_attrs:
             if hasattr(src_module, attr):
-                src = getattr(src_module, attr)
-                break
+                cand = getattr(src_module, attr)
+                if isinstance(cand, nn.Module) and hasattr(cand, "weight"):
+                    src = cand
+                    break
+                elif hasattr(cand, "dense") and hasattr(cand.dense, "weight"):
+                    src = cand.dense
+                    break
+                elif hasattr(cand, "weight"):
+                    src = cand
+                    break
+
+        dst = None
+        candidates = dst_aliases.get(target_attr, [target_attr])
+        for cand_name in candidates:
+            if hasattr(dst_module, cand_name):
+                c = getattr(dst_module, cand_name)
+                if hasattr(c, "weight"):
+                    dst = c
+                    break
+
         if src is None:
+            if target_attr == "out_proj" and dst is not None:
+                with torch.no_grad():
+                    min_d = min(dst.weight.shape[0], dst.weight.shape[1])
+                    dst.weight.data.zero_()
+                    dst.weight.data[:min_d, :min_d].fill_diagonal_(1.0)
+                    if dst.bias is not None:
+                        nn.init.zeros_(dst.bias)
+                if hasattr(dst_module, "is_nested_encoder"):
+                    dst_module.is_nested_encoder = True
+                continue
             raise ValueError(
-                f"Cannot find source for '{target_attr}' in " f"{src_module.__class__.__name__}. Tried: {src_attrs}"
+                f"Cannot find source for '{target_attr}' in {src_module.__class__.__name__}. Tried: {src_attrs}"
             )
-        dst = getattr(dst_module, target_attr)
-        dst.weight.data.copy_(src.weight.data)
-        if src.bias is not None and dst.bias is not None:
-            dst.bias.data.copy_(src.bias.data)
-        elif src.bias is None and dst.bias is not None:
-            nn.init.zeros_(dst.bias)
+
+        if dst is None:
+            continue
+
+        with torch.no_grad():
+            w_src = src.weight.data
+            w_dst = dst.weight.data
+
+            if w_src.ndim > 2:
+                w_src = w_src.reshape(w_src.shape[0], -1)
+            if w_dst.ndim > 2:
+                w_dst = w_dst.reshape(w_dst.shape[0], -1)
+
+            if w_src.shape != w_dst.shape and w_dst.shape == w_src.t().shape:
+                w_src = w_src.t().contiguous()
+
+            dst_out, dst_in = w_dst.shape
+            src_out, src_in = w_src.shape
+
+            h_dim = head_dim
+            if h_dim is None:
+                for hd in (64, 128, 32, 16, 256):
+                    if dst_out % hd == 0 and src_out % hd == 0:
+                        h_dim = hd
+                        break
+                else:
+                    h_dim = dst_out
+
+            if dst_out == src_out and dst_in == src_in:
+                dst.weight.data.copy_(w_src)
+                if src.bias is not None and dst.bias is not None:
+                    dst.bias.data.copy_(src.bias.data)
+                elif dst.bias is not None:
+                    nn.init.zeros_(dst.bias)
+            elif dst_out < src_out and dst_in == src_in:
+                src_heads = max(1, src_out // h_dim)
+                dst_heads = max(1, dst_out // h_dim)
+                if src_heads > dst_heads and src_heads % dst_heads == 0:
+                    group = src_heads // dst_heads
+                    scale = math.sqrt(group)
+                    w_pooled = (w_src.view(dst_heads, group, h_dim, src_in).mean(dim=1) * scale).reshape(dst_out, dst_in)
+                    dst.weight.data.copy_(w_pooled)
+                    if src.bias is not None and dst.bias is not None:
+                        b_pooled = (src.bias.data.view(dst_heads, group, h_dim).mean(dim=1) * scale).reshape(dst_out)
+                        dst.bias.data.copy_(b_pooled)
+                    elif dst.bias is not None:
+                        nn.init.zeros_(dst.bias)
+                else:
+                    dst.weight.data.copy_(w_src[:dst_out])
+                    if src.bias is not None and dst.bias is not None:
+                        dst.bias.data.copy_(src.bias.data[:dst_out])
+                    elif dst.bias is not None:
+                        nn.init.zeros_(dst.bias)
+            elif dst_out > src_out and dst_out % src_out == 0:
+                rep = dst_out // src_out
+                dst.weight.data.copy_(w_src.repeat(rep, 1))
+                if src.bias is not None and dst.bias is not None:
+                    dst.bias.data.copy_(src.bias.data.repeat(rep))
+                elif dst.bias is not None:
+                    nn.init.zeros_(dst.bias)
+            else:
+                out_d = min(dst_out, src_out)
+                in_d = min(dst_in, src_in)
+                dst.weight.data.zero_()
+                dst.weight.data[:out_d, :in_d].copy_(w_src[:out_d, :in_d])
+                if src.bias is not None and dst.bias is not None:
+                    mb = min(dst.bias.numel(), src.bias.numel())
+                    dst.bias.data[:mb].copy_(src.bias.data[:mb])
+                elif dst.bias is not None:
+                    nn.init.zeros_(dst.bias)
+
+            if hasattr(dst, "freeze_base_weights") and callable(dst.freeze_base_weights):
+                dst.freeze_base_weights()
 
 
 def replace_module(model: nn.Module, full_name: str, new_module: nn.Module) -> None:

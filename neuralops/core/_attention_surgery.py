@@ -208,7 +208,26 @@ def _copy_projection_weights(
                 and target_mod.weight.shape[1] == src_weight_2d.shape[1]
                 and target_mod.weight.shape[0] < src_weight_2d.shape[0]
             ):
-                target_mod.weight.data.copy_(src_weight_2d[: target_mod.weight.shape[0]])
+                src_out = src_weight_2d.shape[0]
+                dst_out = target_mod.weight.shape[0]
+                head_dim = getattr(target_mod, "head_dim", 64)
+                if dst_out % head_dim != 0 or src_out % head_dim != 0:
+                    for hd in (64, 128, 32, 16):
+                        if dst_out % hd == 0 and src_out % hd == 0:
+                            head_dim = hd
+                            break
+                    else:
+                        head_dim = dst_out
+                src_heads = max(1, src_out // head_dim)
+                dst_heads = max(1, dst_out // head_dim)
+                if src_heads > dst_heads and src_heads % dst_heads == 0:
+                    group = src_heads // dst_heads
+                    scale = math.sqrt(group)
+                    w_reshaped = src_weight_2d.view(dst_heads, group, head_dim, -1)
+                    w_pooled = (w_reshaped.mean(dim=1) * scale).reshape(dst_out, -1)
+                    target_mod.weight.data.copy_(w_pooled)
+                else:
+                    target_mod.weight.data.copy_(src_weight_2d[: target_mod.weight.shape[0]])
             elif (
                 src_weight_2d.ndim == 2
                 and target_mod.weight.shape[1] == src_weight_2d.shape[0]
@@ -228,7 +247,26 @@ def _copy_projection_weights(
                 if src_bias is not None and target_mod.bias.shape == src_bias.shape:
                     target_mod.bias.data.copy_(src_bias)
                 elif src_bias is not None and target_mod.bias.shape[0] <= src_bias.shape[0]:
-                    target_mod.bias.data.copy_(src_bias[: target_mod.bias.shape[0]])
+                    dst_out = target_mod.bias.shape[0]
+                    src_out = src_bias.shape[0]
+                    head_dim = getattr(target_mod, "head_dim", 64)
+                    if dst_out % head_dim != 0 or src_out % head_dim != 0:
+                        for hd in (64, 128, 32, 16):
+                            if dst_out % hd == 0 and src_out % hd == 0:
+                                head_dim = hd
+                                break
+                        else:
+                            head_dim = dst_out
+                    src_heads = max(1, src_out // head_dim)
+                    dst_heads = max(1, dst_out // head_dim)
+                    if src_heads > dst_heads and src_heads % dst_heads == 0:
+                        group = src_heads // dst_heads
+                        scale = math.sqrt(group)
+                        b_reshaped = src_bias.view(dst_heads, group, head_dim)
+                        b_pooled = (b_reshaped.mean(dim=1) * scale).reshape(dst_out)
+                        target_mod.bias.data.copy_(b_pooled)
+                    else:
+                        target_mod.bias.data.copy_(src_bias[: target_mod.bias.shape[0]])
                 elif (
                     src_bias is not None
                     and target_mod.bias.shape[0] > src_bias.shape[0]
