@@ -86,8 +86,36 @@ def upload_directory(
         logger.info("[%s] Uploading files to %s via single-stream HTTPS...", attn_key, repo_id)
         api.create_repo(repo_id=repo_id, repo_type="model", exist_ok=True, private=False)
 
-        # Upload files sequentially to avoid multi-threading entropy starvation on cluster kernel
-        files_to_upload = sorted([p for p in target_dir.iterdir() if p.is_file() and not p.name.startswith((".", "upload_"))])
+        # Ensure heavy whole-model weights are purged and NEVER uploaded
+        for heavy_name in ["pytorch_model.bin", "model.safetensors", "optimizer.pt"]:
+            heavy_path = target_dir / heavy_name
+            if heavy_path.exists():
+                try:
+                    # If attention_weights.safetensors is missing, extract strictly attention weights first
+                    attn_safetensors = target_dir / "attention_weights.safetensors"
+                    if not attn_safetensors.exists() and heavy_name in ["pytorch_model.bin", "model.safetensors"]:
+                        import torch
+                        from safetensors.torch import save_file, load_file
+                        if heavy_name.endswith(".safetensors"):
+                            sd = load_file(str(heavy_path))
+                        else:
+                            sd = torch.load(str(heavy_path), map_location="cpu")
+                        attn_sd = {k: v.half().contiguous() for k, v in sd.items() if any(term in k.lower() for term in ("attention", "classifier", "pooler", "adapter", "lora"))}
+                        save_file(attn_sd, str(attn_safetensors))
+                        logger.info("[%s] Converted %s to attention-only FP16 safetensors (%.2f MB)", attn_key, heavy_name, attn_safetensors.stat().st_size / (1024 * 1024))
+                    size_mb = heavy_path.stat().st_size / (1024 * 1024)
+                    os.remove(heavy_path)
+                    logger.info("[%s] [DISK CLEANUP] Purged heavy base model %s (%.1f MB freed).", attn_key, heavy_name, size_mb)
+                except Exception as e:
+                    logger.warning("[%s] Could not purge heavy file %s: %s", attn_key, heavy_name, e)
+
+        # Upload strictly attention weights and configuration metadata (never base model weights)
+        files_to_upload = sorted([
+            p for p in target_dir.iterdir()
+            if p.is_file()
+            and not p.name.startswith((".", "upload_"))
+            and p.name not in ["pytorch_model.bin", "model.safetensors", "optimizer.pt"]
+        ])
         uploaded_count = 0
         for fpath in files_to_upload:
             logger.info("[%s] Uploading %s (%.2f MB)...", attn_key, fpath.name, fpath.stat().st_size / (1024 * 1024))
@@ -96,30 +124,22 @@ def upload_directory(
                 path_in_repo=fpath.name,
                 repo_id=repo_id,
                 repo_type="model",
-                commit_message=f"Upload {fpath.name} for bert-{slug}",
+                commit_message=f"Upload {fpath.name} for bert-{slug} (attention weights only)",
             )
             uploaded_count += 1
 
-        logger.info("[%s] Upload completed successfully (%d files uploaded to %s)!", attn_key, uploaded_count, repo_id)
+        logger.info("[%s] Upload completed successfully (%d attention-only files uploaded to %s)!", attn_key, uploaded_count, repo_id)
         commit_hash = "verified"
 
         # Write confirmation record
         success_record = {
             "status": "UPLOAD_SUCCESS",
             "repo_id": repo_id,
+            "format": "attention_only_fp16",
             "commit_hash": str(commit_hash),
             "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
         }
         (target_dir / "upload_success.json").write_text(json.dumps(success_record, indent=2))
-
-        # Cleanup heavy weights
-        if cleanup_weights:
-            for w_name in ["model.safetensors", "pytorch_model.bin", "optimizer.pt"]:
-                w_file = target_dir / w_name
-                if w_file.exists():
-                    size_mb = w_file.stat().st_size / (1024 * 1024)
-                    os.remove(w_file)
-                    logger.info("[%s] [DISK CLEANUP] Removed %s (%.1f MB freed).", attn_key, w_name, size_mb)
 
         return True
 

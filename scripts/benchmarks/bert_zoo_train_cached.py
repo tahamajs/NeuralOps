@@ -250,35 +250,49 @@ def train_single_attention_cached(
         "status": "PASSED",
     }
 
-    # Save self-contained checkpoint
+    # Save STRICTLY attention and adapter weights (FP16) - zero base model bloat
     out_dir.mkdir(parents=True, exist_ok=True)
-    student.save_pretrained(str(out_dir), safe_serialization=True)
     tokenizer.save_pretrained(str(out_dir))
 
-    # Also save attention_weights.safetensors for neuralops.load_attention_from_hub
-    try:
-        from safetensors.torch import save_file
-        save_file(student.state_dict(), str(out_dir / "attention_weights.safetensors"))
-    except Exception:
-        pass
+    # Extract strictly trained attention and task head weights in half precision
+    attn_state: dict[str, torch.Tensor] = {}
+    for k, v in student.state_dict().items():
+        k_lower = k.lower()
+        if any(term in k_lower for term in ("attention", "classifier", "pooler", "adapter", "lora")):
+            attn_state[k] = v.detach().cpu().half().contiguous()
 
-    # Add auto_map and shim for instant loading via AutoModel / AutoModelForSequenceClassification
-    cfg_file = out_dir / "config.json"
-    if cfg_file.exists():
-        cfg_dict = json.loads(cfg_file.read_text())
-        cfg_dict["attention_type"] = attn_key
-        cfg_dict["neuralops_attention_type"] = attn_key
-        cfg_dict["auto_map"] = {
-            "AutoConfig": "modeling_neuralops_bert.NeuralOpsBertConfig",
-            "AutoModel": "modeling_neuralops_bert.NeuralOpsBertModel",
-            "AutoModelForSequenceClassification": "modeling_neuralops_bert.NeuralOpsBertForSequenceClassification",
-        }
-        cfg_file.write_text(json.dumps(cfg_dict, indent=2), encoding="utf-8")
+    from safetensors.torch import save_file
+    save_file(attn_state, str(out_dir / "attention_weights.safetensors"))
+
+    # Purge any legacy heavy whole-model files if present
+    for heavy_name in ["pytorch_model.bin", "model.safetensors", "optimizer.pt"]:
+        h_path = out_dir / heavy_name
+        if h_path.exists():
+            try:
+                os.remove(h_path)
+            except Exception:
+                pass
+
+    # Save lightweight config
+    student_cfg = student.config.to_dict()
+    student_cfg["attention_type"] = attn_key
+    student_cfg["neuralops_attention_type"] = attn_key
+    student_cfg["weights_format"] = "attention_only_fp16"
+    student_cfg["auto_map"] = {
+        "AutoConfig": "modeling_neuralops_bert.NeuralOpsBertConfig",
+        "AutoModel": "modeling_neuralops_bert.NeuralOpsBertModel",
+        "AutoModelForSequenceClassification": "modeling_neuralops_bert.NeuralOpsBertForSequenceClassification",
+    }
+    (out_dir / "config.json").write_text(json.dumps(student_cfg, indent=2), encoding="utf-8")
 
     modeling_py = f"""# Self-contained HuggingFace Hub loading shim for NeuralOps BERT ({attn_key})
+import os
+from pathlib import Path
 import torch
 import torch.nn as nn
 from transformers import BertConfig, BertModel, BertForSequenceClassification
+from safetensors.torch import load_file
+from huggingface_hub import hf_hub_download
 
 # Compatibility shim: PyTorch < 2.0 with Accelerate >= 1.0 (named_parameters remove_duplicate)
 _orig_named_params = nn.Module.named_parameters
@@ -289,19 +303,46 @@ nn.Module.named_parameters = _compat_named_parameters
 class NeuralOpsBertConfig(BertConfig):
     model_type = "bert"
 
+def _load_attention_weights_into(model, repo_or_dir):
+    p = Path(repo_or_dir)
+    if p.is_dir() and (p / "attention_weights.safetensors").exists():
+        w_path = str(p / "attention_weights.safetensors")
+    else:
+        w_path = hf_hub_download(str(repo_or_dir), "attention_weights.safetensors")
+    weights = load_file(w_path)
+    model.load_state_dict(weights, strict=False)
+
 class NeuralOpsBertModel(BertModel):
     config_class = NeuralOpsBertConfig
     def __init__(self, config, add_pooling_layer=True):
         super().__init__(config, add_pooling_layer=add_pooling_layer)
-        from neuralops.utils.replace_attention import replace_attention
+        from neuralops.api import replace_attention
         replace_attention(self, attention="{attn_key}", copy_weights=False)
+
+    @classmethod
+    def from_pretrained(cls, pretrained_model_name_or_path, *model_args, **kwargs):
+        config = kwargs.pop("config", None) or cls.config_class.from_pretrained(pretrained_model_name_or_path)
+        base = BertModel.from_pretrained("bert-base-uncased", config=config, **kwargs)
+        from neuralops.api import replace_attention
+        replace_attention(base, attention="{attn_key}", copy_weights=False)
+        _load_attention_weights_into(base, pretrained_model_name_or_path)
+        return base
 
 class NeuralOpsBertForSequenceClassification(BertForSequenceClassification):
     config_class = NeuralOpsBertConfig
     def __init__(self, config):
         super().__init__(config)
-        from neuralops.utils.replace_attention import replace_attention
+        from neuralops.api import replace_attention
         replace_attention(self, attention="{attn_key}", copy_weights=False)
+
+    @classmethod
+    def from_pretrained(cls, pretrained_model_name_or_path, *model_args, **kwargs):
+        config = kwargs.pop("config", None) or cls.config_class.from_pretrained(pretrained_model_name_or_path)
+        base = BertForSequenceClassification.from_pretrained("bert-base-uncased", config=config, **kwargs)
+        from neuralops.api import replace_attention
+        replace_attention(base, attention="{attn_key}", copy_weights=False)
+        _load_attention_weights_into(base, pretrained_model_name_or_path)
+        return base
 """
     (out_dir / "modeling_neuralops_bert.py").write_text(modeling_py, encoding="utf-8")
     (out_dir / "training_metrics.json").write_text(json.dumps(result, indent=2), encoding="utf-8")

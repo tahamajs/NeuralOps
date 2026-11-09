@@ -479,10 +479,33 @@ def train_single_qwen_attention(
         "status": "PASSED",
     }
 
-    # Save checkpoint
+    # Save checkpoint - strictly attention weights (FP16) - zero base model bloat
     out_dir.mkdir(parents=True, exist_ok=True)
-    student.save_pretrained(str(out_dir))
     tokenizer.save_pretrained(str(out_dir))
+
+    attn_state: dict[str, torch.Tensor] = {}
+    for k, v in student.state_dict().items():
+        k_lower = k.lower()
+        if any(term in k_lower for term in ("attention", "adapter", "lora", "qwen_att")):
+            attn_state[k] = v.detach().cpu().half().contiguous()
+
+    from safetensors.torch import save_file
+    save_file(attn_state, str(out_dir / "attention_weights.safetensors"))
+
+    # Purge any heavy whole-model weights
+    for heavy_name in ["pytorch_model.bin", "model.safetensors", "optimizer.pt"]:
+        h_path = out_dir / heavy_name
+        if h_path.exists():
+            try:
+                os.remove(h_path)
+            except Exception:
+                pass
+
+    # Save lightweight config
+    qwen_cfg = student.config.to_dict()
+    qwen_cfg["attention_type"] = attn_key
+    qwen_cfg["weights_format"] = "attention_only_fp16"
+    (out_dir / "config.json").write_text(json.dumps(qwen_cfg, indent=2), encoding="utf-8")
     (out_dir / "training_metrics.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
 
     # Model Card

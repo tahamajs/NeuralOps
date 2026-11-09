@@ -217,12 +217,22 @@ def load_pretrained_bert(
     try:
         model = ModelClass.from_pretrained(repo_id, trust_remote_code=True, **kwargs)
     except Exception as e:
-        logger.warning(
-            "Remote hub download failed (%s). Falling back to local surgery on bert-base-uncased.", e
+        logger.info(
+            "Direct AutoModel load failed (%s). Reconstructing from bert-base-uncased + attention_weights.safetensors...", e
         )
         model = ModelClass.from_pretrained("bert-base-uncased", **kwargs)
         from neuralops.api import replace_attention
-        model = replace_attention(model, attention=attention_type, copy_weights=True)
+        model = replace_attention(model, attention=attention_type, copy_weights=False)
+
+        try:
+            from huggingface_hub import hf_hub_download
+            from safetensors.torch import load_file
+            w_path = hf_hub_download(repo_id=repo_id, filename="attention_weights.safetensors")
+            weights = load_file(w_path)
+            model.load_state_dict(weights, strict=False)
+            logger.info("Successfully loaded attention_weights.safetensors from %s", repo_id)
+        except Exception as err:
+            logger.warning("Could not download attention_weights.safetensors (%s). Keeping uninitialized weights.", err)
 
     if device == "auto":
         dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
