@@ -172,3 +172,59 @@ def test_masked_forward_pass(bert_teacher, module_name):
 
     assert not torch.isnan(y).any(), f"{module_name} produced NaNs with attention mask"
     assert not torch.isinf(y).any(), f"{module_name} produced Infs with attention mask"
+
+
+@pytest.mark.parametrize("module_name", HEALED_MODULES)
+def test_end_to_end_bert_surgery_replacement(module_name):
+    """Verify surgical replacement in full BertForSequenceClassification achieves high fidelity and backward flow."""
+    from transformers import BertForSequenceClassification
+    from neuralops.api import replace_attention
+
+    torch.manual_seed(42)
+    cfg = BertConfig(
+        hidden_size=768,
+        num_attention_heads=12,
+        num_hidden_layers=2,
+        num_labels=2,
+        intermediate_size=3072,
+    )
+    teacher_model = BertForSequenceClassification(cfg)
+    teacher_model.eval()
+
+    input_ids = torch.randint(0, 1000, (2, 32))
+    attn_mask = torch.ones(2, 32)
+    attn_mask[:, 24:] = 0
+
+    with torch.no_grad():
+        orig_logits = teacher_model(input_ids, attention_mask=attn_mask).logits
+
+    # Surgically replace attention
+    student_model = replace_attention(teacher_model, attention=module_name, copy_weights=True)
+    student_model.eval()
+
+    with torch.no_grad():
+        new_logits = student_model(input_ids, attention_mask=attn_mask).logits
+
+    assert not torch.isnan(new_logits).any(), f"{module_name} produced NaN logits"
+    assert not torch.isinf(new_logits).any(), f"{module_name} produced Inf logits"
+
+    cos_sim = torch.cosine_similarity(orig_logits.flatten(), new_logits.flatten(), dim=0).item()
+    assert cos_sim >= 0.90, (
+        f"{module_name} failed end-to-end BERT logit fidelity (>0.90): got {cos_sim:.4f}"
+    )
+
+    # End-to-end backward pass test
+    student_model.train()
+    loss = student_model(input_ids, attention_mask=attn_mask, labels=torch.tensor([1, 0])).loss
+    assert torch.isfinite(loss), f"{module_name} produced non-finite loss: {loss.item()}"
+    loss.backward()
+
+    # Check gradients in replaced attention module
+    has_finite_grad = False
+    for p in student_model.parameters():
+        if p.requires_grad and p.grad is not None:
+            assert torch.isfinite(p.grad).all(), f"Non-finite grad in {module_name} parameters"
+            if p.grad.norm().item() > 1e-4:
+                has_finite_grad = True
+    assert has_finite_grad, f"No parameter gradients found after backward pass in {module_name}"
+
