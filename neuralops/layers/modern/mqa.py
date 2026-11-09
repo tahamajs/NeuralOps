@@ -391,7 +391,8 @@ class MultiQueryAttention(BaseAttention):
 
             if src_heads > target_heads and src_heads % target_heads == 0:
                 group_size = src_heads // target_heads
-                w_pooled = w_reshaped.view(target_heads, group_size, head_dim, -1).mean(dim=1)
+                scale = math.sqrt(group_size)
+                w_pooled = (w_reshaped.view(target_heads, group_size, head_dim, -1).mean(dim=1)) * scale
             elif src_heads > target_heads:
                 idx = torch.linspace(0, src_heads - 1, target_heads).long()
                 w_pooled = w_reshaped.index_select(0, idx.to(w.device))

@@ -32,6 +32,12 @@ from neuralops.core.utils.gqa import repeat_kv
 from neuralops.utils.model_family import ModelAdapter
 
 
+class _ProjectionWeightProxy:
+    def __init__(self, weight: torch.Tensor, bias: torch.Tensor | None = None) -> None:
+        self.weight = weight
+        self.bias = bias
+
+
 @ATTENTION_REGISTRY.register(
     "compressed_mha_attention",
     supports_causal=True,
@@ -148,6 +154,47 @@ class CompressedDistilBertAttention(BaseAttention):
     def out_weight(self) -> torch.Tensor:
         """Reconstruct the effective base Out weight from SVD factors."""
         return (self.U_out * self.S_out.view(1, -1)) @ self.Vh_out
+
+    @property
+    def query(self) -> _ProjectionWeightProxy:
+        return _ProjectionWeightProxy(self.qkv_weight[: self.all_head_size], self.bias_q)
+
+    @property
+    def key(self) -> _ProjectionWeightProxy:
+        return _ProjectionWeightProxy(
+            self.qkv_weight[self.all_head_size : self.all_head_size + self.kv_head_size], self.bias_k
+        )
+
+    @property
+    def value(self) -> _ProjectionWeightProxy:
+        return _ProjectionWeightProxy(
+            self.qkv_weight[self.all_head_size + self.kv_head_size : self.all_head_size + 2 * self.kv_head_size],
+            self.bias_v,
+        )
+
+    @property
+    def out_proj(self) -> _ProjectionWeightProxy:
+        return _ProjectionWeightProxy(self.out_weight, self.bias_out)
+
+    @property
+    def q_proj(self) -> _ProjectionWeightProxy:
+        return self.query
+
+    @property
+    def k_proj(self) -> _ProjectionWeightProxy:
+        return self.key
+
+    @property
+    def v_proj(self) -> _ProjectionWeightProxy:
+        return self.value
+
+    @property
+    def o_proj(self) -> _ProjectionWeightProxy:
+        return self.out_proj
+
+    @property
+    def dense(self) -> _ProjectionWeightProxy:
+        return self.out_proj
 
     def reset_lora_parameters(self) -> None:
         if self.lora_rank > 0:
@@ -314,6 +361,39 @@ class CompressedDistilBertAttention(BaseAttention):
             w_q = _orient(extracted["q"][0].float(), self.hidden_size)
             w_k = _orient(extracted["k"][0].float(), self.hidden_size)
             w_v = _orient(extracted["v"][0].float(), self.hidden_size)
+
+            def _pool_kv_tensor(t: torch.Tensor | None, target_dim: int, head_dim: int) -> torch.Tensor | None:
+                if t is None:
+                    return None
+                if t.dim() == 1:
+                    if t.shape[0] == target_dim:
+                        return t
+                    src_heads = max(1, t.shape[0] // head_dim)
+                    dst_heads = max(1, target_dim // head_dim)
+                    if src_heads > dst_heads and src_heads % dst_heads == 0:
+                        group = src_heads // dst_heads
+                        scale = math.sqrt(group)
+                        return (t.view(dst_heads, group, head_dim).mean(dim=1) * scale).reshape(target_dim)
+                    return t[:target_dim]
+                elif t.dim() == 2:
+                    if t.shape[0] == target_dim:
+                        return t
+                    src_heads = max(1, t.shape[0] // head_dim)
+                    dst_heads = max(1, target_dim // head_dim)
+                    if src_heads > dst_heads and src_heads % dst_heads == 0:
+                        group = src_heads // dst_heads
+                        scale = math.sqrt(group)
+                        return (t.view(dst_heads, group, head_dim, -1).mean(dim=1) * scale).reshape(target_dim, -1)
+                    return t[:target_dim]
+                return t
+
+            if w_q.shape[0] != self.all_head_size:
+                w_q = _pool_kv_tensor(w_q, self.all_head_size, self.head_dim)
+            if w_k.shape[0] != self.kv_head_size:
+                w_k = _pool_kv_tensor(w_k, self.kv_head_size, self.head_dim)
+            if w_v.shape[0] != self.kv_head_size:
+                w_v = _pool_kv_tensor(w_v, self.kv_head_size, self.head_dim)
+
             w_qkv = torch.cat([w_q, w_k, w_v], dim=0)
 
             U, S, Vh = torch.linalg.svd(w_qkv, full_matrices=False)
@@ -329,18 +409,21 @@ class CompressedDistilBertAttention(BaseAttention):
             if extracted["q"][1] is not None:
                 b_q = extracted["q"][1]
                 b_q_data = b_q.data if isinstance(b_q, nn.Parameter) else b_q
+                b_q_data = _pool_kv_tensor(b_q_data.float(), self.all_head_size, self.head_dim)
                 self.bias_q.data[: min(self.all_head_size, len(b_q_data))].copy_(
                     b_q_data[: min(self.all_head_size, len(b_q_data))]
                 )
             if extracted["k"][1] is not None:
                 b_k = extracted["k"][1]
                 b_k_data = b_k.data if isinstance(b_k, nn.Parameter) else b_k
+                b_k_data = _pool_kv_tensor(b_k_data.float(), self.kv_head_size, self.head_dim)
                 self.bias_k.data[: min(self.kv_head_size, len(b_k_data))].copy_(
                     b_k_data[: min(self.kv_head_size, len(b_k_data))]
                 )
             if extracted["v"][1] is not None:
                 b_v = extracted["v"][1]
                 b_v_data = b_v.data if isinstance(b_v, nn.Parameter) else b_v
+                b_v_data = _pool_kv_tensor(b_v_data.float(), self.kv_head_size, self.head_dim)
                 self.bias_v.data[: min(self.kv_head_size, len(b_v_data))].copy_(
                     b_v_data[: min(self.kv_head_size, len(b_v_data))]
                 )

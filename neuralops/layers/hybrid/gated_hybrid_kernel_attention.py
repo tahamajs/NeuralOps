@@ -42,7 +42,7 @@ class GatedHybridKernelConfig:
         self.head_dim = kwargs.get("head_dim")
         if self.head_dim is None and self.hidden_size is not None and self.num_heads is not None:
             self.head_dim = self.hidden_size // max(1, self.num_heads)
-        self.window_size = kwargs.get("window_size", 64)
+        self.window_size = kwargs.get("window_size", 128)
         default_svd = min(384, self.hidden_size) if self.hidden_size is not None else 384
         self.svd_rank = kwargs.get("svd_rank", default_svd)
         self.low_rank_update = kwargs.get("low_rank_update", 16)
@@ -55,7 +55,7 @@ class GatedHybridKernelConfig:
         self.kernel_clamp_min = kwargs.get("kernel_clamp_min", -20.0)
         self.kernel_clamp_max = kwargs.get("kernel_clamp_max", 8.0)
         self.kernel_seed = kwargs.get("kernel_seed")
-        self.fusion_gate_bias = kwargs.get("fusion_gate_bias", 1.8)
+        self.fusion_gate_bias = kwargs.get("fusion_gate_bias", 2.5)
         self.is_decoder = kwargs.get("is_decoder", False)
         self.chunk_size = kwargs.get("chunk_size", 128)
 
@@ -394,11 +394,12 @@ class GatedHybridKernelAttention(BaseAttention):
                 num_heads=n_heads,
                 num_key_value_heads=n_kv_heads,
                 head_dim=h_dim,
-                window_size=getattr(config, "window_size", 64),
-                svd_rank=getattr(config, "svd_rank", min(128, h_size) if h_size else 128),
+                window_size=getattr(config, "window_size", 128),
+                svd_rank=getattr(config, "svd_rank", min(384, h_size) if h_size else 384),
                 low_rank_update=getattr(config, "low_rank_update", 16),
                 kernel_feature_dim=getattr(config, "kernel_feature_dim", 128),
                 dropout=getattr(config, "dropout", 0.1),
+                fusion_gate_bias=getattr(config, "fusion_gate_bias", 2.5),
                 is_decoder=dec,
             )
 
@@ -1161,12 +1162,12 @@ def inject_gated_hybrid_kernel(
             num_heads=n_heads,
             num_key_value_heads=n_kv_heads,
             head_dim=h_dim,
-            window_size=getattr(comp_config, "window_size", 64) if comp_config else 64,
-            svd_rank=getattr(comp_config, "svd_rank", 192) if comp_config else 192,
+            window_size=getattr(comp_config, "window_size", 128) if comp_config else 128,
+            svd_rank=getattr(comp_config, "svd_rank", 384) if comp_config else 384,
             low_rank_update=getattr(comp_config, "low_rank_update", 16) if comp_config else 16,
             kernel_feature_dim=getattr(comp_config, "kernel_feature_dim", 128) if comp_config else 128,
             dropout=getattr(comp_config, "dropout", 0.1) if comp_config else 0.1,
-            fusion_gate_bias=getattr(comp_config, "fusion_gate_bias", 1.8) if comp_config else 1.8,
+            fusion_gate_bias=getattr(comp_config, "fusion_gate_bias", 2.5) if comp_config else 2.5,
             chunk_size=getattr(comp_config, "chunk_size", 128) if comp_config else 128,
             is_decoder=is_dec,
         )

@@ -434,7 +434,13 @@ class BlockTransformerHIBA(BaseAttention):
         with torch.no_grad():
             for proj_key, target_mod in target_map.items():
                 if proj_key == "o" and self.is_nested_encoder:
-                    self.out_proj = nn.Identity()
+                    min_d = min(target_mod.weight.size(0), target_mod.weight.size(1))
+                    target_mod.weight.data.zero_()
+                    target_mod.weight.data[:min_d, :min_d].fill_diagonal_(1.0)
+                    if target_mod.bias is not None:
+                        nn.init.zeros_(target_mod.bias)
+                    if self.freeze_base:
+                        target_mod.freeze_base_weights()
                     continue
 
                 w, b = extracted[proj_key]
@@ -446,6 +452,20 @@ class BlockTransformerHIBA(BaseAttention):
 
                 if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
                     w = w.t().contiguous()
+
+                if proj_key in ("k", "v") and w.size(0) > target_mod.weight.size(0):
+                    src_heads = max(1, w.size(0) // self.head_dim)
+                    dst_heads = max(1, target_mod.weight.size(0) // self.head_dim)
+                    if src_heads > dst_heads and src_heads % dst_heads == 0:
+                        group = src_heads // dst_heads
+                        scale = math.sqrt(group)
+                        w = (w.view(dst_heads, group, self.head_dim, -1).mean(dim=1) * scale).reshape(
+                            target_mod.weight.size(0), -1
+                        )
+                        if b is not None:
+                            b = (b.view(dst_heads, group, self.head_dim).mean(dim=1) * scale).reshape(
+                                target_mod.weight.size(0)
+                            )
 
                 out_d = min(target_mod.weight.size(0), w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
@@ -803,7 +823,7 @@ class BlockTransformerHIBA(BaseAttention):
                     out = _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
                     out = torch.nan_to_num(out, nan=0.0)
 
-                    if not isinstance(self.out_proj, nn.Identity):
+                    if not self.is_nested_encoder and not isinstance(self.out_proj, nn.Identity):
                         out = self.out_proj(out)
 
                     return out.to(hidden_states.dtype), None

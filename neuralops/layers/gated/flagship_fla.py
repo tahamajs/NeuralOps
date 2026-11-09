@@ -149,6 +149,123 @@ def gdn2_chunk_scan(
     return y, S.to(dtype)
 
 
+def _copy_attention_weights(module: nn.Module, src: Any) -> bool:
+    """Copies pretrained weights and biases into module and detects nested encoder."""
+    if src is None:
+        return False
+    cls_name = getattr(src, "__class__", type(src)).__name__
+    has_out = any(hasattr(src, a) for a in ("dense", "out_proj", "out_lin", "c_proj", "o_proj"))
+    is_nested = False
+    if (
+        cls_name in (
+            "BertSelfAttention",
+            "RobertaSelfAttention",
+            "XLMRobertaSelfAttention",
+            "ElectraSelfAttention",
+            "DebertaSelfAttention",
+        )
+        or (hasattr(src, "query") and not has_out)
+        or (hasattr(src, "self") and hasattr(src, "output"))
+    ):
+        is_nested = True
+    module.is_nested_encoder = bool(is_nested)
+
+    extracted: dict[str, tuple[torch.Tensor | None, torch.Tensor | None]] = {
+        "q": (None, None),
+        "k": (None, None),
+        "v": (None, None),
+        "o": (None, None),
+    }
+
+    if hasattr(src, "c_attn") and src.c_attn is not None:
+        c_attn_mod = src.c_attn
+        c_w = getattr(c_attn_mod, "weight", None)
+        if c_w is not None:
+            c_w = c_w.data.clone()
+            if "Conv1D" in type(c_attn_mod).__name__ or (c_w.ndim == 2 and c_w.shape[0] < c_w.shape[1]):
+                c_w = c_w.t()
+            sz = c_w.size(0) // 3
+            c_b = c_attn_mod.bias.data.clone() if getattr(c_attn_mod, "bias", None) is not None else None
+            extracted["q"] = (c_w[:sz], c_b[:sz] if c_b is not None else None)
+            extracted["k"] = (c_w[sz : 2 * sz], c_b[sz : 2 * sz] if c_b is not None else None)
+            extracted["v"] = (c_w[2 * sz :], c_b[2 * sz :] if c_b is not None else None)
+        if hasattr(src, "c_proj") and src.c_proj is not None:
+            o_w = getattr(src.c_proj, "weight", None)
+            if o_w is not None:
+                o_w = o_w.data.clone()
+                if "Conv1D" in type(src.c_proj).__name__ or (o_w.ndim == 2 and o_w.shape[0] < o_w.shape[1]):
+                    o_w = o_w.t()
+                o_b = src.c_proj.bias.data.clone() if getattr(src.c_proj, "bias", None) is not None else None
+                extracted["o"] = (o_w, o_b)
+    elif hasattr(src, "self") and hasattr(src.self, "query"):
+        for k, name in (("q", "query"), ("k", "key"), ("v", "value")):
+            m = getattr(src.self, name, None)
+            if m is not None and hasattr(m, "weight"):
+                extracted[k] = (m.weight.data.clone(), m.bias.data.clone() if m.bias is not None else None)
+        if hasattr(src, "output") and hasattr(src.output, "dense"):
+            d = src.output.dense
+            extracted["o"] = (d.weight.data.clone(), d.bias.data.clone() if d.bias is not None else None)
+    else:
+        aliases = {
+            "q": ["q_proj", "query", "q_lin"],
+            "k": ["k_proj", "key", "k_lin"],
+            "v": ["v_proj", "value", "v_lin"],
+            "o": ["out_proj", "dense", "out_lin", "o_proj"],
+        }
+        for k, names in aliases.items():
+            for name in names:
+                m = getattr(src, name, None)
+                if m is not None and hasattr(m, "weight"):
+                    extracted[k] = (m.weight.data.clone(), m.bias.data.clone() if m.bias is not None else None)
+                    break
+
+    missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not module.is_nested_encoder)]
+    if missing:
+        try:
+            from neuralops.core.adapters import UniversalAdapter
+
+            adapter = UniversalAdapter()
+            for k in missing:
+                w, b = adapter.get_weight_bias(src, k)
+                if w is not None:
+                    extracted[k] = (w.clone(), b.clone() if b is not None else None)
+        except Exception:
+            pass
+
+    target_map = {
+        "q": getattr(module, "q_proj", None),
+        "k": getattr(module, "k_proj", None),
+        "v": getattr(module, "v_proj", None),
+        "o": getattr(module, "out_proj", None),
+    }
+    with torch.no_grad():
+        for k, target in target_map.items():
+            if target is None:
+                continue
+            w, b = extracted[k]
+            if w is not None:
+                if w.shape == target.weight.shape:
+                    target.weight.copy_(w)
+                elif w.t().shape == target.weight.shape:
+                    target.weight.copy_(w.t())
+                elif target.weight.dim() == 2 and w.dim() == 2 and target.weight.shape[1] == w.shape[1]:
+                    if target.weight.shape[0] % w.shape[0] == 0:
+                        g = target.weight.shape[0] // w.shape[0]
+                        target.weight.copy_(w.repeat_interleave(g, dim=0))
+                if b is not None and target.bias is not None:
+                    if b.shape == target.bias.shape:
+                        target.bias.copy_(b)
+                    elif target.bias.shape[0] % b.shape[0] == 0:
+                        g = target.bias.shape[0] // b.shape[0]
+                        target.bias.copy_(b.repeat_interleave(g, dim=0))
+
+        if module.is_nested_encoder and extracted["o"][0] is None and hasattr(module, "out_proj"):
+            nn.init.eye_(module.out_proj.weight)
+            if module.out_proj.bias is not None:
+                module.out_proj.bias.data.zero_()
+    return is_nested
+
+
 @ATTENTION_REGISTRY.register("gdn2_attention")
 @ATTENTION_REGISTRY.register("gdn2", is_alias=True)
 class GDN2Attention(BaseAttention):
@@ -180,12 +297,13 @@ class GDN2Attention(BaseAttention):
         self.head_dim = _cfg_get(config, "head_dim", head_dim or (self.d_model // self.num_heads))
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.chunk_size = chunk_size
+        self.is_nested_encoder = False
 
-        self.q_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
-        self.k_proj = nn.Linear(self.d_model, self.num_kv_heads * self.head_dim, bias=False)
-        self.v_proj = nn.Linear(self.d_model, self.num_kv_heads * self.head_dim, bias=False)
-        self.z_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
-        self.out_proj = nn.Linear(self.num_heads * self.head_dim, self.d_model, bias=False)
+        self.q_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=True)
+        self.k_proj = nn.Linear(self.d_model, self.num_kv_heads * self.head_dim, bias=True)
+        self.v_proj = nn.Linear(self.d_model, self.num_kv_heads * self.head_dim, bias=True)
+        self.z_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=True)
+        self.out_proj = nn.Linear(self.num_heads * self.head_dim, self.d_model, bias=True)
 
         self.alpha_proj = nn.Linear(self.d_model, self.num_heads, bias=True)
         self.erase_proj = nn.Linear(self.d_model, self.num_heads, bias=True)
@@ -193,9 +311,14 @@ class GDN2Attention(BaseAttention):
         self.norm_weight = nn.Parameter(torch.ones(self.num_heads * self.head_dim))
 
         with torch.no_grad():
-            nn.init.constant_(self.alpha_proj.bias, 2.0)
-            nn.init.constant_(self.erase_proj.bias, 0.0)
-            nn.init.constant_(self.write_proj.bias, 1.0)
+            nn.init.constant_(self.alpha_proj.bias, 2.5)
+            nn.init.constant_(self.erase_proj.bias, -2.0)
+            nn.init.constant_(self.write_proj.bias, 2.0)
+            nn.init.zeros_(self.z_proj.weight)
+            nn.init.constant_(self.z_proj.bias, 2.0)
+
+    def copy_weights(self, src: Any) -> None:
+        _copy_attention_weights(self, src)
 
     def forward(
         self,
@@ -211,12 +334,48 @@ class GDN2Attention(BaseAttention):
         q = self.q_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
         k = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, D).transpose(1, 2)
         v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, D).transpose(1, 2)
-        z = self.z_proj(hidden_states)
 
         if self.kv_repeat > 1:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
+        is_causal = self.supports_causal and (
+            kwargs.get("is_causal", False)
+            or getattr(self.config, "is_decoder", False)
+            or getattr(self.config, "is_causal", False)
+        )
+
+        if not is_causal:
+            q_feat = F.elu(q.float()) + 1.0
+            k_feat = F.elu(k.float()) + 1.0
+            diff = -torch.abs(
+                torch.arange(L, device=hidden_states.device).unsqueeze(0)
+                - torch.arange(L, device=hidden_states.device).unsqueeze(1)
+            ).float()
+            decay = torch.exp(0.01 * diff).unsqueeze(0).unsqueeze(0)
+            scores = torch.matmul(q_feat, k_feat.transpose(-1, -2)) * decay
+            if attention_mask is not None:
+                if attention_mask.dim() == 2:
+                    mask = (
+                        (attention_mask > 0)
+                        if not attention_mask.dtype.is_floating_point
+                        else (attention_mask > -1e4)
+                    ).unsqueeze(1).unsqueeze(2)
+                    scores = scores.masked_fill(~mask, 0.0)
+                elif attention_mask.dim() == 4:
+                    mask = (
+                        (attention_mask > -1e4)
+                        if attention_mask.dtype.is_floating_point
+                        else attention_mask.bool()
+                    )
+                    scores = scores.masked_fill(~mask, 0.0)
+            den = scores.sum(dim=-1, keepdim=True).clamp(min=1e-5)
+            y = torch.matmul(scores / den, v.float()).transpose(1, 2).contiguous().view(B, L, H * D).to(hidden_states.dtype)
+            if self.is_nested_encoder:
+                return y, None
+            return self.out_proj(y), None
+
+        z = self.z_proj(hidden_states)
         alpha = torch.sigmoid(self.alpha_proj(hidden_states)).transpose(1, 2)
         beta_erase = torch.sigmoid(self.erase_proj(hidden_states)).transpose(1, 2)
         beta_write = torch.sigmoid(self.write_proj(hidden_states)).transpose(1, 2)
@@ -248,10 +407,11 @@ class GDN2Attention(BaseAttention):
                 res = chunk_gdn2(q_fl, k_fl, v_fl, g_fl, b_fl, w_fl)
                 y_fl = res[0] if isinstance(res, tuple) else res
                 y = y_fl.contiguous().view(B, L, H * D)
+                if self.is_nested_encoder:
+                    return y, None
                 y_gated = fused_rmsnorm_gate(y, z, self.norm_weight, eps=1e-5, activation="silu")
                 return self.out_proj(y_gated), None
             except Exception:
-                # allowed-swallow: best-effort-telemetry
                 pass
 
         y, next_state = gdn2_chunk_scan(
@@ -266,6 +426,8 @@ class GDN2Attention(BaseAttention):
         )
 
         y = y.transpose(1, 2).contiguous().view(B, L, H * D)
+        if self.is_nested_encoder:
+            return y, ((next_state,) if use_cache else None)
         y_gated = fused_rmsnorm_gate(y, z, self.norm_weight, eps=1e-5, activation="silu")
         out = self.out_proj(y_gated)
 
@@ -370,13 +532,20 @@ class DeltaProductAttention(BaseAttention):
         self.d_model = _cfg_get(config, "hidden_size", hidden_size)
         self.num_heads = _cfg_get(config, "num_attention_heads", num_heads)
         self.head_dim = _cfg_get(config, "head_dim", head_dim or (self.d_model // self.num_heads))
+        self.is_nested_encoder = False
 
-        self.q_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
-        self.k_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
-        self.v_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
-        self.u_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
+        self.q_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=True)
+        self.k_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=True)
+        self.v_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=True)
+        self.u_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=True)
         self.beta_proj = nn.Linear(self.d_model, self.num_heads, bias=True)
-        self.out_proj = nn.Linear(self.num_heads * self.head_dim, self.d_model, bias=False)
+        self.out_proj = nn.Linear(self.num_heads * self.head_dim, self.d_model, bias=True)
+
+        with torch.no_grad():
+            nn.init.constant_(self.beta_proj.bias, -2.0)
+
+    def copy_weights(self, src: Any) -> None:
+        _copy_attention_weights(self, src)
 
     def forward(
         self,
@@ -393,6 +562,43 @@ class DeltaProductAttention(BaseAttention):
         k = self.k_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
         v = self.v_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
         u = self.u_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
+
+        is_causal = self.supports_causal and (
+            kwargs.get("is_causal", False)
+            or getattr(self.config, "is_decoder", False)
+            or getattr(self.config, "is_causal", False)
+        )
+
+        if not is_causal:
+            q_feat = F.elu(q.float()) + 1.0
+            k_feat = F.elu(k.float()) + 1.0
+            diff = -torch.abs(
+                torch.arange(L, device=hidden_states.device).unsqueeze(0)
+                - torch.arange(L, device=hidden_states.device).unsqueeze(1)
+            ).float()
+            decay = torch.exp(0.01 * diff).unsqueeze(0).unsqueeze(0)
+            scores = torch.matmul(q_feat, k_feat.transpose(-1, -2)) * decay
+            if attention_mask is not None:
+                if attention_mask.dim() == 2:
+                    mask = (
+                        (attention_mask > 0)
+                        if not attention_mask.dtype.is_floating_point
+                        else (attention_mask > -1e4)
+                    ).unsqueeze(1).unsqueeze(2)
+                    scores = scores.masked_fill(~mask, 0.0)
+                elif attention_mask.dim() == 4:
+                    mask = (
+                        (attention_mask > -1e4)
+                        if attention_mask.dtype.is_floating_point
+                        else attention_mask.bool()
+                    )
+                    scores = scores.masked_fill(~mask, 0.0)
+            den = scores.sum(dim=-1, keepdim=True).clamp(min=1e-5)
+            y = torch.matmul(scores / den, v.float()).transpose(1, 2).contiguous().view(B, L, H * D).to(hidden_states.dtype)
+            if self.is_nested_encoder:
+                return y, None
+            return self.out_proj(y), None
+
         beta_raw = torch.sigmoid(self.beta_proj(hidden_states))
 
         init_state = None
@@ -483,8 +689,10 @@ class DeltaProductAttention(BaseAttention):
             present_state = curr
 
         y = y.transpose(1, 2).contiguous().view(B, L, H * D)
-        out = self.out_proj(y)
         present_kv = (present_state.to(q.dtype),) if use_cache else None
+        if self.is_nested_encoder:
+            return y, present_kv
+        out = self.out_proj(y)
         return out, present_kv
 
     def step(
@@ -579,14 +787,23 @@ class PreconditionedGDNAttention(BaseAttention):
         self.num_heads = _cfg_get(config, "num_attention_heads", num_heads)
         self.head_dim = _cfg_get(config, "head_dim", head_dim or (self.d_model // self.num_heads))
         self.damping = preconditioner_damping
+        self.is_nested_encoder = False
 
-        self.q_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
-        self.k_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
-        self.v_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=False)
+        self.q_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=True)
+        self.k_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=True)
+        self.v_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=True)
         self.beta_proj = nn.Linear(self.d_model, self.num_heads, bias=True)
         self.alpha_proj = nn.Linear(self.d_model, self.num_heads, bias=True)
         self.curvature_diag = nn.Parameter(torch.ones(self.num_heads, self.head_dim))
-        self.out_proj = nn.Linear(self.num_heads * self.head_dim, self.d_model, bias=False)
+        self.out_proj = nn.Linear(self.num_heads * self.head_dim, self.d_model, bias=True)
+
+        with torch.no_grad():
+            nn.init.constant_(self.alpha_proj.bias, 2.5)
+            nn.init.constant_(self.beta_proj.bias, 1.0)
+            nn.init.ones_(self.curvature_diag)
+
+    def copy_weights(self, src: Any) -> None:
+        _copy_attention_weights(self, src)
 
     def forward(
         self,
@@ -605,6 +822,42 @@ class PreconditionedGDNAttention(BaseAttention):
 
         p_scale = torch.rsqrt(F.softplus(self.curvature_diag) + self.damping).view(1, H, 1, D)
         k_preconditioned = k * p_scale
+
+        is_causal = self.supports_causal and (
+            kwargs.get("is_causal", False)
+            or getattr(self.config, "is_decoder", False)
+            or getattr(self.config, "is_causal", False)
+        )
+
+        if not is_causal:
+            q_feat = F.elu(q.float()) + 1.0
+            k_prec = (F.elu(k.float()) + 1.0) * p_scale
+            diff = -torch.abs(
+                torch.arange(L, device=hidden_states.device).unsqueeze(0)
+                - torch.arange(L, device=hidden_states.device).unsqueeze(1)
+            ).float()
+            decay = torch.exp(0.01 * diff).unsqueeze(0).unsqueeze(0)
+            scores = torch.matmul(q_feat, k_prec.transpose(-1, -2)) * decay
+            if attention_mask is not None:
+                if attention_mask.dim() == 2:
+                    mask = (
+                        (attention_mask > 0)
+                        if not attention_mask.dtype.is_floating_point
+                        else (attention_mask > -1e4)
+                    ).unsqueeze(1).unsqueeze(2)
+                    scores = scores.masked_fill(~mask, 0.0)
+                elif attention_mask.dim() == 4:
+                    mask = (
+                        (attention_mask > -1e4)
+                        if attention_mask.dtype.is_floating_point
+                        else attention_mask.bool()
+                    )
+                    scores = scores.masked_fill(~mask, 0.0)
+            den = scores.sum(dim=-1, keepdim=True).clamp(min=1e-5)
+            y = torch.matmul(scores / den, v.float()).transpose(1, 2).contiguous().view(B, L, H * D).to(hidden_states.dtype)
+            if self.is_nested_encoder:
+                return y, None
+            return self.out_proj(y), None
 
         alpha = torch.sigmoid(self.alpha_proj(hidden_states)).transpose(1, 2)
         beta = torch.sigmoid(self.beta_proj(hidden_states)).transpose(1, 2)
@@ -694,8 +947,10 @@ class PreconditionedGDNAttention(BaseAttention):
             present_state = curr
 
         y = y.transpose(1, 2).contiguous().view(B, L, H * D)
-        out = self.out_proj(y)
         present_kv = (present_state.to(q.dtype),) if use_cache else None
+        if self.is_nested_encoder:
+            return y, present_kv
+        out = self.out_proj(y)
         return out, present_kv
 
     def step(

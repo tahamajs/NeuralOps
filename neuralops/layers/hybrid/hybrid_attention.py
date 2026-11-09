@@ -206,7 +206,7 @@ class HybridAttention(BaseAttention):
         self.ensemble_gate = nn.Linear(self.hidden_size, self.num_heads)
         with torch.no_grad():
             self.ensemble_gate.weight.zero_()
-            self.ensemble_gate.bias.fill_(0.0)
+            self.ensemble_gate.bias.fill_(2.5)
         self.ensemble_gate.weight.requires_grad = True
         self.ensemble_gate.bias.requires_grad = True
 
@@ -553,7 +553,7 @@ class HybridAttention(BaseAttention):
         fused = fused + self.decompress_proj(self.compress_proj(fused))
 
         if self.is_nested_encoder:
-            out = self.out_proj(fused)
+            out = fused
         else:
             out = self.out_proj(fused)
             out = self.dropout(out)
@@ -646,6 +646,12 @@ class HybridAttention(BaseAttention):
                 target.weight.copy_(w)
                 if b is not None and target.bias is not None:
                     target.bias.copy_(b)
+
+        if self.is_nested_encoder:
+            with torch.no_grad():
+                nn.init.eye_(self.out_proj.weight)
+                if self.out_proj.bias is not None:
+                    nn.init.zeros_(self.out_proj.bias)
 
 
 WeightedEnsembleAttention = HybridAttention

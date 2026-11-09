@@ -112,6 +112,7 @@ class GLAttention(BaseAttention):
         if old_attn is not None and (hasattr(old_attn, "c_attn") or getattr(old_attn, "is_decoder", False)):
             is_dec = True
         self.is_decoder = is_dec
+        self.is_nested_encoder = False
 
         self.q_proj = nn.Linear(self.dim, self.all_head_size, bias=True)
         self.k_proj = nn.Linear(self.dim, self.all_head_size, bias=True)
@@ -167,12 +168,30 @@ class GLAttention(BaseAttention):
                     if src.c_proj.bias is not None:
                         self.out_proj.bias.copy_(src.c_proj.bias.data)
         else:
+            cls_name = getattr(src, "__class__", type(src)).__name__
+            has_out = any(hasattr(src, a) for a in ("dense", "out_proj", "out_lin", "c_proj", "o_proj"))
+            is_nested = False
+            if (
+                cls_name in (
+                    "BertSelfAttention",
+                    "RobertaSelfAttention",
+                    "XLMRobertaSelfAttention",
+                    "ElectraSelfAttention",
+                    "DebertaSelfAttention",
+                )
+                or (hasattr(src, "query") and not has_out)
+                or (hasattr(src, "self") and hasattr(src, "output"))
+            ):
+                is_nested = True
+            self.is_nested_encoder = bool(is_nested)
+
             aliases = {
                 "q_proj": ["q_proj", "query", "q_lin"],
                 "k_proj": ["k_proj", "key", "k_lin"],
                 "v_proj": ["v_proj", "value", "v_lin"],
                 "out_proj": ["out_proj", "o_proj", "out_lin", "dense"],
             }
+            out_copied = False
             for tgt_name, names in aliases.items():
                 for name in names:
                     src_mod = getattr(src, name, None)
@@ -182,6 +201,8 @@ class GLAttention(BaseAttention):
                             src_w = src_mod.weight.data
                             if src_w.shape == target.weight.shape:
                                 target.weight.copy_(src_w)
+                                if tgt_name == "out_proj":
+                                    out_copied = True
                             elif (
                                 src_w.dim() == 2
                                 and target.weight.dim() == 2
@@ -191,6 +212,8 @@ class GLAttention(BaseAttention):
                                 # GQA: expand num_kv_heads to num_q_heads via repeat_interleave
                                 g = target.weight.shape[0] // src_w.shape[0]
                                 target.weight.copy_(src_w.repeat_interleave(g, dim=0))
+                                if tgt_name == "out_proj":
+                                    out_copied = True
 
                             if hasattr(src_mod, "bias") and src_mod.bias is not None and target.bias is not None:
                                 src_b = src_mod.bias.data
@@ -204,6 +227,12 @@ class GLAttention(BaseAttention):
                                     g = target.bias.shape[0] // src_b.shape[0]
                                     target.bias.copy_(src_b.repeat_interleave(g, dim=0))
                         break
+
+            if self.is_nested_encoder and not out_copied:
+                with torch.no_grad():
+                    nn.init.eye_(self.out_proj.weight)
+                    if self.out_proj.bias is not None:
+                        self.out_proj.bias.data.zero_()
 
     def forward(
         self,
@@ -222,79 +251,94 @@ class GLAttention(BaseAttention):
         K = self.k_proj(hidden_states).view(B, N, H, d)
         V = self.v_proj(hidden_states).view(B, N, H, d)
 
-        out = None
-        if self._fla_kernel is not None:
-            try:
-                Q_f = Q.to(torch.bfloat16)
-                K_f = K.to(torch.bfloat16)
-                V_f = V.to(torch.bfloat16)
-                g_f = g.unsqueeze(-1).expand(B, N, H, d).to(torch.bfloat16)
+        if not self.is_decoder:
+            # Bidirectional mode with positive feature maps and symmetric state decay
+            q_all = (F.elu(Q.float()) + 1.0).permute(0, 2, 1, 3)
+            k_all = (F.elu(K.float()) + 1.0).permute(0, 2, 1, 3)
+            v_all = V.float().permute(0, 2, 1, 3)
 
-                out_raw, _ = self._fla_kernel(
-                    Q_f,
-                    K_f,
-                    V_f,
-                    g_f,
-                    scale=self.scale,
-                    output_final_state=False,
-                )
-                out = out_raw.float()
-            except (RuntimeError, NotImplementedError, ValueError) as e:
-                from neuralops.utils.logging_config import warn_once
-
-                warn_once("gla_fla_fallback", "FLA failed with %s; switching to Triton/PyTorch fallback", e)
-
-        if out is None:
-            # Level 1: CUDA gla_scan fastpath
-            if Q.is_cuda and Q.dtype in (torch.float16, torch.bfloat16) and d <= 128:
+            diff_sym = -torch.abs(
+                torch.arange(N, device=hidden_states.device).unsqueeze(0)
+                - torch.arange(N, device=hidden_states.device).unsqueeze(1)
+            ).float()
+            decay_sym = torch.exp(0.01 * diff_sym).unsqueeze(0).unsqueeze(0)
+            scores = torch.matmul(q_all, k_all.transpose(-1, -2)) * decay_sym
+            if attention_mask is not None:
+                if attention_mask.dim() == 2:
+                    mask = (
+                        (attention_mask > 0)
+                        if not attention_mask.dtype.is_floating_point
+                        else (attention_mask > -1e4)
+                    ).unsqueeze(1).unsqueeze(2)
+                    scores = scores.masked_fill(~mask, 0.0)
+                elif attention_mask.dim() == 4:
+                    mask = (
+                        (attention_mask > -1e4)
+                        if attention_mask.dtype.is_floating_point
+                        else attention_mask.bool()
+                    )
+                    scores = scores.masked_fill(~mask, 0.0)
+            den = scores.sum(dim=-1, keepdim=True).clamp(min=1e-5)
+            attn = scores / den
+            out = torch.matmul(attn, v_all).permute(0, 2, 1, 3).contiguous().to(hidden_states.dtype)
+        else:
+            out = None
+            if self._fla_kernel is not None:
                 try:
-                    from neuralops.ops.cuda.gla_scan import gla_scan
+                    Q_f = Q.to(torch.bfloat16)
+                    K_f = K.to(torch.bfloat16)
+                    V_f = V.to(torch.bfloat16)
+                    g_f = g.unsqueeze(-1).expand(B, N, H, d).to(torch.bfloat16)
+
+                    out_raw, _ = self._fla_kernel(
+                        Q_f,
+                        K_f,
+                        V_f,
+                        g_f,
+                        scale=self.scale,
+                        output_final_state=False,
+                    )
+                    out = out_raw.float()
+                except (RuntimeError, NotImplementedError, ValueError) as e:
+                    from neuralops.utils.logging_config import warn_once
+
+                    warn_once("gla_fla_fallback", "FLA failed with %s; switching to Triton/PyTorch fallback", e)
+
+            if out is None:
+                # Level 1: CUDA gla_scan fastpath
+                if Q.is_cuda and Q.dtype in (torch.float16, torch.bfloat16) and d <= 128:
+                    try:
+                        from neuralops.ops.cuda.gla_scan import gla_scan
+
+                        q_t = Q.transpose(1, 2).contiguous()
+                        k_t = K.transpose(1, 2).contiguous()
+                        v_t = V.transpose(1, 2).contiguous()
+                        alpha_t = torch.exp(g.transpose(1, 2).contiguous().float()).clamp(1e-4, 1.0 - 1e-4).to(Q.dtype)
+                        out_t = gla_scan(q_t, k_t, v_t, alpha=alpha_t)
+                        out = out_t.transpose(1, 2).contiguous().float()
+                    except Exception:
+                        out = None
+
+            if out is None:
+                # Level 2: Triton kda_hla_chunk_scan_triton fastpath
+                try:
+                    from neuralops.ops.triton.gla_scan import kda_hla_chunk_scan_triton
 
                     q_t = Q.transpose(1, 2).contiguous()
                     k_t = K.transpose(1, 2).contiguous()
                     v_t = V.transpose(1, 2).contiguous()
-                    # g is [B, N, H]; transpose to [B, H, N]
-                    alpha_t = torch.exp(g.transpose(1, 2).contiguous().float()).clamp(1e-4, 1.0 - 1e-4).to(Q.dtype)
-                    out_t = gla_scan(q_t, k_t, v_t, alpha=alpha_t)
+                    g_t = g.transpose(1, 2).contiguous()
+                    out_t = kda_hla_chunk_scan_triton(q_t, k_t, v_t, g_t, scale=self.scale)
                     out = out_t.transpose(1, 2).contiguous().float()
                 except Exception:
-                    # Fallback to Triton / PyTorch
-                    out = None
+                    # Level 3: Numerically stable PyTorch reference fallback
+                    out = self._pytorch_gla_stable(Q, K, V, g).float()
 
-        if out is None:
-            # Level 2: Triton kda_hla_chunk_scan_triton fastpath
-            try:
-                from neuralops.ops.triton.gla_scan import kda_hla_chunk_scan_triton
-
-                # Q, K, V are [B, N, H, d]; transpose to [B, H, N, d]
-                q_t = Q.transpose(1, 2).contiguous()
-                k_t = K.transpose(1, 2).contiguous()
-                v_t = V.transpose(1, 2).contiguous()
-                g_t = g.transpose(1, 2).contiguous()
-                out_t = kda_hla_chunk_scan_triton(q_t, k_t, v_t, g_t, scale=self.scale)
-                out = out_t.transpose(1, 2).contiguous().float()
-            except Exception:
-                # Level 3: Numerically stable PyTorch reference fallback
-                out = self._pytorch_gla_stable(Q, K, V, g).float()
-
-        if not self.is_decoder:
-            Q_r = torch.flip(Q, dims=[1])
-            K_r = torch.flip(K, dims=[1])
-            V_r = torch.flip(V, dims=[1])
-            g_r = torch.flip(g, dims=[1])
-            out_bwd_raw = self._pytorch_gla_stable(Q_r, K_r, V_r, g_r).float()
-            out_bwd = torch.flip(out_bwd_raw, dims=[1])
-            out = 0.5 * (out + out_bwd)
-
-        out = self.o_norm(out.float()).to(hidden_states.dtype)
+            out = self.o_norm(out.float()).to(hidden_states.dtype)
 
         out = out.contiguous().view(B, N, self.all_head_size)
-        v_flat = V.contiguous().view(B, N, self.all_head_size).float()
-        out_f = out.float()
-        v_rms = torch.sqrt(torch.mean(v_flat**2, dim=-1, keepdim=True).clamp_min(1e-8))
-        o_rms = torch.sqrt(torch.mean(out_f**2, dim=-1, keepdim=True).clamp_min(1e-8))
-        scale = (v_rms / o_rms).clamp(0.25, 4.0).to(out.dtype)
-        out = out * scale
+        if self.is_nested_encoder:
+            return out, None
         return self.out_proj(out), None
 
     def step(
@@ -442,8 +486,8 @@ class GLAttention(BaseAttention):
             end = min(start + chunk_size, N)
             L = end - start
 
-            q = (Q[:, start:end] * self.scale).float()
-            k = K[:, start:end].float()
+            q = (F.elu(Q[:, start:end].float()) + 1.0) * self.scale
+            k = F.elu(K[:, start:end].float()) + 1.0
             v = V[:, start:end].float()
             g_c = g[:, start:end].float()
 
@@ -459,7 +503,8 @@ class GLAttention(BaseAttention):
             qk = torch.einsum("bihd,bjhd->bijh", q, k)
             scores = (qk * decay).permute(0, 3, 1, 2)
             scores = scores.masked_fill(~causal, 0.0)
-            intra = torch.einsum("bhij,bjhd->bihd", scores, v)
+            den = scores.sum(dim=-1, keepdim=True).clamp(min=1e-5)
+            intra = torch.einsum("bhij,bjhd->bihd", scores / den, v)
 
             out_chunks.append(inter + intra)
 

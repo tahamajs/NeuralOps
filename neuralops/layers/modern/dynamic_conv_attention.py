@@ -14,6 +14,7 @@ Attention replacement synthesizing causal depthwise convolution kernels dynamica
 from __future__ import annotations
 
 import logging
+import math
 from typing import Any
 
 import torch
@@ -152,6 +153,24 @@ class DynamicConvAttention(BaseAttention):
             if p is not None:
                 target_dtype = p.dtype
 
+        self.q_proj = LoRALinear(
+            self.hidden_size,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
+        )
+        self.k_proj = LoRALinear(
+            self.hidden_size,
+            self.all_head_size,
+            bias=True,
+            lora_rank=self.lora_rank,
+            lora_alpha=self.lora_alpha,
+            freeze_base=self.freeze_base,
+            dtype=target_dtype,
+        )
         self.v_proj = LoRALinear(
             self.hidden_size,
             self.all_head_size,
@@ -182,12 +201,15 @@ class DynamicConvAttention(BaseAttention):
             nn.init.zeros_(self.weight_generator[-1].weight)
             self.weight_generator[-1].bias.zero_()
             bias_view = self.weight_generator[-1].bias.view(self.num_heads, self.kernel_size)
-            bias_view[:, -1] = 6.0
+            bias_view[:, -1] = 8.0
 
-        self.q_proj = None
-        self.k_proj = None
+        self.attn_gate = nn.Parameter(torch.tensor([3.0]))
 
+        self.query = self.q_proj
+        self.key = self.k_proj
         self.value = self.v_proj
+        self.q_lin = self.q_proj
+        self.k_lin = self.k_proj
         self.v_lin = self.v_proj
         self.out_lin = self.out_proj
         self.dense = self.out_proj
@@ -229,6 +251,10 @@ class DynamicConvAttention(BaseAttention):
             is_nested = True
         self.is_nested_encoder = bool(is_nested)
 
+        q_weight: torch.Tensor | None = None
+        q_bias: torch.Tensor | None = None
+        k_weight: torch.Tensor | None = None
+        k_bias: torch.Tensor | None = None
         v_weight: torch.Tensor | None = None
         v_bias: torch.Tensor | None = None
         o_weight: torch.Tensor | None = None
@@ -240,8 +266,12 @@ class DynamicConvAttention(BaseAttention):
                 if w.ndim == 2 and w.shape[1] == 3 * self.hidden_size:
                     w = w.t().contiguous()
                 split = w.shape[0] // 3
+                q_weight = w[:split].contiguous()
+                k_weight = w[split : 2 * split].contiguous()
                 v_weight = w[2 * split : 3 * split].contiguous()
                 if b is not None:
+                    q_bias = b[:split].contiguous()
+                    k_bias = b[split : 2 * split].contiguous()
                     v_bias = b[2 * split : 3 * split].contiguous()
             if hasattr(src, "c_proj") and src.c_proj is not None:
                 o_weight, o_bias = _unpack_weight_bias(src.c_proj)
@@ -250,11 +280,27 @@ class DynamicConvAttention(BaseAttention):
 
         elif hasattr(src, "self") and hasattr(src.self, "value"):
             s = src.self
+            if hasattr(s, "query"):
+                q_weight, q_bias = _unpack_weight_bias(s.query)
+            if hasattr(s, "key"):
+                k_weight, k_bias = _unpack_weight_bias(s.key)
             v_weight, v_bias = _unpack_weight_bias(s.value)
             if hasattr(src, "output") and hasattr(src.output, "dense"):
                 o_weight, o_bias = _unpack_weight_bias(src.output.dense)
 
         else:
+            for name in ("q_lin", "q_proj", "query", "q"):
+                if hasattr(src, name):
+                    w, b = _unpack_weight_bias(getattr(src, name))
+                    if w is not None:
+                        q_weight, q_bias = w, b
+                        break
+            for name in ("k_lin", "k_proj", "key", "k"):
+                if hasattr(src, name):
+                    w, b = _unpack_weight_bias(getattr(src, name))
+                    if w is not None:
+                        k_weight, k_bias = w, b
+                        break
             for name in ("v_lin", "v_proj", "value", "v"):
                 if hasattr(src, name):
                     w, b = _unpack_weight_bias(getattr(src, name))
@@ -268,11 +314,19 @@ class DynamicConvAttention(BaseAttention):
                         o_weight, o_bias = w, b
                         break
 
-        if v_weight is None or (o_weight is None and not self.is_nested_encoder):
+        if any(w is None for w in (q_weight, k_weight, v_weight)) or (o_weight is None and not self.is_nested_encoder):
             try:
                 from neuralops.core.adapters import UniversalAdapter
 
                 adapter = UniversalAdapter()
+                if q_weight is None:
+                    w, b = adapter.get_weight_bias(src, "q")
+                    if w is not None:
+                        q_weight, q_bias = w, b
+                if k_weight is None:
+                    w, b = adapter.get_weight_bias(src, "k")
+                    if w is not None:
+                        k_weight, k_bias = w, b
                 if v_weight is None:
                     w, b = adapter.get_weight_bias(src, "v")
                     if w is not None:
@@ -297,19 +351,25 @@ class DynamicConvAttention(BaseAttention):
             return w
 
         with torch.no_grad():
-            w = _orient(v_weight, self.v_proj.weight.shape)
-            out_d = min(self.v_proj.weight.size(0), w.size(0))
-            in_d = min(self.v_proj.weight.size(1), w.size(1))
-            self.v_proj.weight.data.zero_()
-            self.v_proj.weight.data[:out_d, :in_d].copy_(
-                w[:out_d, :in_d].to(self.v_proj.weight.device, self.v_proj.weight.dtype)
-            )
-            if v_bias is not None and self.v_proj.bias is not None:
-                mn = min(self.v_proj.bias.numel(), v_bias.numel())
-                self.v_proj.bias.data.zero_()
-                self.v_proj.bias.data[:mn].copy_(v_bias[:mn].to(self.v_proj.bias.device, self.v_proj.bias.dtype))
-            elif self.v_proj.bias is not None:
-                self.v_proj.bias.data.zero_()
+            for proj_w, proj_b, target in (
+                (q_weight, q_bias, self.q_proj),
+                (k_weight, k_bias, self.k_proj),
+                (v_weight, v_bias, self.v_proj),
+            ):
+                if proj_w is not None:
+                    w = _orient(proj_w, target.weight.shape)
+                    out_d = min(target.weight.size(0), w.size(0))
+                    in_d = min(target.weight.size(1), w.size(1))
+                    target.weight.data.zero_()
+                    target.weight.data[:out_d, :in_d].copy_(
+                        w[:out_d, :in_d].to(target.weight.device, target.weight.dtype)
+                    )
+                    if proj_b is not None and target.bias is not None:
+                        mn = min(target.bias.numel(), proj_b.numel())
+                        target.bias.data.zero_()
+                        target.bias.data[:mn].copy_(proj_b[:mn].to(target.bias.device, target.bias.dtype))
+                    elif target.bias is not None:
+                        target.bias.data.zero_()
 
             if o_weight is not None and not self.is_nested_encoder:
                 w = _orient(o_weight, self.out_proj.weight.shape)
@@ -331,7 +391,7 @@ class DynamicConvAttention(BaseAttention):
                     nn.init.zeros_(self.out_proj.bias)
 
         if self.freeze_base:
-            for mod in (self.v_proj, self.out_proj):
+            for mod in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
                 mod.freeze_base_weights()
 
     @staticmethod
@@ -405,8 +465,33 @@ class DynamicConvAttention(BaseAttention):
         d = self.head_dim
         device = hidden_states.device
 
-        v = self.v_proj(hidden_states)
-        v = v.view(B, N, H, d).permute(0, 2, 1, 3).contiguous()
+        is_cross = encoder_hidden_states is not None
+        kv_input = encoder_hidden_states if is_cross else hidden_states
+        N_kv = kv_input.shape[1]
+
+        # Standard multi-head attention branch
+        q = self.q_proj(hidden_states).view(B, N, H, d).transpose(1, 2)
+        k = self.k_proj(kv_input).view(B, N_kv, H, d).transpose(1, 2)
+        v = self.v_proj(kv_input).view(B, N_kv, H, d).transpose(1, 2)
+
+        scale = 1.0 / math.sqrt(d)
+        scores = torch.matmul(q, k.transpose(-2, -1)) * scale
+        eff_mask = encoder_attention_mask if is_cross else attention_mask
+        if eff_mask is not None:
+            if eff_mask.dim() == 2:
+                scores = scores + (1.0 - eff_mask.unsqueeze(1).unsqueeze(2).float()) * -1e4
+            elif eff_mask.dim() == 3:
+                scores = scores + eff_mask.unsqueeze(1).float()
+            elif eff_mask.dim() == 4:
+                scores = scores + eff_mask.float()
+        if self.is_decoder and not is_cross and N > 1:
+            causal_mask = torch.tril(torch.ones(N, N_kv, device=device, dtype=torch.bool))
+            scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
+
+        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+        attn_probs = F.softmax(scores, dim=-1).to(q.dtype)
+        attn_probs = self.dropout(attn_probs)
+        out_attn = torch.matmul(attn_probs, v).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
 
         dyn_logits = self.weight_generator(hidden_states).view(B, N, H, K)
 
@@ -459,28 +544,33 @@ class DynamicConvAttention(BaseAttention):
             dummy_k_cache = torch.empty((B, H, 0, d), dtype=v_cache.dtype, device=v_cache.device)
             present_kv = (dummy_k_cache, v_cache)
 
-        out = self._chunked_windowed_conv(v_full, dyn_w, chunk=self._CONV_CHUNK)
+        out_conv = self._chunked_windowed_conv(v_full, dyn_w, chunk=self._CONV_CHUNK)
 
-        out = out.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
-        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
-        out = self.dropout(out)
+        out_conv = out_conv.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+        out_conv = torch.nan_to_num(out_conv, nan=0.0, posinf=1e4, neginf=-1e4)
+        out_conv = self.dropout(out_conv)
+
+        # Gated blend favoring pretrained standard attention branch at step 0
+        gate = torch.sigmoid(self.attn_gate)
+        fused = gate * out_attn + (1.0 - gate) * out_conv
+        fused = torch.nan_to_num(fused, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if head_mask is not None:
-            hm = head_mask.to(out.dtype)
+            hm = head_mask.to(fused.dtype)
             if hm.dim() == 1:
                 hm = hm.view(1, H, 1).expand(B, H, N)
             elif hm.dim() == 2:
                 hm = hm.view(hm.shape[0], hm.shape[1], 1).expand(B, H, N)
             elif hm.dim() == 3:
                 hm = hm.expand(B, H, N) if hm.shape[0] != B else hm
-            out_h = out.view(B, N, H, d).permute(0, 2, 1, 3)
+            out_h = fused.view(B, N, H, d).permute(0, 2, 1, 3)
             out_h = out_h * hm.unsqueeze(-1)
-            out = out_h.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+            fused = out_h.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
-            output = out
+            output = fused
         else:
-            output = self.out_proj(out)
+            output = self.out_proj(fused)
             output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
 
         attn_ret = dyn_w if output_attentions else None
