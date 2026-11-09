@@ -25,7 +25,7 @@ from neuralops.core.attention_utils import apply_rotary_pos_emb
 
 logger = logging.getLogger(__name__)
 
-from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_mask import apply_attention_mask, get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.utils.gqa import repeat_kv
@@ -555,12 +555,7 @@ class CompressedDistilBertAttention(BaseAttention):
 
         mask = attention_mask if attention_mask is not None else kwargs.get("mask")
         if mask is not None:
-            if mask.dim() == 4:
-                scores = scores + mask.to(scores.dtype)
-            else:
-                valid_m = get_token_valid_mask(mask, B, N, device)
-                if valid_m is not None:
-                    scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
+            scores = apply_attention_mask(scores, mask, mask_value=-10000.0)
 
         mt = str(getattr(self.config, "model_type", "") or "").lower()
         decoder_prefixes = (

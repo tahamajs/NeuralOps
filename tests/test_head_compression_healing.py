@@ -198,3 +198,78 @@ def test_forward_backward_autograd_check(bert_config, bert_self, mech_cls):
     assert len(param_grads) > 0, f"No parameter gradients computed for {mech_cls.__name__}"
     for g in param_grads:
         assert torch.isfinite(g).all(), f"Parameter gradient has non-finite values for {mech_cls.__name__}"
+
+
+def test_masked_input_classification_cosine_similarity(bert_config):
+    """Verify classification cosine similarity on padded sequences with real attention mask exceeds 0.85."""
+    from transformers import BertForSequenceClassification
+
+    torch.manual_seed(42)
+    teacher = BertForSequenceClassification(bert_config)
+    teacher.eval()
+
+    # Input with padding tokens
+    input_ids = torch.randint(100, 1000, (2, 16))
+    attention_mask = torch.tensor([[1] * 12 + [0] * 4, [1] * 14 + [0] * 2])
+
+    with torch.no_grad():
+        teacher_logits = teacher(input_ids, attention_mask=attention_mask).logits
+
+    for mech in ["mqa", "compressed_mha_attention", "block_transformer_hiba"]:
+        torch.manual_seed(42)
+        student = BertForSequenceClassification(bert_config)
+        student.load_state_dict(teacher.state_dict())
+        student = replace_attention(student, attention=mech, copy_weights=True)
+        student.eval()
+
+        with torch.no_grad():
+            student_logits = student(input_ids, attention_mask=attention_mask).logits
+
+        cos_sim = F.cosine_similarity(teacher_logits.flatten(), student_logits.flatten(), dim=0).item()
+        assert cos_sim > 0.85, f"[{mech}] Masked classification cosine similarity {cos_sim:.4f} is not > 0.85"
+
+
+def test_mask_variant_robustness(bert_config, bert_self):
+    """Verify all 3 mechanisms gracefully handle 2D, 4D float additive, and 4D bool masks."""
+    x = torch.randn(2, 8, 768)
+    # 1. 2D binary mask
+    mask_2d = torch.tensor([[1, 1, 1, 1, 1, 1, 0, 0], [1, 1, 1, 1, 1, 1, 1, 0]])
+    # 2. 4D float additive mask
+    mask_4d_float = torch.zeros(2, 1, 1, 8)
+    mask_4d_float[0, 0, 0, 6:] = -10000.0
+    mask_4d_float[1, 0, 0, 7:] = -10000.0
+    # 3. 4D boolean mask
+    mask_4d_bool = torch.ones(2, 1, 8, 8, dtype=torch.bool)
+    mask_4d_bool[0, 0, :, 6:] = False
+    mask_4d_bool[1, 0, :, 7:] = False
+
+    masks = [mask_2d, mask_4d_float, mask_4d_bool]
+
+    for mech_cls in [MultiQueryAttention, CompressedDistilBertAttention, BlockTransformerHIBA]:
+        layer = mech_cls(config=bert_config)
+        copy_attention_weights(bert_self, layer)
+        layer.eval()
+
+        for m in masks:
+            with torch.no_grad():
+                out = layer(x, attention_mask=m)
+                if isinstance(out, tuple):
+                    out = out[0]
+                assert torch.isfinite(out).all(), f"Non-finite output for {mech_cls.__name__} with mask"
+                assert out.shape == (2, 8, 768)
+
+
+def test_mqa_grouped_query_mode(bert_config, bert_self):
+    """Verify MultiQueryAttention functions correctly in GQA mode (num_kv_heads=2)."""
+    mqa = MultiQueryAttention(config=bert_config, num_kv_heads=2)
+    copy_attention_weights(bert_self, mqa)
+    mqa.eval()
+
+    assert mqa.k_proj.weight.shape == (128, 768), "K projection should have 2 heads (128 channels)"
+    assert mqa.v_proj.weight.shape == (128, 768), "V projection should have 2 heads (128 channels)"
+
+    x = torch.randn(2, 8, 768)
+    with torch.no_grad():
+        out = mqa(x)[0]
+    assert out.shape == (2, 8, 768)
+    assert torch.isfinite(out).all()

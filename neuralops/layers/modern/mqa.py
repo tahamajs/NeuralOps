@@ -22,6 +22,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.core.amp_utils import maybe_half
+from neuralops.core.attention_mask import apply_attention_mask
 from neuralops.core.attention_utils import LoRALinear
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import _cfg_get, _unpack_weight_bias
@@ -642,9 +643,17 @@ class MultiQueryAttention(BaseAttention):
 
         if not use_sdpa:
             scale = 1.0 / math.sqrt(d)
+            if self.num_kv_heads == 1:
+                k_eff, v_eff = k, v
+            elif self.kv_repeat > 1:
+                k_eff = repeat_kv(k, self.kv_repeat)
+                v_eff = repeat_kv(v, self.kv_repeat)
+            else:
+                k_eff, v_eff = k, v
+
             # Elimination of physical DRAM replication: compute q @ k^T with 1 KV head directly via broadcast
             # q: (B, H, N_q, d), k: (B, 1, N_k, d) -> matmul broadcast over H without expanding k
-            raw_scores = torch.matmul(q.float(), k.float().transpose(-2, -1))
+            raw_scores = torch.matmul(q.float(), k_eff.float().transpose(-2, -1))
 
             try:
                 from neuralops.ops.triton.gqa import fused_mqa_bias_scale_triton
@@ -659,16 +668,7 @@ class MultiQueryAttention(BaseAttention):
                     scores = scores.masked_fill(causal_mask, _safe_mask_val(scores.dtype))
 
             if eff_mask is not None:
-                if eff_mask.dim() == 2:
-                    m = eff_mask[:, None, None, :].to(torch.bool)
-                    if m.dtype == torch.bool:
-                        scores = scores.masked_fill(~m, _safe_mask_val(scores.dtype))
-                elif eff_mask.dim() == 3:
-                    m = eff_mask.unsqueeze(1).to(torch.bool)
-                    scores = scores.masked_fill(~m, _safe_mask_val(scores.dtype))
-                elif eff_mask.dim() == 4:
-                    m = eff_mask.to(torch.bool)
-                    scores = scores.masked_fill(~m, _safe_mask_val(scores.dtype))
+                scores = apply_attention_mask(scores, eff_mask, mask_value=_safe_mask_val(scores.dtype))
 
             scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
             attn = F.softmax(scores, dim=-1).to(dtype)
@@ -686,7 +686,7 @@ class MultiQueryAttention(BaseAttention):
                 attn = attn * hm
 
             # Elimination of physical DRAM replication: attn @ v broadcasts over single V head
-            context = torch.matmul(attn, v.to(dtype))
+            context = torch.matmul(attn, v_eff.to(dtype))
             if output_attentions:
                 attn_weights = attn
 

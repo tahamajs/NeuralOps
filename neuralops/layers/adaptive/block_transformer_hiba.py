@@ -803,10 +803,14 @@ class BlockTransformerHIBA(BaseAttention):
             if not need_attn_or_hm:
                 try:
                     attn_bias = None
-                    if valid_mask is not None and not valid_mask.all():
-                        causal_mask = torch.ones((L, S), device=q.device, dtype=torch.bool).tril(diagonal=S - L)
-                        attn_bias = torch.zeros((1, 1, L, S), device=q.device, dtype=q.dtype)
-                        attn_bias = attn_bias.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), float("-inf"))
+                    has_pad = valid_mask is not None and not valid_mask.all()
+                    if has_pad or is_causal_dense:
+                        attn_bias = torch.zeros((B, 1, L, S), device=q.device, dtype=q.dtype)
+                        if has_pad:
+                            attn_bias = attn_bias.masked_fill((~valid_mask).view(B, 1, 1, S), float("-inf"))
+                        if is_causal_dense:
+                            causal_mask = torch.ones((L, S), device=q.device, dtype=torch.bool).tril(diagonal=S - L)
+                            attn_bias = attn_bias.masked_fill(~causal_mask.view(1, 1, L, S), float("-inf"))
                     _qs = maybe_half(q)
                     _ks = maybe_half(k)
                     _vs = maybe_half(v)
