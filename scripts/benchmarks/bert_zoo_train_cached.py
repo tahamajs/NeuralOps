@@ -58,6 +58,33 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("bert_zoo_cached_train")
 
 
+def build_cached_dataloader(cache: dict[str, Any], batch_size: int, is_cuda: bool) -> DataLoader:
+    """Builds a high-throughput DataLoader with optional parallel layer-wise attention targets."""
+    tensors = [
+        cache["input_ids"],
+        cache["attention_mask"],
+        cache["labels"],
+    ]
+    if "teacher_layer_inputs" in cache and "teacher_attn_outputs" in cache:
+        # cache["teacher_layer_inputs"]: [12, N, S, D] -> permute to [N, 12, S, D]
+        layer_in = cache["teacher_layer_inputs"].permute(1, 0, 2, 3).contiguous()
+        layer_target = cache["teacher_attn_outputs"].permute(1, 0, 2, 3).contiguous()
+        tensors.extend([layer_in, layer_target])
+
+    tensors.extend([
+        cache["teacher_last_hidden"],
+        cache["teacher_cls_logits"],
+    ])
+    dataset = TensorDataset(*tensors)
+    return DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        pin_memory=is_cuda,
+        drop_last=True,
+    )
+
+
 def evaluate_sst2_accuracy(model: nn.Module, loader: DataLoader, device: torch.device) -> tuple[float, float]:
     """Evaluates classification accuracy and cross-entropy loss on SST-2 validation split."""
     model.eval()
@@ -111,37 +138,60 @@ def train_single_attention_cached(
     logger.info("[%s] Pre-KD Baseline: SST-2 Accuracy=%.2f%% | Loss=%.4f (Teacher: 91.63%%)", attn_key, pre_acc, pre_loss)
 
     t_train_start = time.time()
-    t_s1_deadline = t_train_start + (train_secs * 0.30)
+    t_s1_deadline = t_train_start + (train_secs * 0.50)
     t_s2_deadline = t_train_start + train_secs
 
     scaler = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda"))
 
-    # Stage 1: Attention Subspace Alignment (30% of budget)
+    # Stage 1: Parallel Layer-by-Layer Attention Approximation (50% of budget)
+    # Freeze all weights except attention layers
     for name, p in student.named_parameters():
-        p.requires_grad = ("attention" in name) or ("LayerNorm" in name)
+        p.requires_grad = ("attention" in name)
 
-    opt1 = torch.optim.AdamW([p for p in student.parameters() if p.requires_grad], lr=2.0e-4, weight_decay=0.01)
+    opt1 = torch.optim.AdamW([p for p in student.parameters() if p.requires_grad], lr=4.0e-4, weight_decay=0.01)
     student.train()
     step_s1 = 0
     t0_s1 = time.time()
 
     while time.time() < t_s1_deadline:
-        for b_in, b_att, b_lbl, t_hid, t_log in train_loader:
+        for batch in train_loader:
             if time.time() >= t_s1_deadline:
                 break
-            b_in = b_in.to(device, non_blocking=True)
+            if len(batch) == 7:
+                b_in, b_att, b_lbl, b_layer_in, b_layer_target, t_hid, t_log = batch
+                has_layerwise = True
+            else:
+                b_in, b_att, b_lbl, t_hid, t_log = batch
+                has_layerwise = False
+
             b_att = b_att.to(device, non_blocking=True)
-            t_hid = t_hid.to(device, non_blocking=True).float()
+            ext_mask = (1.0 - b_att[:, None, None, :].float()) * -10000.0
+            if device.type == "cuda":
+                ext_mask = ext_mask.half()
 
-            with torch.cuda.amp.autocast(dtype=torch.float16 if device.type == "cuda" else torch.bfloat16):
-                s_out = student(input_ids=b_in, attention_mask=b_att, output_hidden_states=True)
-                s_hid = s_out.hidden_states[-1].float()
+            if has_layerwise:
+                l_losses = []
+                with torch.cuda.amp.autocast(dtype=torch.float16 if device.type == "cuda" else torch.bfloat16):
+                    for l in range(12):
+                        h_l = b_layer_in[:, l, :, :].to(device, non_blocking=True)
+                        y_l = b_layer_target[:, l, :, :].to(device, non_blocking=True).float()
 
-                # Bounded Cosine + Normalized MSE loss (Zero NaNs)
-                loss_mse = F.mse_loss(s_hid, t_hid)
-                cos_sim = F.cosine_similarity(s_hid, t_hid, dim=-1).mean()
-                loss_cos = 1.0 - cos_sim
-                loss = (loss_mse + 0.5 * loss_cos) / grad_accum
+                        # Directly approximate teacher attention output for layer l
+                        s_attn_out = student.bert.encoder.layer[l].attention(h_l, ext_mask)[0].float()
+                        mse_l = F.mse_loss(s_attn_out, y_l)
+                        cos_l = 1.0 - F.cosine_similarity(s_attn_out, y_l, dim=-1).mean()
+                        l_losses.append(mse_l + 0.5 * cos_l)
+
+                    loss = (sum(l_losses) / 12.0) / grad_accum
+            else:
+                b_in = b_in.to(device, non_blocking=True)
+                t_hid = t_hid.to(device, non_blocking=True).float()
+                with torch.cuda.amp.autocast(dtype=torch.float16 if device.type == "cuda" else torch.bfloat16):
+                    s_out = student(input_ids=b_in, attention_mask=b_att, output_hidden_states=True)
+                    s_hid = s_out.hidden_states[-1].float()
+                    loss_mse = F.mse_loss(s_hid, t_hid)
+                    cos_sim = F.cosine_similarity(s_hid, t_hid, dim=-1).mean()
+                    loss = (loss_mse + 0.5 * (1.0 - cos_sim)) / grad_accum
 
             scaler.scale(loss).backward()
             step_s1 += 1
@@ -154,13 +204,18 @@ def train_single_attention_cached(
                 opt1.zero_grad(set_to_none=True)
 
             if step_s1 % 25 == 0:
-                logger.info("[%s] [Stage 1 Step %d] Alignment Loss: %.4f (MSE=%.4f, Cos=%.4f)",
-                            attn_key, step_s1, float(loss.item() * grad_accum), float(loss_mse.item()), float(loss_cos.item()))
+                if has_layerwise:
+                    logger.info("[%s] [Stage 1 Step %d] Parallel Layer-wise Loss: %.4f (L0=%.4f, L6=%.4f, L11=%.4f)",
+                                attn_key, step_s1, float(loss.item() * grad_accum),
+                                float(l_losses[0].item()), float(l_losses[6].item()), float(l_losses[11].item()))
+                else:
+                    logger.info("[%s] [Stage 1 Step %d] Alignment Loss: %.4f",
+                                attn_key, step_s1, float(loss.item() * grad_accum))
 
     dur_s1 = time.time() - t0_s1
     logger.info("[%s] Stage 1 Complete: %d steps in %.1fs", attn_key, step_s1, dur_s1)
 
-    # Stage 2: End-to-End Unfrozen Distillation + Task Head Fine-tuning (70% of budget)
+    # Stage 2: End-to-End Unfrozen Distillation + Task Head Fine-tuning (50% of budget)
     for p in student.parameters():
         p.requires_grad = True
 
@@ -177,9 +232,13 @@ def train_single_attention_cached(
     tau = 2.0
 
     while time.time() < t_s2_deadline:
-        for b_in, b_att, b_lbl, t_hid, t_log in train_loader:
+        for batch in train_loader:
             if time.time() >= t_s2_deadline:
                 break
+            if len(batch) == 7:
+                b_in, b_att, b_lbl, _, _, t_hid, t_log = batch
+            else:
+                b_in, b_att, b_lbl, t_hid, t_log = batch
             b_in = b_in.to(device, non_blocking=True)
             b_att = b_att.to(device, non_blocking=True)
             b_lbl = b_lbl.to(device, non_blocking=True)
@@ -429,20 +488,7 @@ def main() -> None:
         from transformers import AutoTokenizer
         tokenizer = AutoTokenizer.from_pretrained(args.teacher_path, local_files_only=True)
         cache = torch.load(args.cache_path, map_location="cpu")
-        train_dataset = TensorDataset(
-            cache["input_ids"],
-            cache["attention_mask"],
-            cache["labels"],
-            cache["teacher_last_hidden"],
-            cache["teacher_cls_logits"],
-        )
-        train_loader = DataLoader(
-            train_dataset,
-            batch_size=args.batch_size,
-            shuffle=True,
-            pin_memory=(device.type == "cuda"),
-            drop_last=True,
-        )
+        train_loader = build_cached_dataloader(cache, batch_size=args.batch_size, is_cuda=(device.type == "cuda"))
         import datasets
         raw_val = datasets.load_dataset("glue", "sst2", split="validation")
         val_enc = tokenizer(raw_val["sentence"], padding="max_length", truncation=True, max_length=128, return_tensors="pt")
@@ -530,8 +576,7 @@ def main() -> None:
             from transformers import AutoTokenizer
             tokenizer = AutoTokenizer.from_pretrained(args.teacher_path, local_files_only=True)
             cache = torch.load(args.cache_path, map_location="cpu")
-            train_dataset = TensorDataset(cache["input_ids"], cache["attention_mask"], cache["labels"], cache["teacher_last_hidden"], cache["teacher_cls_logits"])
-            train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=True)
+            train_loader = build_cached_dataloader(cache, batch_size=args.batch_size, is_cuda=(device.type == "cuda"))
             import datasets
             raw_val = datasets.load_dataset("glue", "sst2", split="validation")
             val_enc = tokenizer(raw_val["sentence"], padding="max_length", truncation=True, max_length=128, return_tensors="pt")

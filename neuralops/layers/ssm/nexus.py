@@ -151,6 +151,7 @@ class DualStageStripeAttention(nn.Module):
         num_heads: int = 1,
         is_decoder: bool = False,
         is_nested_encoder: bool = False,
+        seer_beta: nn.Parameter | None = None,
         **kwargs,
     ) -> None:
         super().__init__()
@@ -159,6 +160,7 @@ class DualStageStripeAttention(nn.Module):
         self.num_heads = num_heads
         self.is_decoder = is_decoder
         self.is_nested_encoder = is_nested_encoder
+        self.seer_beta = seer_beta
         self.xattn_scorer = XAttentionScorer()
 
     def _inter_block_topk(self, scores: torch.Tensor, top_k: int) -> torch.Tensor:
@@ -204,7 +206,8 @@ class DualStageStripeAttention(nn.Module):
 
         if seer_mask is not None:
             expanded_seer = seer_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[:, :, :N, :N]
-            scores = scores + (expanded_seer - 1.0) * 10000.0
+            beta_factor = torch.tanh(self.seer_beta).to(scores.dtype) if self.seer_beta is not None else 1.0
+            scores = scores + beta_factor * (expanded_seer - 1.0) * 10000.0
 
         if self.cfg.stripe_enabled and N > 256:
             sw = self.cfg.stripe_width
@@ -412,12 +415,15 @@ class NEXUSAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(self.cfg.dropout)
 
+        self.seer_beta = nn.Parameter(torch.zeros(1, device=target_device, dtype=target_dtype))
+
         self.dss_attn = DualStageStripeAttention(
             self.cfg,
             self.head_dim,
             num_heads=self.num_heads,
             is_decoder=self.is_decoder,
             is_nested_encoder=self.is_nested_encoder,
+            seer_beta=self.seer_beta,
         )
 
         self.seer_gate: SeerGating | None = None
@@ -429,7 +435,6 @@ class NEXUSAttention(BaseAttention):
                 self.cfg.seer_top_k_blocks,
                 self.cfg.seer_temperature,
             )
-        self.seer_beta = nn.Parameter(torch.zeros(1, device=target_device, dtype=target_dtype))
 
         self.rect_interval = self.cfg.rectify_interval
         self.is_rectify = (
@@ -832,6 +837,8 @@ class NEXUSAttention(BaseAttention):
                     if target.bias is not None:
                         target.bias.data.zero_()
 
+                if hasattr(target, "lora_B") and target.lora_B is not None:
+                    target.lora_B.data.zero_()
                 target.freeze_base_weights()
 
         if hasattr(src, "is_decoder"):
@@ -950,10 +957,11 @@ class NEXUSAttention(BaseAttention):
         context = context.transpose(1, 2).contiguous().view(B, N, H * D)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        v_flat = V.transpose(1, 2).contiguous().view(B, N, H * D)
-        v_rms = v_flat.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
-        c_rms = context.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
-        context = context * (v_rms / c_rms).clamp(min=0.25, max=4.0).to(context.dtype)
+        if not self.is_nested_encoder and self.is_decoder:
+            v_flat = V.transpose(1, 2).contiguous().view(B, N, H * D)
+            v_rms = v_flat.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
+            c_rms = context.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
+            context = context * (v_rms / c_rms).clamp(min=0.25, max=4.0).to(context.dtype)
 
         if self.is_nested_encoder:
             output = context

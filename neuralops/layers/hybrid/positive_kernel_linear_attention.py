@@ -100,10 +100,11 @@ class PositiveKernelLinearAttention(BaseAttention):
             or kwargs.get("lora_alpha", 32.0)
         )
 
+        default_rank = min(self.dim, self.all_head_size)
         self.proj_rank = int(
             kwargs.get("proj_rank")
             or (getattr(comp_config, "proj_rank", None) if comp_config else None)
-            or (rank if rank is not None else 64)
+            or (rank if rank is not None else default_rank)
         )
 
         FF = FactorizedLoRALinear
@@ -294,12 +295,10 @@ class PositiveKernelLinearAttention(BaseAttention):
         """Positive kernel feature embedding using ELU + 1.
 
         Guarantees strict positivity so denominator never collapses.
-        Returns: (B, H, N, F)
+        Returns: (B, H, N, d)
         """
-        x_norm = self.norm(x)
-        proj_matrix = self.proj.to(device=x.device, dtype=x.dtype)
-        features = torch.einsum("bhnd,hdf->bhnf", x_norm, proj_matrix)
-        return F.elu(features) + 1.0 + 1e-6
+        scale = self.head_dim**-0.25
+        return F.elu(x * scale) + 1.0
 
     def copy_weights(self, src: Any) -> None:
         if src is None:
