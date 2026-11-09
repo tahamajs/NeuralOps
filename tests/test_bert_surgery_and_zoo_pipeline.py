@@ -104,8 +104,10 @@ def test_fix4_downstream_sibling_output_dense_calibration():
     B, L = 2, 4
 
     # Setup original and surgical models
+    import copy
     orig_layer = MockTransformerLayer(embed_dim=D)
-    surg_layer = MockTransformerLayer(embed_dim=D)
+    surg_layer = copy.deepcopy(orig_layer)
+    surg_layer.attention.self = nn.Linear(D, D)
 
     # Invert weights on surg self to create discrepancy
     nn.init.orthogonal_(orig_layer.attention.self.weight)

@@ -669,12 +669,12 @@ def calibrate_surgically_replaced_model(
                     downstream_proj = parent_mod.dense
 
         if downstream_proj is not None and downstream_proj.in_features == D:
-            W_cur = downstream_proj.weight.data.float()
+            W_cur = downstream_proj.weight.data.float().clone()
             W_target = torch.matmul(W_cur, W_align.t())
             W_new = (1.0 - blend_alpha) * W_cur + blend_alpha * W_target
             downstream_proj.weight.data.copy_(W_new.to(dtype=downstream_proj.weight.dtype, device=downstream_proj.weight.device))
             if getattr(downstream_proj, "bias", None) is not None:
-                b_cur = downstream_proj.bias.data.float()
+                b_cur = downstream_proj.bias.data.float().clone()
                 b_target = b_cur + torch.matmul(b_align.unsqueeze(0), W_cur.t()).squeeze(0)
                 b_new = (1.0 - blend_alpha) * b_cur + blend_alpha * b_target
                 downstream_proj.bias.data.copy_(b_new.to(dtype=downstream_proj.bias.dtype, device=downstream_proj.bias.device))
@@ -693,12 +693,12 @@ def calibrate_surgically_replaced_model(
                         break
 
             if out_proj is not None and out_proj.weight.shape[0] == D:
-                W_cur = out_proj.weight.data.float()
+                W_cur = out_proj.weight.data.float().clone()
                 W_target = torch.matmul(W_align.t(), W_cur)
                 W_new = (1.0 - blend_alpha) * W_cur + blend_alpha * W_target
                 out_proj.weight.data.copy_(W_new.to(dtype=out_proj.weight.dtype, device=out_proj.weight.device))
                 if getattr(out_proj, "bias", None) is not None:
-                    b_cur = out_proj.bias.data.float()
+                    b_cur = out_proj.bias.data.float().clone()
                     b_target = torch.matmul(b_cur.unsqueeze(0), W_align).squeeze(0) + b_align
                     b_new = (1.0 - blend_alpha) * b_cur + blend_alpha * b_target
                     out_proj.bias.data.copy_(b_new.to(dtype=out_proj.bias.dtype, device=out_proj.bias.device))
