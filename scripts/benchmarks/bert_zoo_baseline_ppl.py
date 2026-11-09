@@ -25,7 +25,17 @@ import os
 import sys
 
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader
+
+# PyTorch 1.12 compatibility with modern HuggingFace Accelerate
+try:
+    _orig_named_parameters = nn.Module.named_parameters
+    def _compat_named_parameters(self, prefix="", recurse=True, remove_duplicate=True):
+        return _orig_named_parameters(self, prefix=prefix, recurse=recurse)
+    nn.Module.named_parameters = _compat_named_parameters
+except Exception:
+    pass
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
