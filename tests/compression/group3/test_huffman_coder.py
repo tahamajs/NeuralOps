@@ -36,20 +36,23 @@ def test_huffman_registry():
 
 
 def test_huffman_encode_decode():
-    tensor = torch.randint(0, 16, (32, 32), dtype=torch.int32)
-    coder = HuffmanCoder()
-    encoded = coder.encode(tensor)
-    decoded = coder.decode(encoded, shape=(32, 32))
-    assert (tensor == decoded).all()
+    tensor = torch.randn(32, 32)
+    packed_b, code_map, meta = HuffmanCoder.encode(tensor, quantize_bits=8)
+    assert len(packed_b) > 0
+    assert len(code_map) > 0
+    decoded = HuffmanCoder.decode(packed_b, code_map, meta)
+    assert decoded.shape == (32, 32)
+    assert torch.allclose(tensor, decoded, atol=0.1)
 
 
 def test_huffman_compress_and_forward():
     model = DummyMLP()
-    compressor = HuffmanCompressor(model)
+    compressor = HuffmanCompressor(model, quantize_bits=4, target_attention_only=False)
     compressed, stats = compressor.compress()
 
     assert compressed is not None
-    assert stats["compression_ratio"] > 1.05
+    eff_ratio = stats.get("huffman_compression_ratio", stats.get("theoretical_compression_ratio", 1.0))
+    assert eff_ratio > 1.05
 
     x = torch.randn(2, 128)
     out = compressed(x)

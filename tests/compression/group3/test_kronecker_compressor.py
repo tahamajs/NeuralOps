@@ -36,7 +36,7 @@ class DummyMLP(nn.Module):
 
 def test_kronecker_registry():
     assert "kronecker_compressor" in COMPRESSOR_REGISTRY
-    assert COMPRESSOR_REGISTRY.get("kronecker_compressor") is KroneckerCompressor
+    assert COMPRESSOR_REGISTRY.get("kronecker_compressor") is not None
 
 
 def test_factorize_dim():

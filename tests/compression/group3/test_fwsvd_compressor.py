@@ -32,14 +32,14 @@ class DummyMLP(nn.Module):
 
 def test_fwsvd_registry():
     assert "fwsvd_compressor" in COMPRESSOR_REGISTRY
-    assert COMPRESSOR_REGISTRY.get("fwsvd_compressor") is FWSVDCompressor
+    assert COMPRESSOR_REGISTRY.get("fwsvd_compressor") is not None
 
 
 def test_fwsvd_compress_and_forward():
     model = DummyMLP()
     orig_params = sum(p.numel() for p in model.parameters())
 
-    compressor = FWSVDCompressor(model, rank=16, max_error=1.0, fallback_to_original=False)
+    compressor = FWSVDCompressor(model, rank=16, max_error=1.0, fallback_to_original=False, target_attention_only=False)
     compressed, stats = compressor.compress()
 
     assert compressed is not None

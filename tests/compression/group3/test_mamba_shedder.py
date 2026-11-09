@@ -40,8 +40,9 @@ def test_mamba_shedder_registry():
 
 
 def test_shed_linear_forward():
-    linear = nn.Linear(64, 64)
-    layer = MambaShedderPrunedLinear(linear, prune_ratio=0.25)
+    W = torch.randn(48, 64)
+    keep_idx = torch.arange(48)
+    layer = MambaShedderPrunedLinear(in_features=64, original_out_features=64, W_kept=W, keep_idx=keep_idx)
     x = torch.randn(2, 64)
     out = layer(x)
     assert out.shape == (2, 64)
@@ -52,7 +53,13 @@ def test_mamba_shedder_compress_and_forward():
     model = DummyMLP()
     orig_params = sum(p.numel() for p in model.parameters())
 
-    compressor = MambaShedderCompressor(model, shed_ratio=0.25)
+    compressor = MambaShedderCompressor(
+        model,
+        sparsity=0.25,
+        max_error=1.0,
+        fallback_to_original=False,
+        target_attention_only=False,
+    )
     compressed, stats = compressor.compress()
 
     assert compressed is not None

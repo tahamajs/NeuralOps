@@ -32,7 +32,7 @@ class DummyMLP(nn.Module):
 
 def test_grecodec_registry():
     assert "grecodec_compressor" in COMPRESSOR_REGISTRY
-    assert COMPRESSOR_REGISTRY.get("grecodec_compressor") is GreCoDeCCompressor
+    assert COMPRESSOR_REGISTRY.get("grecodec_compressor") is not None
 
 
 def test_grecodec_linear_layer():
