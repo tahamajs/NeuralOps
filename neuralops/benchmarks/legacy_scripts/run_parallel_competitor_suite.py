@@ -10,13 +10,14 @@ from typing import Any
 
 import torch
 
-repo_root = Path(__file__).resolve().parents[2]
+repo_root = Path(__file__).resolve().parents[3]
 if str(repo_root) not in sys.path:
     sys.path.insert(0, str(repo_root))
 
 
 def persist_competitor_record(rec: dict, sqlite_path: Path, csv_path: Path):
     try:
+        sqlite_path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(sqlite_path, timeout=30.0)
         cur = conn.cursor()
         cur.execute("PRAGMA journal_mode=WAL;")
