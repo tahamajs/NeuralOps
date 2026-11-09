@@ -204,11 +204,44 @@ class OptimalSubspaceLoRALinear(nn.Module):
         return layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        orig_shape = x.shape
+        x_flat = x.reshape(-1, self.in_features) if x.dim() > 2 else x
+        dispatched = False
+        out = None
+
         if self.U is not None and self.V is not None:
-            h = F.linear(x, self.V)
-            out = F.linear(h, self.U, self.bias)
+            if x.is_cuda and not self.training:
+                # Level 1: CUDA C++ fused SVD projection
+                try:
+                    from neuralops.ops.cuda.fused_svd_projection import fused_svd_projection
+
+                    out = fused_svd_projection(
+                        x_flat, self.V.t().to(x.dtype), None, self.U.t().to(x.dtype), bias=self.bias
+                    )
+                    dispatched = True
+                except Exception:
+                    pass
+
+                # Level 2: Triton JIT kernel
+                if not dispatched:
+                    try:
+                        from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
+                        out = fused_down_up_gemm_bias_triton(
+                            x_flat, self.V.to(x.dtype), self.U.t().to(x.dtype).contiguous(), bias=self.bias
+                        )
+                        dispatched = True
+                    except Exception:
+                        pass
+
+            if not dispatched or out is None:
+                h = F.linear(x, self.V)
+                out = F.linear(h, self.U, self.bias)
+            elif x.dim() > 2:
+                out = out.reshape(*orig_shape[:-1], self.out_features)
         else:
             out = F.linear(x, self.weight_param, self.bias)
+
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
 
@@ -222,7 +255,6 @@ class OptimalSubspaceLoRALinear(nn.Module):
                     )
                     return out + (self.scaling * lora_out)
                 except Exception:
-                    # allowed-swallow: best-effort-telemetry
                     pass
 
             out = out + self.scaling * F.linear(F.linear(x.float(), self.lora_A), self.lora_B).to(out.dtype)

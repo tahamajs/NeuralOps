@@ -111,25 +111,46 @@ class SALRLayer(nn.Module):
         """Two-stage forward pass with sparse bottleneck mask and optional LoRA branch."""
         V_masked = self.V * self.mask
 
-        from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
-
-        suitable, _ = check_triton_suitability(x, "low_rank")
-        if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
+        if x.is_cuda:
+            base_bias = self.bias if (self.lora_r == 0 or self.lora_A is None) else None
+            # Level 1: Native CUDA C++ fused SVD projection
             try:
-                from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+                from neuralops.ops.cuda.fused_svd_projection import fused_svd_projection
 
-                base_bias = self.bias if (self.lora_r == 0 or self.lora_A is None) else None
-                out = fused_down_up_gemm_bias_triton(x, V_masked, self.U.t().contiguous(), bias=base_bias)
+                out = fused_svd_projection(x, V_masked.t(), None, self.U.t(), bias=base_bias)
                 if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-                    lora_out = (
-                        fused_down_up_gemm_bias_triton(x, self.lora_A, self.lora_B.t().contiguous(), bias=self.bias)
-                        * self.scaling
-                    )
+                    try:
+                        from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
+                        lora_out = (
+                            fused_down_up_gemm_bias_triton(x, self.lora_A, self.lora_B.t().contiguous(), bias=self.bias)
+                            * self.scaling
+                        )
+                    except Exception:
+                        lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
                     return out + lora_out
                 return out
             except Exception:
-                # allowed-swallow: best-effort-telemetry
                 pass
+
+            # Level 2: Triton JIT kernel
+            from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
+            suitable, _ = check_triton_suitability(x, "low_rank")
+            if not FORCE_PYTORCH_FALLBACK and suitable:
+                try:
+                    from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
+                    out = fused_down_up_gemm_bias_triton(x, V_masked, self.U.t().contiguous(), bias=base_bias)
+                    if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+                        lora_out = (
+                            fused_down_up_gemm_bias_triton(x, self.lora_A, self.lora_B.t().contiguous(), bias=self.bias)
+                            * self.scaling
+                        )
+                        return out + lora_out
+                    return out
+                except Exception:
+                    pass
 
         latent = F.linear(x, V_masked)
         out = F.linear(latent, self.U, self.bias)

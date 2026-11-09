@@ -816,7 +816,7 @@ class CacheNotesCompressor(BaseCompressor):
             if self.rank is not None:
                 r = max(1, min(int(self.rank), min(out_f, in_f) - 1, max_param_rank))
             else:
-                r = max(1, min(int(min(out_f, in_f) * self.keep_ratio * 0.5), max_param_rank))
+                r = max(1, min(int(min(out_f, in_f) * self.keep_ratio), max_param_rank))
             self.actual_ranks[name] = r
             try:
                 U, S, Vt = torch.linalg.svd(W_cpt, full_matrices=False)
@@ -867,7 +867,15 @@ class CacheNotesCompressor(BaseCompressor):
             )
             if getattr(target_mod, "bias", None) is not None and svd_layer.bias is not None and target_mod.bias is not None:
                 svd_layer.bias.data.copy_(target_mod.bias.data)
-            if name == "":
+            if hasattr(module, "base_layer"):
+                module.base_layer = svd_layer
+                for p in svd_layer.parameters():
+                    p.requires_grad = False
+                if hasattr(module, "lora_A") and hasattr(module.lora_A, "requires_grad"):
+                    module.lora_A.requires_grad = True
+                if hasattr(module, "lora_B") and hasattr(module.lora_B, "requires_grad"):
+                    module.lora_B.requires_grad = True
+            elif name == "":
                 self.model = svd_layer
             else:
                 replace_module(self.model, name, svd_layer)

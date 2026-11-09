@@ -82,12 +82,18 @@ class RPCALinear(nn.Module):
 
         if getattr(self, "use_triton", True) and x.is_cuda and not self.training:
             try:
-                from neuralops.ops.triton.low_rank import triton_fused_lowrank_sparse_gemm
+                from neuralops.ops.cuda.rpca_sparse_svd import rpca_sparse_svd_gemm
 
-                out = triton_fused_lowrank_sparse_gemm(x_flat, self.V, self.U, s=self.S_sparse, bias=self.bias)
+                out = rpca_sparse_svd_gemm(x_flat, self.V, self.U, s=self.S_sparse, bias=self.bias)
                 return out.view(*orig_shape[:-1], self.out_features)
-            except Exception as e:
-                logger.debug("Triton RPCALinear failed (%s); fallback to PyTorch", e)
+            except Exception:
+                try:
+                    from neuralops.ops.triton.low_rank import triton_fused_lowrank_sparse_gemm
+
+                    out = triton_fused_lowrank_sparse_gemm(x_flat, self.V, self.U, s=self.S_sparse, bias=self.bias)
+                    return out.view(*orig_shape[:-1], self.out_features)
+                except Exception as e:
+                    logger.debug("Triton RPCALinear failed (%s); fallback to PyTorch", e)
 
         y_lr = F.linear(F.linear(x_flat, self.V), self.U)
         y_sp = F.linear(x_flat, self.S_sparse)

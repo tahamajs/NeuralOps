@@ -113,21 +113,48 @@ class NMFLinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
+        b = self.bias.to(dtype=x_flat.dtype) if self.bias is not None else None
 
-        x_v = F.linear(x_flat, self.V.to(dtype=x_flat.dtype))
-        F.linear(x_v, self.H.to(dtype=x_v.dtype))
-        W_eff = self.weight.to(dtype=x_flat.dtype)
-        out = F.linear(x_flat, W_eff)
+        # Check if pure non-negative factorization applies (W_sign == 1)
+        if torch.all(self.W_sign >= 0) and x.is_cuda:
+            dispatched = False
+            out = None
+            try:
+                from neuralops.ops.cuda.fused_svd_projection import fused_svd_projection
 
-        if self.bias is not None:
-            out = out + self.bias.to(dtype=x_flat.dtype)
+                out = fused_svd_projection(x_flat, self.V.t().to(x_flat.dtype), None, self.H.t().to(x_flat.dtype), bias=b)
+                dispatched = True
+            except Exception:
+                pass
+
+            if not dispatched:
+                try:
+                    from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
+                    out = fused_down_up_gemm_bias_triton(x_flat, self.V.to(x_flat.dtype), self.H.to(x_flat.dtype), bias=b)
+                    dispatched = True
+                except Exception:
+                    pass
+
+            if not dispatched or out is None:
+                W_eff = self.weight.to(dtype=x_flat.dtype)
+                out = F.linear(x_flat, W_eff, b)
+        else:
+            W_eff = self.weight.to(dtype=x_flat.dtype)
+            out = F.linear(x_flat, W_eff, b)
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            try:
-                from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+            lora_dispatched = False
+            lora_out = None
+            if x.is_cuda:
+                try:
+                    from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
 
-                lora_out = fused_down_up_gemm_bias_triton(x_flat.float(), self.lora_A.t(), self.lora_B.t())
-            except Exception:
+                    lora_out = fused_down_up_gemm_bias_triton(x_flat.float(), self.lora_A.t(), self.lora_B.t())
+                    lora_dispatched = True
+                except Exception:
+                    pass
+            if not lora_dispatched or lora_out is None:
                 lora_out = F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B)
             out = out + self.scaling * lora_out.to(out.dtype)
 

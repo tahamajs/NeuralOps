@@ -202,17 +202,47 @@ class MLoRQLoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         U, S, Vt = self._dequantize(x.dtype, x.device)
-        x_v = F.linear(x, Vt)
-        x_v = x_v * S
-        out = F.linear(x_v, U)
-        if self.bias is not None:
-            out = out + self.bias.to(dtype=x.dtype, device=x.device)
-        if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            try:
-                from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+        b = self.bias.to(dtype=x.dtype, device=x.device) if self.bias is not None else None
+        dispatched = False
+        out = None
 
-                lora_out = fused_down_up_gemm_bias_triton(x.float(), self.lora_A.t(), self.lora_B.t())
+        if x.is_cuda:
+            # Level 1: CUDA C++ fused SVD projection
+            try:
+                from neuralops.ops.cuda.fused_svd_projection import fused_svd_projection
+
+                out = fused_svd_projection(x, Vt.t(), S=S, V_T=U.t(), bias=b)
+                dispatched = True
             except Exception:
+                pass
+
+            # Level 2: Triton JIT kernel
+            if not dispatched:
+                try:
+                    from neuralops.ops.triton.fused_svd_projection_triton import fused_svd_projection_triton
+
+                    out = fused_svd_projection_triton(x, Vt.t(), S=S, V_T=U.t(), bias=b)
+                    dispatched = True
+                except Exception:
+                    pass
+
+        # Level 3: Vectorized PyTorch reference
+        if not dispatched or out is None:
+            x_v = F.linear(x, Vt) * S
+            out = F.linear(x_v, U, b)
+
+        if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+            lora_dispatched = False
+            lora_out = None
+            if x.is_cuda:
+                try:
+                    from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
+                    lora_out = fused_down_up_gemm_bias_triton(x.float(), self.lora_A.t(), self.lora_B.t())
+                    lora_dispatched = True
+                except Exception:
+                    pass
+            if not lora_dispatched or lora_out is None:
                 lora_out = F.linear(F.linear(x.float(), self.lora_A), self.lora_B)
             out = out + self.scaling * lora_out.to(out.dtype)
         return out
