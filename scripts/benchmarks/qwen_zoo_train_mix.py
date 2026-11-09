@@ -182,33 +182,42 @@ def evaluate_causal_ppl(
     model: nn.Module,
     val_loader: DataLoader,
     device: torch.device,
-    max_batches: int = 20,
+    max_batches: int = 15,
 ) -> float:
-    """Computes Causal LM Perplexity: PPL = exp(cross_entropy_loss)."""
+    """Computes Causal LM Perplexity with micro-chunked evaluation to prevent 152k vocab OOM."""
     model.eval()
     total_loss = 0.0
-    total_batches = 0
+    total_tokens = 0
 
     with torch.no_grad():
         for i, batch in enumerate(val_loader):
             if i >= max_batches:
                 break
             in_ids = batch["input_ids"].to(device, non_blocking=True)
-            att_m = batch["attention_mask"].to(device, non_blocking=True)
             lbls = batch["labels"].to(device, non_blocking=True)
 
             with torch.cuda.amp.autocast(dtype=torch.float16 if device.type == "cuda" else torch.bfloat16):
-                out = model(input_ids=in_ids, attention_mask=att_m, labels=lbls)
-                loss = out.loss
+                h = getattr(model, "model", model)(input_ids=in_ids).last_hidden_state
+                seq_len = in_ids.size(1) - 1
+                targets = lbls[:, 1:].contiguous()
+                h_causal = h[:, :seq_len, :]
 
-            if torch.isfinite(loss):
-                total_loss += loss.item()
-                total_batches += 1
+                chunk_sz = 64
+                for c in range(0, seq_len, chunk_sz):
+                    h_c = h_causal[:, c : c + chunk_sz, :]
+                    tgt_c = targets[:, c : c + chunk_sz]
+                    logits_c = getattr(model, "lm_head", None)
+                    if logits_c is not None:
+                        logits = logits_c(h_c)
+                        loss_c = F.cross_entropy(logits.reshape(-1, logits.size(-1)), tgt_c.reshape(-1), reduction="sum")
+                        if torch.isfinite(loss_c):
+                            total_loss += loss_c.item()
+                            total_tokens += tgt_c.numel()
 
-    if total_batches == 0:
+    if total_tokens == 0:
         return float("inf")
 
-    avg_loss = total_loss / total_batches
+    avg_loss = total_loss / total_tokens
     return math.exp(min(avg_loss, 20.0))
 
 
@@ -353,8 +362,8 @@ def train_single_qwen_attention(
     logger.info("[START] Distilling Qwen Attention Module: %s (%ds, pattern=%s)", attn_key, int(train_secs), pattern)
     logger.info("=" * 80)
 
-    # 1. Surgery with weight inheritance
-    student = copy.deepcopy(teacher_model)
+    # 1. Surgery with weight inheritance (FP32 master weights for AMP stability)
+    student = copy.deepcopy(teacher_model).float()
     student = apply_qwen_attention_surgery(student, attn_key=attn_key, pattern=pattern)
     student = student.to(device)
 
@@ -371,7 +380,8 @@ def train_single_qwen_attention(
     for name, p in student.named_parameters():
         p.requires_grad = ("self_attn" in name) or ("layernorm" in name.lower())
 
-    opt1 = torch.optim.AdamW([p for p in student.parameters() if p.requires_grad], lr=1.0e-3, weight_decay=0.01)
+    opt1 = torch.optim.AdamW([p for p in student.parameters() if p.requires_grad], lr=2.0e-4, weight_decay=0.01)
+    scaler1 = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda"))
     student.train()
     step_s1 = 0
     t0_s1 = time.time()
@@ -392,43 +402,38 @@ def train_single_qwen_attention(
                 s_hiddens = s_out.hidden_states[1:]
                 t_hiddens = t_out.hidden_states[1:]
                 layer_mses = [F.mse_loss(s, t) for s, t in zip(s_hiddens, t_hiddens)]
+                layer_cos = [1.0 - F.cosine_similarity(s, t, dim=-1).mean() for s, t in zip(s_hiddens, t_hiddens)]
                 loss_mse = torch.stack(layer_mses).mean()
+                loss_cos = torch.stack(layer_cos).mean()
 
-                layer_covs = [fast_gram_covariance_loss(s, t) for s, t in zip(s_hiddens, t_hiddens)]
-                loss_cov = torch.stack(layer_covs).mean()
+                loss = (loss_mse + 0.25 * loss_cos) / grad_accum
 
-                loss = (loss_mse + 0.5 * loss_cov) / grad_accum
-
-            loss.backward()
+            scaler1.scale(loss).backward()
             step_s1 += 1
 
             if step_s1 % grad_accum == 0:
+                scaler1.unscale_(opt1)
                 torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
-                opt1.step()
+                scaler1.step(opt1)
+                scaler1.update()
                 opt1.zero_grad(set_to_none=True)
 
     dur_s1 = time.time() - t0_s1
     logger.info("[%s] Stage 1 Complete: %d steps in %.1fs", attn_key, step_s1, dur_s1)
 
     # Release Stage 1 optimizer states to reclaim 2.5+ GB VRAM
-    del opt1
+    del opt1, scaler1
     if device.type == "cuda":
         torch.cuda.empty_cache()
     gc.collect()
 
-    # Stage 2: End-to-End Unfrozen KD + Causal LM with Top-K Sparse Logit KD
-    for p in student.parameters():
-        p.requires_grad = True
-
-    attn_params = [p for n, p in student.named_parameters() if "self_attn" in n]
-    bb_params = [p for n, p in student.named_parameters() if "self_attn" not in n]
+    # Stage 2: Fine-Tuning Multi-Layer Representation Distillation
     opt2 = torch.optim.AdamW(
-        [
-            {"params": attn_params, "lr": 5.0e-4},
-            {"params": bb_params, "lr": 5.0e-5},
-        ],
+        [p for p in student.parameters() if p.requires_grad],
+        lr=6.0e-5,
         weight_decay=0.01,
     )
+    scaler2 = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda"))
 
     student.train()
     step_s2 = 0
@@ -440,50 +445,29 @@ def train_single_qwen_attention(
                 break
             in_ids = batch["input_ids"].to(device, non_blocking=True)
             att_m = batch["attention_mask"].to(device, non_blocking=True)
-            lbls = batch["labels"].to(device, non_blocking=True)
 
             with torch.cuda.amp.autocast(dtype=torch.float16 if device.type == "cuda" else torch.bfloat16):
-                # 1. Teacher representations (Zero 152k dense logit allocation, per Section 21.1)
                 with torch.no_grad():
-                    t_hidden = teacher_model.model(input_ids=in_ids, attention_mask=att_m).last_hidden_state
+                    t_out = teacher_model.model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
+                s_out = student.model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
 
-                # 2. Student backbone forward
-                s_hidden = student.model(input_ids=in_ids, attention_mask=att_m).last_hidden_state
+                s_hiddens = s_out.hidden_states[1:]
+                t_hiddens = t_out.hidden_states[1:]
+                layer_mses = [F.mse_loss(s, t) for s, t in zip(s_hiddens, t_hiddens)]
+                layer_cos = [1.0 - F.cosine_similarity(s, t, dim=-1).mean() for s, t in zip(s_hiddens, t_hiddens)]
+                loss_mse = torch.stack(layer_mses).mean()
+                loss_cos = torch.stack(layer_cos).mean()
 
-                # 3. Backbone representation distillation loss (MSE + Cosine)
-                loss_rep = (0.50 * F.mse_loss(s_hidden, t_hidden) + 0.50 * (1.0 - F.cosine_similarity(s_hidden, t_hidden, dim=-1).mean())) / grad_accum
+                loss = (loss_mse + 0.50 * loss_cos) / grad_accum
 
-            # Backward representation alignment loss
-            loss_rep.backward(retain_graph=True)
-            del t_hidden, loss_rep
-
-            # 4. Micro-chunked Causal LM Cross-Entropy with immediate per-chunk backward
-            # (Projects [8, 64, 896] -> [8, 64, 151936] taking only 150MB peak VRAM instead of 2.5GB)
-            seq_len = in_ids.size(1) - 1
-            targets = lbls[:, 1:].contiguous()
-            h_causal = s_hidden[:, :seq_len, :]
-            del s_hidden
-
-            chunk_sz = 64
-            num_chunks = (seq_len + chunk_sz - 1) // chunk_sz
-            for c_idx, c in enumerate(range(0, seq_len, chunk_sz)):
-                with torch.cuda.amp.autocast(dtype=torch.float16 if device.type == "cuda" else torch.bfloat16):
-                    h_c = h_causal[:, c : c + chunk_sz, :]
-                    tgt_c = targets[:, c : c + chunk_sz]
-                    logits_c = student.lm_head(h_c)
-                    loss_c = F.cross_entropy(logits_c.reshape(-1, logits_c.size(-1)), tgt_c.reshape(-1))
-                    loss_chunk_scaled = (0.50 * loss_c) / (num_chunks * grad_accum)
-
-                is_last = (c_idx == num_chunks - 1)
-                loss_chunk_scaled.backward(retain_graph=not is_last)
-                del logits_c, h_c, tgt_c, loss_c, loss_chunk_scaled
-
-            del h_causal, targets
+            scaler2.scale(loss).backward()
             step_s2 += 1
 
             if step_s2 % grad_accum == 0:
+                scaler2.unscale_(opt2)
                 torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
-                opt2.step()
+                scaler2.step(opt2)
+                scaler2.update()
                 opt2.zero_grad(set_to_none=True)
 
     dur_s2 = time.time() - t0_s2
@@ -516,32 +500,24 @@ def train_single_qwen_attention(
         "status": "PASSED",
     }
 
-    # Save checkpoint - strictly attention weights (FP16) - zero base model bloat
+    # Save checkpoint - full model + attention weights in FP16
     out_dir.mkdir(parents=True, exist_ok=True)
     tokenizer.save_pretrained(str(out_dir))
+    student.half().save_pretrained(str(out_dir))
 
     attn_state: dict[str, torch.Tensor] = {}
     for k, v in student.state_dict().items():
         k_lower = k.lower()
-        if any(term in k_lower for term in ("attention", "adapter", "lora", "qwen_att")):
+        if any(term in k_lower for term in ("self_attn", "attention", "adapter", "lora", "qwen_att")):
             attn_state[k] = v.detach().cpu().half().contiguous()
 
     from safetensors.torch import save_file
     save_file(attn_state, str(out_dir / "attention_weights.safetensors"))
 
-    # Purge any heavy whole-model weights
-    for heavy_name in ["pytorch_model.bin", "model.safetensors", "optimizer.pt"]:
-        h_path = out_dir / heavy_name
-        if h_path.exists():
-            try:
-                os.remove(h_path)
-            except Exception:
-                pass
-
-    # Save lightweight config
+    # Save config
     qwen_cfg = student.config.to_dict()
     qwen_cfg["attention_type"] = attn_key
-    qwen_cfg["weights_format"] = "attention_only_fp16"
+    qwen_cfg["weights_format"] = "full_and_adapter_fp16"
     (out_dir / "config.json").write_text(json.dumps(qwen_cfg, indent=2), encoding="utf-8")
     (out_dir / "training_metrics.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
 

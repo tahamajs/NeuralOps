@@ -14,7 +14,7 @@ export OPENBLAS_NUM_THREADS=1
 export NUMEXPR_NUM_THREADS=1
 export VECLIB_MAXIMUM_THREADS=1
 export PATH="/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/bin:/share/apps/gcc/gcc-8.2.0/bin:/usr/local/cuda-11.3/bin:/usr/bin:$PATH"
-export LD_LIBRARY_PATH="/share/apps/gcc/gcc-8.2.0/lib64:/usr/local/cuda-11.3/lib64:$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH="/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/lib:/share/apps/gcc/gcc-8.2.0/lib64:/usr/local/cuda-11.3/lib64:$LD_LIBRARY_PATH"
 export PYTHONPATH="/tmp/neuralops_run:$PYTHONPATH"
 export PYTORCH_CUDA_ALLOC_CONF="max_split_size_mb:128"
 export HF_HUB_OFFLINE=1
@@ -26,7 +26,7 @@ PYTHON="/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/bin/python"
 cd /tmp/neuralops_run
 
 mkdir -p /tmp/neuralops_run/results/bert_compressor_zoo
-mkdir -p /tmp/neuralops_run/results/qwen_attention_zoo
+mkdir -p /home/tahamajlesi.ut/NeuralOps/results/qwen_attention_zoo
 
 echo "================================================================================"
 echo "STARTING PRIORITY QWEN DISTILLATION & COMPRESSION PIPELINE AT $(date)"
@@ -34,7 +34,7 @@ echo "==========================================================================
 
 # -----------------------------------------------------------------------------
 # PHASE 1 (PRIORITY): Qwen 2.5 (0.5B) Attention Zoo Distillation (All 110 Attentions)
-# WikiText-2 PPL with Stage 1 Subspace Alignment + Stage 2 Micro-chunked LM Head
+# WikiText-2 PPL with Layer-wise Representation Alignment + Cosine Fine-Tuning
 # -----------------------------------------------------------------------------
 echo ""
 echo ">>> [STAGE 1/2] RUNNING QWEN 2.5 (0.5B) ATTENTION ZOO DISTILLATION (ALL 110 MODULES) <<<"
@@ -48,8 +48,8 @@ $PYTHON scripts/benchmarks/qwen_zoo_train_mix.py \
     --grad_accum 4 \
     --train_secs 180.0 \
     --topk 64 \
-    --out_dir /tmp/neuralops_run/results/qwen_attention_zoo \
-    --metrics_log /tmp/neuralops_run/results/qwen_attention_zoo/metrics.jsonl \
+    --out_dir /home/tahamajlesi.ut/NeuralOps/results/qwen_attention_zoo \
+    --metrics_log /home/tahamajlesi.ut/NeuralOps/results/qwen_attention_zoo/metrics.jsonl \
     --hf_org tahamajs \
     --device cuda
 
