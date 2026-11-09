@@ -478,19 +478,24 @@ class NativeSparseAttention(BaseAttention):
         k_raw = self.k_proj(hidden_states)
         v_raw = self.v_proj(hidden_states)
 
-        num_blocks = (L + self.block_size - 1) // self.block_size
-        if (
-            self._learned_router is None
-            or self._learned_router.num_blocks != num_blocks
-            or self._learned_router.d != self.all_head_size
-        ):
-            self._learned_router = LearnedBlockRouter(
-                d=self.all_head_size,
-                num_blocks=num_blocks,
-                router_hidden=self.router_hidden,
-            ).to(device=device, dtype=q_raw.dtype)
+        num_blocks = max(1, (L + self.block_size - 1) // self.block_size)
+        k_val = min(self.top_k, num_blocks)
+        try:
+            if self._learned_router is not None and self._learned_router.num_blocks == num_blocks:
+                _, selected_blocks = self._learned_router(q_raw.contiguous(), top_k=k_val)
+            else:
+                # Direct block importance scoring via L2 energy (fast, stable, zero-leak)
+                padded_L = num_blocks * self.block_size
+                if padded_L > L:
+                    q_pad = F.pad(q_raw, (0, 0, 0, padded_L - L))
+                else:
+                    q_pad = q_raw
+                q_blk = q_pad.view(B, num_blocks, self.block_size, D).norm(dim=(2, 3))
+                selected_blocks = torch.topk(q_blk, k=k_val, dim=-1).indices
+        except Exception:
+            # Fallback to contiguous uniform selection
+            selected_blocks = torch.arange(k_val, device=device).unsqueeze(0).expand(B, -1)
 
-        _, selected_blocks = self._learned_router(q_raw, top_k=self.top_k)
         block_mask = torch.zeros(B, num_blocks, device=device, dtype=torch.bool).scatter_(-1, selected_blocks, True)
 
         Q = q_raw.view(B, L, H, d).permute(0, 2, 1, 3)

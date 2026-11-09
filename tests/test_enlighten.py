@@ -94,7 +94,8 @@ def test_no_scale_distortion():
     model = DummyLinearModel(64, 64)
     compressor = ENLightenCompressor(model, rank=16, structured_24=True)
     W = torch.randn(64, 64)
-    W_recon, err = compressor._decompose_and_prune(W, rank=16)
+    U_factor, V_factor, err = compressor._decompose_and_prune(W, rank=16)
+    W_recon = U_factor @ V_factor
     expected_err = float(torch.linalg.norm(W - W_recon) / torch.linalg.norm(W))
     assert abs(err - expected_err) < 1e-6
 

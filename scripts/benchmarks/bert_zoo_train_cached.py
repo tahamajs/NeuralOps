@@ -370,6 +370,8 @@ def main() -> None:
     parser.add_argument("--out_dir", default="results/bert_attention_zoo")
     parser.add_argument("--metrics_log", default="results/bert_attention_zoo/metrics.jsonl")
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    parser.add_argument("--single_key", default=None, help="Train only a single specified key")
+    parser.add_argument("--isolate_workers", type=int, default=1, help="Spawn isolated subprocess per key to protect CUDA context")
     args = parser.parse_args()
 
     device = torch.device(args.device)
@@ -381,43 +383,56 @@ def main() -> None:
     out_base.mkdir(parents=True, exist_ok=True)
     Path(args.metrics_log).parent.mkdir(parents=True, exist_ok=True)
 
+    # If single_key is explicitly passed, run only that key directly in this process
+    if args.single_key:
+        from transformers import AutoTokenizer
+        tokenizer = AutoTokenizer.from_pretrained(args.teacher_path, local_files_only=True)
+        cache = torch.load(args.cache_path, map_location="cpu")
+        train_dataset = TensorDataset(
+            cache["input_ids"],
+            cache["attention_mask"],
+            cache["labels"],
+            cache["teacher_last_hidden"],
+            cache["teacher_cls_logits"],
+        )
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=args.batch_size,
+            shuffle=True,
+            pin_memory=(device.type == "cuda"),
+            drop_last=True,
+        )
+        import datasets
+        raw_val = datasets.load_dataset("glue", "sst2", split="validation")
+        val_enc = tokenizer(raw_val["sentence"], padding="max_length", truncation=True, max_length=128, return_tensors="pt")
+        val_dataset = TensorDataset(val_enc["input_ids"], val_enc["attention_mask"], torch.tensor(raw_val["label"], dtype=torch.long))
+        val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, pin_memory=(device.type == "cuda"))
+
+        ckpt_dir = out_base / args.single_key
+        logger.info("[WORKER] Training single attention: %s", args.single_key)
+        res = train_single_attention_cached(
+            attn_key=args.single_key,
+            teacher_model_path=args.teacher_path,
+            train_loader=train_loader,
+            val_loader=val_loader,
+            device=device,
+            tokenizer=tokenizer,
+            out_dir=ckpt_dir,
+            train_secs=args.train_secs,
+            batch_size=args.batch_size,
+            grad_accum=args.grad_accum,
+        )
+        with open(args.metrics_log, "a", encoding="utf-8") as f:
+            f.write(json.dumps(res) + "\n")
+        return
+
     # 1. Load keys
     with open(args.keys_json, "r") as f:
         keys: list[str] = json.load(f)
-    logger.info("Loaded %d keys from %s", len(keys), args.keys_json)
+    logger.info("Loaded %d keys from %s (isolated_workers=%d)", len(keys), args.keys_json, args.isolate_workers)
 
-    # 2. Tokenizer & Teacher Path
-    from transformers import AutoTokenizer
-    tokenizer = AutoTokenizer.from_pretrained(args.teacher_path, local_files_only=True)
-
-    # 3. Load Offline Cached Representations
-    logger.info("Loading pre-computed teacher representations from %s...", args.cache_path)
-    cache = torch.load(args.cache_path, map_location="cpu")
-    train_dataset = TensorDataset(
-        cache["input_ids"],
-        cache["attention_mask"],
-        cache["labels"],
-        cache["teacher_last_hidden"],
-        cache["teacher_cls_logits"],
-    )
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=args.batch_size,
-        shuffle=True,
-        pin_memory=(device.type == "cuda"),
-        drop_last=True,
-    )
-    logger.info("Loaded %d training samples from cache (%d batches at batch_size=%d).", len(train_dataset), len(train_loader), args.batch_size)
-
-    # 4. Load validation set (SST-2 validation split)
-    import datasets
-    raw_val = datasets.load_dataset("glue", "sst2", split="validation")
-    val_enc = tokenizer(raw_val["sentence"], padding="max_length", truncation=True, max_length=128, return_tensors="pt")
-    val_dataset = TensorDataset(val_enc["input_ids"], val_enc["attention_mask"], torch.tensor(raw_val["label"], dtype=torch.long))
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, pin_memory=(device.type == "cuda"))
-    logger.info("Loaded %d validation samples from GLUE SST-2.", len(val_dataset))
-
-    # 5. Distillation Sweep
+    # 2. Master loop with worker isolation
+    import subprocess
     for i, key in enumerate(keys):
         ckpt_dir = out_base / key
         metrics_file = ckpt_dir / "training_metrics.json"
@@ -426,27 +441,66 @@ def main() -> None:
             logger.info("[%d/%d] [RESUME] Skipping %s (already trained).", i + 1, len(keys), key)
             continue
 
-        logger.info("\n[%d/%d] Processing Attention: %s", i + 1, len(keys), key)
+        logger.info("\n[%d/%d] Launching Attention Worker: %s", i + 1, len(keys), key)
 
-        try:
-            res = train_single_attention_cached(
-                attn_key=key,
-                teacher_model_path=args.teacher_path,
-                train_loader=train_loader,
-                val_loader=val_loader,
-                device=device,
-                tokenizer=tokenizer,
-                out_dir=ckpt_dir,
-                train_secs=args.train_secs,
-                batch_size=args.batch_size,
-                grad_accum=args.grad_accum,
-            )
-        except Exception as e:
-            logger.error("[%s] Training exception: %s", key, e, exc_info=True)
-            res = {"attn_key": key, "status": "FAIL_TRAINING", "error": str(e), "timestamp": datetime.datetime.utcnow().isoformat()}
+        if args.isolate_workers:
+            cmd = [
+                sys.executable,
+                os.path.abspath(__file__),
+                "--single_key", key,
+                "--keys_json", args.keys_json,
+                "--cache_path", args.cache_path,
+                "--teacher_path", args.teacher_path,
+                "--train_secs", str(args.train_secs),
+                "--batch_size", str(args.batch_size),
+                "--grad_accum", str(args.grad_accum),
+                "--out_dir", args.out_dir,
+                "--metrics_log", args.metrics_log,
+                "--device", args.device,
+            ]
+            proc = subprocess.run(cmd)
+            if proc.returncode != 0:
+                logger.error("[ISOLATION] Worker for %s failed with exit code %d (CUDA context preserved for next module)", key, proc.returncode)
+                fail_record = {
+                    "attn_key": key,
+                    "status": "FAIL_CRASH",
+                    "exit_code": proc.returncode,
+                    "timestamp": datetime.datetime.utcnow().isoformat(),
+                }
+                with open(args.metrics_log, "a", encoding="utf-8") as f:
+                    f.write(json.dumps(fail_record) + "\n")
+        else:
+            # In-process execution
+            from transformers import AutoTokenizer
+            tokenizer = AutoTokenizer.from_pretrained(args.teacher_path, local_files_only=True)
+            cache = torch.load(args.cache_path, map_location="cpu")
+            train_dataset = TensorDataset(cache["input_ids"], cache["attention_mask"], cache["labels"], cache["teacher_last_hidden"], cache["teacher_cls_logits"])
+            train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, pin_memory=(device.type == "cuda"), drop_last=True)
+            import datasets
+            raw_val = datasets.load_dataset("glue", "sst2", split="validation")
+            val_enc = tokenizer(raw_val["sentence"], padding="max_length", truncation=True, max_length=128, return_tensors="pt")
+            val_dataset = TensorDataset(val_enc["input_ids"], val_enc["attention_mask"], torch.tensor(raw_val["label"], dtype=torch.long))
+            val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, pin_memory=(device.type == "cuda"))
 
-        with open(args.metrics_log, "a", encoding="utf-8") as f:
-            f.write(json.dumps(res) + "\n")
+            try:
+                res = train_single_attention_cached(
+                    attn_key=key,
+                    teacher_model_path=args.teacher_path,
+                    train_loader=train_loader,
+                    val_loader=val_loader,
+                    device=device,
+                    tokenizer=tokenizer,
+                    out_dir=ckpt_dir,
+                    train_secs=args.train_secs,
+                    batch_size=args.batch_size,
+                    grad_accum=args.grad_accum,
+                )
+            except Exception as e:
+                logger.error("[%s] Training exception: %s", key, e, exc_info=True)
+                res = {"attn_key": key, "status": "FAIL_TRAINING", "error": str(e), "timestamp": datetime.datetime.utcnow().isoformat()}
+
+            with open(args.metrics_log, "a", encoding="utf-8") as f:
+                f.write(json.dumps(res) + "\n")
 
     logger.info("\nDistillation Engine Complete. Master ledger at: %s", args.metrics_log)
 
