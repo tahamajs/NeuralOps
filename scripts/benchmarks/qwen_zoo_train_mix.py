@@ -438,8 +438,8 @@ def train_single_qwen_attention(
 
             with torch.cuda.amp.autocast(dtype=torch.float16 if device.type == "cuda" else torch.bfloat16):
                 with torch.no_grad():
-                    t_out = teacher_model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
-                s_out = student(input_ids=in_ids, attention_mask=att_m, labels=lbls, output_hidden_states=True)
+                    t_out = teacher_model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=False)
+                s_out = student(input_ids=in_ids, attention_mask=att_m, labels=lbls, output_hidden_states=False)
 
                 # Top-K Sparse Logit KD (topk=64) avoiding dense 151936 logit OOM
                 loss_sparse_kl = compute_topk_sparse_kd_loss(s_out.logits, t_out.logits, topk=topk)
@@ -448,6 +448,8 @@ def train_single_qwen_attention(
                 loss_total = (0.50 * loss_sparse_kl + 0.50 * loss_causal_ce) / grad_accum
 
             loss_total.backward()
+            del t_out
+            del s_out
             step_s2 += 1
 
             if step_s2 % grad_accum == 0:
