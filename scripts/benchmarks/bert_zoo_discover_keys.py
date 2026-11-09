@@ -39,30 +39,48 @@ SEQ_LEN = 16   # small probe input
 BATCH = 2
 
 
+import subprocess
+
 def probe_attention(key: str, device: torch.device) -> str | None:
     """
-    Try to instantiate and forward-pass one attention module with BertAttentionAdapter.
+    Try to instantiate and forward-pass one attention module with BertAttentionAdapter
+    in an isolated subprocess. This guarantees that C++/CUDA/Triton JIT aborts
+    (SIGABRT/SIGSEGV) do not crash the discovery daemon.
     Returns None on success, error string on failure.
     """
-    from neuralops.core.registry import create_attention
-    from neuralops.layers.bert_adapter import BertAttentionAdapter
+    device_str = "cuda" if device.type == "cuda" else "cpu"
+    probe_code = f"""
+import sys, os, torch, gc
+sys.path.insert(0, os.path.abspath("."))
+from neuralops.core.registry import create_attention
+from neuralops.layers.bert_adapter import BertAttentionAdapter
 
+device = torch.device("{device_str}")
+raw_mod = create_attention("{key}", embed_dim={EMBED_DIM}, num_heads={NUM_HEADS})
+mod = BertAttentionAdapter(raw_mod, embed_dim={EMBED_DIM}, num_heads={NUM_HEADS})
+mod = mod.to(device)
+mod.eval()
+with torch.no_grad():
+    x = torch.randn({BATCH}, {SEQ_LEN}, {EMBED_DIM}, device=device)
+    out, _ = mod(x)
+    assert out.shape[-1] == {EMBED_DIM}, f"bad output shape {{out.shape}}"
+"""
     try:
-        raw_mod = create_attention(key, embed_dim=EMBED_DIM, num_heads=NUM_HEADS)
-        mod = BertAttentionAdapter(raw_mod, embed_dim=EMBED_DIM, num_heads=NUM_HEADS)
-        mod = mod.to(device)
-        mod.eval()
-        with torch.no_grad():
-            x = torch.randn(BATCH, SEQ_LEN, EMBED_DIM, device=device)
-            out, _ = mod(x)
-            assert out.shape[-1] == EMBED_DIM, f"bad output shape {out.shape}"
-        del mod, raw_mod, x, out
-        if device.type == "cuda":
-            torch.cuda.empty_cache()
-        gc.collect()
-        return None
-    except Exception:
-        return traceback.format_exc(limit=5)
+        proc = subprocess.run(
+            [sys.executable, "-c", probe_code],
+            capture_output=True,
+            text=True,
+            timeout=35,
+        )
+        if proc.returncode == 0:
+            return None
+        else:
+            err = proc.stderr.strip() or proc.stdout.strip() or f"Process exited with code {proc.returncode}"
+            return err
+    except subprocess.TimeoutExpired:
+        return "Probe timed out after 35 seconds"
+    except Exception as e:
+        return str(e)
 
 
 def main() -> None:
