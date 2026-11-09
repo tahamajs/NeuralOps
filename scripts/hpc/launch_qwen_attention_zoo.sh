@@ -31,8 +31,8 @@ $PYTHON scripts/benchmarks/qwen_zoo_train_mix.py \
     --keys_json results/bert_attention_zoo/registry_keys.json \
     --surgery_pattern hybrid_3_1 \
     --seq_len 512 \
-    --batch_size 2 \
-    --grad_accum 16 \
+    --batch_size 8 \
+    --grad_accum 4 \
     --train_secs 300.0 \
     --topk 64 \
     --out_dir /tmp/neuralops_run/results/qwen_attention_zoo \

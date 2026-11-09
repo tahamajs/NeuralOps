@@ -439,11 +439,21 @@ def train_single_qwen_attention(
             with torch.cuda.amp.autocast(dtype=torch.float16 if device.type == "cuda" else torch.bfloat16):
                 with torch.no_grad():
                     t_out = teacher_model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=False)
-                s_out = student(input_ids=in_ids, attention_mask=att_m, labels=lbls, output_hidden_states=False)
+                # Call student WITHOUT labels=lbls to avoid HF internal unchunked 2.5GB loss allocation
+                s_out = student(input_ids=in_ids, attention_mask=att_m, output_hidden_states=False)
 
                 # Top-K Sparse Logit KD (topk=64) avoiding dense 151936 logit OOM
                 loss_sparse_kl = compute_topk_sparse_kd_loss(s_out.logits, t_out.logits, topk=topk)
-                loss_causal_ce = s_out.loss if s_out.loss is not None else torch.tensor(0.0, device=device)
+
+                # Exact chunked causal cross-entropy (128 tokens per chunk)
+                shift_logits = s_out.logits[..., :-1, :].contiguous()
+                shift_labels = lbls[..., 1:].contiguous()
+                ce_chunks = []
+                for c in range(0, shift_logits.size(1), 128):
+                    c_log = shift_logits[:, c : c + 128, :]
+                    c_lbl = shift_labels[:, c : c + 128]
+                    ce_chunks.append(F.cross_entropy(c_log.reshape(-1, c_log.size(-1)), c_lbl.reshape(-1)))
+                loss_causal_ce = torch.stack(ce_chunks).mean()
 
                 loss_total = (0.50 * loss_sparse_kl + 0.50 * loss_causal_ce) / grad_accum
 
