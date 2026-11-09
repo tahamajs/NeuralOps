@@ -128,7 +128,16 @@ def load_tokenized_qwen_corpus(
     seq_len: int = 512,
     max_train_samples: int = 4000,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Tokenizes corpus into contiguous chunks of length seq_len."""
+    """Tokenizes corpus into contiguous chunks of length seq_len with RAM caching."""
+    cache_path = Path(f"/dev/shm/wikitext_qwen_seq{seq_len}.pt")
+    if cache_path.exists():
+        try:
+            logger.info("Loading pre-tokenized corpus from RAM cache: %s", cache_path)
+            data = torch.load(cache_path, map_location="cpu")
+            return data["train_chunks"], data["val_chunks"]
+        except Exception as e:
+            logger.warning("RAM cache load failed (%s); re-tokenizing...", e)
+
     from datasets import load_dataset
 
     logger.info("Loading %s dataset...", dataset_name)
@@ -153,6 +162,12 @@ def load_tokenized_qwen_corpus(
 
     train_chunks = text_to_chunks(train_texts, max_train_samples)
     val_chunks = text_to_chunks(val_texts, 500)
+
+    try:
+        torch.save({"train_chunks": train_chunks, "val_chunks": val_chunks}, cache_path)
+        logger.info("Cached tokenized corpus to RAM: %s", cache_path)
+    except Exception as e:
+        logger.debug("Failed to write RAM cache: %s", e)
 
     logger.info(
         "Corpus tokenized: %d train chunks, %d validation chunks (seq_len=%d)",
