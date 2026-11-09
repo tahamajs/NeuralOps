@@ -61,22 +61,26 @@ def upload_directory(
     is_compressor = "compressor" in str(target_dir) or "compressor" in metrics or "param_reduction" in metrics
     is_qwen = "qwen" in str(target_dir) or "qwen" in metrics or "model" in metrics and "qwen" in str(metrics["model"]).lower()
 
-    if is_compressor:
-        if is_qwen:
-            repo_id = f"{hf_org}/qwen-comp-{slug}-wiki"
-        else:
-            repo_id = f"{hf_org}/bert-comp-{slug}-wiki"
-    elif is_qwen:
-        repo_id = f"{hf_org}/qwen-2.5-0.5b-{slug}-wiki"
-    else:
-        repo_id = f"{hf_org}/bert-{slug}-wiki"
-
-    logger.info("[%s] Uploading to %s...", attn_key, repo_id)
-
     try:
         from huggingface_hub import HfApi
 
         api = HfApi(token=token)
+        whoami = api.whoami()
+        username = whoami.get("name", "tahamajs")
+        allowed_orgs = [o["name"] for o in whoami.get("orgs", []) if o.get("canCreateModels", False)]
+        effective_org = hf_org if (hf_org in allowed_orgs or hf_org == username) else username
+
+        if is_compressor:
+            if is_qwen:
+                repo_id = f"{effective_org}/qwen-comp-{slug}-sst2"
+            else:
+                repo_id = f"{effective_org}/bert-comp-{slug}-sst2"
+        elif is_qwen:
+            repo_id = f"{effective_org}/qwen-2.5-0.5b-{slug}-sst2"
+        else:
+            repo_id = f"{effective_org}/bert-{slug}-sst2"
+
+        logger.info("[%s] Uploading to %s...", attn_key, repo_id)
         api.create_repo(repo_id=repo_id, repo_type="model", exist_ok=True, private=False)
 
         commit_info = api.upload_folder(
@@ -148,7 +152,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="BERT Attention Zoo Hugging Face Uploader")
     parser.add_argument("--watch_dir", default=None, help="Directory to watch for completed models")
     parser.add_argument("--single_dir", default=None, help="Single directory to upload directly")
-    parser.add_argument("--hf_org", default="Hooshaai", help="Hugging Face organization")
+    parser.add_argument("--hf_org", default="tahamajs", help="Hugging Face organization or user namespace")
     parser.add_argument("--cleanup", type=int, default=1, help="1 to delete weights after upload, 0 to keep")
     parser.add_argument("--poll_interval", type=int, default=30, help="Polling interval in seconds")
     args = parser.parse_args()
