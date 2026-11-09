@@ -254,7 +254,8 @@ class QwenAttentionAdapter(nn.Module):
         # Single-o_proj Contract: apply canonical output projection strictly once
         context = self.o_proj(context)
 
-        return (context, attn_weights)
+        # Qwen2DecoderLayer contract: (hidden_states, attn_weights, present_key_value)
+        return (context, attn_weights, past_key_values)
 
 
 __all__ = ["QwenAttentionAdapter"]

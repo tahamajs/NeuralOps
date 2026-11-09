@@ -358,10 +358,9 @@ def train_single_qwen_attention(
     student = apply_qwen_attention_surgery(student, attn_key=attn_key, pattern=pattern)
     student = student.to(device)
 
-    # Stage 0: Evaluate uncalibrated / zero-shot
+    # Stage 0: Evaluate uncalibrated / zero-shot on WikiText-2
     pre_ppl = evaluate_causal_ppl(student, val_loader, device)
-    pre_sst2 = evaluate_sst2_accuracy(student, tokenizer, device)
-    logger.info("[%s] Pre-KD Evaluation: PPL=%.2f | SST-2 Acc=%.2f%%", attn_key, pre_ppl, pre_sst2)
+    logger.info("[%s] Pre-KD WikiText-2 Perplexity: PPL=%.2f", attn_key, pre_ppl)
 
     # Timer starts STRICTLY AFTER Stage 0 evaluation finish
     t_train_start = time.time()
@@ -406,8 +405,11 @@ def train_single_qwen_attention(
             step_s1 += 1
 
             if step_s1 % grad_accum == 0:
-                scaler.unscale_(opt1)
-                torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
+                try:
+                    scaler.unscale_(opt1)
+                    torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
+                except Exception:
+                    pass
                 scaler.step(opt1)
                 scaler.update()
                 opt1.zero_grad(set_to_none=True)
@@ -456,8 +458,11 @@ def train_single_qwen_attention(
             step_s2 += 1
 
             if step_s2 % grad_accum == 0:
-                scaler.unscale_(opt2)
-                torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
+                try:
+                    scaler.unscale_(opt2)
+                    torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
+                except Exception:
+                    pass
                 scaler.step(opt2)
                 scaler.update()
                 opt2.zero_grad(set_to_none=True)
@@ -466,10 +471,9 @@ def train_single_qwen_attention(
     total_time = time.time() - t_train_start
     logger.info("[%s] Stage 2 Complete: %d steps in %.1fs (Total: %.1fs)", attn_key, step_s2, dur_s2, total_time)
 
-    # Post-KD Evaluation
+    # Post-KD Evaluation on WikiText-2
     post_ppl = evaluate_causal_ppl(student, val_loader, device)
-    post_sst2 = evaluate_sst2_accuracy(student, tokenizer, device)
-    logger.info("[%s] Post-KD Evaluation: PPL=%.2f | SST-2 Acc=%.2f%%", attn_key, post_ppl, post_sst2)
+    logger.info("[%s] Post-KD Evaluation: PPL=%.2f (Delta: %+.2f)", attn_key, post_ppl, post_ppl - pre_ppl)
 
     peak_vram = round(torch.cuda.max_memory_allocated() / (1024 * 1024)) if device.type == "cuda" else 0
 
@@ -479,12 +483,11 @@ def train_single_qwen_attention(
     result = {
         "model": model_name,
         "attn_key": attn_key,
+        "dataset": "wikitext-2",
         "pattern": pattern,
         "ppl_before": round(pre_ppl, 2),
         "ppl_after": round(post_ppl, 2),
         "ppl_delta": round(post_ppl - pre_ppl, 2),
-        "sst2_before": round(pre_sst2, 2),
-        "sst2_after": round(post_sst2, 2),
         "train_secs": round(total_time, 1),
         "steps_s1": step_s1,
         "steps_s2": step_s2,
@@ -528,10 +531,11 @@ def train_single_qwen_attention(
 
 - **Base Model:** `{model_name}`
 - **Transplanted Attention:** `{attn_key}` (`ATTENTION_REGISTRY`)
+- **Dataset:** WikiText-2 (`wikitext-2-raw-v1`)
 - **Surgery Pattern:** `{pattern}`
 - **Pre-KD Causal PPL:** `{pre_ppl:.2f}`
 - **Post-KD Causal PPL:** `{post_ppl:.2f}`
-- **SST-2 Accuracy:** `{post_sst2:.2f}%`
+- **PPL Delta:** `{post_ppl - pre_ppl:+.2f}`
 - **Distillation Time:** `{total_time:.1f}s` on NVIDIA RTX 3090
 """
     (out_dir / "README.md").write_text(card_md, encoding="utf-8")

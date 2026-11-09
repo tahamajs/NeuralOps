@@ -75,11 +75,11 @@ def upload_directory(
 
         if is_compressor:
             if is_qwen:
-                repo_id = f"{effective_org}/qwen-comp-{slug}-sst2"
+                repo_id = f"{effective_org}/qwen-comp-{slug}-wikitext2"
             else:
                 repo_id = f"{effective_org}/bert-comp-{slug}-sst2"
         elif is_qwen:
-            repo_id = f"{effective_org}/qwen-2.5-0.5b-{slug}-sst2"
+            repo_id = f"{effective_org}/qwen-2.5-0.5b-{slug}-wikitext2"
         else:
             repo_id = f"{effective_org}/bert-{slug}-sst2"
 
