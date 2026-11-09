@@ -53,7 +53,7 @@ class PagedKVCacheSimulator:
 
     def __init__(
         self,
-        num_blocks: int = 2048,
+        num_blocks: int = 8192,
         block_size: int = 16,
         num_heads: int = 12,
         head_dim: int = 64,
@@ -111,7 +111,7 @@ def benchmark_vllm_poisson_serving(
     max_seq: int = 1024,
     min_seq: int = 64,
     decode_steps: int = 16,
-    num_blocks: int = 2048,
+    num_blocks: int = 8192,
     block_size: int = 16,
     num_heads: int = 12,
     head_dim: int = 64,

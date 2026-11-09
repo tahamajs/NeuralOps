@@ -82,14 +82,16 @@ def main():
     print(f"=== Starting Competitor Benchmark Suite on {device} ===", flush=True)
 
     modules_to_test = [
-        ("deepspeed_zero3", "benchmarks.competitors.bench_deepspeed_zero3_overhead"),
-        ("megatron_tp_sp", "benchmarks.competitors.bench_megatron_tp_sp"),
-        ("flash_attention_standard", "benchmarks.competitors.bench_flash_attention_standard"),
-        ("sglang_radix_cache", "benchmarks.competitors.bench_sglang_radix_cache"),
-        ("vllm_poisson_serving", "benchmarks.competitors.bench_vllm_poisson_serving"),
-        ("tensorrt_quant_sqnr", "benchmarks.competitors.bench_tensorrt_quant_sqnr"),
-        ("ruler_long_context", "benchmarks.competitors.bench_ruler_long_context"),
-        ("medusa_speculative_tree", "benchmarks.competitors.bench_medusa_speculative_tree"),
+        ("deepspeed_zero3", "neuralops.benchmarks.competitors.bench_deepspeed_zero3_overhead"),
+        ("megatron_tp_sp", "neuralops.benchmarks.competitors.bench_megatron_tp_sp"),
+        ("flash_attention_standard", "neuralops.benchmarks.competitors.bench_flash_attention_standard"),
+        ("sglang_radix_cache", "neuralops.benchmarks.competitors.bench_sglang_radix_cache"),
+        ("vllm_poisson_serving", "neuralops.benchmarks.competitors.bench_vllm_poisson_serving"),
+        ("tensorrt_quant_sqnr", "neuralops.benchmarks.competitors.bench_tensorrt_quant_sqnr"),
+        ("ruler_long_context", "neuralops.benchmarks.competitors.bench_ruler_long_context"),
+        ("medusa_speculative_tree", "neuralops.benchmarks.competitors.bench_medusa_speculative_tree"),
+        ("lighteval_fast_stream", "neuralops.benchmarks.competitors.bench_lighteval_fast_stream"),
+        ("lm_eval_mmlu_gsm8k", "neuralops.benchmarks.competitors.bench_lm_eval_mmlu_gsm8k"),
     ]
 
     for name, mod_path in modules_to_test:
@@ -103,14 +105,40 @@ def main():
             else:
                 res = {"status": "SKIPPED", "error": "No benchmark function found"}
 
+            # Comprehensive metric extraction across diverse competitor schemas
+            throughput_val = (
+                res.get("throughput_tok_s")
+                or res.get("tokens_per_sec")
+                or res.get("token_throughput")
+                or res.get("effective_bandwidth_gb_sec")
+                or res.get("effective_throughput_tok_s")
+                or res.get("throughput")
+                or res.get("attained_tflops")
+                or res.get("speedup_ratio")
+                or 0.0
+            )
+            latency_val = (
+                res.get("latency_ms")
+                or res.get("gather_latency_ms")
+                or res.get("fwd_latency_ms")
+                or (res.get("ttft_percentiles_ms", {}).get("p50") if isinstance(res.get("ttft_percentiles_ms"), dict) else None)
+                or (res.get("tree_eval_latency_ms") if res.get("tree_eval_latency_ms") is not None else None)
+                or 0.0
+            )
+            memory_val = (
+                res.get("peak_memory_mb")
+                or res.get("total_param_mb")
+                or res.get("memory_mb")
+                or res.get("allocated_mb")
+                or 0.0
+            )
+
             rec = {
                 "benchmark_name": name,
                 "raw": res,
-                "throughput": res.get(
-                    "throughput_tok_s", res.get("tokens_per_sec", res.get("effective_bandwidth_gb_sec", 0.0))
-                ),
-                "latency_ms": res.get("latency_ms", res.get("gather_latency_ms", 0.0)),
-                "memory_mb": res.get("peak_memory_mb", res.get("total_param_mb", 0.0)),
+                "throughput": float(throughput_val),
+                "latency_ms": float(latency_val),
+                "memory_mb": float(memory_val),
                 "status": "PASS",
             }
             persist_competitor_record(rec, sqlite_path, csv_path)

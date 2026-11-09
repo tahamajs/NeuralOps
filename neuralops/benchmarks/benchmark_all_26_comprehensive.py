@@ -478,10 +478,10 @@ def run_all_26_comprehensive(
         )
 
         m_nys = 32
-        F1 = F.softmax(torch.randn(B, H, N, m_nys, device=device, dtype=torch.float32), dim=-1)
-        F2_pinv = torch.randn(B, H, m_nys, m_nys, device=device, dtype=torch.float32)
-        F3 = F.softmax(torch.randn(B, H, m_nys, N, device=device, dtype=torch.float32), dim=-1)
-        V_nys = torch.randn(B, H, N, D, device=device, dtype=torch.float32)
+        F1 = F.softmax(torch.randn(B, H, N, m_nys, device=device, dtype=dtype), dim=-1)
+        F2_pinv = torch.randn(B, H, m_nys, m_nys, device=device, dtype=dtype)
+        F3 = F.softmax(torch.randn(B, H, m_nys, N, device=device, dtype=dtype), dim=-1)
+        V_nys = torch.randn(B, H, N, D, device=device, dtype=dtype)
         results.append(
             benchmark_single_kernel(
                 "fused_nystrom_landmark_pinv",
@@ -1185,6 +1185,51 @@ def run_all_26_comprehensive(
             for r in results:
                 writer.writerow(r)
         print(f"[OK] Successfully saved {len(results)} kernel benchmarks to {csv_p}")
+
+    # Persist directly into SQLite master ledger
+    try:
+        import sqlite3
+        import datetime
+        sqlite_p = Path("results/master_ledger.sqlite")
+        sqlite_p.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(sqlite_p, timeout=30.0)
+        cur = conn.cursor()
+        cur.execute("PRAGMA journal_mode=WAL;")
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS hardware_kernel_speedups (
+                backend TEXT,
+                module TEXT,
+                category TEXT,
+                kernel_ms REAL,
+                pytorch_ms REAL,
+                speedup REAL,
+                max_diff REAL,
+                status TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        ts_now = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        for r in results:
+            cur.execute("""
+                INSERT INTO hardware_kernel_speedups (
+                    backend, module, category, kernel_ms, pytorch_ms, speedup, max_diff, status, timestamp
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                "triton",
+                r.get("kernel"),
+                r.get("category"),
+                r.get("triton_ms"),
+                r.get("pytorch_ms"),
+                r.get("speedup"),
+                r.get("max_diff_forward", r.get("max_diff", 0.0)),
+                r.get("status"),
+                r.get("timestamp_utc", ts_now),
+            ))
+        conn.commit()
+        conn.close()
+        print(f"[OK] Successfully persisted {len(results)} Triton benchmarks to {sqlite_p}")
+    except Exception as exc:
+        print(f"[WARN] Failed to persist Triton benchmarks to SQLite: {exc}")
 
     if report_md:
         rep_p = Path(report_md)

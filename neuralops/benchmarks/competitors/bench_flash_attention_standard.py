@@ -111,8 +111,9 @@ def benchmark_flash_attn_tflops(
         start_fwd = torch.cuda.Event(enable_timing=True)
         end_fwd = torch.cuda.Event(enable_timing=True)
         start_fwd.record()
-        for _ in range(iters):
-            out = flash_decoding_attention(q, k, v)
+        with torch.no_grad():
+            for _ in range(iters):
+                out = flash_decoding_attention(q, k, v)
         end_fwd.record()
 
         # Backward timing
@@ -139,8 +140,9 @@ def benchmark_flash_attn_tflops(
     else:
         # CPU Timing
         t0 = time.perf_counter()
-        for _ in range(iters):
-            out = flash_decoding_attention(q, k, v)
+        with torch.no_grad():
+            for _ in range(iters):
+                out = flash_decoding_attention(q, k, v)
         elapsed_sec = time.perf_counter() - t0
         fwd_latency_ms = (elapsed_sec / iters) * 1000.0
 

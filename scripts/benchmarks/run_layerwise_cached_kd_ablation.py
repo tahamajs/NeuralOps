@@ -447,6 +447,7 @@ def main():
     parser.add_argument("--iso-lr", type=float, default=1.2e-3)
     parser.add_argument("--polish-lr", type=float, default=2.0e-5)
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
+    parser.add_argument("--resume", action="store_true", default=True, help="Resume from existing json results if present")
     parser.add_argument("--out-json", type=str, default="results/sst2_layerwise_kd_ablation.json")
     parser.add_argument("--out-csv", type=str, default="results/sst2_layerwise_kd_ablation.csv")
     parser.add_argument("--ledger-db", type=str, default="results/master_ledger.sqlite")
@@ -535,7 +536,28 @@ def main():
         ]
 
     results = []
+    completed_modules = set()
+    if args.resume and os.path.exists(args.out_json):
+        try:
+            with open(args.out_json, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+            if isinstance(loaded, list):
+                for item in loaded:
+                    if item.get("status") == "PASSED":
+                        results.append(item)
+                        completed_modules.add(item.get("module"))
+            logger.info(f"Resuming: found {len(completed_modules)} already passed modules in {args.out_json}")
+            # Persist existing results to SQLite immediately
+            if results:
+                persist_to_sqlite(results, base_acc=round(base_acc, 2), base_ppl=round(base_ppl, 2), sqlite_path=args.ledger_db)
+        except Exception as exc:
+            logger.warning(f"Could not load resume data from {args.out_json}: {exc}")
+
     for mod_name in target_modules:
+        if mod_name in completed_modules:
+            logger.info(f"Skipping already-completed module: {mod_name}")
+            continue
+
         try:
             res = run_single_module_pipeline(
                 module_name=mod_name,
@@ -552,9 +574,10 @@ def main():
             res["baseline_ppl"] = round(base_ppl, 2)
             res["retention_pct"] = round((res["polished_acc"] / (base_acc + 1e-9)) * 100.0, 2)
             results.append(res)
+            persist_to_sqlite([res], base_acc=round(base_acc, 2), base_ppl=round(base_ppl, 2), sqlite_path=args.ledger_db)
         except Exception as exc:
             logger.error(f"Error testing {mod_name}: {exc}")
-            results.append({
+            failed_entry = {
                 "module": mod_name,
                 "zero_shot_acc": 0.0,
                 "zero_shot_ppl": 99.9,
@@ -568,7 +591,14 @@ def main():
                 "total_time_s": 0.0,
                 "pillars_evaluated": ["Logits", "Hidden", "Layer-Attn", "SVD Spectrum", "Fisher Curvature", "Sparsity"],
                 "status": f"FAILED: {exc}",
-            })
+            }
+            results.append(failed_entry)
+            persist_to_sqlite([failed_entry], base_acc=round(base_acc, 2), base_ppl=round(base_ppl, 2), sqlite_path=args.ledger_db)
+
+        # Clean GPU memory between module iterations
+        gc.collect()
+        if device.type == "cuda":
+            torch.cuda.empty_cache()
 
         os.makedirs(os.path.dirname(args.out_json), exist_ok=True)
         with open(args.out_json, "w", encoding="utf-8") as f:
@@ -577,7 +607,6 @@ def main():
     import pandas as pd
     df = pd.DataFrame(results)
     df.to_csv(args.out_csv, index=False)
-    persist_to_sqlite(results, base_acc=round(base_acc, 2), base_ppl=round(base_ppl, 2), sqlite_path=args.ledger_db)
 
     print("\n" + "=" * 115)
     print(f"ATTENTION SURGERY & 6-PILLAR KD COMPLETE MATRIX (Teacher Baseline: Acc={base_acc:.2f}%, PPL={base_ppl:.2f})")
