@@ -51,7 +51,7 @@ logger = logging.getLogger("build_teacher_cache")
 def precompute_and_cache(
     teacher_path: str = "models/bert_sst2_teacher",
     out_cache_path: str = "data/cached_teacher_representations.pt",
-    max_samples: int = 12800,
+    max_samples: int = 1920,
     seq_len: int = 128,
     batch_size: int = 64,
     device_str: str = "cuda" if torch.cuda.is_available() else "cpu",
@@ -90,7 +90,9 @@ def precompute_and_cache(
     dataset = TensorDataset(all_input_ids, all_attention_mask, all_labels)
     loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
 
-    logger.info("Pre-computing teacher representations on %s across %d batches...", device, len(loader))
+    logger.info("Pre-computing teacher representations and layer-wise attention targets on %s across %d batches...", device, len(loader))
+    cached_layer_inputs = [[] for _ in range(12)]
+    cached_layer_attn_outputs = [[] for _ in range(12)]
     cached_last_hidden = []
     cached_cls_logits = []
 
@@ -99,16 +101,23 @@ def precompute_and_cache(
         for b_idx, (b_in, b_att, b_lbl) in enumerate(loader):
             b_in = b_in.to(device)
             b_att = b_att.to(device)
+            ext_mask = teacher.get_extended_attention_mask(b_att, b_in.shape)
 
             with torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16):
                 outputs = teacher(input_ids=b_in, attention_mask=b_att, output_hidden_states=True)
+                for l in range(12):
+                    h_l = outputs.hidden_states[l]
+                    attn_out = teacher.bert.encoder.layer[l].attention(h_l, ext_mask)[0]
+                    cached_layer_inputs[l].append(h_l.cpu().half())
+                    cached_layer_attn_outputs[l].append(attn_out.cpu().half())
+
                 last_hidden = outputs.hidden_states[-1].cpu().half()
                 cls_logits = outputs.logits.cpu().half()
 
             cached_last_hidden.append(last_hidden)
             cached_cls_logits.append(cls_logits)
 
-            if (b_idx + 1) % 50 == 0 or (b_idx + 1) == len(loader):
+            if (b_idx + 1) % 10 == 0 or (b_idx + 1) == len(loader):
                 elapsed = time.time() - t0
                 tok_per_sec = ((b_idx + 1) * batch_size * seq_len) / max(elapsed, 0.001)
                 logger.info(
@@ -116,6 +125,8 @@ def precompute_and_cache(
                     b_idx + 1, len(loader), elapsed, tok_per_sec,
                 )
 
+    full_layer_inputs = torch.stack([torch.cat(l_list, dim=0) for l_list in cached_layer_inputs], dim=0)
+    full_attn_outputs = torch.stack([torch.cat(l_list, dim=0) for l_list in cached_layer_attn_outputs], dim=0)
     full_last_hidden = torch.cat(cached_last_hidden, dim=0)
     full_cls_logits = torch.cat(cached_cls_logits, dim=0)
 
@@ -123,25 +134,29 @@ def precompute_and_cache(
         "input_ids": all_input_ids,
         "attention_mask": all_attention_mask,
         "labels": all_labels,
+        "teacher_layer_inputs": full_layer_inputs,
+        "teacher_attn_outputs": full_attn_outputs,
         "teacher_last_hidden": full_last_hidden,
         "teacher_cls_logits": full_cls_logits,
         "num_samples": len(all_input_ids),
         "seq_len": seq_len,
         "hidden_size": full_last_hidden.size(-1),
+        "num_layers": 12,
         "teacher_path": teacher_path,
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
 
-    logger.info("Saving cache payload to %s (Size: %.2f MB)...", out_file, full_last_hidden.numel() * 2 / (1024 * 1024))
+    cache_mb = (full_layer_inputs.numel() * 2 + full_attn_outputs.numel() * 2 + full_last_hidden.numel() * 2) / (1024 * 1024)
+    logger.info("Saving cache payload to %s (Size: %.2f MB)...", out_file, cache_mb)
     torch.save(cache_payload, str(out_file))
-    logger.info("Cache successfully generated and verified at: %s", out_file)
+    logger.info("Layer-wise teacher cache successfully generated and verified at: %s", out_file)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--teacher_path", default="models/bert_sst2_teacher")
     parser.add_argument("--out_cache", default="data/cached_teacher_representations.pt")
-    parser.add_argument("--max_samples", type=int, default=12800)
+    parser.add_argument("--max_samples", type=int, default=1920)
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--seq_len", type=int, default=128)
     args = parser.parse_args()

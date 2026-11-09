@@ -33,7 +33,7 @@ from neuralops.core.utils.gqa import repeat_kv
 @dataclass
 class NEXUSConfig:
     block_size: int = 16
-    top_k_blocks: int = 4
+    top_k_blocks: int = 8
     xattn_enabled: bool = True
     xattn_stride: int = 2
     seer_enabled: bool = True
@@ -46,7 +46,7 @@ class NEXUSConfig:
     stripe_width: int = 4
     rectify_interval: int = 4
     rff_features: int = 128
-    softpick_enabled: bool = True
+    softpick_enabled: bool = False
     softpick_temperature: float = 1.0
     sparse_min_seq_len: int = 8
     enable_spectraformer: bool = False
