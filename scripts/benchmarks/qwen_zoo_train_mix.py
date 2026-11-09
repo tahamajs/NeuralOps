@@ -483,7 +483,7 @@ def train_single_qwen_attention(
     out_dir.mkdir(parents=True, exist_ok=True)
     student.save_pretrained(str(out_dir))
     tokenizer.save_pretrained(str(out_dir))
-    (out_dir / "training_metrics.json").write_text(json.dumps(result, indent=2))
+    (out_dir / "training_metrics.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
 
     # Model Card
     card_md = f"""# Qwen-2.5-0.5B with NeuralOps {attn_key} Attention
@@ -496,7 +496,7 @@ def train_single_qwen_attention(
 - **SST-2 Accuracy:** `{post_sst2:.2f}%`
 - **Distillation Time:** `{total_time:.1f}s` on NVIDIA RTX 3090
 """
-    (out_dir / "README.md").write_text(card_md)
+    (out_dir / "README.md").write_text(card_md, encoding="utf-8")
 
     del student
     if device.type == "cuda":

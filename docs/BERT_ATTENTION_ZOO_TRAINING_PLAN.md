@@ -381,51 +381,149 @@ Features:
 
 ---
 
-## 12. Registry Manifest: All 131 Canonical Attention Units
+## 12. Registry Manifest: All 131 Canonical Attention Units (110 Verified on GPU)
 
-All 131 attention mechanisms dynamically registered and supported:
+Audited physically on `GPU-3090-1` (NVIDIA RTX 3090 24GB):
+- **110 Functional Valid Attention Keys** (`results/bert_attention_zoo/registry_keys.json`)
+- **5 Isolated Skips** (`results/bert_attention_zoo/skipped_keys.json`):
+  1. `chela_slay`: Triton assertion `loopResult.hasOneUse()` during JIT compilation.
+  2. `expert_choice_moe`: MoE token routing dimension mismatch.
+  3. `jamba`: Shared expert choice MoE router dimension mismatch.
+  4. `ttt_linear_attention`: Subprocess probe timeout (> 35s).
+  5. `vspec`: LoRA output rank mismatch (64 vs 768).
+
 ```text
 [001-010] adaptive_span_attention, adaptive_sparse_attention, adaptive_svd_attention, adasplash_attention, alibi,
-          asvd_attention, bam_umoe, block_transformer_hiba, chela_slay, cluster_attention
-[011-020] compressed_attention, compressed_mha_attention, cosformer, cross_attention, decay_linear_attention,
-          delta_product_attention, dynamic_conv_attention, eat, expert_choice_moe, factorised_matrix_state
-[021-030] flash_attention3, flash_attention3_fp8, full_attention, fused_svd_kernel, fusion_attn,
-          galerkin_attention, gated_delta_net, gated_deltanet_block, gated_hybrid_kernel_attention, gdn2_attention
-[031-040] gla_attention, goldfinch_ahn, gqa_attention, granite_hybrid, griffin_ssd,
-          halo_regla, hamming_attention, hgrn2_gated_deltanet, hgrn2_gated_layer, hgrn2_gated_outer
-[041-050] hla_attention, hybrid_attention, hybrid_local_kernel, hymba_transx, jamba,
-          jamba_info, kda_attention, landmark_local_attention, linformer_attention, lola_attention
-[051-060] lora_attention, lsh_attention, mamba_block, mamba_svd_flash, minimal_nova,
-          minimal_svd, mixattention_moska, mla_attention, moba_attention, moe_deltakv_paged
-[061-070] mqa, naive_svd, nasc_attention, nexus, nha_attention,
-          nsa_attention, nystrom_attention, optimized_hybrid_attention, orion, padre_attention
-[071-080] performer_attention, phantom, positive_kernel_linear_attention, preconditioned_gdn_attention, primal_attention,
-          progressive_token_pruning, projection_factorized_attn, qcqa_attention, rala_attention, reap_moe
-[081-090] refined_landmark_attention, regla_attention, residual_svd_attention, routing_attention, rpc_attention,
-          salt_attention, samba_m3, samba_moe, selective_ssm, simple_ssm
-[091-100] sink_attention, soa_attn, spectraformer_attention, spectron, spectron_fp8,
-          split_head_hybrid, svd_attention, svd_compressed, svd_linear_attention, svd_linear_decay
-[101-110] svd_llm_v2_attention, svd_mamba, svd_projection_attention, token_compressed_attention, tri_branch_hybrid,
-          triton_cosformer, triton_svd_linear_attention, ttt_linear_attention, unified_rope, upi_stuffed_mamba
-[111-115] vig_attention, vspec, wgqa_attention, xattention, zeros_attention
-[116-131] Canonical Extensible Units:
-          116: chunk_gla_attention, 117: multi_scale_retention, 118: rwkv6_linear_attention, 119: hgrn_linear_attention,
-          120: lightning_attention2, 121: focused_linear_attention, 122: flash_linear_attention, 123: gated_linear_attention_v2,
-          124: polynomial_kernel_attention, 125: relu_linear_attention, 126: elu_linear_attention, 127: taylor_series_linear_attention,
-          128: randomized_svd_attention, 129: truncated_svd_attention, 130: orthogonal_svd_attention, 131: fused_recurrent_attention
+          asvd_attention, bam_umoe, block_transformer_hiba, cluster_attention, compressed_attention
+[011-020] compressed_mha_attention, cosformer, cross_attention, decay_linear_attention, delta_product_attention,
+          dynamic_conv_attention, eat, factorised_matrix_state, flash_attention3, flash_attention3_fp8
+[021-030] full_attention, fused_svd_kernel, fusion_attn, galerkin_attention, gated_delta_net,
+          gated_deltanet_block, gated_hybrid_kernel_attention, gdn2_attention, gla_attention, goldfinch_ahn
+[031-040] gqa_attention, granite_hybrid, griffin_ssd, halo_regla, hamming_attention,
+          hgrn2_gated_deltanet, hgrn2_gated_layer, hgrn2_gated_outer, hla_attention, hybrid_attention
+[041-050] hybrid_local_kernel, hymba_transx, jamba_info, kda_attention, landmark_local_attention,
+          linformer_attention, lola_attention, lora_attention, lsh_attention, mamba_block
+[051-060] mamba_svd_flash, minimal_nova, minimal_svd, mixattention_moska, mla_attention,
+          moba_attention, moe_deltakv_paged, mqa, naive_svd, nasc_attention
+[061-070] nexus, nha_attention, nsa_attention, nystrom_attention, optimized_hybrid_attention,
+          orion, padre_attention, performer_attention, phantom, positive_kernel_linear_attention
+[071-080] preconditioned_gdn_attention, primal_attention, progressive_token_pruning, projection_factorized_attn, qcqa_attention,
+          rala_attention, reap_moe, refined_landmark_attention, regla_attention, residual_svd_attention
+[081-090] routing_attention, rpc_attention, salt_attention, samba_m3, samba_moe,
+          selective_ssm, simple_ssm, sink_attention, soa_attn, spectraformer_attention
+[091-100] spectron, spectron_fp8, split_head_hybrid, svd_attention, svd_compressed,
+          svd_linear_attention, svd_linear_decay, svd_llm_v2_attention, svd_mamba, svd_projection_attention
+[101-110] token_compressed_attention, tri_branch_hybrid, triton_cosformer, triton_svd_linear_attention, unified_rope,
+          upi_stuffed_mamba, vig_attention, wgqa_attention, xattention, zeros_attention
 ```
 
 ---
 
-## 13. Failure Policies, Recovery Matrix & Verification Protocol
+## 13. Compressor Zoo Manifest: 82 Engines Audited (33 Verified Functional)
+
+Audited physically on Sharif HPC against strict zero-fake-artifact contracts (AGENTS.md Section 0.2 & 0.3):
+- **33 Verified Truly Functional Compression Engines** (`results/compressor_zoo/registry_keys.json`):
+  Each physically verified with **$R = P_{\text{orig}} / P_{\text{comp}} > 1.00x$** and non-zero reconstruction error:
+  `adaptive_ranks`, `auto_svd`, `compot_compressor`, `cur_moe_compressor`, `direct_svd`, `dynamic_rank`, `entropy_budget_allocation`, `erc_svd`, `flat_llm`, `frandi_compressor`, `grecodec_compressor`, `hybrid_svd_layer`, `kmeans_quantize`, `kronecker_compressor`, `kvtc_compressor`, `mamba_shedder`, `mgie_budget`, `mlorq_compressor`, `modegpt_compressor`, `nmf_compressor`, `residual_svd_compressor`, `rotational_slicegpt_int4`, `saes_svd_v2`, `salr`, `sdrm_compressor`, `slicegpt`, `soka_compressor`, `subspace_projection`, `svd_linear`, `swift_svd`, `swift_svd_act`, `tt_compressor`, `uniql_compressor`.
+
+- **22 Rejected Identity Pass-Through Engines** (`results/compressor_zoo/identity_keys.json`):
+  Caught and rejected for returning unmodified weights (`Param Reduction = 1.00x` and `Recon Rel Error = 0.0000`):
+  `a3_compressor`, `aa_svd_compressor`, `aatc_xkv_compressor`, `adasvd_compressor`, `admm_compressor`, `asvd`, `bonsai_pruner`, `cr_compressor`, `cur_compressor`, `delta_kv`, `dobi_svd`, `drone_compressor`, `fwsvd_compressor`, `hashed_net_compressor`, `hybridkv_compressor`, `lillama_compressor`, `roast_hashed_linear`, `slicegpt_pca`, `smoothquant`, `svd_llm_compressor`, `tomoe_compressor`, `zerokv_neo_compressor`.
+
+- **27 Failed / Unmet Hardware Dependencies**:
+  Engines requiring proprietary hardware packages, custom runtime extensions, or calibration datasets.
+
+---
+
+## 14. Physical Ground Truth Baseline Metrics (Sharif HPC GPU-3090-1)
+
+Verified empirically via `scripts/benchmarks/bert_zoo_baseline_ppl.py`:
+
+```json
+{
+  "ppl_vanilla_bert": 10.4837,
+  "acc_vanilla_bert": 59.92,
+  "loss": 2.349818,
+  "num_batches": 30,
+  "num_tokens": 35154,
+  "model": "bert-base-uncased",
+  "dataset": "wikitext-2-raw-v1",
+  "split": "validation",
+  "seq_len": 128,
+  "batch_size": 64,
+  "device": "cuda (NVIDIA GeForce RTX 3090 24GB)",
+  "timestamp": "2026-11-09T15:06:59.406220Z"
+}
+```
+
+---
+
+## 15. Production Execution Commands
+
+### 15.1 Track A: BERT Attention Zoo Distillation (110 models)
+```bash
+export LD_LIBRARY_PATH=/share/apps/gcc/gcc-8.2.0/lib64:/usr/local/cuda-11.3/lib64:$LD_LIBRARY_PATH
+export PYTHONPATH=/home/tahamajlesi.ut/NeuralOps:$PYTHONPATH
+export HF_HUB_OFFLINE=1
+
+python scripts/benchmarks/bert_zoo_train_wiki.py \
+    --keys_json results/bert_attention_zoo/registry_keys.json \
+    --train_secs 300.0 \
+    --batch_size 128 \
+    --grad_accum 2 \
+    --hf_upload 1 \
+    --hf_org Hooshaai \
+    --keep_local_weights 0 \
+    --device cuda
+```
+
+### 15.2 Track A-Comp: BERT Compressor Zoo Distillation (33 models)
+```bash
+python scripts/benchmarks/bert_compressor_zoo_train_wiki.py \
+    --keys_json results/compressor_zoo/registry_keys.json \
+    --train_secs 300.0 \
+    --batch_size 128 \
+    --grad_accum 2 \
+    --hf_upload 1 \
+    --hf_org Hooshaai \
+    --keep_local_weights 0 \
+    --device cuda
+```
+
+### 15.3 Track B: Qwen Generative LM Attention Zoo Distillation
+```bash
+python scripts/benchmarks/qwen_zoo_train_mix.py \
+    --keys_json results/bert_attention_zoo/registry_keys.json \
+    --model Qwen/Qwen2.5-0.5B \
+    --pattern hybrid_3_1 \
+    --train_secs 300.0 \
+    --topk 64 \
+    --hf_upload 1 \
+    --device cuda
+```
+
+### 15.4 Track B-Comp: Qwen Compressor Zoo Distillation (33 models)
+```bash
+python scripts/benchmarks/qwen_compressor_zoo_train_mix.py \
+    --keys_json results/compressor_zoo/registry_keys.json \
+    --model Qwen/Qwen2.5-0.5B \
+    --train_secs 300.0 \
+    --topk 64 \
+    --hf_upload 1 \
+    --device cuda
+```
+
+---
+
+## 16. Failure Policies, Recovery Matrix & Verification Protocol
 
 | Fault Condition | Automated Recovery & Self-Healing Protocol |
 |---|---|
-| **OOM on Attention $i$** | Intercept `torch.cuda.OutOfMemoryError`, empty VRAM cache, halve batch size ($128 \rightarrow 64$), double accumulation ($2 \rightarrow 4$), and retry once. |
+| **OOM on Module $i$** | Intercept `torch.cuda.OutOfMemoryError`, empty VRAM cache, halve batch size ($128 \rightarrow 64$), double accumulation ($2 \rightarrow 4$), and retry once. |
 | **HPC Outbound Network Blocked** | Compute node stages weights locally; login node background watcher daemon uploads asynchronously via proxy. |
 | **PBS Walltime Preemption** | Resume capability: engine scans `training_metrics.json` and skips previously completed checkpoints upon re-launch. |
 | **Numerical Divergence / NaN** | Flagged as `FAIL_NUMERICS` in `metrics.jsonl`; process moves cleanly to module $i+1$. |
 | **Disk Quota Constraint** | Local `.safetensors` deleted immediately upon upload commit verification; active disk usage strictly $< 2\,\text{GB}$. |
 
 ---
-*End of Master Pretrained Attention Hub Zoo Architectural Plan (`NOP-ARCH-ZOO-MASTER-v4.0`).*
+*End of Master Pretrained Attention & Compression Hub Zoo Architectural Plan (`NOP-ARCH-ZOO-MASTER-v5.0`).*

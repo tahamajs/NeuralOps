@@ -317,7 +317,7 @@ def write_self_contained_hf_checkpoint(
             "AutoConfig": "modeling_neuralops_bert.NeuralOpsBertConfig",
             "AutoModelForMaskedLM": "modeling_neuralops_bert.NeuralOpsBertForMaskedLM",
         }
-        cfg_file.write_text(json.dumps(cfg_dict, indent=2))
+        cfg_file.write_text(json.dumps(cfg_dict, indent=2), encoding="utf-8")
 
     # 3. Write lightweight self-contained modeling file
     modeling_py = f"""# Self-contained HuggingFace Hub loading shim for NeuralOps BERT ({attn_key})
@@ -336,16 +336,16 @@ class NeuralOpsBertForMaskedLM(BertForMaskedLM):
         except Exception:
             pass
 """
-    (out_dir / "modeling_neuralops_bert.py").write_text(modeling_py)
+    (out_dir / "modeling_neuralops_bert.py").write_text(modeling_py, encoding="utf-8")
 
     # 4. Write training metrics
-    (out_dir / "training_metrics.json").write_text(json.dumps(metrics, indent=2))
+    (out_dir / "training_metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
 
     # 5. Write Model Card README.md
     slug = attn_key.replace("_", "-")
     repo_id = f"Hooshaai/bert-{slug}-wiki"
     card_md = generate_bert_model_card_markdown(attn_key, metrics, repo_id)
-    (out_dir / "README.md").write_text(card_md)
+    (out_dir / "README.md").write_text(card_md, encoding="utf-8")
 
 
 def train_single_attention(

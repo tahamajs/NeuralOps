@@ -188,8 +188,8 @@ class FusedSVDProjectionFunction(Function):
         if needs_dVT:
             dV_T = (ctx.alpha * torch.matmul(z_scaled.t(), dout_f)).to(V_T.dtype)
 
-        # dz_scaled = alpha * (dOut * V_T)
-        dz_scaled = ctx.alpha * torch.matmul(dout_f, V_T_f)
+        # dz_scaled = alpha * (dOut * V_T^T)
+        dz_scaled = ctx.alpha * torch.matmul(dout_f, V_T_f.t())
 
         # Backward for dS: sum(dz_scaled * Z) along M
         if needs_dS and ctx.has_s:
