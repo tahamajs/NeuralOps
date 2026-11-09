@@ -88,8 +88,11 @@ class LSCPrunedLoRALinear(nn.Module):
         self,
         in_features: int,
         out_features: int,
-        weight: torch.Tensor,
+        weight: torch.Tensor | None = None,
+        U: torch.Tensor | None = None,
+        V: torch.Tensor | None = None,
         bias: torch.Tensor | None = None,
+        rank: int | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         device: torch.device | None = None,
@@ -102,19 +105,50 @@ class LSCPrunedLoRALinear(nn.Module):
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
-        self.rank = self.lora_r
 
-        target_device = device if device is not None else weight.device
-        target_dtype = dtype if dtype is not None else weight.dtype
-
-        self.weight = nn.Parameter(
-            weight.to(device=target_device, dtype=target_dtype),
-            requires_grad=False,
+        ref_tensor = U if U is not None else (weight if weight is not None else None)
+        target_device = (
+            device if device is not None else (ref_tensor.device if ref_tensor is not None else torch.device("cpu"))
         )
+        target_dtype = (
+            dtype if dtype is not None else (ref_tensor.dtype if ref_tensor is not None else torch.float32)
+        )
+
+        if U is not None and V is not None:
+            eff_rank = U.shape[1]
+            u_init = U.to(device=target_device, dtype=target_dtype)
+            v_init = V.to(device=target_device, dtype=target_dtype)
+        elif weight is not None:
+            w_float = weight.float()
+            r_req = rank if rank is not None else min(32, in_features, out_features)
+            eff_rank = max(1, min(r_req, in_features, out_features))
+            max_r = int((in_features * out_features) / (1.1 * (in_features + out_features)))
+            if max_r >= 1:
+                eff_rank = min(eff_rank, max_r)
+            eff_rank = max(1, eff_rank)
+            u, s, vh = torch.linalg.svd(w_float, full_matrices=False)
+            eff_rank = min(eff_rank, len(s))
+            u_init = (u[:, :eff_rank] * torch.sqrt(s[:eff_rank])).to(device=target_device, dtype=target_dtype)
+            v_init = (torch.sqrt(s[:eff_rank]).unsqueeze(1) * vh[:eff_rank, :]).to(
+                device=target_device, dtype=target_dtype
+            )
+        else:
+            eff_rank = max(1, min(rank if rank is not None else 32, in_features, out_features))
+            u_init = torch.empty((out_features, eff_rank), device=target_device, dtype=target_dtype)
+            v_init = torch.empty((eff_rank, in_features), device=target_device, dtype=target_dtype)
+            bound = 1.0 / math.sqrt(max(1, in_features))
+            nn.init.uniform_(u_init, -bound, bound)
+            nn.init.uniform_(v_init, -bound, bound)
+
+        self.rank = eff_rank
+        requires_grad = not (self.lora_r > 0)
+        self.U = nn.Parameter(u_init, requires_grad=requires_grad)
+        self.V = nn.Parameter(v_init, requires_grad=requires_grad)
+
         if bias is not None:
             self.bias = nn.Parameter(
                 bias.to(device=target_device, dtype=target_dtype),
-                requires_grad=False,
+                requires_grad=requires_grad,
             )
         else:
             self.register_parameter("bias", None)
@@ -135,32 +169,55 @@ class LSCPrunedLoRALinear(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Reconstructed effective weight matrix for compatibility."""
+        w = torch.matmul(self.U, self.V)
+        return w.t().contiguous() if getattr(self, "is_conv1d", False) else w
+
     @classmethod
     def from_linear(
         cls,
         linear: nn.Module,
-        weight: torch.Tensor,
+        weight: torch.Tensor | None = None,
+        U: torch.Tensor | None = None,
+        V: torch.Tensor | None = None,
+        rank: int = 32,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> LSCPrunedLoRALinear:
         base_layer = getattr(linear, "base_layer", linear)
         bias = base_layer.bias.detach() if hasattr(base_layer, "bias") and base_layer.bias is not None else None
-        in_features = getattr(base_layer, "in_features", weight.shape[1])
-        out_features = getattr(base_layer, "out_features", weight.shape[0])
+        in_features = getattr(base_layer, "in_features", None)
+        out_features = getattr(base_layer, "out_features", None)
+        if in_features is None:
+            in_features = V.shape[1] if V is not None else (weight.shape[1] if weight is not None else 768)
+        if out_features is None:
+            out_features = U.shape[0] if U is not None else (weight.shape[0] if weight is not None else 768)
 
         existing_lora_r = _detect_lora_rank(linear)
         eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
         eff_lora_alpha = _detect_lora_alpha(linear) if existing_lora_r > 0 else lora_alpha
 
+        target_device = (
+            base_layer.weight.device if hasattr(base_layer, "weight") and base_layer.weight is not None else None
+        )
+        target_dtype = (
+            base_layer.weight.dtype if hasattr(base_layer, "weight") and base_layer.weight is not None else None
+        )
+
         layer = cls(
             in_features=in_features,
             out_features=out_features,
             weight=weight,
+            U=U,
+            V=V,
             bias=bias,
+            rank=rank,
             lora_r=eff_lora_r,
             lora_alpha=eff_lora_alpha,
-            device=weight.device,
-            dtype=weight.dtype,
+            device=target_device,
+            dtype=target_dtype,
         )
         cls_name = base_layer.__class__.__name__.lower()
         layer.is_conv1d = "conv1d" in cls_name or hasattr(base_layer, "nf")
@@ -188,11 +245,28 @@ class LSCPrunedLoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if getattr(self, "is_conv1d", False):
-            out = torch.matmul(x, self.weight)
+            out = torch.matmul(torch.matmul(x, self.V.t()), self.U.t())
             if self.bias is not None:
                 out = out + self.bias
         else:
-            out = F.linear(x, self.weight, self.bias)
+            if x.is_cuda:
+                try:
+                    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
+                    suitable, _ = check_triton_suitability(x, "low_rank")
+                    if not FORCE_PYTORCH_FALLBACK and suitable:
+                        from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
+                        out = fused_down_up_gemm_bias_triton(
+                            x, self.V.t().contiguous(), self.U.t().contiguous(), bias=self.bias
+                        )
+                    else:
+                        out = F.linear(F.linear(x, self.V), self.U, self.bias)
+                except Exception:
+                    out = F.linear(F.linear(x, self.V), self.U, self.bias)
+            else:
+                out = F.linear(F.linear(x, self.V), self.U, self.bias)
+
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
@@ -454,7 +528,8 @@ class LSCCompressor(BaseCompressor):
                     k = idx[0].item() + 1 if len(idx) > 0 else total_coeffs
                     k = max(1, min(k, total_coeffs))
                 else:
-                    k = max(1, min(self.rank * self.rank, total_coeffs))
+                    budget_coeffs = (d_out + d_in) * self.rank
+                    k = max(1, min(max(self.rank * self.rank, budget_coeffs), total_coeffs))
 
                 thr = torch.topk(flat_mag, k=k, largest=True).values[-1]
                 spectral_mask = (magnitude >= thr).float()
@@ -462,8 +537,21 @@ class LSCCompressor(BaseCompressor):
                 W_comp = torch.fft.ifft2(W_fft * spectral_mask).real
                 W_comp = torch.nan_to_num(W_comp, nan=0.0, posinf=0.0, neginf=0.0)
 
+                # Low-rank factorization of spectrally filtered weights
+                eff_r = min(self.rank, d_out, d_in)
+                max_r = int((d_out * d_in) / (1.1 * (d_out + d_in)))
+                if max_r >= 1:
+                    eff_r = min(eff_r, max_r)
+                eff_r = max(1, eff_r)
+
+                u, s, vh = torch.linalg.svd(W_comp, full_matrices=False)
+                eff_r = min(eff_r, len(s))
+                U_mat = (u[:, :eff_r] * torch.sqrt(s[:eff_r])).to(dtype=dtype, device=device)
+                V_mat = (torch.sqrt(s[:eff_r]).unsqueeze(1) * vh[:eff_r, :]).to(dtype=dtype, device=device)
+                W_recon = (U_mat @ V_mat).float()
+
                 norm_orig = torch.norm(W, p="fro").item()
-                rel_err = torch.norm(W - W_comp, p="fro").item() / max(norm_orig, 1e-12)
+                rel_err = torch.norm(W - W_recon, p="fro").item() / max(norm_orig, 1e-12)
                 self.layer_errors[name] = float(rel_err)
 
                 fam = getattr(getattr(self.model, "config", None), "model_type", None)
@@ -490,23 +578,11 @@ class LSCCompressor(BaseCompressor):
                         _add_params(module)
                         continue
 
-                new_w = W_comp.t().contiguous() if is_conv1d else W_comp
-                expected_shape = target_layer.weight.shape
-                if new_w.shape != expected_shape:
-                    logger.warning(
-                        "LSC: shape mismatch for %s: expected %s, got %s; skipping.",
-                        name,
-                        tuple(expected_shape),
-                        tuple(new_w.shape),
-                    )
-                    for p in module.parameters(recurse=False):
-                        p.requires_grad = False
-                    _add_params(module)
-                    continue
-
                 new_layer = LSCPrunedLoRALinear.from_linear(
                     module,
-                    weight=new_w.to(dtype=dtype, device=device),
+                    U=U_mat,
+                    V=V_mat,
+                    rank=eff_r,
                     lora_r=self.lora_r,
                     lora_alpha=self.lora_alpha,
                 )
@@ -515,8 +591,10 @@ class LSCCompressor(BaseCompressor):
                 _add_params(new_layer)
                 layer_details[name] = {
                     "k_coeffs": int(k),
+                    "rank": int(eff_r),
                     "rel_error": float(rel_err),
-                    "shape": tuple(new_w.shape),
+                    "shape_U": tuple(U_mat.shape),
+                    "shape_V": tuple(V_mat.shape),
                 }
             except Exception as e:
                 logger.warning(
@@ -542,9 +620,20 @@ class LSCCompressor(BaseCompressor):
                 except Exception:
                     try:
                         self.model(dummy_ids)
-                    except Exception as e2:
-                        logger.warning("LSC: forward check failed: %s", e2)
-                        forward_check_success = False
+                    except Exception:
+                        try:
+                            in_dim = getattr(first_param, "shape", [768])[-1]
+                            dummy_x = torch.randn(
+                                1,
+                                8,
+                                in_dim,
+                                device=dev,
+                                dtype=first_param.dtype if first_param is not None else torch.float32,
+                            )
+                            self.model(dummy_x)
+                        except Exception as e2:
+                            logger.warning("LSC: forward check failed: %s", e2)
+                            forward_check_success = False
         except Exception as e:
             logger.warning("LSC: forward check raised: %s", e)
             forward_check_success = False
@@ -559,7 +648,7 @@ class LSCCompressor(BaseCompressor):
             if self.compressed_layers
             else 0.0
         )
-        eff_ratio = total_comp_params / max(1, total_orig_params)
+        eff_ratio = total_orig_params / max(1, total_comp_params)
 
         try:
             stats = self.get_compression_stats()
@@ -587,10 +676,8 @@ class LSCCompressor(BaseCompressor):
                 "forward_check_success": forward_check_success,
                 "method": "lsc_fourier_spectral",
                 "note": (
-                    "LSC performs in-place spectral filtering of weights. "
-                    "The stored weight is still dense (out x in); "
-                    "framework-level compression_rate reads 1.0. "
-                    "Use effective_parameter_ratio for the true storage metric."
+                    "LSC projects weight matrices into spectral and Fourier domains, "
+                    "truncating high frequencies and decomposing into low-rank spectral factors (U @ V)."
                 ),
             }
         )

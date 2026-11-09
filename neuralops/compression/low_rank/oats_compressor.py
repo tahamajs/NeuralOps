@@ -46,6 +46,7 @@ class OATSLoRALinear(nn.Module):
         weight: torch.Tensor | None = None,
         U: torch.Tensor | None = None,
         V: torch.Tensor | None = None,
+        S: torch.Tensor | None = None,
         bias: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
@@ -89,6 +90,14 @@ class OATSLoRALinear(nn.Module):
         else:
             raise ValueError("Either (U, V) or weight must be provided to OATSLoRALinear")
 
+        if S is not None:
+            self.register_buffer(
+                "S_sparse",
+                S.to(device=target_device, dtype=target_dtype),
+            )
+        else:
+            self.register_buffer("S_sparse", None)
+
         if bias is not None:
             self.bias = nn.Parameter(
                 bias.to(device=target_device, dtype=target_dtype),
@@ -121,6 +130,8 @@ class OATSLoRALinear(nn.Module):
     def weight(self) -> torch.Tensor:
         if self.U is not None and self.V is not None:
             base = torch.matmul(self.U.float(), self.V.float()).to(self.U.dtype)
+            if getattr(self, "S_sparse", None) is not None:
+                base = base + self.S_sparse.to(self.U.dtype)
         else:
             base = self.weight_param
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
@@ -134,6 +145,7 @@ class OATSLoRALinear(nn.Module):
         weight: torch.Tensor | None = None,
         U: torch.Tensor | None = None,
         V: torch.Tensor | None = None,
+        S: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         **kwargs: Any,
@@ -161,6 +173,7 @@ class OATSLoRALinear(nn.Module):
             weight=weight,
             U=U,
             V=V,
+            S=S,
             bias=bias,
             lora_r=eff_lora_r,
             lora_alpha=eff_lora_alpha,
@@ -192,6 +205,8 @@ class OATSLoRALinear(nn.Module):
         if self.U is not None and self.V is not None:
             h = F.linear(x, self.V)
             out = F.linear(h, self.U, self.bias)
+            if getattr(self, "S_sparse", None) is not None:
+                out = out + F.linear(x, self.S_sparse)
         else:
             out = F.linear(x, self.weight_param, self.bias)
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
@@ -308,6 +323,10 @@ class OATSCompressor(BaseCompressor):
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.min_rank = max(1, int(min_rank))
+        target_rank = kwargs.get("target_rank", kwargs.get("rank", None))
+        if cfg is not None and target_rank is None:
+            target_rank = _cfg_get(cfg, "oats_rank", _cfg_get(cfg, "rank", _cfg_get(cfg, "target_rank", None)))
+        self.target_rank = int(target_rank) if target_rank is not None else None
 
         self.target_device = (
             torch.device(device) if device is not None else next(model.parameters(), torch.tensor(0.0)).device
@@ -418,17 +437,18 @@ class OATSCompressor(BaseCompressor):
         self,
         W: torch.Tensor,
         activations: torch.Tensor | None,
-    ) -> tuple[torch.Tensor, int]:
-        """Decomposes weight into outlier low-rank L + sparse S under metric M."""
+        rank: int | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor | None, int]:
+        """Decomposes weight into outlier low-rank factors U, V and sparse outliers S under metric M."""
         d_out, d_in = W.shape
         device = W.device
 
         if activations is not None and activations.numel() > 0:
             X = activations.reshape(-1, activations.shape[-1]).float().to(device)
-            if X.shape[-1] == d_in:
+            if X.shape[-1] == d_in and X.shape[0] >= 1:
                 M = torch.matmul(X.T, X) / max(X.shape[0], 1)
                 diag_mean = torch.diagonal(M).mean().item()
-                reg = max(1e-4 * diag_mean, 1e-5)
+                reg = max(1e-2 * diag_mean, 1e-3)
                 M = M + reg * torch.eye(d_in, device=device)
             else:
                 M = torch.eye(d_in, device=device)
@@ -438,24 +458,30 @@ class OATSCompressor(BaseCompressor):
         try:
             L_M = torch.linalg.cholesky(M)
             L_M_inv = torch.linalg.inv(L_M)
-            if torch.isnan(L_M).any() or torch.isnan(L_M_inv).any():
-                raise ValueError("Cholesky produced NaNs")
+            if torch.isnan(L_M).any() or torch.isnan(L_M_inv).any() or torch.isinf(L_M_inv).any():
+                raise ValueError("Cholesky produced NaNs or Infs")
         except Exception:
             L_M = torch.eye(d_in, device=device)
             L_M_inv = torch.eye(d_in, device=device)
 
         W_scaled = torch.matmul(W, L_M)
-        rank = max(
-            min(self.min_rank, min(d_out, d_in)),
-            min(int(self.rank_ratio * min(d_out, d_in)), min(d_out, d_in)),
-        )
+        target_r = rank if rank is not None else self.target_rank
+        if target_r is not None:
+            r = min(int(target_r), min(d_out, d_in) - 1)
+        else:
+            r = max(
+                min(self.min_rank, min(d_out, d_in)),
+                min(int(self.rank_ratio * min(d_out, d_in)), min(d_out, d_in)),
+            )
+            r = min(r, min(d_out, d_in) - 1)
+        r = max(1, r)
 
         try:
             U, S, Vh = torch.linalg.svd(W_scaled, full_matrices=False)
-            r = min(rank, len(S))
-            L = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :])
+            curr_r = min(r, len(S))
+            L = torch.matmul(U[:, :curr_r] * S[:curr_r].unsqueeze(0), Vh[:curr_r, :])
         except Exception:
-            r = rank
+            curr_r = r
             L = torch.zeros_like(W_scaled)
 
         R = W_scaled - L
@@ -471,8 +497,8 @@ class OATSCompressor(BaseCompressor):
         for _ in range(self.num_iters):
             try:
                 U, S, Vh = torch.linalg.svd(W_scaled - S_mat, full_matrices=False)
-                r = min(rank, len(S))
-                L = torch.matmul(U[:, :r] * S[:r].unsqueeze(0), Vh[:r, :])
+                curr_r = min(r, len(S))
+                L = torch.matmul(U[:, :curr_r] * S[:curr_r].unsqueeze(0), Vh[:curr_r, :])
             except Exception as e:
                 logger.warning(
                     "OATS SVD alternating iteration failed: %s; keeping previous decomposition",
@@ -491,15 +517,35 @@ class OATSCompressor(BaseCompressor):
                 S_mat = R * mask
 
         try:
-            W_comp = torch.matmul(L + S_mat, L_M_inv)
+            U, S, Vh = torch.linalg.svd(W_scaled - S_mat, full_matrices=False)
+            curr_r = min(r, len(S))
+            sqrt_S = torch.sqrt(torch.clamp(S[:curr_r], min=1e-12))
+            U_factor = U[:, :curr_r] * sqrt_S.unsqueeze(0)
+            V_factor = sqrt_S.unsqueeze(1) * torch.matmul(Vh[:curr_r, :], L_M_inv)
+            S_sparse = torch.matmul(S_mat, L_M_inv)
         except Exception as e:
-            logger.warning("OATS de-scaling failed: %s; returning original weight", e)
-            return W, rank
+            logger.warning("OATS factorization failed: %s; falling back to direct SVD", e)
+            U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+            curr_r = min(r, len(S))
+            sqrt_S = torch.sqrt(torch.clamp(S[:curr_r], min=1e-12))
+            U_factor = U[:, :curr_r] * sqrt_S.unsqueeze(0)
+            V_factor = sqrt_S.unsqueeze(1) * Vh[:curr_r, :]
+            S_sparse = None
 
-        if torch.isnan(W_comp).any() or torch.isinf(W_comp).any():
-            logger.warning("OATS decomposition produced NaNs or Infs; returning original weight")
-            return W, rank
-        return W_comp, r
+        if (
+            torch.isnan(U_factor).any()
+            or torch.isnan(V_factor).any()
+            or torch.isinf(U_factor).any()
+            or torch.isinf(V_factor).any()
+        ):
+            U, S, Vh = torch.linalg.svd(W, full_matrices=False)
+            curr_r = min(r, len(S))
+            sqrt_S = torch.sqrt(torch.clamp(S[:curr_r], min=1e-12))
+            U_factor = U[:, :curr_r] * sqrt_S.unsqueeze(0)
+            V_factor = sqrt_S.unsqueeze(1) * Vh[:curr_r, :]
+            S_sparse = None
+
+        return U_factor, V_factor, S_sparse, curr_r
 
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         """Executes OATS decomposition across compressible Linear and Conv1D modules."""
@@ -539,9 +585,18 @@ class OATSCompressor(BaseCompressor):
 
                 act = activations_map.get(name, None)
                 try:
-                    W_comp, r = self._oats_decompose(W, act)
+                    U_factor, V_factor, S_sparse, r = self._oats_decompose(W, act, rank=self.target_rank)
+                    compressed_layer = OATSLoRALinear.from_linear(
+                        module,
+                        U=U_factor.to(dtype=dtype, device=device),
+                        V=V_factor.to(dtype=dtype, device=device),
+                        S=S_sparse.to(dtype=dtype, device=device) if S_sparse is not None else None,
+                        lora_r=self.lora_r,
+                        lora_alpha=self.lora_alpha,
+                    )
                     w_norm = torch.norm(W, p="fro").item()
-                    err = (torch.norm(W - W_comp, p="fro") / max(w_norm, 1e-12)).item()
+                    w_rec = compressed_layer.weight
+                    err = (torch.norm(W - w_rec.float(), p="fro") / max(w_norm, 1e-12)).item()
                     self.layer_errors[name] = float(err)
                     self.layer_ranks[name] = r
 
@@ -563,13 +618,6 @@ class OATSCompressor(BaseCompressor):
                                 total_comp_params += p.numel()
                             continue
 
-                    W_target = W_comp
-                    compressed_layer = OATSLoRALinear.from_linear(
-                        module,
-                        weight=W_target.to(dtype=dtype, device=device),
-                        lora_r=self.lora_r,
-                        lora_alpha=self.lora_alpha,
-                    )
                     replace_module(self.model, name, compressed_layer)
                     self.compressed_layers.append(name)
                     for p in compressed_layer.parameters():
@@ -584,13 +632,21 @@ class OATSCompressor(BaseCompressor):
 
         forward_check_success = True
         try:
+            device = next(self.model.parameters(), torch.tensor(0.0)).device
             with torch.no_grad():
-                dev = next(self.model.parameters(), torch.tensor(0.0)).device
-                dummy = torch.randint(0, 100, (1, 8), device=dev)
-                try:
+                cfg = getattr(self.model, "config", None)
+                if cfg is not None and getattr(cfg, "vocab_size", None) is not None:
+                    dummy = torch.randint(0, min(cfg.vocab_size, 100), (1, 8), device=device)
                     self.model(dummy)
-                except Exception:
-                    self.model(dummy.float())
+                else:
+                    dim = 64
+                    for m in self.model.modules():
+                        if hasattr(m, "in_features"):
+                            dim = m.in_features
+                            break
+                    first_p = next(self.model.parameters())
+                    dummy = torch.randn(1, dim, device=device, dtype=first_p.dtype)
+                    self.model(dummy)
         except Exception as e:
             logger.warning("OATS post-compression forward check warning: %s", e)
             forward_check_success = False

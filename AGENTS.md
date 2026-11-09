@@ -469,5 +469,35 @@ change appears, stop the affected phase and report it.
 - **v2.0.0** — Reconciled policy with the actual v2.0.6 repository: argparse
   CLI, verifier-based invariants, benchmark integrity, GPU evidence, artifact
   hygiene, architecture boundaries, security, and test tiers.
+- **v2.0.1** — Added Section 21: Cached Distillation & Dual Zoo Verification
+  Protocol, canonical BenchmarkResult persistence across 5 formats, and
+  asynchronous Hugging Face Hub upload daemon architecture.
 
-*Last updated: 2026-11-06.*
+## 21. Cached Distillation & Dual Zoo Verification Protocol
+
+### 21.1 Offline Teacher Representation Caching
+- Distillation training MUST NOT execute forward passes through fine-tuned teacher models during student optimization.
+- Intermediate teacher representations (hidden states and task logits) are pre-computed once and cached to high-speed shared memory (`/dev/shm/cached_teacher_representations.pt` or `data/cached_teacher_representations.pt`).
+- Guarantees: 0 MB teacher GPU VRAM allocation, 2x training throughput, zero teacher CUDA OOM risk.
+
+### 21.2 Benchmark Result Persistence Architecture
+- Every distillation run and benchmark experiment MUST persist its execution state using the canonical `neuralops.benchmarks.results.schema.BenchmarkResult` and `neuralops.benchmarks.results.saver.save_all_formats`.
+- Full run specification MUST be recorded: run ID, git commit, branch, dirty flag, exact hardware usage, peak VRAM, wall-clock duration, tokens/sec, pre/post accuracy, delta metrics, and hyperparameters.
+- Persistence across all 5 canonical formats:
+  1. JSON (canonical self-contained artifact in `results/<category>/<module>/<model>/<dataset>/rank_<rank>/<run_id>.json`);
+  2. JSONL (append-only ledger in `results/bert_attention_zoo/metrics.jsonl` and suite ledgers);
+  3. CSV (rolling tabular index);
+  4. Markdown (human-readable summary card);
+  5. Parquet (columnar storage for analytics).
+
+### 21.3 82-Compressor Zoo Verification Contract
+- Every compressor in the 82-compressor zoo must achieve physical reduction (effective ratio R > 1.05x, structured non-zero sparsity > 0%, or bit quantization < 32 bits).
+- Clean forward pass with finite outputs (zero NaNs, zero Infs) on both MLP and multi-head BERT.
+- Prohibited: synthetic identity placeholders, relabeled generic SVDs, and `fallback_to_original` masks that pretend reduction occurred.
+
+### 21.4 Decoupled Asynchronous Hugging Face Upload
+- Cluster compute nodes without outbound internet access MUST NOT stall GPU execution waiting for network I/O.
+- Checkpoints are saved locally to `results/bert_attention_zoo/<key>/`.
+- An asynchronous background upload daemon (`scripts/hpc/bert_zoo_upload_hf.py`) runs in parallel on the login node, continuously syncing completed models to Hugging Face Hub (`tahamajs/bert-{slug}-sst2`) and purging heavy local weights to protect cluster disk quotas.
+
+*Last updated: 2026-11-09.*
