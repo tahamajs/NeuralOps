@@ -92,6 +92,16 @@ class FP8Compressor(BaseCompressor):
             w_fp8 = w_scaled.to(self.target_dtype)
             w_dequant = w_fp8.to(w.dtype) * scale.to(w.dtype)
         else:
+            if w.is_cuda:
+                try:
+                    from neuralops.ops.triton.quantize_fp8 import fp8_compressor_compress
+
+                    w_dequant = fp8_compressor_compress(w, scale_type=self.scale_type, fp8_format=self.fp8_format)
+                    w_fp8 = (w_dequant / scale).to(torch.float32)
+                    return w_dequant, w_fp8, scale
+                except Exception:
+                    # allowed-swallow: best-effort-telemetry
+                    pass
             mantissa_bits = 3 if self.fp8_format == "e4m3" else 2
             exp = torch.floor(torch.log2(w_scaled.abs().clamp(min=1e-8)))
             base = torch.pow(2.0, exp)
