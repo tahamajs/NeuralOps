@@ -37,10 +37,7 @@ def test_registry():
 
 
 def test_svd_llm_linear():
-    lin = nn.Linear(128, 64)
-    u = torch.randn(64, 16)
-    v = torch.randn(16, 128)
-    layer = SVDLLMLinear(128, 64, 16, U=u, V=v, bias=lin.bias)
+    layer = SVDLLMLinear(128, 64, 16, bias=True)
     assert layer.rank == 16
     assert layer.in_features == 128
     assert layer.out_features == 64

@@ -39,7 +39,7 @@ def test_registry():
 
 def test_svd_linear_layer():
     lin = nn.Linear(128, 64)
-    layer = SVDLinearLayer.from_linear(lin, rank=16)
+    layer = SVDLinearLayer(lin, rank=16)
     assert layer.rank == 16
     assert layer.in_features == 128
     assert layer.out_features == 64

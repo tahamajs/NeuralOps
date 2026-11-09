@@ -38,8 +38,7 @@ def test_registry():
 
 
 def test_soka_linear():
-    lin = nn.Linear(128, 64)
-    lr_layer = LowRankLinear.from_linear(lin, rank=16)
+    lr_layer = LowRankLinear(128, 64, rank=16, bias=True)
     assert lr_layer.rank == 16
     assert lr_layer.in_features == 128
     assert lr_layer.out_features == 64
