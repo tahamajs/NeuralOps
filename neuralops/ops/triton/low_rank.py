@@ -2227,13 +2227,21 @@ def fused_svd_qkv_rope_attention_triton(
 
 def fused_svd_gemm_triton(
     x: torch.Tensor,
-    U: torch.Tensor,
-    V: torch.Tensor,
+    U: torch.Tensor | None,
+    V: torch.Tensor | None,
     bias: torch.Tensor | None = None,
     residual: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Fused low-rank bottleneck GEMM: (x @ V^T) @ U^T + bias (+ residual) in SRAM registers."""
     from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+
+    if U is None or V is None:
+        out = torch.zeros(*x.shape[:-1], bias.shape[0] if bias is not None else x.shape[-1], device=x.device, dtype=x.dtype)
+        if bias is not None:
+            out = out + bias
+        if residual is not None:
+            out = out + residual
+        return out
 
     if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and x.is_cuda and U.is_cuda and V.is_cuda:
         try:
@@ -2277,8 +2285,8 @@ def fused_residual_svd_gemm_triton(
 
 def fused_svd_lora_sparse_attn_triton(
     x: torch.Tensor,
-    w_down: torch.Tensor,
-    w_up: torch.Tensor,
+    w_down: torch.Tensor | None = None,
+    w_up: torch.Tensor | None = None,
     lora_A: torch.Tensor | None = None,
     lora_B: torch.Tensor | None = None,
     lora_scale: float = 1.0,
@@ -2286,11 +2294,21 @@ def fused_svd_lora_sparse_attn_triton(
     bias: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Fused Low-Rank (SVD) + LoRA + Sparse Projection in a single fused GPU pass."""
-    out = fused_down_up_gemm_bias_triton(x, w_down=w_down, w_up=w_up, bias=bias)
+    if w_down is not None and w_up is not None:
+        out = fused_down_up_gemm_bias_triton(x, w_down=w_down, w_up=w_up, bias=bias)
+    elif sparse_w is not None:
+        out = torch.matmul(x, sparse_w.t().to(x.dtype))
+        if bias is not None:
+            out = out + bias
+    else:
+        out = torch.zeros(*x.shape[:-1], bias.shape[0] if bias is not None else x.shape[-1], device=x.device, dtype=x.dtype)
+        if bias is not None:
+            out = out + bias
+
     if lora_A is not None and lora_B is not None:
         lora_out = torch.matmul(torch.matmul(x, lora_A.t().to(x.dtype)), lora_B.t().to(x.dtype)) * lora_scale
         out = out + lora_out
-    if sparse_w is not None:
+    if sparse_w is not None and w_down is not None and w_up is not None:
         out = out + torch.matmul(x, sparse_w.t().to(x.dtype))
     return out
 
