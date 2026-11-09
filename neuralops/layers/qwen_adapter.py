@@ -204,15 +204,15 @@ class QwenAttentionAdapter(nn.Module):
         batch_size, seq_len, _ = hidden_states.shape
         call_kwargs: dict[str, Any] = {}
 
-        # Forward causal / attention mask if accepted
+        # Forward causal / attention mask if accepted (sliced to seq_len)
         if attention_mask is not None:
             if attention_mask.dim() == 4:
-                mask_2d = (attention_mask[:, 0, -1, :] > -1.0).long()
+                mask_2d = (attention_mask[:, 0, -1, :seq_len] > -1.0).long()
                 call_kwargs["mask"] = mask_2d
                 call_kwargs["attention_mask"] = mask_2d
             elif attention_mask.dim() == 2:
-                call_kwargs["mask"] = attention_mask
-                call_kwargs["attention_mask"] = attention_mask
+                call_kwargs["mask"] = attention_mask[:, :seq_len]
+                call_kwargs["attention_mask"] = attention_mask[:, :seq_len]
 
         if self.is_causal:
             call_kwargs["is_causal"] = True

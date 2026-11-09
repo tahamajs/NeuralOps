@@ -194,10 +194,11 @@ def evaluate_causal_ppl(
             if i >= max_batches:
                 break
             in_ids = batch["input_ids"].to(device, non_blocking=True)
+            att_m = batch["attention_mask"].to(device, non_blocking=True)
             lbls = batch["labels"].to(device, non_blocking=True)
 
             with torch.cuda.amp.autocast(dtype=torch.float16 if device.type == "cuda" else torch.bfloat16):
-                h = getattr(model, "model", model)(input_ids=in_ids).last_hidden_state
+                h = getattr(model, "model", model)(input_ids=in_ids, attention_mask=att_m).last_hidden_state
                 seq_len = in_ids.size(1) - 1
                 targets = lbls[:, 1:].contiguous()
                 h_causal = h[:, :seq_len, :]
