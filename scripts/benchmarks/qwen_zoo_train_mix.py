@@ -410,6 +410,12 @@ def train_single_qwen_attention(
     dur_s1 = time.time() - t0_s1
     logger.info("[%s] Stage 1 Complete: %d steps in %.1fs", attn_key, step_s1, dur_s1)
 
+    # Release Stage 1 optimizer states to reclaim 2.5+ GB VRAM
+    del opt1
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
+    gc.collect()
+
     # Stage 2: End-to-End Unfrozen KD + Causal LM with Top-K Sparse Logit KD
     for p in student.parameters():
         p.requires_grad = True
@@ -437,29 +443,42 @@ def train_single_qwen_attention(
             lbls = batch["labels"].to(device, non_blocking=True)
 
             with torch.cuda.amp.autocast(dtype=torch.float16 if device.type == "cuda" else torch.bfloat16):
+                # 1. Teacher representations (Zero 152k dense logit allocation, per Section 21.1)
                 with torch.no_grad():
-                    t_out = teacher_model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=False)
-                # Call student WITHOUT labels=lbls to avoid HF internal unchunked 2.5GB loss allocation
-                s_out = student(input_ids=in_ids, attention_mask=att_m, output_hidden_states=False)
+                    t_hidden = teacher_model.model(input_ids=in_ids, attention_mask=att_m).last_hidden_state
 
-                # Top-K Sparse Logit KD (topk=64) avoiding dense 151936 logit OOM
-                loss_sparse_kl = compute_topk_sparse_kd_loss(s_out.logits, t_out.logits, topk=topk)
+                # 2. Student backbone forward
+                s_hidden = student.model(input_ids=in_ids, attention_mask=att_m).last_hidden_state
 
-                # Exact chunked causal cross-entropy (128 tokens per chunk)
-                shift_logits = s_out.logits[..., :-1, :].contiguous()
-                shift_labels = lbls[..., 1:].contiguous()
-                ce_chunks = []
-                for c in range(0, shift_logits.size(1), 128):
-                    c_log = shift_logits[:, c : c + 128, :]
-                    c_lbl = shift_labels[:, c : c + 128]
-                    ce_chunks.append(F.cross_entropy(c_log.reshape(-1, c_log.size(-1)), c_lbl.reshape(-1)))
-                loss_causal_ce = torch.stack(ce_chunks).mean()
+                # 3. Backbone representation distillation loss (MSE + Cosine)
+                loss_rep = (0.50 * F.mse_loss(s_hidden, t_hidden) + 0.50 * (1.0 - F.cosine_similarity(s_hidden, t_hidden, dim=-1).mean())) / grad_accum
 
-                loss_total = (0.50 * loss_sparse_kl + 0.50 * loss_causal_ce) / grad_accum
+            # Backward representation alignment loss
+            loss_rep.backward(retain_graph=True)
+            del t_hidden, loss_rep
 
-            loss_total.backward()
-            del t_out
-            del s_out
+            # 4. Micro-chunked Causal LM Cross-Entropy with immediate per-chunk backward
+            # (Projects [8, 64, 896] -> [8, 64, 151936] taking only 150MB peak VRAM instead of 2.5GB)
+            seq_len = in_ids.size(1) - 1
+            targets = lbls[:, 1:].contiguous()
+            h_causal = s_hidden[:, :seq_len, :]
+            del s_hidden
+
+            chunk_sz = 64
+            num_chunks = (seq_len + chunk_sz - 1) // chunk_sz
+            for c_idx, c in enumerate(range(0, seq_len, chunk_sz)):
+                with torch.cuda.amp.autocast(dtype=torch.float16 if device.type == "cuda" else torch.bfloat16):
+                    h_c = h_causal[:, c : c + chunk_sz, :]
+                    tgt_c = targets[:, c : c + chunk_sz]
+                    logits_c = student.lm_head(h_c)
+                    loss_c = F.cross_entropy(logits_c.reshape(-1, logits_c.size(-1)), tgt_c.reshape(-1))
+                    loss_chunk_scaled = (0.50 * loss_c) / (num_chunks * grad_accum)
+
+                is_last = (c_idx == num_chunks - 1)
+                loss_chunk_scaled.backward(retain_graph=not is_last)
+                del logits_c, h_c, tgt_c, loss_c, loss_chunk_scaled
+
+            del h_causal, targets
             step_s2 += 1
 
             if step_s2 % grad_accum == 0:
