@@ -420,7 +420,17 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         with torch.no_grad():
             try:
                 if isinstance(calib_inputs, dict):
-                    self.model(**calib_inputs)
+                    try:
+                        self.model(**calib_inputs)
+                    except TypeError:
+                        in_dim = None
+                        for m in self.model.modules():
+                            if hasattr(m, "in_features"):
+                                in_dim = m.in_features
+                                break
+                        if in_dim is not None:
+                            dummy_t = torch.randn(8, in_dim, device=self.target_device)
+                            self.model(dummy_t)
                 elif isinstance(calib_inputs, torch.Tensor):
                     self.model(calib_inputs)
                 elif isinstance(calib_inputs, (list, tuple)):
@@ -564,29 +574,26 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         try:
             with torch.no_grad():
                 dev = next(self.model.parameters(), torch.tensor(0.0)).device
-                dummy = torch.randint(0, 100, (1, 8), device=dev, dtype=torch.long)
-                try:
-                    self.model(input_ids=dummy)
-                except Exception:
+                if hasattr(self.model, "config") and hasattr(self.model.config, "vocab_size"):
+                    dummy = torch.randint(0, min(100, self.model.config.vocab_size), (1, 8), device=dev, dtype=torch.long)
                     try:
-                        self.model(dummy)
+                        self.model(input_ids=dummy)
                     except Exception:
-                        cfg = getattr(self.model, "config", None)
-                        hidden = getattr(cfg, "hidden_size", None) if cfg else None
-                        if hidden is None:
-                            first_lin = next(
-                                (m for m in self.model.modules() if isinstance(m, nn.Linear)),
-                                None,
-                            )
-                            hidden = getattr(first_lin, "in_features", 8)
-                        dummy_feat = torch.randn(
-                            1,
-                            8,
-                            hidden,
-                            device=dev,
-                            dtype=next(self.model.parameters()).dtype,
-                        )
+                        self.model(dummy)
+                else:
+                    in_dim = 8
+                    for m in self.model.modules():
+                        if hasattr(m, "in_features"):
+                            in_dim = m.in_features
+                            break
+                    param_dtype = next(self.model.parameters(), torch.tensor(0.0)).dtype
+                    if not param_dtype.is_floating_point:
+                        param_dtype = torch.float32
+                    dummy_feat = torch.randn(1, in_dim, device=dev, dtype=param_dtype)
+                    try:
                         self.model(dummy_feat)
+                    except Exception:
+                        self.model(input_ids=torch.randint(0, 100, (1, 8), device=dev, dtype=torch.long))
         except Exception as e:
             logger.warning("OSP forward sanity check failed: %s", e)
             forward_check_success = False

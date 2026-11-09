@@ -48,10 +48,42 @@ class QuaRotCompressor(BaseCompressor):
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 self._quantize_layer(module, name or "root")
+                module.effective_bits = self.bits
                 stats["layers"].append(name or "root")
         if not stats["layers"] and isinstance(self.model, nn.Linear):
             self._quantize_layer(self.model, "root")
+            self.model.effective_bits = self.bits
             stats["layers"].append("root")
+        self.model.effective_bits = self.bits
+
+        forward_check_success = True
+        try:
+            with torch.no_grad():
+                dev = next(self.model.parameters(), torch.tensor(0.0)).device
+                if hasattr(self.model, "config") and hasattr(self.model.config, "vocab_size"):
+                    dummy = torch.randint(0, min(100, self.model.config.vocab_size), (1, 8), device=dev, dtype=torch.long)
+                    try:
+                        self.model(input_ids=dummy)
+                    except Exception:
+                        self.model(dummy)
+                else:
+                    in_dim = 8
+                    for m in self.model.modules():
+                        if hasattr(m, "in_features"):
+                            in_dim = m.in_features
+                            break
+                    param_dtype = next(self.model.parameters(), torch.tensor(0.0)).dtype
+                    if not param_dtype.is_floating_point:
+                        param_dtype = torch.float32
+                    dummy_feat = torch.randn(1, in_dim, device=dev, dtype=param_dtype)
+                    try:
+                        self.model(dummy_feat)
+                    except Exception:
+                        self.model(input_ids=torch.randint(0, 100, (1, 8), device=dev, dtype=torch.long))
+        except Exception as e:
+            forward_check_success = False
+        stats["forward_check_success"] = forward_check_success
+
         return self.model, stats
 
     def _quantize_layer(self, layer: nn.Linear, name: str) -> None:

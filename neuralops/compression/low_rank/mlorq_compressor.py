@@ -687,26 +687,24 @@ class MLoRQCompressor(BaseCompressor):
 
         forward_check_success = True
         try:
+            device = next(self.model.parameters(), torch.tensor(0.0)).device
             with torch.no_grad():
-                dev = next(self.model.parameters(), torch.tensor(0.0)).device
-                dummy = torch.randint(0, 100, (1, 8), device=dev, dtype=torch.long)
-                try:
-                    self.model(input_ids=dummy)
-                except Exception:
+                cfg = getattr(self.model, "config", None)
+                if cfg is not None and getattr(cfg, "vocab_size", None) is not None:
+                    dummy = torch.randint(0, min(cfg.vocab_size, 100), (1, 8), device=device, dtype=torch.long)
                     try:
-                        self.model(dummy)
+                        self.model(input_ids=dummy)
                     except Exception:
-                        cfg = getattr(self.model, "config", None)
-                        hidden = getattr(cfg, "hidden_size", None) if cfg else None
-                        if hidden is None:
-                            first_lin = next(
-                                (m for m in self.model.modules() if isinstance(m, nn.Linear)),
-                                None,
-                            )
-                            hidden = getattr(first_lin, "in_features", 8)
-                        dt = next(self.model.parameters()).dtype
-                        dummy_feat = torch.randn(1, 8, hidden, device=dev, dtype=dt)
+                        self.model(dummy)
+                else:
+                    first_lin = next((m for m in self.model.modules() if hasattr(m, "in_features")), None)
+                    hidden = getattr(first_lin, "in_features", 768) if first_lin else 768
+                    first_p = next(self.model.parameters())
+                    dummy_feat = torch.randn(1, hidden, device=device, dtype=first_p.dtype)
+                    try:
                         self.model(dummy_feat)
+                    except Exception:
+                        self.model(dummy_feat.unsqueeze(1))
         except Exception as e:
             logger.warning("MLoRQ forward sanity check failed: %s", e)
             forward_check_success = False

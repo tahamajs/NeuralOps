@@ -652,21 +652,24 @@ class MoDeGPTCompressor(BaseCompressor):
 
         forward_check_success = True
         try:
+            device = next(self.model.parameters(), torch.tensor(0.0)).device
             with torch.no_grad():
-                dev = next(self.model.parameters(), torch.tensor(0.0)).device
                 cfg = getattr(self.model, "config", None)
-                vocab = getattr(cfg, "vocab_size", None) if cfg else None
-                if vocab is None:
-                    vocab = 100
-                dummy = torch.randint(0, min(vocab, 100), (1, 8), device=dev)
-                try:
-                    self.model(input_ids=dummy, attention_mask=torch.ones_like(dummy))
-                except Exception:
+                if cfg is not None and getattr(cfg, "vocab_size", None) is not None:
+                    dummy = torch.randint(0, min(cfg.vocab_size, 100), (1, 8), device=device, dtype=torch.long)
                     try:
+                        self.model(input_ids=dummy, attention_mask=torch.ones_like(dummy))
+                    except Exception:
                         self.model(dummy)
-                    except Exception as e2:
-                        logger.warning("MoDeGPT post-compression forward check failed: %s", e2)
-                        forward_check_success = False
+                else:
+                    first_lin = next((m for m in self.model.modules() if hasattr(m, "in_features")), None)
+                    hidden = getattr(first_lin, "in_features", 768) if first_lin else 768
+                    first_p = next(self.model.parameters())
+                    dummy_feat = torch.randn(1, hidden, device=device, dtype=first_p.dtype)
+                    try:
+                        self.model(dummy_feat)
+                    except Exception:
+                        self.model(dummy_feat.unsqueeze(1))
         except Exception as e:
             logger.warning("MoDeGPT forward check warning: %s", e)
             forward_check_success = False

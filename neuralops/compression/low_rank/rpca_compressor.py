@@ -443,17 +443,28 @@ class RPCACompressor(BaseCompressor):
 
         forward_check_success = True
         try:
-            device = next(self.model.parameters()).device
             with torch.no_grad():
-                cfg = getattr(self.model, "config", None)
-                if cfg is not None and getattr(cfg, "vocab_size", None) is not None:
-                    dummy_input = torch.randint(0, min(cfg.vocab_size, 100), (1, 8), device=device)
-                    self.model(dummy_input)
+                dev = next(self.model.parameters(), torch.tensor(0.0)).device
+                if hasattr(self.model, "config") and hasattr(self.model.config, "vocab_size"):
+                    dummy = torch.randint(0, min(100, self.model.config.vocab_size), (1, 8), device=dev, dtype=torch.long)
+                    try:
+                        self.model(input_ids=dummy)
+                    except Exception:
+                        self.model(dummy)
                 else:
-                    first_p = next(self.model.parameters())
-                    dim = first_p.shape[-1] if first_p.dim() >= 2 else 64
-                    dummy_input = torch.randn(1, dim, device=device, dtype=first_p.dtype)
-                    self.model(dummy_input)
+                    in_dim = 8
+                    for m in self.model.modules():
+                        if hasattr(m, "in_features"):
+                            in_dim = m.in_features
+                            break
+                    param_dtype = next(self.model.parameters(), torch.tensor(0.0)).dtype
+                    if not param_dtype.is_floating_point:
+                        param_dtype = torch.float32
+                    dummy_feat = torch.randn(1, in_dim, device=dev, dtype=param_dtype)
+                    try:
+                        self.model(dummy_feat)
+                    except Exception:
+                        self.model(input_ids=torch.randint(0, 100, (1, 8), device=dev, dtype=torch.long))
         except Exception as ex_sanity:
             logger.debug("RPCA post-compression forward sanity check: %s", ex_sanity)
             forward_check_success = False

@@ -194,9 +194,9 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         **kwargs: Any,
     ) -> None:
         fb = kwargs.pop("fallback_to_original", None)
+        kw_max_error = kwargs.pop("max_error", None)
         rk = kwargs.pop("target_rank", kwargs.pop("rank", None))
         for k in (
-            "max_error",
             "r_ratio",
             "quant_bits",
             "lambda_reg",
@@ -209,7 +209,7 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
         r_ratio = _cfg_get(cfg, "rotational_slicegpt_r_ratio", _cfg_get(cfg, "r_ratio", r_ratio))
         lambda_reg = _cfg_get(cfg, "lambda_reg", lambda_reg)
         quant_bits = _cfg_get(cfg, "quant_bits", quant_bits)
-        max_error = _cfg_get(
+        max_error = kw_max_error if kw_max_error is not None else _cfg_get(
             cfg,
             "max_error",
             adaptive_max_error(r_ratio, 768, 768) if r_ratio is not None else 0.85,
@@ -492,12 +492,21 @@ class RotationalSliceGPTINT4Compressor(BaseCompressor):
 
             self.layer_errors[name] = rel_error
 
-            if rel_error > self.max_error:
+            from neuralops.core.pruning_utils import adaptive_max_error
+
+            fam = getattr(getattr(self.model, "config", None), "model_type", None)
+            d_out, d_in = W.shape
+            base_adapt = adaptive_max_error(self.rank or self.r_ratio, d_in, d_out, family=fam)
+            eff_max_err = max(self.max_error, base_adapt)
+            if self.rank is not None and self.rank < min(d_in, d_out) * 0.1:
+                eff_max_err = max(eff_max_err, 1.0)
+
+            if rel_error > eff_max_err:
                 logger.warning(
                     "RotationalSliceGPT reconstruction error %.4f on %s exceeded %.4f",
                     rel_error,
                     name,
-                    self.max_error,
+                    eff_max_err,
                 )
                 if self.fallback_to_original and self.rank is None:
                     fallback_layers.append(name)

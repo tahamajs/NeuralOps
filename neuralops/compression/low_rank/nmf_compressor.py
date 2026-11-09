@@ -496,11 +496,23 @@ class NMFCompressor(BaseCompressor):
         try:
             with torch.no_grad():
                 dev = next(self.model.parameters(), torch.tensor(0.0)).device
-                dummy = torch.randint(0, 100, (1, 8), device=dev, dtype=torch.long)
-                try:
-                    self.model(input_ids=dummy)
-                except Exception:
-                    self.model(dummy)
+                if hasattr(self.model, "config") and hasattr(self.model.config, "vocab_size"):
+                    dummy = torch.randint(0, min(100, self.model.config.vocab_size), (1, 8), device=dev, dtype=torch.long)
+                    try:
+                        self.model(input_ids=dummy)
+                    except Exception:
+                        self.model(dummy)
+                else:
+                    in_dim = 8
+                    for m in self.model.modules():
+                        if hasattr(m, "in_features"):
+                            in_dim = m.in_features
+                            break
+                    dummy = torch.randn(1, in_dim, device=dev, dtype=torch.float32)
+                    try:
+                        self.model(dummy)
+                    except Exception:
+                        self.model(input_ids=torch.randint(0, 100, (1, 8), device=dev, dtype=torch.long))
         except Exception as e:
             logger.warning("NMF forward sanity check failed: %s", e)
             forward_check_success = False

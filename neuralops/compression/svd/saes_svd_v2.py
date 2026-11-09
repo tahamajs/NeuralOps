@@ -248,6 +248,34 @@ class SAESSVDCompressorV2(BaseCompressor):
                     p.requires_grad = False
 
         self._compressed_params = self._count_params(self.model)
+
+        forward_check_success = True
+        try:
+            with torch.no_grad():
+                dev = next(self.model.parameters(), torch.tensor(0.0)).device
+                if hasattr(self.model, "config") and hasattr(self.model.config, "vocab_size"):
+                    dummy = torch.randint(0, min(100, self.model.config.vocab_size), (1, 8), device=dev, dtype=torch.long)
+                    try:
+                        self.model(input_ids=dummy)
+                    except Exception:
+                        self.model(dummy)
+                else:
+                    in_dim = 8
+                    for m in self.model.modules():
+                        if hasattr(m, "in_features"):
+                            in_dim = m.in_features
+                            break
+                    param_dtype = next(self.model.parameters(), torch.tensor(0.0)).dtype
+                    if not param_dtype.is_floating_point:
+                        param_dtype = torch.float32
+                    dummy_feat = torch.randn(1, in_dim, device=dev, dtype=param_dtype)
+                    try:
+                        self.model(dummy_feat)
+                    except Exception:
+                        self.model(input_ids=torch.randint(0, 100, (1, 8), device=dev, dtype=torch.long))
+        except Exception:
+            forward_check_success = False
+
         stats = self.get_compression_stats()
         stats.update(
             {
@@ -259,6 +287,7 @@ class SAESSVDCompressorV2(BaseCompressor):
                 "fallback_to_original": self.fallback_to_original,
                 "correcting_steps": self.correcting_steps,
                 "target_attention_only": self.target_attention_only,
+                "forward_check_success": forward_check_success,
             }
         )
         return self.model, stats
