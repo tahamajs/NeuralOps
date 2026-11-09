@@ -140,13 +140,13 @@ def test_group2_compression_and_forward(key: str):
     bit_reduction = 1.0
     for obj in [comp_obj, compressed]:
         if hasattr(obj, "effective_bits"):
-            bit_reduction = max(bit_reduction, 32.0 / getattr(obj, "effective_bits"))
+            bit_reduction = max(bit_reduction, 32.0 / obj.effective_bits)
         if hasattr(obj, "bits"):
-            bit_reduction = max(bit_reduction, 32.0 / getattr(obj, "bits"))
+            bit_reduction = max(bit_reduction, 32.0 / obj.bits)
         if hasattr(obj, "bit_reduction"):
-            bit_reduction = max(bit_reduction, float(getattr(obj, "bit_reduction")))
+            bit_reduction = max(bit_reduction, float(obj.bit_reduction))
         if hasattr(obj, "compression_ratio"):
-            cr = float(getattr(obj, "compression_ratio"))
+            cr = float(obj.compression_ratio)
             if cr > 1.05:
                 bit_reduction = max(bit_reduction, cr)
 
