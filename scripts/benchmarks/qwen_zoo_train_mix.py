@@ -367,8 +367,6 @@ def train_single_qwen_attention(
     t_s1_deadline = t_train_start + (train_secs * stage1_frac)
     t_s2_deadline = t_train_start + train_secs
 
-    scaler = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda"))
-
     # Stage 1: Frozen-Backbone Subspace Alignment (lm_head bypassed)
     for name, p in student.named_parameters():
         p.requires_grad = ("self_attn" in name) or ("layernorm" in name.lower())
@@ -401,17 +399,12 @@ def train_single_qwen_attention(
 
                 loss = (loss_mse + 0.5 * loss_cov) / grad_accum
 
-            scaler.scale(loss).backward()
+            loss.backward()
             step_s1 += 1
 
             if step_s1 % grad_accum == 0:
-                try:
-                    scaler.unscale_(opt1)
-                    torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
-                except Exception:
-                    pass
-                scaler.step(opt1)
-                scaler.update()
+                torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
+                opt1.step()
                 opt1.zero_grad(set_to_none=True)
 
     dur_s1 = time.time() - t0_s1
@@ -454,17 +447,12 @@ def train_single_qwen_attention(
 
                 loss_total = (0.50 * loss_sparse_kl + 0.50 * loss_causal_ce) / grad_accum
 
-            scaler.scale(loss_total).backward()
+            loss_total.backward()
             step_s2 += 1
 
             if step_s2 % grad_accum == 0:
-                try:
-                    scaler.unscale_(opt2)
-                    torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
-                except Exception:
-                    pass
-                scaler.step(opt2)
-                scaler.update()
+                torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
+                opt2.step()
                 opt2.zero_grad(set_to_none=True)
 
     dur_s2 = time.time() - t0_s2
