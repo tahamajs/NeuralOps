@@ -431,14 +431,29 @@ def main() -> None:
         keys: list[str] = json.load(f)
     logger.info("Loaded %d keys from %s (isolated_workers=%d)", len(keys), args.keys_json, args.isolate_workers)
 
-    # 2. Master loop with worker isolation
+    # 2. Master loop with worker isolation & robust resumption
+    completed_keys: set[str] = set()
+    if os.path.exists(args.metrics_log):
+        with open(args.metrics_log, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    try:
+                        rec = json.loads(line)
+                        if rec.get("status") == "PASSED":
+                            k = rec.get("attn_key") or rec.get("module")
+                            if k:
+                                completed_keys.add(k)
+                    except Exception:
+                        pass
+    logger.info("Found %d already passed keys in %s", len(completed_keys), args.metrics_log)
+
     import subprocess
     for i, key in enumerate(keys):
         ckpt_dir = out_base / key
         metrics_file = ckpt_dir / "training_metrics.json"
 
-        if metrics_file.exists():
-            logger.info("[%d/%d] [RESUME] Skipping %s (already trained).", i + 1, len(keys), key)
+        if metrics_file.exists() or key in completed_keys:
+            logger.info("[%d/%d] [RESUME] Skipping %s (already trained and verified).", i + 1, len(keys), key)
             continue
 
         logger.info("\n[%d/%d] Launching Attention Worker: %s", i + 1, len(keys), key)
