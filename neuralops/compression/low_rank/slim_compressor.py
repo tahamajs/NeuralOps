@@ -204,6 +204,9 @@ class SLiMCompressor(BaseCompressor):
 
                 final_w = W_final.t().contiguous() if is_conv1d else W_final
                 base_mod.weight.data = final_w.to(dtype=dtype, device=device)
+                binary_mask = final_w != 0.0
+                base_mod.register_buffer("pruning_mask", binary_mask)
+                base_mod.register_buffer("mask", binary_mask.to(dtype=base_mod.weight.dtype))
                 compressed_layer = base_mod
                 if (
                     hasattr(module, "lora_A")

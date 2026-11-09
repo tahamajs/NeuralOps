@@ -28,7 +28,13 @@ import torch.nn as nn
 from neuralops.core.base import BaseCompressor
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
-__all__ = ["smoothquant_layer", "smoothquant_model", "SmoothQuantLinear", "SmoothQuantCompressor"]
+__all__ = [
+    "smoothquant_layer",
+    "smoothquant_model",
+    "SmoothQuantLinear",
+    "SmoothQuantCompressor",
+    "smoothquant_factory",
+]
 
 
 class SmoothQuantLinear(nn.Module):
@@ -283,3 +289,21 @@ class SmoothQuantCompressor(BaseCompressor):
                 }
             },
         }
+
+
+def smoothquant_factory(
+    model: nn.Module,
+    comp_config: Any = None,
+    alpha: float = 0.5,
+    return_stats: bool = False,
+    return_tuple: bool = False,
+    **kwargs: Any,
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
+    """Factory function for SmoothQuant compressor."""
+    ret_stats = return_stats or return_tuple or kwargs.pop("return_both", False)
+    compressor = SmoothQuantCompressor(model, comp_config=comp_config, alpha=alpha, **kwargs)
+    compressed_model, stats = compressor.compress()
+    if ret_stats:
+        return compressed_model, stats
+    return compressed_model
+
