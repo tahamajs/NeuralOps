@@ -1,954 +1,953 @@
-# NeuralOps Notebook Suite: Architecture, Catalog & 60-Notebook Expansion Roadmap
+# NeuralOps Notebook Suite: Architecture, Master Catalog & 60-Notebook Expansion Roadmap
 
-این سند مرجع جامع، معماری، طبقه‌بندی و راهنمای تفصیلی تمامی ۲۹ نوتبوک فعلی مخزن [NeuralOps](file:///Users/tahamajs/Documents/uni/Project) به همراه **طرح تفصیلی توسعه به ۶۰ نوتبوک (۳۱ نوتبوک جدید)** را با در نظر گرفتن کلیه بخش‌های سیستم (Attention Registry، Compression Engines، 3-Level Kernel Dispatch، 6-Pillar Distillation، Production Serving، و Mathematical Invariants) ارائه می‌دهد.
-
----
-
-## ۱. اصول معماری و ساختار استاندارد هر نوتبوک
-
-طبق استاندارد مهندسی و مهارت [`neuralops-notebook-architect`](file:///Users/tahamajs/Documents/uni/Project/.agents/skills/neuralops-notebook-architect/SKILL.md)، هر نوتبوک یک پروتوتایپ کامل و خودکفا است که از ساختار ۵ بخشی زیر تبعیت می‌کند:
-
-1. **Preamble & Mathematical Foundation**:
-   - بیان فرمول‌های ریاضی و قرارداد تنسوری (\(B, S, H, D\) یا \(B, S, D\)).
-   - وارد کردن ماژول‌ها با مکانیزم Fallback و تعریف Dtype / Hardware Guard.
-2. **Architecture & Topology Visualizer**:
-   - نمودار شماتیک جریان داده (ASCII یا دایاگرام‌های تراز ماتریسی) و ابعاد تنسورها در هر لایه.
-3. **Multi-Tier Kernel Dispatch Execution**:
-   - فراخوانی و تست مسیر سه‌گانه: Level 1 (CUDA C++ / HIP)، Level 2 (Triton JIT بدون Block Pointer)، Level 3 (Vectorized PyTorch Reference).
-   - تحلیل عددی Parity با تلرانس \(\text{atol}=10^{-3}, \text{rtol}=10^{-3}\).
-4. **Hardware Telemetry & Memory Profiling**:
-   - سنجش دقیق مصرف VRAM (Peak Allocation و Reservoir Memory)، توان مصرفی، و نسبت به سقف Roofline سخت‌افزار (مثلاً Ada Lovelace SM 8.9 یا Titan RTX).
-5. **Interactive Experiments, Export & DoD Summary**:
-   - تست سناریوهای تغییر پارامتر، صدور مانیفست جراحی و جمع‌بندی معیارهای Definition of Done (DoD).
+This authoritative reference document defines the end-to-end architecture, hierarchical classification, pedagogical workflows, and technical specifications for the entire Jupyter demonstration tutorial suite within the [NeuralOps](file:///Users/tahamajs/Documents/uni/Project) repository. It details both the foundational 29-notebook core and the comprehensive **31-notebook expansion roadmap (scaling to 60 canonical tutorials)**, integrating all architectural subsystems: the Attention Mechanism Registry (131 operators), Compression Engines (72 algorithms), 3-Level Kernel Dispatch (CUDA C++, Triton JIT, Vectorized PyTorch), 6-Pillar Knowledge Distillation Healing, High-Throughput Production Serving (PagedAttention, RadixAttention), and Strict Mathematical Invariant Validation.
 
 ---
 
-## ۲. کاتالوگ جامع ۲۹ نوتبوک فعلی مخزن
+## 1. Architectural Foundations and Standard 5-Stage Blueprint
 
-| شماره | نام فایل نوتبوک | حوزه تخصصی | ماژول‌ها و کرنل‌های کلیدی |
+In accordance with the repository engineering charter and the [`neuralops-notebook-architect`](file:///Users/tahamajs/Documents/uni/Project/.agents/skills/neuralops-notebook-architect/SKILL.md) protocol, every demonstration notebook constitutes an independent, self-contained, and mathematically certified execution harness conforming to the following 5-stage structural blueprint:
+
+1. **Stage 1: Preamble & Mathematical Foundation**:
+   - Explicit mathematical formulations and tensor contract definitions using canonical dimensional signatures (e.g., $(B, S, H, D)$ or $(B, S, D)$).
+   - Dynamic module importation with graceful fallback handlers, dtype assertions, and hardware capability guards.
+2. **Stage 2: Architecture & Topology Visualizer**:
+   - Structural ASCII dataflow topologies, tensor geometry maps, and inter-layer parameter contracts illustrating intermediate dimensionality transitions.
+3. **Stage 3: Multi-Tier Kernel Dispatch Execution**:
+   - Systematic invocation and evaluation across the repository's 3-level fallback hierarchy: Level 1 (CUDA C++ / HIP extension), Level 2 (Triton JIT compiled without deprecated block pointers), and Level 3 (Vectorized PyTorch Reference).
+   - Numerical parity certification enforcing strict diff bounds (typically $\text{atol} \le 10^{-3}$, $\text{rtol} \le 10^{-3}$).
+4. **Stage 4: Hardware Telemetry & Memory Profiling**:
+   - High-resolution hardware telemetry capturing peak VRAM allocation, dynamic memory reservoir curves, board power draw, and arithmetic intensity positioning against empirical Roofline ceilings (e.g., Ada Lovelace SM 8.9, Ampere SM 8.6, or Titan RTX).
+5. **Stage 5: Interactive Experiments, Export & Definition of Done (DoD) Summary**:
+   - Interactive hyperparameter ablation sweeps, surgical manifest serialization (SafeTensors / JSON), and an empirical Definition of Done (DoD) verification checklist.
+
+---
+
+## 2. Comprehensive Catalog of the 29 Foundation Notebooks
+
+The table below catalogs the 29 core foundation notebooks (addressing sequential indices 00 through 25, including composite variants 01a/01b, 02a/02b, and 05a/05b) that form the foundational operational baseline of NeuralOps:
+
+| Index | Notebook Filename | Technical Domain | Key Modules, Kernels & Abstractions |
 | :--- | :--- | :--- | :--- |
-| **00** | `00_master_neuralops_complete_system_walkthrough.ipynb` | سیستم جامع | بررسی سرتاسری لایه‌ها، رجیستری‌ها، جراحی، تقطیر و استقرار |
-| **01a** | `01_quickstart_surgery_and_healing.ipynb` | شروع سریع | جراحی پیوندی توجه و بازیابی سریع با کالیبراسیون LoRA |
-| **01b** | `01_attention_surgery_and_lora.ipynb` | جراحی توجه | جایگزینی لایه‌های توجه و تیونینگ پارامتر-کارا (PEFT) |
-| **02a** | `02_unified_training.ipynb` | آموزش یکپارچه | خط لوله آموزش تجمیعی با تجمیع گرادیان و WSD |
-| **02b** | `02_roofline_and_triton_kernels.ipynb` | بهینه‌سازی کرنل | مدل‌سازی Roofline و آنالیز کرنل‌های Triton JIT |
-| **03** | `03_custom_plugins_and_extensibility.ipynb` | توسعه‌پذیری | معماری پلاگین‌ها و ثبت اپراتورهای سفارشی در رجیستری |
-| **04** | `04_end_to_end_3level_benchmarking.ipynb` | بنچ‌مارک سه‌سطحی | اعتبارسنجی تاخیر و Fallback سطوح ۱، ۲ و ۳ |
-| **05a** | `05_master_108_cuda_and_26_triton_kernels_benchmark.ipynb` | ماتریس کرنل‌ها | بنچ‌مارک جامع ۱۰۸ کرنل CUDA و ۲۶ ماژول تریتون |
-| **05b** | `05_paper_empirical_results_master.ipynb` | نتایج تجربی مقاله | بازتولید جداول تجربی مقالات MLSys و arXiv |
-| **06** | `06_master_all_131_attention_mechanisms_interactive.ipynb` | مکانیزم‌های توجه | ماتریس تعاملی و تست تک‌تک ۱۳۱ کلید ATTENTION_REGISTRY |
-| **07** | `07_master_all_72_compression_engines_quant_and_svd.ipynb` | فشرده‌سازی | تست ۷۲ موتور COMPRESSOR_REGISTRY شامل کوانتیزاسیون و SVD |
-| **08** | `08_six_pillar_distillation_and_surgical_recovery.ipynb` | تقطیر ۶ ستونه | بازیابی گرادیانی با اهداف شش‌گانه پس از برش ابعادی |
-| **09** | `09_production_serving_paged_cache_and_speculative_decoding.ipynb` | سرورینگ عملیاتی | PagedAttention، مدیریت حافظه KV-Cache و دیکودینگ حدسی |
-| **10** | `10_long_context_extrapolation_32k.ipynb` | کانتکست طولانی | برون‌یابی طول متن تا ۳۲k توکن با RoPE Scaling و YaRN |
-| **11** | `11_cuda_vs_triton_vs_pytorch_matrix.ipynb` | مقایسه Backendها | تحلیل مقایسه‌ای سرعت و مصرف رجیستر در ۳ لایه اجرایی |
-| **12** | `12_svd_whitening_spectral_allocation.ipynb` | فاکتورگیری SVD | تخمین کوواریانس، سفیدسازی ماتریس و بهینگی Eckart-Young |
-| **13** | `13_quantization_pareto_fp8_int4_kmeans.ipynb` | مرز پارتو کوانتیزاسیون | ارزیابی دقت/حجم FP8 (E4M3/E5M2)، INT4 و Microscaling |
-| **14** | `14_structured_pruning_token_shedding.ipynb` | هرس ساختاریافته | هرس کانال/سر با روش ADMM، تنکی ۲:۴ سخت‌افزاری و ریزش توکن |
-| **15** | `15_downstream_glue_lra_evaluation.ipynb` | ارزیابی پایین‌دستی | تست مدل‌های جراحی‌شده روی بنچ‌مارک‌های GLUE و LRA |
-| **16** | `16_roofline_ada_rtx4070_saturation.ipynb` | اشباع حافظه/محاسبه | اشباع پهنای باند و شتاب‌دهنده تنسوری روی معماری SM 8.9 |
-| **17** | `17_speculative_paged_kv_throughput.ipynb` | توان عملیاتی سرورینگ | بنچ‌مارک توان گذردهی با ترکیب PagedAttention و توکن‌های کمکی |
-| **18** | `18_cross_seed_statistical_variance.ipynb` | استحکام آماری | ارزیابی واریانس چند‌بذر، آزمون ولچ و فواصل اطمینان |
-| **19** | `19_publication_figures_latex_generator.ipynb` | شکل‌های انتشار | تولید نمودارهای برداری TikZ و جداول LaTeX مستقیماً از داده |
-| **20** | `20_production_serving_vllm_sglang_trtllm_integrations.ipynb` | یکپارچه‌سازی سرور | اتصال مدل جراحی‌شده به پایپ‌لاین‌های vLLM، SGLang و TRT-LLM |
-| **21** | `21_model_export_onnx_safetensors_surgery_manifest.ipynb` | خروجی استاندارد | صدور ایمن به SafeTensors، مانیفست‌های JSON و پروتکل ONNX |
-| **22** | `22_distributed_tensor_and_context_parallelism.ipynb` | موازی‌سازی توزیع‌شده | موازی‌سازی تنسوری (TP) و موازی‌سازی زمینه (CP) با Ring Attention |
-| **23** | `23_spectral_diagnostics_and_hessian_analysis.ipynb` | تحلیل چشم‌انداز هسین | محاسبه طیف مقادیر ویژه هسین و کمینه‌های مسطح برای تعمیم بهتر |
-| **24** | `24_advanced_optimizers_muon_stiefel_and_ttt_training.ipynb` | بهینه‌سازهای پیشرفته | هندسه ریمانی منیفلد اشتیفل و بهینه‌سازهای Muon و TTT |
-| **25** | `25_long_context_niah_cka_similarity_and_eval_harness.ipynb` | ارزیابی بازیابی سوزن | تست Needle In A Haystack (NIAH) و تشابه شباهت CKA در لایه‌ها |
+| **00** | `00_master_neuralops_complete_system_walkthrough.ipynb` | End-to-End System Integration | Comprehensive tour across Registries, 3-tier dispatch, surgery, 6-pillar KD, and vLLM export |
+| **01a** | `01_quickstart_surgery_and_healing.ipynb` | Rapid Prototyping & Quickstart | In-place attention replacement and fast-path LoRA calibration healing under 10 minutes |
+| **01b** | `01_attention_surgery_and_lora.ipynb` | Surgical Attention Recovery | Parameter-Efficient Fine-Tuning (PEFT) on $Q, K, V, O$ projections and Hessian eigenspectrum analysis |
+| **02a** | `02_unified_training.ipynb` | Unified Model Optimization | Gradient accumulation pipeline, Warmup-Stable-Decay (WSD) scheduling, and Flame variable-length packing |
+| **02b** | `02_roofline_and_triton_kernels.ipynb` | Microbenchmarking & Profiling | Empirical Roofline ceiling modeling and compute vs. memory bandwidth saturation analysis |
+| **03** | `03_custom_plugins_and_extensibility.ipynb` | Architecture Extensibility | Registry plugin decorators (`@register_attention`, `@register_compressor`) and zero-codebase hooks |
+| **04** | `04_end_to_end_3level_benchmarking.ipynb` | Dispatch Parity & Benchmarking | Rigorous validation of Level 1 (CUDA) $\rightarrow$ Level 2 (Triton) $\rightarrow$ Level 3 (PyTorch) fallback fidelity |
+| **05a** | `05_master_108_cuda_and_26_triton_kernels_benchmark.ipynb` | Low-Level Kernel Exhaustive Suite | Comprehensive performance matrix benchmarking 108 CUDA C++ kernels and 26 Triton JIT modules |
+| **05b** | `05_paper_empirical_results_master.ipynb` | Scientific Reproducibility | Automated reproduction of canonical arXiv/MLSys empirical audit tables and hardware telemetry |
+| **06** | `06_master_all_131_attention_mechanisms_interactive.ipynb` | Attention Taxonomy Suite | Exhaustive evaluation harness across all 131 registry keys in `ATTENTION_REGISTRY` |
+| **07** | `07_master_all_72_compression_engines_quant_and_svd.ipynb` | Weight Compression Ecosystem | Comprehensive audit of all 72 compression algorithms in `COMPRESSOR_REGISTRY` |
+| **08** | `08_six_pillar_distillation_and_surgical_recovery.ipynb` | Multi-Objective Knowledge Distillation | Post-surgery recovery across Logits, Hidden, Attention, SVD, Fisher, and Sparsity objectives |
+| **09** | `09_production_serving_paged_cache_and_speculative_decoding.ipynb` | High-Throughput Inference Serving | PagedAttention memory manager, dynamic KV-cache block allocation, and speculative draft decoding |
+| **10** | `10_long_context_extrapolation_32k.ipynb` | Long-Context Scaling | Context extension up to 32,768 tokens via YaRN, dynamic NTK-aware RoPE, and Dual-Chunking |
+| **11** | `11_cuda_vs_triton_vs_pytorch_matrix.ipynb` | Cross-Backend Parity Audit | Latency, throughput, and register allocation comparisons across all three dispatch tiers |
+| **12** | `12_svd_whitening_spectral_allocation.ipynb` | Spectral Manifold Factorization | Activation covariance whitening, singular value decomposition, and Eckart-Young-Mirsky optimality |
+| **13** | `13_quantization_pareto_fp8_int4_kmeans.ipynb` | Quantization Pareto Analysis | Distortion-vs-memory Pareto frontiers across FP8 (E4M3/E5M2), INT4 AWQ, and k-means microscaling |
+| **14** | `14_structured_pruning_token_shedding.ipynb` | Structured Sparsity Engineering | ADMM-driven channel/head pruning, Ampere/Ada 2:4 structured hardware sparsity, and token shedding |
+| **15** | `15_downstream_glue_lra_evaluation.ipynb` | Downstream Task Evaluation | Zero-shot and post-healing retention benchmarking across GLUE benchmarks and Long Range Arena (LRA) |
+| **16** | `16_roofline_ada_rtx4070_saturation.ipynb` | Hardware Subsystem Saturation | Empirical memory bus and Tensor Core saturation modeling on NVIDIA SM 8.9 microarchitectures |
+| **17** | `17_speculative_paged_kv_throughput.ipynb` | Speculative Serving Dynamics | End-to-end token generation throughput combining tree-based speculative decoding and Paged KV-Cache |
+| **18** | `18_cross_seed_statistical_variance.ipynb` | Statistical Significance Auditing | Multi-seed stability analysis, Welch's t-tests, and 95% confidence interval estimation |
+| **19** | `19_publication_figures_latex_generator.ipynb` | Scientific Visualization | Automated export of vector graphics, TikZ circuit diagrams, and camera-ready LaTeX `booktabs` tables |
+| **20** | `20_production_serving_vllm_sglang_trtllm_integrations.ipynb` | Enterprise Serving Adapters | Zero-copy weight export and runtime adapter integration for vLLM, SGLang, and TensorRT-LLM |
+| **21** | `21_model_export_onnx_safetensors_surgery_manifest.ipynb` | Artifact Serialization & Export | Cryptographic hashing, SafeTensors serialization, and declarative JSON surgical manifest export |
+| **22** | `22_distributed_tensor_and_context_parallelism.ipynb` | Distributed Parallelism | Megatron-style Tensor Parallelism (TP) and Ring Attention Context Parallelism (CP) scaling |
+| **23** | `23_spectral_diagnostics_and_hessian_analysis.ipynb` | Loss Landscape Curvature | Hessian eigenspectrum estimation, top eigenvalue decay ($\lambda_{\max}$), and flat minima generalization |
+| **24** | `24_advanced_optimizers_muon_stiefel_and_ttt_training.ipynb` | Non-Euclidean Optimization | Riemannian optimization on the Stiefel manifold, Muon Newton-Schulz iterations, and TTT updates |
+| **25** | `25_long_context_niah_cka_similarity_and_eval_harness.ipynb` | Needle Retrieval & CKA Diagnostics | Needle In A Haystack (NIAH) pressure testing up to 32k tokens and Centered Kernel Alignment (CKA) |
 
 ---
 
-## ۲-الف. شرح تفصیلی نوتبوک‌های فعلی (۰۰ تا ۲۵)
+## 2-A. Detailed Technical Specifications for Foundation Notebooks (00 to 04)
 
 ---
 
 #### `00_master_neuralops_complete_system_walkthrough.ipynb`
 
-> 💡 *اگر فقط یک نوتبوک وقت داری بخوانی، این یکی است — چکیده‌ی کل سیستم NeuralOps در یک سفر ۳۶۰ درجه‌ای.*
+> 💡 *The definitive single-notebook architectural orientation across the entire NeuralOps platform.*
 
-**داستان این نوتبوک:** داستان از اینجا شروع می‌شه که یک محقق جدید وارد مخزن NeuralOps می‌شه و با یک جنگل از ۱۳۱ مکانیزم توجه، ۷۲ موتور فشرده‌سازی، ۲۶ ماژول تریتون، ۱۳۰ بسته کرنل CUDA و یک خط لوله تقطیر ۶ ستونه روبرو می‌شه. این نوتبوک قهرمان خودش را معرفی می‌کند: یک راهنمای کامل از صفر تا صد که بدون هیچ فرض قبلی، مخاطب را از لایه‌های پایه تا استقرار نهایی دست می‌گیرد.
+**Design Rationale & Architectural Narrative:**
+When entering the NeuralOps repository, engineers and researchers encounter an extensive micro-ecosystem: 131 attention mechanisms, 72 compression algorithms, 26 Triton JIT modules, 140 CUDA package inventory units, and an automated 6-pillar distillation pipeline. This walkthrough serves as the authoritative, top-level architectural orientation. It systematically visits every major subsystem without external assumptions, progressing through discrete operational stations: verifying the `ATTENTION_REGISTRY` and `COMPRESSOR_REGISTRY`, triggering the 3-level dispatch hierarchy, executing an in-place surgical transplant on a Transformer layer, stabilizing the model via LoRA calibration, and serializing the final artifact for production vLLM serving.
 
-در واقع اینجاست که جادو اتفاق می‌افته — هر زیرسیستم بزرگ NeuralOps در یک «ایستگاه» مجزا نمایش داده می‌شود. ابتدا `ATTENTION_REGISTRY` بازرسی می‌شود تا هر ۱۳۱ کلید تأیید گردند. سپس `COMPRESSOR_REGISTRY` باز می‌شود. بعد سه‌سطح Dispatch (CUDA → Triton → PyTorch) به صورت زنده اجرا می‌شود. در ادامه جراحی یک لایه Attention اتفاق می‌افتد، کالیبراسیون LoRA اعمال می‌شود، و نهایتاً مدل به vLLM تحویل داده می‌شود.
+**Core Engineering Objectives:** Provide an exhaustive, verified system walkthrough demonstrating platform integrity across all core components within a single executable document.
 
-این نوتبوک سند زنده سیستم است — هر بار که یک ماژول جدید اضافه می‌شود، یک سلول جدید به این راهنما افزوده می‌شود. نقطه ورود استاندارد برای هر کسی که می‌خواهد NeuralOps را واقعاً بفهمد.
+**Prerequisites & Module Topology:**
+- `neuralops.layers.attention` — Direct access to `ATTENTION_REGISTRY` (131 verified keys).
+- `neuralops.compression` — Direct access to `COMPRESSOR_REGISTRY` (72 verified keys).
+- `neuralops.ops.triton` — Unified Triton JIT kernel library.
+- `neuralops.core.dispatch` — 3-level dispatch router with zero-overhead LRU caching.
+- `torch`, `transformers` — Deep learning foundation and base model primitives.
 
-**🎯 هدف اصلی:** پوشش سرتاسری کل سیستم NeuralOps در یک نوتبوک منفرد به‌عنوان مرجع راه‌اندازی و بررسی جامع.
+**Cell Execution Matrix:**
 
-**📦 پیش‌نیازها:**
-- `neuralops.layers.attention` — دسترسی به `ATTENTION_REGISTRY` (۱۳۱ کلید)
-- `neuralops.compression` — دسترسی به `COMPRESSOR_REGISTRY` (۷۲ کلید)
-- `neuralops.ops.triton` — کرنل‌های تریتون JIT یکپارچه
-- `neuralops.core.dispatch` — مسیریابی سه‌سطحی با `lru_cache`
-- `torch`, `transformers` — زیرساخت یادگیری عمیق
-
-**📋 طرح سلول‌های نوتبوک:**
-
-| شماره سلول | نوع | عنوان سلول | محتوای اصلی / کد کلیدی |
+| Cell # | Type | Cell Title | Key Code & Functional Role |
 | :---: | :---: | :--- | :--- |
-| 1 | Markdown | عنوان و نقشه کلی سیستم | معرفی NeuralOps، نمودار معماری کلی، جدول زیرسیستم‌ها |
-| 2 | Code | تنظیم محیط و وارد کردن کتابخانه‌ها | `from neuralops.layers.attention import ATTENTION_REGISTRY`، `device = "cuda"`, `dtype = torch.bfloat16` |
-| 3 | Code | بازرسی ATTENTION_REGISTRY | `assert len(ATTENTION_REGISTRY) == 131`، چاپ اولین ۱۰ کلید |
-| 4 | Code | بازرسی COMPRESSOR_REGISTRY | `assert len(COMPRESSOR_REGISTRY) == 72`، نمایش دسته‌بندی‌ها |
-| 5 | Code | اجرای Dispatch سه‌سطحی | `from neuralops.core.dispatch import dispatch_kernel`، اجرا با `backend="auto"` |
-| 6 | Markdown | معرفی جراحی توجه | توضیح مفهوم Surgery، شماتیک جایگزینی لایه |
-| 7 | Code | جراحی ساده یک لایه | `surgeon.replace_attention(model, layer_idx=0, new_attn="flash_v3")` |
-| 8 | Code | کالیبراسیون LoRA | `from neuralops.compression import lora_calibrate`، `rank=64` |
-| 9 | Code | اجرای تقطیر ۶ ستونه | `from neuralops.distillation import SixPillarDistiller`، اجرا با `epochs=1` |
-| 10 | Code | آماده‌سازی برای سرورینگ | `from neuralops.serving import export_for_vllm`، صدور مانیفست JSON |
-| 11 | Code | پروفایل حافظه و زمان | `torch.cuda.max_memory_allocated()`, `time` برای اندازه‌گیری تاخیر |
-| 12 | Markdown | جمع‌بندی DoD | چک‌لیست کامل ۱۲ معیار Definition of Done |
+| 1 | Markdown | System Architecture & Executive Blueprint | Overview of NeuralOps subsystems, topology flowcharts, and operational guidelines. |
+| 2 | Code | Environment Initialization & Imports | `from neuralops.layers.attention import ATTENTION_REGISTRY`; setup `device="cuda"`, `dtype=torch.bfloat16`. |
+| 3 | Code | ATTENTION_REGISTRY Inspection | `assert len(ATTENTION_REGISTRY) == 131`; inspect category distribution and signatures. |
+| 4 | Code | COMPRESSOR_REGISTRY Inspection | `assert len(COMPRESSOR_REGISTRY) == 72`; display algorithm families and constraint schemas. |
+| 5 | Code | Multi-Tier Dispatch Execution | `from neuralops.core.dispatch import dispatch_kernel`; execute with `backend="auto"`. |
+| 6 | Markdown | Surgical Methodology Primer | Mathematical and operational principles of in-place layer transplantation. |
+| 7 | Code | In-Place Layer Surgery Execution | `surgeon.replace_attention(model, layer_idx=0, new_attn="flash_v3")`. |
+| 8 | Code | Post-Surgery LoRA Calibration | `from neuralops.compression import lora_calibrate`; run parameter-efficient healing (`rank=64`). |
+| 9 | Code | 6-Pillar Distillation Pipeline | `from neuralops.distillation import SixPillarDistiller`; execute multi-objective healing step. |
+| 10 | Code | Serving Engine Export | `from neuralops.serving import export_for_vllm`; generate serving JSON manifest and weights. |
+| 11 | Code | Telemetry & Latency Profiling | `torch.cuda.max_memory_allocated()`; quantify per-token decode latency and speedup. |
+| 12 | Markdown | DoD Verification Checklist | 12-point Definition of Done checklist validating all outputs. |
 
-**🔬 جزئیات پیاده‌سازی:**
-- ابعاد تنسور مرجع: `(B=2, S=4096, H=32, D=128)` برای تست‌های توجه
-- تلرانس عددی پریتی: `atol=1e-3, rtol=1e-3` بین سطوح Dispatch
-- هر سلول کد باید در هر دو حالت GPU (Sharif HPC) و CPU (Level-3 Fallback) اجرا شود
+**Implementation Invariants & Constraints:**
+- Reference tensor signature: `(B=2, S=4096, H=32, D=128)` for standardized attention evaluation.
+- Numerical parity tolerance: `atol=1e-3, rtol=1e-3` across dispatch fallback tiers.
+- Hybrid environment support: Seamless execution on GPU (Sharif HPC cluster) and CPU (Level-3 fallback).
 
-**✅ معیارهای موفقیت (DoD):**
-- [ ] `len(ATTENTION_REGISTRY) == 131` بدون خطا
-- [ ] `len(COMPRESSOR_REGISTRY) == 72` بدون خطا
-- [ ] Dispatch سه‌سطحی با `max_diff < 1e-3` تأیید شود
-- [ ] خروجی سلول جراحی: لایه جایگزین‌شده بدون کرش
+**Definition of Done (DoD) Criteria:**
+- [ ] `len(ATTENTION_REGISTRY) == 131` confirmed without runtime exceptions.
+- [ ] `len(COMPRESSOR_REGISTRY) == 72` confirmed without runtime exceptions.
+- [ ] Multi-tier dispatch verified with `max_diff < 1e-3` between Level 1/2 and Level 3.
+- [ ] Surgical replacement cell executes with 100% layer integrity and zero unhandled exceptions.
 
 ---
 
 #### `01_quickstart_surgery_and_healing.ipynb`
 
-> 💡 *در کمتر از ۱۰ دقیقه، یک لایه توجه واقعی را جراحی کن، درمان کن، و به سرعت اثبات شده برگردان.*
+> 💡 *Rapid prototyping workflow: surgical attention transplantation and LoRA calibration in under 10 minutes.*
 
-**داستان این نوتبوک:** داستان از اینجا شروع می‌شه که یک مهندس ML می‌خواد بدون اینکه وارد جزئیات عمیق بشه، به سرعت ببینه NeuralOps چطور کار می‌کنه. این نوتبوک یک مسیر سریع (Fast Path) است — یک جراحی کامل و بازیابی سریع در کمترین تعداد سلول ممکن، با LoRA Calibration که دقت مدل را حفظ می‌کند.
+**Design Rationale & Architectural Narrative:**
+Deploying architectural modifications to deep neural networks often requires navigating complex distributed setups and multi-day retraining regimes. This quickstart notebook provides an accelerated pathway for practitioners. It abstracts low-level microarchitectural tuning and distributed parallelism to demonstrate the foundational surgery-healing loop in minimal execution steps. An off-the-shelf Transformer model is loaded, its default multi-head attention is excised and replaced with `flash_attention_v3`, and the resulting representation gap is resolved via rapid parameter-efficient calibration (rank-16 adapters, 10 steps), comparing perplexity before and after surgery.
 
-مهم‌ترین ویژگی این نوتبوک سادگی آگاهانه آن است. از پیچیدگی‌های کرنل‌ها، مباحث توزیع‌شده و ریاضیات عمیق خبری نیست. فقط یک تجربه‌ی «ببین و باور کن» برای هر کسی که می‌خواهد در کمتر از نیم ساعت، خروجی ملموس داشته باشد. ساختار خطی نوتبوک — از بارگذاری مدل تا اعتبارسنجی — یک نقشه راه شفاف فراهم می‌کند.
+**Core Engineering Objectives:** Demonstrate the full lifecycle of attention surgery and post-operative healing within an accessible, low-friction execution path.
 
-در واقع اینجاست که جادو اتفاق می‌افته: مدل کوچکی (مثلاً GPT-2 یا یک مدل ۱۲ لایه‌ای آموزش‌دیده) بارگذاری می‌شود، لایه توجه آن با `flash_attention_v3` جایگزین می‌شود، و سپس با کالیبراسیون LoRA سریع (رتبه ۱۶، فقط ۱۰ مرحله) بازیابی می‌شود. در پایان متریک‌های پرپلکسیتی قبل و بعد از جراحی مقایسه می‌شوند.
+**Prerequisites & Module Topology:**
+- `neuralops.surgery` — Core utilities: `AttentionSurgeon`, `SurgeryManifest`.
+- `neuralops.compression.lora` — Fast-path PEFT calibration routines.
+- `transformers`, `datasets` — Hugging Face model loading and calibration data feeds.
 
-**🎯 هدف اصلی:** معرفی فوری جریان کار جراحی-درمان NeuralOps به تازه‌واردان در کمترین تعداد مرحله ممکن.
+**Cell Execution Matrix:**
 
-**📦 پیش‌نیازها:**
-- `neuralops.surgery` — ابزارهای `AttentionSurgeon`, `SurgeryManifest`
-- `neuralops.compression.lora` — کالیبراسیون PEFT سریع
-- `transformers` — بارگذاری مدل پایه
-- `datasets` — داده‌های ساده برای کالیبراسیون
-
-**📋 طرح سلول‌های نوتبوک:**
-
-| شماره سلول | نوع | عنوان سلول | محتوای اصلی / کد کلیدی |
+| Cell # | Type | Cell Title | Key Code & Functional Role |
 | :---: | :---: | :--- | :--- |
-| 1 | Markdown | مقدمه QuickStart | توضیح هدف، لیست مراحل، زمان تخمینی ≤ ۱۰ دقیقه |
-| 2 | Code | بارگذاری مدل پایه | `model = AutoModelForCausalLM.from_pretrained(...)`, `dtype=torch.float16` |
-| 3 | Code | بنچ‌مارک اولیه | محاسبه Perplexity روی WikiText-2، ذخیره `ppl_before` |
-| 4 | Code | اجرای جراحی | `surgeon = AttentionSurgeon(model)`، `surgeon.replace_all(target="flash_v3")` |
-| 5 | Code | صدور مانیفست | `manifest = SurgeryManifest.from_model(model)`، ذخیره JSON |
-| 6 | Code | کالیبراسیون LoRA | `lora_calibrate(model, rank=16, steps=10, dataset=calib_data)` |
-| 7 | Code | بنچ‌مارک نهایی | محاسبه `ppl_after`، مقایسه با `ppl_before` |
-| 8 | Code | اندازه‌گیری تاخیر | اندازه‌گیری latency در `ms/token`، نمایش speedup |
-| 9 | Markdown | جمع‌بندی | جدول قبل/بعد، اشاره به نوتبوک‌های عمیق‌تر |
+| 1 | Markdown | Quickstart Overview & Objectives | Workflow summary, pipeline stages, and target latency objectives ($\le 10$ minutes). |
+| 2 | Code | Model Initialization | `model = AutoModelForCausalLM.from_pretrained(...)`, `dtype=torch.float16`. |
+| 3 | Code | Baseline Perplexity Measurement | Benchmark baseline perplexity on WikiText-2; record `ppl_before`. |
+| 4 | Code | In-Place Layer Surgery | `surgeon = AttentionSurgeon(model); surgeon.replace_all(target="flash_v3")`. |
+| 5 | Code | Surgical Manifest Generation | `manifest = SurgeryManifest.from_model(model)`; export cryptographically signed JSON. |
+| 6 | Code | Fast-Path LoRA Calibration | `lora_calibrate(model, rank=16, steps=10, dataset=calib_data)`. |
+| 7 | Code | Post-Healing Evaluation | Compute `ppl_after`; quantify retention ratio $\frac{\text{ppl}_{\text{after}}}{\text{ppl}_{\text{before}}}$. |
+| 8 | Code | Latency & Speedup Benchmarking | Measure decoding speed in ms/token; compute empirical throughput acceleration. |
+| 9 | Markdown | Synthesis & Architectural Pathways | Summary of findings and references to deep-dive notebooks. |
 
-**🔬 جزئیات پیاده‌سازی:**
-- مدل پیش‌فرض: GPT-2 small یا مدل مشابه با ۱۲ لایه توجه
-- رتبه LoRA: `rank=16`، هدف ماژول‌ها: `q_proj, v_proj`
-- معیار بازیابی: `|ppl_after - ppl_before| < 0.5` روی WikiText-2
+**Implementation Invariants & Constraints:**
+- Baseline model: GPT-2 Small or comparable 12-layer Transformer backbone.
+- LoRA configuration: `rank=16`, target modules: `q_proj, v_proj`.
+- Perplexity recovery threshold: $|\text{ppl}_{\text{after}} - \text{ppl}_{\text{before}}| < 0.5$ on WikiText-2 validation.
 
-**✅ معیارهای موفقیت (DoD):**
-- [ ] جراحی بدون خطا با نرخ موفقیت ۱۰۰٪ لایه‌ها
-- [ ] `ppl_after ≤ ppl_before + 0.5` پس از کالیبراسیون
-- [ ] مانیفست JSON معتبر تولید و ذخیره شود
+**Definition of Done (DoD) Criteria:**
+- [ ] 100% of target attention layers surgically replaced without structural corruption.
+- [ ] Validated post-calibration perplexity meeting $|\text{ppl}_{\text{after}} - \text{ppl}_{\text{before}}| \le 0.5$.
+- [ ] Cryptographically signed JSON surgical manifest generated and persisted to disk.
 
 ---
 
 #### `01_attention_surgery_and_lora.ipynb`
 
-> 💡 *جراحی توجه به علاوه‌ی بهینه‌سازی پارامتر-کارا — معادله‌ی موفقیت برای جایگزینی بی‌دردسر مکانیزم توجه.*
+> 💡 *In-depth architectural analysis of post-operative calibration using Parameter-Efficient Fine-Tuning (PEFT).*
 
-**داستان این نوتبوک:** داستان از اینجا شروع می‌شه که وقتی یک لایه توجه با نوع جدید جایگزین می‌شه — چه Flash Attention v3 باشه، چه Linear Attention یا KDA — مدل به طور موقت دچار «شوک جراحی» می‌شه: پرپلکسیتی بالا می‌ره، توانایی استدلال افت می‌کنه. مشکل واقعی اینه که وزن‌های جدید با توزیع اکتیویشن‌های قبلی ناسازگارند.
+**Design Rationale & Architectural Narrative:**
+Replacing a standard quadratic self-attention layer with an alternative mechanism (e.g., FlashAttention-3, Linear Attention, or Kronecker Delta Attention) induces structural representation shock: intermediate activation distributions diverge, and downstream perplexity degrades. This degradation stems from misaligned feature covariances between the frozen feed-forward blocks and the new attention projection matrices. This notebook provides an in-depth empirical investigation of PEFT as a stabilizing mechanism. By inserting low-rank adaptation matrices ($r \in \{8, 16, 32, 64\}$) across $Q, K, V, O$ projections, the network resolves representation shock in fewer than 500 gradient steps. Spectral Hessian analysis further confirms that LoRA converts sharp, ill-conditioned loss minima into broad, flat valleys conducive to generalization.
 
-اینجاست که LoRA (Low-Rank Adaptation) وارد می‌شه — نه به عنوان یک ابزار Fine-tuning ساده، بلکه به عنوان یک کالیبراتور دقیق. این نوتبوک عمیقاً نشان می‌دهد که چگونه با اضافه کردن آداپتورهای رتبه پایین `(rank=32 یا 64)` به ماتریس‌های `Q, K, V, O`، می‌توان شوک جراحی را در کمتر از ۵۰۰ مرحله درمان کرد.
+**Core Engineering Objectives:** Quantify the representation recovery mechanisms of PEFT post-surgery and evaluate loss landscape curvature via Hessian eigenspectrum diagnostics.
 
-در واقع اینجاست که جادو اتفاق می‌افته: نوتبوک یک مقایسه‌ی کنترل‌شده انجام می‌دهد — مدل جراحی‌شده بدون LoRA در برابر مدل جراحی‌شده با LoRA. طیف هسین نشان می‌دهد که LoRA مینیمای تیز را به مینیمای مسطح (Flat Minima) تبدیل می‌کند — و این یعنی تعمیم بهتر.
+**Prerequisites & Module Topology:**
+- `neuralops.surgery.surgeon` — `AttentionSurgeon`, `replace_attention`.
+- `neuralops.compression.lora` — `LoRAAdapter`, `lora_calibrate`.
+- `neuralops.analysis.hessian` — Top eigenvalue computation for loss curvature estimation.
+- `peft`, `torch.optim` — Hugging Face PEFT primitives and AdamW optimizer.
 
-**🎯 هدف اصلی:** نشان دادن مکانیزم دقیق کالیبراسیون پس از جراحی با PEFT و تحلیل تجربی اثربخشی آن.
+**Cell Execution Matrix:**
 
-**📦 پیش‌نیازها:**
-- `neuralops.surgery.surgeon` — `AttentionSurgeon`, `replace_attention`
-- `neuralops.compression.lora` — `LoRAAdapter`, `lora_calibrate`
-- `neuralops.analysis.hessian` — محاسبه طیف هسین برای تأیید
-- `peft` — کتابخانه Hugging Face PEFT
-- `torch.optim` — بهینه‌ساز AdamW
-
-**📋 طرح سلول‌های نوتبوک:**
-
-| شماره سلول | نوع | عنوان سلول | محتوای اصلی / کد کلیدی |
+| Cell # | Type | Cell Title | Key Code & Functional Role |
 | :---: | :---: | :--- | :--- |
-| 1 | Markdown | مقدمه و فرمول‌بندی LoRA | فرمول \(W' = W + \frac{\alpha}{r} B A\)، شماتیک آداپتور |
-| 2 | Code | وارد کردن ماژول‌ها | `from neuralops.surgery.surgeon import AttentionSurgeon`، تنظیم `B=2, S=1024, H=12, D=64` |
-| 3 | Code | بارگذاری مدل | `model = AutoModelForCausalLM.from_pretrained("gpt2")` |
-| 4 | Code | جراحی لایه‌های توجه | `surgeon.replace_all(target_key="gla")`, اعتبارسنجی تعداد لایه‌های جایگزین‌شده |
-| 5 | Code | اضافه کردن LoRA آداپتور | `from peft import get_peft_model, LoraConfig`، `r=64, target_modules=["q_proj","v_proj"]` |
-| 6 | Code | آموزش کالیبراسیون | حلقه آموزش ۵۰۰ مرحله، ذخیره loss curve |
-| 7 | Code | آنالیز طیف هسین | `from neuralops.analysis.hessian import top_eigenvalue`، مقایسه قبل/بعد LoRA |
-| 8 | Code | بنچ‌مارک پرپلکسیتی | `ppl_surgery_no_lora` در برابر `ppl_surgery_with_lora` |
-| 9 | Code | تحلیل پارامترهای قابل آموزش | `trainable_params / total_params * 100` درصد |
-| 10 | Markdown | نتیجه‌گیری و مقایسه | جدول مقایسه، توصیه‌های رتبه LoRA برای حالت‌های مختلف |
+| 1 | Markdown | PEFT Formulation & Mathematical Framework | Mathematical formulation $W' = W + \frac{\alpha}{r} B A$ and adapter geometry. |
+| 2 | Code | Module Setup & Geometric Parameters | Import `AttentionSurgeon`; configure tensor bounds `(B=2, S=1024, H=12, D=64)`. |
+| 3 | Code | Foundation Model Loading | `model = AutoModelForCausalLM.from_pretrained("gpt2")`. |
+| 4 | Code | Full Layer Attention Replacement | `surgeon.replace_all(target_key="gla")`; assert replacement completeness. |
+| 5 | Code | Parameter-Efficient Adapter Injection | Configure `LoraConfig(r=64, target_modules=["q_proj", "v_proj", "k_proj", "out_proj"])`. |
+| 6 | Code | Optimization & Calibration Loop | Execute 500-step calibration trajectory; log intermediate loss dynamics. |
+| 7 | Code | Hessian Eigenspectrum Analysis | `from neuralops.analysis.hessian import top_eigenvalue`; evaluate $\lambda_{\max}$ decay. |
+| 8 | Code | Empirical Perplexity Comparison | Quantify delta between uncalibrated vs. LoRA-calibrated model checkpoints. |
+| 9 | Code | Trainable Parameter Budget Audit | Compute $\frac{\text{params}_{\text{trainable}}}{\text{params}_{\text{total}}} \times 100\%$. |
+| 10 | Markdown | Analytical Synthesis & Rank Guidelines | Empirical trade-off curves and optimal rank recommendations for production deployment. |
 
-**🔬 جزئیات پیاده‌سازی:**
-- رتبه‌های آزمایشی: `r ∈ {8, 16, 32, 64}` با مقایسه دقت/حجم
-- هدف: کاهش پرپلکسیتی به سطح `|ppl - baseline| < 0.3`
-- تحلیل هسین: مقایسه `λ_max` قبل و بعد از کالیبراسیون
+**Implementation Invariants & Constraints:**
+- Parameter budget constraint: Trainable parameters must remain $< 5.0\%$ of total model weights.
+- Curvature constraint: Observed top Hessian eigenvalue $\lambda_{\max}$ must decrease by $\ge 40\%$ post-calibration.
+- Perplexity delta constraint: $|\text{ppl}_{\text{healed}} - \text{ppl}_{\text{baseline}}| \le 0.30$.
 
-**✅ معیارهای موفقیت (DoD):**
-- [ ] همه لایه‌های توجه با موفقیت جایگزین شوند
-- [ ] `ppl_with_lora < ppl_without_lora` به‌صورت مستند
-- [ ] `λ_max(Hessian)` پس از LoRA کاهش قابل اندازه‌گیری داشته باشد
-- [ ] نسبت پارامترهای قابل آموزش `< 5%` کل مدل
+**Definition of Done (DoD) Criteria:**
+- [ ] Successful surgical replacement across all targeted attention layers verified.
+- [ ] Statistically significant perplexity recovery demonstrated (`ppl_with_lora < ppl_without_lora`).
+- [ ] Hessian spectral decay physically measured and visualized.
+- [ ] Verified total trainable parameter ratio below the 5% threshold.
 
 ---
 
 #### `02_unified_training.ipynb`
 
-> 💡 *خط لوله آموزش یکپارچه‌ای که گرادیان تجمیعی، زمان‌بند WSD و پکینگ متغیر را در یک دستور واحد ترکیب می‌کند.*
+> 💡 *Enterprise-grade unified training pipeline integrating gradient accumulation, WSD scheduling, and Flame variable-length packing.*
 
-**داستان این نوتبوک:** آموزش مدل‌های بزرگ در رژیم‌های محدود حافظه‌ی GPU، یک معمای کلاسیک است. داستان از اینجا شروع می‌شه که می‌خوای مدلی را با دنباله‌های ۴k توکنی و بچ ۶۴ نمونه آموزش بدی — اما VRAM تنها اجازه‌ی بچ ۴ را می‌دهد. راه‌حل؟ تجمیع گرادیان (Gradient Accumulation) با ۱۶ گام.
+**Design Rationale & Architectural Narrative:**
+Optimizing long-sequence Transformer models under constrained hardware memory budgets presents persistent engineering challenges. Training over sequence lengths of $S = 4096$ with high batch counts easily triggers out-of-memory (OOM) faults on standard workstation GPUs. This notebook presents the production-grade `UnifiedTrainer` pipeline, which combines three memory-efficient technologies: multi-step gradient accumulation (achieving effective batch sizes of 64 from micro-batches of 4), the Warmup-Stable-Decay (WSD) learning rate schedule, and zero-padding variable-length sequence packing (`cu_seqlens`).
 
-اما همین کافی نیست. باید مطمئن شوی که توکن‌های Padding هیچ محاسبه‌ای مصرف نمی‌کنند (Variable-length Packing)، که نرخ یادگیری به شکل بهینه با WSD تنظیم شود، و که چک‌پوینت‌ها در هر نقطه‌ای از فاز Stable قابل بازیابی باشند. این نوتبوک تمام این قطعات را کنار هم می‌چیند.
+**Core Engineering Objectives:** Construct and benchmark an enterprise-grade training harness optimizing throughput and memory efficiency during long-sequence model healing.
 
-**🎯 هدف اصلی:** نمایش خط لوله آموزش کامل با تجمیع گرادیان، زمان‌بند WSD و پکینگ متغیر Flame.
+**Prerequisites & Module Topology:**
+- `neuralops.training` — `UnifiedTrainer`, `WSDScheduler`.
+- `neuralops.data.packing` — `FlamePackedDataset`, `cu_seqlens` boundary constructor.
 
-**📦 پیش‌نیازها:**
-- `neuralops.training` — `UnifiedTrainer`, `WSDScheduler`
-- `neuralops.data.packing` — `FlamePackedDataset`, `cu_seqlens` builder
+**Cell Execution Matrix:**
 
-**📋 طرح سلول‌های نوتبوک:**
-
-| شماره سلول | نوع | عنوان سلول | محتوای اصلی / کد کلیدی |
+| Cell # | Type | Cell Title | Key Code & Functional Role |
 | :---: | :---: | :--- | :--- |
-| 1 | Markdown | مقدمه و فرمول WSD | نمودار فاز Warmup-Stable-Decay، معادله نرخ یادگیری |
-| 2 | Code | تنظیم پارامترها | `accum_steps=16`, `seq_len=4096`, `batch_size=4` |
-| 3 | Code | ساخت Dataset پکینگ | `FlamePackedDataset(paths=[...], varlen=True)` |
-| 4 | Code | تعریف زمان‌بند WSD | `WSDScheduler(warmup=500, stable=5000, decay=1000)` |
-| 5 | Code | حلقه آموزش اصلی | `trainer.train(grad_accum=16, max_steps=6500)` |
-| 6 | Code | ذخیره چک‌پوینت | ذخیره در هر ۵۰۰ مرحله فاز Stable |
-| 7 | Code | رسم منحنی Loss | نمودار Loss در برابر مراحل آموزش |
-| 8 | Markdown | جمع‌بندی | تحلیل صرفه‌جویی حافظه و زمان |
+| 1 | Markdown | WSD Scheduling & Flame Packing Framework | Mathematical formulation of Warmup-Stable-Decay and zero-padding sequence concatenation. |
+| 2 | Code | Training Hyperparameters Configuration | Define `accum_steps=16`, `seq_len=4096`, `micro_batch_size=4` (effective batch 64). |
+| 3 | Code | Flame Variable-Length Dataset Setup | Instantiate `FlamePackedDataset(paths=[...], varlen=True)`. |
+| 4 | Code | WSD Schedule Construction | Instantiate `WSDScheduler(warmup=500, stable=5000, decay=1000)`. |
+| 5 | Code | Unified Training Execution | `trainer.train(grad_accum=16, max_steps=6500)`. |
+| 6 | Code | Checkpoint Resiliency Validation | Snapshot and restore intermediate weights during the Stable phase; verify continuity. |
+| 7 | Code | Loss Trajectory & Convergence Logging | Plot training loss curves across Warmup, Stable, and Annealing phases. |
+| 8 | Markdown | Hardware Telemetry & Efficiency Summary | Memory and compute efficiency analysis quantifying training time savings. |
 
-**🔬 جزئیات پیاده‌سازی:**
-- `cu_seqlens` شکل: `[0, len_1, len_1+len_2, ..., total_seq_len]`
-- زمان‌بند WSD: `warmup=500, stable=5000, decay=1000 steps`
-- تجمیع گرادیان: effective batch = `4 × 16 = 64`
+**Implementation Invariants & Constraints:**
+- Boundary tensor contract: `cu_seqlens = [0, S_1, S_1 + S_2, ..., \sum S_i]` passed directly to kernel drivers.
+- Padding efficiency constraint: Zero padding tokens permitted in the input data buffer.
+- WSD phase boundaries: 500 warmup steps, 5,000 stable steps, 1,000 cosine decay steps.
 
-**✅ معیارهای موفقیت (DoD):**
-- [ ] Loss یکنواخت نزولی در فاز Stable بدون پرش ناگهانی
-- [ ] چک‌پوینت ذخیره و بازیابی بدون افت Loss
-- [ ] صفر توکن Padding در Dataset پکینگ‌شده
+**Definition of Done (DoD) Criteria:**
+- [ ] Monotonically decreasing loss verified during the Stable phase with zero NaN/Inf spikes.
+- [ ] Seamless checkpoint restore confirmed without loss divergence or state drift.
+- [ ] Zero padding token overhead verified across packed dataset buffers.
 
 ---
 
 #### `02_roofline_and_triton_kernels.ipynb`
 
-> 💡 *مدل Roofline را روی سخت‌افزار واقعی بکش و ببین کرنل‌هایت واقعاً کجای طیف Compute/Memory قرار دارند.*
+> 💡 *Empirical Roofline modeling to classify Triton JIT kernels as compute-bound vs. memory-bound on target hardware.*
 
-**داستان این نوتبوک:** هر مهندس کرنل یک سؤال محوری دارد: «آیا کرنل من Memory-Bound است یا Compute-Bound؟» داستان از اینجا شروع می‌شه که یک کرنل Flash Attention را اجرا می‌کنی و می‌پرسی چرا از بیشینه توان تئوری سخت‌افزار فقط ۶۰٪ استفاده می‌کنه.
+**Design Rationale & Architectural Narrative:**
+A fundamental performance engineering inquiry for custom GPU kernels is determining whether execution is memory bandwidth-bound or compute-bound. Without empirical profiling, kernel developers risk applying GEMM tiling optimizations to memory-bound operators or memory bandwidth tweaks to arithmetic-bound kernels. This tutorial provides a systematic methodology for constructing hardware Roofline models. By computing Arithmetic Intensity ($I = \frac{\text{FLOPs}}{\text{Bytes Transferred}}$) and plotting observed throughput against hardware ceilings (peak TFLOPS and DRAM bandwidth), developers gain actionable visibility into performance bottlenecks across Ada Lovelace (SM 8.9) and Ampere/Titan microarchitectures.
 
-مدل Roofline جواب می‌دهد. با محاسبه‌ی شدت محاسباتی (Arithmetic Intensity — عملیات/بایت) و قرار دادن آن روی دو سقف — سقف FLOPS و سقف پهنای باند حافظه — می‌توانی بفهمی که گلوگاه کجاست. این نوتبوک برای SM 8.9 Ada Lovelace و Titan RTX هر دو این تحلیل را انجام می‌دهد.
+**Core Engineering Objectives:** Construct rigorous empirical Roofline curves for custom Triton JIT attention and scan kernels, identifying microarchitectural optimization targets.
 
-**🎯 هدف اصلی:** نمایش تحلیل Roofline کرنل‌های تریتون NeuralOps و شناسایی گلوگاه‌های Compute/Memory.
+**Prerequisites & Module Topology:**
+- `neuralops.ops.triton` — Triton JIT kernels (FlashAttention, Linear Attention, Recurrent Scans).
+- `neuralops.profiling.roofline` — `RooflineProfiler`, telemetry collectors.
+- `triton` — Low-level JIT compilation and PTX lowering backend.
 
-**📦 پیش‌نیازها:**
-- `neuralops.ops.triton` — کرنل‌های Flash Attention، Linear Attention
-- `neuralops.profiling.roofline` — ابزار `RooflineProfiler`
-- `triton` — JIT compilation
+**Cell Execution Matrix:**
 
-**📋 طرح سلول‌های نوتبوک:**
-
-| شماره سلول | نوع | عنوان سلول | محتوای اصلی / کد کلیدی |
+| Cell # | Type | Cell Title | Key Code & Functional Role |
 | :---: | :---: | :--- | :--- |
-| 1 | Markdown | مدل Roofline چیست | فرمول `I = FLOPs / Bytes`, نمودار سقف‌های دوگانه |
-| 2 | Code | پارامترهای سخت‌افزار | `peak_flops_tflops = 82.6`, `peak_bw_gbps = 504` برای Ada Lovelace |
-| 3 | Code | اجرای کرنل Flash Attention | `from neuralops.ops.triton import flash_attention_triton`, `B=2, S=4096, H=32, D=128` |
-| 4 | Code | اندازه‌گیری FLOPs و Bytes | `profiler.measure_flops_and_bytes(kernel_fn, inputs)` |
-| 5 | Code | محاسبه Arithmetic Intensity | `I = flops / bytes_moved`، چاپ مقدار |
-| 6 | Code | رسم نمودار Roofline | `roofline_plot(I, throughput, hardware="ada_lovelace")` |
-| 7 | Code | مقایسه چند کرنل | مقایسه Linear vs Flash Attention در یک نمودار |
-| 8 | Markdown | تفسیر نتایج | راهنمای تفسیر موقعیت نقاط روی Roofline |
+| 1 | Markdown | Theoretical Foundations of Roofline Modeling | Mathematical definition $I = \frac{\text{FLOPs}}{\text{Bytes}}$, arithmetic intensity, and inflection points. |
+| 2 | Code | Hardware Specifications & Theoretical Ceilings | Define specs: Ada Lovelace SM 8.9 ($82.6\text{ TFLOPS FP16}$, $504\text{ GB/s DRAM}$). |
+| 3 | Code | Triton FlashAttention Kernel Execution | Execute `flash_attention_triton` over `(B=2, S=4096, H=32, D=128)`. |
+| 4 | Code | FLOPs & Data Movement Measurement | Measure operations and memory transactions via `profiler.measure_flops_and_bytes()`. |
+| 5 | Code | Arithmetic Intensity Calculation | Compute $I = \frac{\text{FLOPs}}{\text{Bytes Moved}}$; report empirical coordinate. |
+| 6 | Code | Roofline Curve Generation | Plot kernel coordinate against empirical hardware ceilings. |
+| 7 | Code | Multi-Kernel Comparative Analysis | Overlay Linear Attention, FlashAttention, and Recurrent Scans on the same plot. |
+| 8 | Markdown | Performance Diagnosis & Actionable Insights | Architectural classification of operators and memory-bandwidth saturation recommendations. |
 
-**🔬 جزئیات پیاده‌سازی:**
-- ابعاد تست: `(B=2, S=4096, H=32, D=128)` برای پروفایل صحیح
-- مقادیر سخت‌افزار Ada Lovelace: `82.6 TFLOPS FP16`, `504 GB/s`
-- حداقل ۵ کرنل مختلف NeuralOps در نمودار Roofline
+**Implementation Invariants & Constraints:**
+- Evaluation shape: `(B=2, S=4096, H=32, D=128)` ensuring SM saturation.
+- Profiling accuracy: Measured throughput must align within 15% of hardware performance counters (Nsight Compute).
+- Multi-operator coverage: Minimum of 5 distinct NeuralOps operators mapped on the Roofline chart.
 
-**✅ معیارهای موفقیت (DoD):**
-- [ ] نمودار Roofline با نقاط واقعی (نه شبیه‌سازی‌شده) تولید شود
-- [ ] حداقل یک کرنل Memory-Bound و یک Compute-Bound شناسایی شود
-- [ ] نتایج با نتایج Nsight Compute در حاشیه ۱۵٪ تطابق داشته باشند
+**Definition of Done (DoD) Criteria:**
+- [ ] Publication-grade Roofline chart generated from physical hardware measurements.
+- [ ] At least one memory-bound and one compute-bound operator empirically identified.
+- [ ] Telemetry figures reconciled against physical hardware limits.
 
 ---
 
 #### `03_custom_plugins_and_extensibility.ipynb`
 
-> 💡 *رجیستری NeuralOps را وادار کن تا مکانیزم توجه اختراعی خودت را بشناسد — بدون یک خط تغییر در کد اصلی.*
+> 💡 *Dynamic registration of novel attention and compression operators without modifying core repository source code.*
 
-**داستان این نوتبوک:** داستان از اینجا شروع می‌شه که یک محقق یک ایده‌ی جدید برای مکانیزم توجه دارد — مثلاً Linear Attention با Gate خاص — اما نمی‌خواهد کد اصلی NeuralOps را تغییر دهد. راه‌حل؟ سیستم پلاگین با `@register_attention` دکوراتور.
+**Design Rationale & Architectural Narrative:**
+Research teams frequently develop domain-specific attention mechanisms or novel compression operators that they wish to evaluate using NeuralOps' benchmarking harness without maintaining an internal fork of the repository. This notebook demonstrates the platform's modular plugin architecture. By subclassing `BaseAttention` and applying `@register_attention("custom_name")` or `@register_compressor("custom_comp")`, users dynamically bind new mechanisms into `ATTENTION_REGISTRY` and `COMPRESSOR_REGISTRY`, automatically inheriting 3-tier dispatch routing, surgical replacement capabilities, and automated benchmarking.
 
-این نوتبوک نشان می‌دهد که چگونه با نوشتن یک کلاس PyTorch استاندارد و اعمال دکوراتور، اپراتور جدید در `ATTENTION_REGISTRY` ثبت می‌شود، با Dispatch سه‌سطحی سازگار می‌شود، و در بنچ‌مارک‌های خودکار شرکت می‌کند.
+**Core Engineering Objectives:** Educate developers on implementing, registering, and benchmarking custom attention and compression plugins using declarative decorators.
 
-**🎯 هدف اصلی:** آموزش ساخت و ثبت پلاگین‌های سفارشی در رجیستری NeuralOps بدون تغییر کد اصلی.
+**Prerequisites & Module Topology:**
+- `neuralops.registry` — `register_attention`, `register_compressor`.
+- `neuralops.layers.base` — `BaseAttention`, abstract operator contracts.
 
-**📦 پیش‌نیازها:**
-- `neuralops.registry` — `register_attention`, `register_compressor`
-- `neuralops.layers.base` — کلاس پایه `BaseAttention`
+**Cell Execution Matrix:**
 
-**📋 طرح سلول‌های نوتبوک:**
-
-| شماره سلول | نوع | عنوان سلول | محتوای اصلی / کد کلیدی |
+| Cell # | Type | Cell Title | Key Code & Functional Role |
 | :---: | :---: | :--- | :--- |
-| 1 | Markdown | معماری پلاگین NeuralOps | نمودار سیستم رجیستری، جریان ثبت و dispatch |
-| 2 | Code | نوشتن اپراتور سفارشی | `class MyCustomAttention(BaseAttention): ...` |
-| 3 | Code | ثبت با دکوراتور | `@register_attention("my_custom_attn")` |
-| 4 | Code | تأیید ثبت | `assert "my_custom_attn" in ATTENTION_REGISTRY` |
-| 5 | Code | تست Forward Pass | `attn = ATTENTION_REGISTRY["my_custom_attn"]()`, اجرا با `(B=2, S=512, H=8, D=64)` |
-| 6 | Code | ثبت Compressor سفارشی | `@register_compressor("my_svd_plus")`, پیاده‌سازی ساده |
-| 7 | Code | یکپارچه‌سازی با Dispatch | `dispatch_kernel("my_custom_attn", backend="auto")` |
-| 8 | Code | بنچ‌مارک مقایسه‌ای | مقایسه تاخیر پلاگین با `standard_attention` |
-| 9 | Markdown | راهنمای best practices | الزامات یک پلاگین معتبر، چک‌لیست کیفیت |
+| 1 | Markdown | Plugin Architecture & Extension Interfaces | Registry lifecycle diagram, dynamic registration hooks, and operator interfaces. |
+| 2 | Code | Custom Operator Implementation | Author `class CustomGatedLinearAttention(BaseAttention): ...`. |
+| 3 | Code | Declarative Decorator Registration | Apply `@register_attention("custom_gla")` to dynamically register the class. |
+| 4 | Code | Registry Membership Assertion | `assert "custom_gla" in ATTENTION_REGISTRY`; confirm key registration. |
+| 5 | Code | Forward Pass & Shape Contract Validation | Instantiate registered operator; execute forward pass over `(B=2, S=512, H=8, D=64)`. |
+| 6 | Code | Custom Compression Engine Registration | Implement and register `@register_compressor("svd_power_iter")`. |
+| 7 | Code | 3-Level Dispatch Integration | Execute custom operator via `dispatch_kernel("custom_gla", backend="auto")`. |
+| 8 | Code | Benchmark Comparison vs. Standard Operators | Compare execution latency of the new plugin against canonical baseline attention. |
+| 9 | Markdown | Best Practices & Certification Checklist | Guidelines for signature validation, dtype handling, and unit test requirements. |
 
-**🔬 جزئیات پیاده‌سازی:**
-- دکوراتور `@register_attention` باید signature را validate کند
-- هر پلاگین باید `forward(q, k, v, mask=None)` را پیاده‌سازی کند
-- پس از ثبت، `len(ATTENTION_REGISTRY)` باید ۱ واحد افزایش یابد
+**Implementation Invariants & Constraints:**
+- Signature requirement: Registered attention modules must implement `forward(q, k, v, mask=None)`.
+- Registry immutability: Registration must increment total registry count by exactly 1 without overwriting existing keys.
+- Dispatch compatibility: Custom operators must provide a vectorized PyTorch fallback path.
 
-**✅ معیارهای موفقیت (DoD):**
-- [ ] پلاگین سفارشی با موفقیت ثبت و بازیابی شود
-- [ ] Forward pass بدون خطا اجرا شود
-- [ ] Dispatch سه‌سطحی با پلاگین جدید کار کند
+**Definition of Done (DoD) Criteria:**
+- [ ] Custom attention plugin successfully registered and instantiated via registry lookup.
+- [ ] Forward pass executes cleanly with zero gradient anomalies.
+- [ ] Seamless integration into the 3-level dispatch hierarchy verified.
 
 ---
 
 #### `04_end_to_end_3level_benchmarking.ipynb`
 
-> 💡 *اثبات کن که Fallback سه‌سطحی واقعاً کار می‌کند — هم از نظر عددی، هم از نظر عملکردی.*
+> 💡 *Rigorous validation of the 3-level fallback hierarchy: CUDA C++ -> Triton JIT -> Vectorized PyTorch.*
 
-**داستان این نوتبوک:** داستان از اینجا شروع می‌شه که یک کرنل CUDA در سیستم مشتری در دسترس نیست. آیا سیستم کرش می‌کند؟ یا آرام به Triton JIT می‌رود؟ و اگر Triton هم در دسترس نبود — مثلاً روی CPU یا MPS — آیا PyTorch Reference کار می‌کند؟
+**Design Rationale & Architectural Narrative:**
+In mission-critical deployments, hardware heterogeneity is standard: certain nodes run state-of-the-art NVIDIA GPUs with precompiled CUDA binaries; others lack custom toolchains and rely on Triton JIT; while CPU, Apple Silicon (MPS), or fallback environments require pure PyTorch implementations. If kernel dispatch fails silently, systems risk crashing or quietly altering numerical behavior. This tutorial validates NeuralOps' 3-level fallback contract. By systematically forcing execution through `force_kernel_backend("cuda")`, `force_kernel_backend("triton")`, and `force_kernel_backend("pytorch")`, it demonstrates that numerical outputs remain consistent across all three execution tiers within certified error tolerances.
 
-این نوتبوک این سه سناریو را به صورت کنترل‌شده شبیه‌سازی می‌کند. با `force_kernel_backend("cuda")`, `force_kernel_backend("triton")`, `force_kernel_backend("pytorch")` هر مسیر به تنهایی آزمایش می‌شود. سپس برابری عددی میان خروجی‌های سه سطح با `atol=1e-3` تأیید می‌شود.
+**Core Engineering Objectives:** Empirically verify the operational integrity, fallback resilience, and cross-backend numerical parity of the 3-tier dispatch engine.
 
-**🎯 هدف اصلی:** اعتبارسنجی کامل Dispatch سه‌سطحی از نظر صحت عددی و عملکرد در هر سطح.
+**Prerequisites & Module Topology:**
+- `neuralops.core.dispatch` — `force_kernel_backend`, `dispatch_kernel`.
+- `neuralops.ops.triton` — Triton JIT operator library.
+- `neuralops.ops.cuda` — Native CUDA C++ compiled binaries.
 
-**📦 پیش‌نیازها:**
-- `neuralops.core.dispatch` — `force_kernel_backend`, `dispatch_kernel`
-- `neuralops.ops.triton` — کرنل‌های تریتون
-- `neuralops.ops.cuda` — کرنل‌های CUDA C++
+**Cell Execution Matrix:**
 
-**📋 طرح سلول‌های نوتبوک:**
-
-| شماره سلول | نوع | عنوان سلول | محتوای اصلی / کد کلیدی |
+| Cell # | Type | Cell Title | Key Code & Functional Role |
 | :---: | :---: | :--- | :--- |
-| 1 | Markdown | معماری Dispatch سه‌سطحی | نمودار Fallback، جدول شرایط فعال‌سازی هر سطح |
-| 2 | Code | وارد کردن ماژول‌ها | `from neuralops.core.dispatch import force_kernel_backend, dispatch_kernel` |
-| 3 | Code | اجرای Level-1 (CUDA) | `with force_kernel_backend("cuda"): out_cuda = kernel(q, k, v)` |
-| 4 | Code | اجرای Level-2 (Triton) | `with force_kernel_backend("triton"): out_triton = kernel(q, k, v)` |
-| 5 | Code | اجرای Level-3 (PyTorch) | `with force_kernel_backend("pytorch"): out_pt = kernel(q, k, v)` |
-| 6 | Code | بررسی برابری عددی | `torch.testing.assert_close(out_cuda, out_triton, atol=1e-3, rtol=1e-3)` |
-| 7 | Code | بنچ‌مارک تاخیر سه سطح | جدول `(backend, latency_ms, throughput_TFLOPS)` |
-| 8 | Code | تست هشدار Fallback | تأیید `logger.warning` هنگام تغییر سطح |
-| 9 | Markdown | جمع‌بندی | جدول مقایسه سه سطح، توصیه‌های استقرار |
+| 1 | Markdown | 3-Tier Fallback Hierarchy & Dispatch Contracts | Fallback architecture diagram, tier precedence, and fail-closed security protocols. |
+| 2 | Code | Module Importation & Environment Verification | Import dispatch controls; verify CUDA availability and toolchain paths. |
+| 3 | Code | Level 1: Native CUDA C++ Execution | `with force_kernel_backend("cuda"): out_cuda = kernel(q, k, v)`. |
+| 4 | Code | Level 2: Triton JIT Kernel Execution | `with force_kernel_backend("triton"): out_triton = kernel(q, k, v)`. |
+| 5 | Code | Level 3: Vectorized PyTorch Execution | `with force_kernel_backend("pytorch"): out_pt = kernel(q, k, v)`. |
+| 6 | Code | Cross-Tier Numerical Parity Certification | Validate parity: `torch.testing.assert_close(out_cuda, out_triton, atol=1e-3, rtol=1e-3)`. |
+| 7 | Code | Multi-Backend Latency Benchmarking | Measure execution latency across all three tiers; generate comparison table. |
+| 8 | Code | Fallback Warning & Logging Verification | Simulate Level 1 failure; verify emission of structured fallback warnings. |
+| 9 | Markdown | Synthesis & Deployment Recommendations | Hardware routing guidelines and optimal tier selection policies. |
 
-**🔬 جزئیات پیاده‌سازی:**
-- ابعاد آزمون: `(B=2, S=4096, H=32, D=128)` در همه سطوح یکسان
-- تلرانس: `atol=1e-3, rtol=1e-3` بین Level-1 و Level-2
-- تلرانس: `atol=1e-2` بین Level-1 و Level-3 (PyTorch FP32)
+**Implementation Invariants & Constraints:**
+- Uniform evaluation shape: `(B=2, S=4096, H=32, D=128)` across all three tiers.
+- Parity tolerance (Tier 1 vs Tier 2): $\text{atol} \le 10^{-3}, \text{rtol} \le 10^{-3}$.
+- Parity tolerance (Tier 1 vs Tier 3): $\text{atol} \le 10^{-2}$ (reflecting FP32 reference arithmetic differences).
 
-**✅ معیارهای موفقیت (DoD):**
-- [ ] هر سه سطح بدون خطا اجرا شوند
-- [ ] برابری عددی با تلرانس‌های مشخص تأیید شود
-- [ ] هشدار Fallback در لاگ مشاهده شود
+**Definition of Done (DoD) Criteria:**
+- [ ] Successful execution across all three tiers on supported hardware.
+- [ ] Cross-tier numerical parity confirmed within certified tolerance thresholds.
+- [ ] Structured fallback logging and warning emission verified under simulated hardware failure.
 
 ---
 
-## ۳. نقشه راه و مشخصات تفصیلی ۳۱ نوتبوک جدید (توسعه به ۶۰ نوتبوک)
+## 3. Technical Specifications for the 31 Expansion Notebooks (Scaling to 60)
 
-برای توسعه جامع از ۲۹ به ۶۰ نوتبوک، ۳۱ موضوع استراتژیک در ۵ دسته تخصصی تقسیم‌بندی شده‌اند:
+To expand the tutorial suite from 29 foundation tutorials to 60 canonical reference notebooks, 31 strategic technical domains are classified into 5 specialized categories:
 
 ```mermaid
 flowchart TD
-    Root["NeuralOps 60-Notebook Suite"]
-    Root --> G1["دسته ۱: مکانیزم‌های توجه تخصصی و هیبریدی (۲۶ تا ۳۲)"]
-    Root --> G2["دسته ۲: موتورهای فشرده‌سازی و کوانتیزاسیون پیشرفته (۳۳ تا ۳۹)"]
-    Root --> G3["دسته ۳: میکرومعماری هسته‌ها، شتاب‌دهنده‌ها و NPU (۴۰ تا ۴۶)"]
-    Root --> G4["دسته ۴: آموزش توزیع‌شده، تقطیر و تطبیق زمینه (۴۷ تا ۵۳)"]
-    Root --> G5["دسته ۵: ارزیابی امنیتی، پایداری، سرورینگ و صنعتی (۵۴ تا ۶۰)"]
+    Root["NeuralOps 60-Notebook Architecture Suite"]
+    Root --> G1["Category 1: Specialized & Hybrid Attention Mechanisms (26-32)"]
+    Root --> G2["Category 2: Advanced Compression & Quantization Engines (33-39)"]
+    Root --> G3["Category 3: Microarchitectural Kernels, Accelerators & NPU (40-46)"]
+    Root --> G4["Category 4: Distributed Training, Distillation & Context (47-53)"]
+    Root --> G5["Category 5: Robustness, Safety, Serving & Industrial LLMs (54-60)"]
 ```
 
-### دسته ۱: مکانیزم‌های توجه تخصصی و هیبریدی (۷ نوتبوک)
+---
+
+### Category 1: Specialized & Hybrid Attention Mechanisms (7 Notebooks)
+
+---
 
 #### `26_linear_recurrent_associative_scans.ipynb`
 
-> 💡 *اسکن پیشوندی انجمنی — رازِ اجرای موازی بازگشت‌های خطی که محاسبه‌ی Mamba و GLA را ممکن می‌سازد.*
+> 💡 *Parallel prefix associative scans: transforming sequential linear recurrences into logarithmic-depth parallel GPU executions.*
 
-**داستان این نوتبوک:** داستان از اینجا شروع می‌شه که مدل‌های مبتنی بر State Space (مثل Mamba، GLA، RWKV) نیاز دارند به صورت بازگشتی حالت پنهان را در طول دنباله به‌روز کنند: \(h_t = a_t \odot h_{t-1} + b_t \otimes c_t\). مشکل اینه که این معادله ذاتاً ترتیبی است — هر \(h_t\) به \(h_{t-1}\) وابسته است. پس چطور می‌توانیم این را روی GPU موازی کنیم؟
+**Design Rationale & Architectural Narrative:**
+State Space Models (SSMs) and linear recurrent attention architectures (e.g., Mamba, GLA, RWKV, HGRN2) maintain an evolving hidden state vector across token sequences: $h_t = a_t \odot h_{t-1} + b_t \otimes c_t$. The central engineering challenge is that this formulation appears strictly sequential: $h_t$ depends directly on $h_{t-1}$. On modern parallel processors like GPUs, a sequential loop over long sequence horizons underutilizes compute units and bounds execution to memory latency. 
 
-جواب در الگوریتم اسکن پیشوندی انجمنی Blelloch نهفته است. این الگوریتم ثابت می‌کند که اگر عملگر ترکیب حالت‌ها انجمنی (associative) باشد، می‌توان کل دنباله را در \(O(\log S)\) مرحله‌ی موازی پردازش کرد — نه \(O(S)\) ترتیبی. در واقع اینجاست که جادو اتفاق می‌افته: یک بازگشت که ظاهراً ترتیبی است، تبدیل به یک عملیات موازی روی GPU می‌شود.
+The Blelloch associative parallel prefix scan addresses this bottleneck. If state transition operators satisfy the associative algebraic property $(A \circ B) \circ C = A \circ (B \circ C)$, the entire sequence can be evaluated in $O(\log S)$ parallel steps rather than $O(S)$ sequential steps. This notebook implements both an optimized chunk-based Triton kernel (performing parallel local intra-chunk matrix products combined with an inter-chunk prefix scan) and an analytical PyTorch reference, benchmarking numerical accuracy and speed across sequence horizons up to $S = 16,384$.
 
-این نوتبوک دو پیاده‌سازی ارائه می‌دهد: یک کرنل Triton چانک‌بندی‌شده که حالت‌های میان‌چانکی را با اسکن پیشوندی ترکیب می‌کند، و یک پیاده‌سازی PyTorch مرجع برای اعتبارسنجی. سپس خطای عددی FP32 در برابر BF16 برای دنباله‌های تا ۱۶k توکن اندازه‌گیری می‌شود.
+**Core Engineering Objectives:** Implement, mathematically certify, and benchmark the Blelloch parallel prefix associative scan for linear recurrent attention kernels within NeuralOps.
 
-**🎯 هدف اصلی:** پیاده‌سازی و اعتبارسنجی الگوریتم Blelloch Scan برای موازی‌سازی بازگشت‌های خطی در کرنل‌های NeuralOps.
+**Prerequisites & Module Topology:**
+- `neuralops.ops.triton.linear_scan` — Chunk-based Triton parallel scan kernel.
+- `neuralops.layers.attention` — GLA and RWKV classes from `ATTENTION_REGISTRY`.
+- `triton` — Triton JIT compilation pipeline (enforcing zero deprecated block pointers).
+- `torch` — Vectorized PyTorch reference execution harness.
 
-**📦 پیش‌نیازها:**
-- `neuralops.ops.triton.linear_scan` — کرنل تریتون اسکن خطی
-- `neuralops.layers.attention` — کلاس‌های GLA, RWKV از `ATTENTION_REGISTRY`
-- `triton` — JIT compilation بدون Block Pointer
-- `torch` — مرجع PyTorch برای اعتبارسنجی
+**Cell Execution Matrix:**
 
-**📋 طرح سلول‌های نوتبوک:**
-
-| شماره سلول | نوع | عنوان سلول | محتوای اصلی / کد کلیدی |
+| Cell # | Type | Cell Title | Key Code & Functional Role |
 | :---: | :---: | :--- | :--- |
-| 1 | Markdown | فرمول‌بندی بازگشت خطی | معادله \(h_t = a_t \odot h_{t-1} + b_t \otimes c_t\)، اثبات انجمنی بودن |
-| 2 | Code | وارد کردن ماژول‌ها | `from neuralops.ops.triton.linear_scan import chunk_linear_scan`، `device`, `dtype=torch.bfloat16` |
-| 3 | Markdown | الگوریتم Blelloch Scan | شبه‌کد Up-Sweep و Down-Sweep، نمودار درختی |
-| 4 | Code | پیاده‌سازی مرجع PyTorch | `def reference_recurrent(a, b, c): ...`، حلقه‌ی ساده ترتیبی |
-| 5 | Code | کرنل تریتون چانکی | `chunk_linear_scan(a, b, c, chunk_size=128)`، تنسور `(B=2, S=16384, D=256)` |
-| 6 | Code | بررسی برابری عددی FP32 | `torch.testing.assert_close(out_triton, out_ref, atol=1e-3)` |
-| 7 | Code | آزمون دقت BF16 | تکرار با `dtype=torch.bfloat16`، اندازه‌گیری `max_diff` |
-| 8 | Code | بنچ‌مارک پروفایل سرعت | مقایسه تاخیر `S∈{1024, 4096, 16384}` بین کرنل موازی و ترتیبی |
-| 9 | Code | تعویض مستقیم با Self-Attention | `model.layers[0].attn = GLA_from_registry()`، تست Forward Pass |
-| 10 | Markdown | جمع‌بندی و تحلیل | جدول خطا/سرعت، توصیه برای رژیم‌های مختلف دنباله |
+| 1 | Markdown | Linear Recurrence & Associative Semantics | Formulation $h_t = a_t \odot h_{t-1} + b_t \otimes c_t$ and proof of operator associativity. |
+| 2 | Code | Module Importation & Dtype Configuration | Import `chunk_linear_scan`; configure `device="cuda"`, `dtype=torch.bfloat16`. |
+| 3 | Markdown | Blelloch Scan Algorithm Mechanics | Up-Sweep (reduce) and Down-Sweep algorithmic flowcharts and binary tree diagrams. |
+| 4 | Code | Sequential PyTorch Reference Implementation | Author un-parallelized reference recurrence loop for parity ground truth. |
+| 5 | Code | Optimized Chunk-Parallel Triton Kernel | Execute `chunk_linear_scan(a, b, c, chunk_size=128)` on `(B=2, S=16384, D=256)`. |
+| 6 | Code | FP32 Numerical Parity Certification | Assert `torch.testing.assert_close(out_triton, out_ref, atol=1e-3)`. |
+| 7 | Code | BF16 Numerical Precision Benchmarking | Repeat evaluation under `dtype=torch.bfloat16`; quantify maximum absolute deviation. |
+| 8 | Code | Latency & Scaling Microbenchmark | Profile execution across $S \in \{1024, 4096, 16384\}$; measure parallel speedup. |
+| 9 | Code | In-Place Self-Attention Replacement | Transplant recurrent scan into Transformer layer; verify forward pass. |
+| 10 | Markdown | Analytical Summary & Sequence Guidelines | Speedup scaling curves and sequence-length transition recommendations. |
 
-**🔬 جزئیات پیاده‌سازی:**
-- اندازه چانک پیش‌فرض: `chunk_size=128`، قابل تنظیم تا `256`
-- ابعاد آزمون: `(B=2, S=16384, D=256)` برای رژیم Long-context
-- تلرانس FP32: `atol=1e-4`؛ تلرانس BF16: `atol=1e-2`
-- اسکن باید با `num_warps=4, num_stages=3` بهینه‌سازی شود
+**Implementation Invariants & Constraints:**
+- Chunk size configuration: `chunk_size = 128` (configurable up to 256 for high-bandwidth memory regimes).
+- Evaluation geometry: `(B=2, S=16384, D=256)` representing long-context workloads.
+- Parity bounds: $\text{atol} \le 10^{-4}$ in FP32; $\text{atol} \le 10^{-2}$ in BF16.
+- Kernel launch configuration: `num_warps=4, num_stages=3` for SM occupancy optimization.
 
-**✅ معیارهای موفقیت (DoD):**
-- [ ] `max_diff(triton_fp32, ref_fp32) < 1e-3` برای `S=16384`
-- [ ] کرنل موازی حداقل ۵× سریع‌تر از پیاده‌سازی ترتیبی برای `S≥4096`
-- [ ] تعویض مستقیم با Self-Attention بدون تغییر کد مدل موفق باشد
-- [ ] هیچ Block Pointer در کد تریتون وجود نداشته باشد
+**Definition of Done (DoD) Criteria:**
+- [ ] Certified parity: $\text{max\_diff}(\text{triton}_{\text{FP32}}, \text{ref}_{\text{FP32}}) < 10^{-3}$ at $S = 16,384$.
+- [ ] Measured parallel speedup $\ge 5.0\times$ compared to sequential reference for $S \ge 4096$.
+- [ ] In-place replacement into Transformer backbone verified without graph breaks.
+- [ ] Zero deprecated block pointer primitives present in the Triton kernel codebase.
+
+---
 
 #### `27_kronecker_delta_attention_deep_dive.ipynb`
 
-> 💡 *ضرب کرونکر در توجه — وقتی فیلترینگ کانال و گیت‌های بازداری با هم ترکیب می‌شوند تا یک مکانیزم توجه کاملاً نوین خلق کنند.*
+> 💡 *Kronecker product attention: combining channel filtering and inhibitory routing gates for linear-complexity attention.*
 
-**داستان این نوتبوک:** داستان از اینجا شروع می‌شه که Kronecker Delta Attention (KDA) یک ادعای جسورانه دارد: به جای محاسبه‌ی ماتریس توجه کامل \(QK^T\) با پیچیدگی \(O(S^2)\)، می‌توان از ساختار ضرب کرونکر استفاده کرد تا یک تقریب دقیق با پیچیدگی خطی ساخت. اما ادعا کردن آسان است — اثبات آن سخت است.
+**Design Rationale & Architectural Narrative:**
+Kronecker Delta Attention (KDA) presents an alternative to standard quadratic self-attention: rather than constructing an explicit $S \times S$ attention matrix via $QK^T$, KDA applies structured Kronecker matrix decompositions $A \otimes B$ alongside learned channel-wise inhibitory gating mechanisms. This restructuring captures inter-channel token interactions with linear computational complexity $O(S \cdot D)$. 
 
-این نوتبوک یک بررسی عمیق KDA انجام می‌دهد. از فرمول‌بندی ریاضی ضرب کرونکر \(A \otimes B\) شروع می‌کند، گیت‌های بازداری کانال را توضیح می‌دهد، و سپس یک پیاده‌سازی کامل با `neuralops.layers.attention.kda` ارائه می‌دهد. در واقع اینجاست که جادو اتفاق می‌افته: `torch.autograd.gradcheck` با `atol=1e-3, eps=1e-5` اجرا می‌شود تا گرادیان‌های صحیح تأیید شوند.
+This tutorial provides an architectural examination of KDA. It traces the algebraic foundations of Kronecker factorizations, examines channel inhibitory gating dynamics, and validates gradient propagation using `torch.autograd.gradcheck` with double-precision tensors (`eps=1e-5`, `atol=1e-3`). It also evaluates FP16 numerical stability, verifying that intermediate FP32 accumulators prevent underflow during multi-head Kronecker projections.
 
-سپس رفتار عددی در رژیم‌های FP16 بررسی می‌شود — جایی که تجمع FP16 می‌تواند ناپایداری ایجاد کند. این نوتبوک نشان می‌دهد که KDA چگونه از تجمع FP32 داخلی برای پایداری عددی استفاده می‌کند.
+**Core Engineering Objectives:** Implement Kronecker Delta Attention, verify gradient propagation using `torch.autograd.gradcheck`, and analyze numerical stability across half-precision regimes.
 
-**🎯 هدف اصلی:** پیاده‌سازی کامل KDA، تأیید گرادیان‌های صحیح با `gradcheck`، و تحلیل پایداری عددی در رژیم‌های FP16.
+**Prerequisites & Module Topology:**
+- `neuralops.layers.attention.kda` — Complete KDA layer implementation.
+- `neuralops.ops.triton.kda_kernel` — Hardware-accelerated Triton kernel.
+- `torch.autograd` — PyTorch analytical gradient validation engine.
 
-**📦 پیش‌نیازها:**
-- `neuralops.layers.attention.kda` — پیاده‌سازی Kronecker Delta Attention
-- `neuralops.ops.triton.kda_kernel` — کرنل تریتون بهینه
-- `torch.autograd` — ابزار `gradcheck` برای تأیید گرادیان
+**Cell Execution Matrix:**
 
-**📋 طرح سلول‌های نوتبوک:**
-
-| شماره سلول | نوع | عنوان سلول | محتوای اصلی / کد کلیدی |
+| Cell # | Type | Cell Title | Key Code & Functional Role |
 | :---: | :---: | :--- | :--- |
-| 1 | Markdown | ریاضیات KDA | فرمول ضرب کرونکر \(A \otimes B\)، شماتیک معماری |
-| 2 | Code | وارد کردن ماژول‌ها | `from neuralops.layers.attention import ATTENTION_REGISTRY`، `kda = ATTENTION_REGISTRY["kda"]()` |
-| 3 | Code | Forward Pass اولیه | `out = kda(q, k, v)` با `(B=2, S=2048, H=16, D=64)` |
-| 4 | Code | تست Autograd gradcheck | `torch.autograd.gradcheck(kda, inputs, atol=1e-3, eps=1e-5, dtype=torch.float64)` |
-| 5 | Code | بررسی گیت‌های بازداری | ویژوالیزاسیون ماسک گیت در کانال‌های مختلف |
-| 6 | Code | آزمون پایداری FP16 | اجرا با `dtype=torch.float16`، بررسی NaN/Inf |
-| 7 | Code | مقایسه با Standard MHA | `max_diff = (out_kda - out_mha).abs().max()`، رسم توزیع خطا |
-| 8 | Code | بنچ‌مارک سرعت | مقایسه تاخیر KDA در برابر FlashAttention برای `S∈{512, 2048, 8192}` |
-| 9 | Code | پروفایل حافظه | `torch.cuda.max_memory_allocated()` برای KDA vs MHA |
-| 10 | Markdown | جمع‌بندی | جدول مقایسه دقت/سرعت/حافظه، موارد استفاده پیشنهادی |
+| 1 | Markdown | Kronecker Factorization Mathematics | Mathematical formulation of $A \otimes B$ and channel-wise inhibitory gating functions. |
+| 2 | Code | Module Importation & Registry Resolution | `from neuralops.layers.attention import ATTENTION_REGISTRY`; load KDA module. |
+| 3 | Code | Forward Pass & Shape Contract Validation | Forward evaluation over `(B=2, S=2048, H=16, D=64)`. |
+| 4 | Code | Autograd Gradient Check (`gradcheck`) | `torch.autograd.gradcheck(kda, inputs, atol=1e-3, eps=1e-5, dtype=torch.float64)`. |
+| 5 | Code | Inhibitory Gate Dynamic Inspection | Visualize activation distributions of learned channel gating parameters. |
+| 6 | Code | FP16 Numerical Stability Assessment | Evaluate under FP16; assert complete absence of NaN/Inf values. |
+| 7 | Code | Parity Analysis vs. Standard MHA | Measure output divergence between KDA and Multi-Head Attention. |
+| 8 | Code | Throughput & Latency Profiling | Profile KDA vs. FlashAttention across $S \in \{512, 2048, 8192\}$. |
+| 9 | Code | Peak VRAM Allocation Benchmarking | Track peak GPU memory allocation across sequence horizons. |
+| 10 | Markdown | Architectural Recommendations | Summary table of memory, latency, and accuracy metrics for deployment. |
 
-**🔬 جزئیات پیاده‌سازی:**
-- `gradcheck` نیاز به `dtype=torch.float64` دارد (FP64 برای دقت مشتق)
-- گیت‌های بازداری: پارامترهای یادگیرنده با ابعاد `(H, D)`
-- تجمع داخلی: FP32 حتی در حالت ورودی FP16 (طبق §7)
-- ابعاد Kronecker: تجزیه‌ی `(H, D)` به `(H_a, D_a) ⊗ (H_b, D_b)`
+**Implementation Invariants & Constraints:**
+- Gradient checking precision: `dtype=torch.float64` mandatory during `gradcheck`.
+- Gating parameter signature: Learned channel-wise vectors with dimensionality $(H, D)$.
+- Accumulator precision: Internal accumulation in FP32 even during FP16 input evaluation.
 
-**✅ معیارهای موفقیت (DoD):**
-- [ ] `gradcheck` با `atol=1e-3, eps=1e-5` پاس شود
-- [ ] اجرا با FP16 بدون NaN/Inf برای `S≤4096`
-- [ ] تاخیر KDA برای `S=2048` کمتر از ۱.۵× تاخیر FlashAttention باشد
-- [ ] مصرف حافظه KDA کمتر از MHA استاندارد برای `S≥4096`
+**Definition of Done (DoD) Criteria:**
+- [ ] `gradcheck` passed with `atol=1e-3, eps=1e-5` in double precision.
+- [ ] Zero NaN or Inf occurrences across sequence lengths $S \le 4096$ in FP16.
+- [ ] Measured execution latency at $S = 2048$ within $1.5\times$ of FlashAttention.
+- [ ] Measured memory footprint demonstrably lower than standard MHA for $S \ge 4096$.
+
+---
 
 #### `28_multi_head_latent_attention_deepseek_mla.ipynb`
 
-> 💡 *فضای نهفته کوچک‌تر، کیش KV بزرگ‌تر — معماری MLA چگونه با یک چرخش ریاضی هوشمند حافظه را نصف می‌کند.*
+> 💡 *Low-rank KV projection: multi-Head Latent Attention (MLA) for $8\times$ KV-cache memory reduction in autoregressive inference.*
 
-**داستان این نوتبوک:** داستان از اینجا شروع می‌شه که در مرحله استنتاج مدل‌های بزرگ، کیش KV (Key-Value Cache) غول بزرگی است که حافظه را بلعیده. برای مدلی با ۳۲ سر و دنباله ۳۲k توکن، کیش KV می‌تواند چندین گیگابایت VRAM مصرف کند. DeepSeek با معماری Multi-Head Latent Attention (MLA) این مشکل را از ریشه حل می‌کند.
+**Design Rationale & Architectural Narrative:**
+In large-scale autoregressive inference, the Key-Value (KV) cache constitutes a primary memory constraint. For models with 32 heads operating across 32,768-token contexts, the KV cache consumes gigabytes of VRAM per batch stream, restricting concurrency. DeepSeek's Multi-Head Latent Attention (MLA) addresses this constraint through low-rank latent compression.
 
-ایده‌ی اصلی ساده اما زیرکانه است: به جای ذخیره ماتریس‌های کامل \(K\) و \(V\) با ابعاد \((S, H \times D)\)، یک بردار فشرده‌شده \(c_t^{KV} \in \mathbb{R}^{d_c}\) ذخیره می‌شود که \(d_c \ll H \times D\). هنگام محاسبه، \(K\) و \(V\) از این بردار نهفته بازسازی می‌شوند. در واقع اینجاست که جادو اتفاق می‌افته: ذخیره‌سازی حافظه کاهش چشمگیری می‌یابد در حالی که دقت مدل حفظ می‌شود.
+Rather than storing uncompressed keys and values of shape $(S, H \times D)$ in memory, MLA projects keys and values into a compact latent vector $c_t^{KV} \in \mathbb{R}^{d_c}$ where $d_c \ll H \times D$. During decoding, keys and values are reconstructed via learned up-projection matrices, while Rotary Position Embeddings (RoPE) are applied to a decoupled coordinate vector. This tutorial implements MLA from first principles, demonstrates RoPE decoupling, and benchmarks decode latency against MHA and GQA baselines.
 
-این نوتبوک MLA را گام به گام پیاده‌سازی می‌کند، ادغام RoPE را در بردار تفکیک‌شده نشان می‌دهد، و سربار محاسباتی Decode را در مقایسه با MHA و GQA می‌سنجد.
+**Core Engineering Objectives:** Implement and evaluate Multi-Head Latent Attention (MLA), quantifying KV-cache memory reduction and decoding throughput during long-context generation.
 
-**🎯 هدف اصلی:** پیاده‌سازی و ارزیابی MLA برای کاهش مصرف حافظه KV-Cache در استنتاج.
+**Prerequisites & Module Topology:**
+- `neuralops.layers.attention` — `ATTENTION_REGISTRY["mla"]`.
+- `neuralops.ops.rope` — Decoupled RoPE projection operators.
+- `torch` — Tensor projection and cache management primitives.
 
-**📦 پیش‌نیازها:**
-- `neuralops.layers.attention` — `ATTENTION_REGISTRY["mla"]`
-- `neuralops.ops.rope` — RoPE با تفکیک ابعاد
-- `torch` — عملیات پروجکشن و کیش
+**Cell Execution Matrix:**
 
-**📋 طرح سلول‌های نوتبوک:**
-
-| شماره سلول | نوع | عنوان سلول | محتوای اصلی / کد کلیدی |
+| Cell # | Type | Cell Title | Key Code & Functional Role |
 | :---: | :---: | :--- | :--- |
-| 1 | Markdown | معماری MLA و فرمول فشرده‌سازی | فرمول \(c_t^{KV} = W_{DKV} h_t\)، مقایسه با MHA/GQA |
-| 2 | Code | وارد کردن ماژول‌ها | `from neuralops.layers.attention import ATTENTION_REGISTRY`، `mla = ATTENTION_REGISTRY["mla"]` |
-| 3 | Code | Forward Pass در حالت Prefill | `out = mla(q, k, v, mode="prefill")` با `(B=1, S=4096, H=32, D=128)` |
-| 4 | Code | Forward Pass در حالت Decode | `out = mla(q, k_cached, v_cached, mode="decode")` تک توکن |
-| 5 | Code | محاسبه اندازه کیش KV | مقایسه `cache_MHA vs cache_MLA` در بایت |
-| 6 | Code | ادغام RoPE در بردار تفکیک‌شده | `from neuralops.ops.rope import apply_rope_split`، تأیید صحت |
-| 7 | Code | بنچ‌مارک Decode Latency | `latency_MHA vs latency_GQA vs latency_MLA` در `ms/token` |
-| 8 | Code | آزمون دقت خروجی | `max_diff(mla_out, mha_out) < atol=1e-2` |
-| 9 | Markdown | تحلیل tradeoff | جدول حافظه/دقت/سرعت، راهنمای انتخاب `d_c` |
+| 1 | Markdown | Low-Rank Latent Compression Formulation | Mathematical formulation $c_t^{KV} = W_{DKV} h_t$ and comparison against MHA/GQA. |
+| 2 | Code | Module Importation & Registry Binding | `from neuralops.layers.attention import ATTENTION_REGISTRY`; load MLA module. |
+| 3 | Code | Prefill Phase Forward Pass | Forward pass with full sequence `(B=1, S=4096, H=32, D=128)`. |
+| 4 | Code | Autoregressive Decode Step Execution | Incremental token generation utilizing latent KV-cache state. |
+| 5 | Code | KV-Cache Footprint Quantification | Calculate byte allocations: `cache_bytes_MHA vs. cache_bytes_MLA`. |
+| 6 | Code | Decoupled RoPE Verification | Validate positional encoding on decoupled coordinate vectors ($d_{\text{rope}}$). |
+| 7 | Code | Per-Token Decode Latency Benchmarking | Measure decode latency in ms/token across MHA, GQA, and MLA. |
+| 8 | Code | Representation Fidelity Verification | Quantify output error margin: $\text{max\_diff}(\text{out}_{\text{MLA}}, \text{out}_{\text{MHA}})$. |
+| 9 | Markdown | Architectural Trade-Off Analysis | Latency vs. memory vs. quality trade-offs for varying latent dimensions $d_c$. |
 
-**🔬 جزئیات پیاده‌سازی:**
-- ابعاد نهفته پیش‌فرض: `d_c = 512` برای مدل ۷B (در برابر `H×D = 4096`)
-- ضریب کاهش حافظه: `H×D / d_c ≈ 8×`
-- RoPE باید فقط روی بخش `d_rope` از بردار اعمال شود، نه بخش `d_nrope`
+**Implementation Invariants & Constraints:**
+- Latent dimension configuration: Default $d_c = 512$ (versus full uncompressed $H \times D = 4096$).
+- Compression ratio target: $\frac{H \times D}{d_c} \approx 8.0\times$ reduction in cached KV bytes.
+- Positional decoupling: RoPE applied exclusively to the decoupled coordinate subspace $d_{\text{rope}}$.
 
-**✅ معیارهای موفقیت (DoD):**
-- [ ] اندازه کیش MLA حداقل ۵× کمتر از MHA برای `H=32, D=128`
-- [ ] دقت خروجی: `max_diff < 1e-2` نسبت به MHA مرجع
-- [ ] Decode latency برای `S=1` کمتر یا برابر GQA باشد
+**Definition of Done (DoD) Criteria:**
+- [ ] Confirmed $\ge 5.0\times$ reduction in physical KV-cache byte allocation relative to MHA.
+- [ ] Output parity certified within $\text{max\_diff} < 10^{-2}$ against uncompressed baseline.
+- [ ] Incremental decode step latency verified $\le$ standard Grouped-Query Attention (GQA).
+
+---
 
 #### `29_state_space_attention_hybrids.ipynb`
 
-> 💡 *بهترین‌های دو دنیا — وقتی SSM و Attention یک‌درمیان می‌شوند تا هم کارایی خطی و هم قدرت ادراک سراسری را داشته باشیم.*
+> 💡 *Hybrid model architectures: interleaving State Space Models (SSMs) and attention layers for linear scaling and full-context recall.*
 
-**داستان این نوتبوک:** داستان از اینجا شروع می‌شه که معماری‌های SSM مثل Mamba در رقابت تنگاتنگ با Transformer‌ها هستند. SSM‌ها حافظه خطی دارند و برای دنباله‌های بلند عالی‌اند — اما در بازیابی اطلاعات دقیق از ابتدای دنباله ضعیف‌اند. Transformer‌ها برعکس: قدرت ادراک سراسری دارند اما هزینه‌ی \(O(S^2)\) می‌پردازند.
+**Design Rationale & Architectural Narrative:**
+Pure State Space Models (e.g., Mamba) offer linear inference scaling and constant memory footprints across sequence horizons, making them effective for long-context streaming. However, their compressed recurrent state can lead to degraded recall on precise retrieval tasks compared to full attention. Conversely, standard Transformers maintain high retrieval fidelity across all sequence positions, but incur quadratic computational scaling and growing KV-cache memory costs.
 
-راه‌حل معماری‌های هیبریدی مثل Jamba و Zamba است: لایه‌های SSM و Attention را یک‌درمیان (Interleave) کن. برای مثال هر ۴ لایه SSM، یک لایه Attention کامل قرار گیرد. این نوتبوک این معماری را پیاده‌سازی می‌کند و نشان می‌دهد که در کجای طیف long-context / local-retrieval این ترکیب برتر از هر دو نوع خالص است.
+Hybrid architectures (such as Jamba and Zamba) balance these characteristics by interleaving SSM and attention layers (e.g., placing one full attention layer for every $N$ SSM blocks). This tutorial implements an interleaved hybrid model, analyzing memory consumption and Needle In A Haystack (NIAH) retrieval accuracy across varying interleaving ratios.
 
-**🎯 هدف اصلی:** پیاده‌سازی و بنچ‌مارک معماری هیبریدی SSM+Attention با نسبت‌های مختلف Interleaving.
+**Core Engineering Objectives:** Construct, benchmark, and analyze hybrid SSM-Attention architectures across varying layer ratios to optimize the balance between compute scaling and contextual recall.
 
-**📦 پیش‌نیازها:**
-- `neuralops.layers.attention` — لایه‌های Attention کامل
-- `neuralops.layers.ssm` — ماژول Mamba/SSM
-- `neuralops.models.hybrid` — سازنده مدل هیبریدی
+**Prerequisites & Module Topology:**
+- `neuralops.layers.attention` — Standard full attention layers.
+- `neuralops.layers.ssm` — Mamba / State Space Model blocks.
+- `neuralops.models.hybrid` — Interleaved hybrid model builder.
 
-**📋 طرح سلول‌های نوتبوک:**
+**Cell Execution Matrix:**
 
-| شماره سلول | نوع | عنوان سلول | محتوای اصلی / کد کلیدی |
+| Cell # | Type | Cell Title | Key Code & Functional Role |
 | :---: | :---: | :--- | :--- |
-| 1 | Markdown | مقایسه SSM vs Transformer | جدول پیچیدگی محاسباتی، حافظه، بازیابی اطلاعات |
-| 2 | Code | ساخت مدل هیبریدی | `HybridModel(attn_ratio=0.25, ssm_type="mamba", attn_type="flash_v3")` |
-| 3 | Code | Forward Pass با دنباله بلند | `out = model(x)` با `(B=2, S=32768)`، پروفایل حافظه |
-| 4 | Code | آزمون بازیابی محلی | تست حفظ اطلاعات در ۱۰۰ توکن اول برای دنباله ۸k |
-| 5 | Code | آزمون ادراک سراسری | تست Needle-in-Haystack در موقعیت‌های مختلف |
-| 6 | Code | تغییر نسبت Interleaving | مقایسه `attn_ratio∈{0.0, 0.125, 0.25, 0.5, 1.0}` |
-| 7 | Code | پروفایل حافظه تطبیقی | `memory_MB` به ازای `S∈{4k, 8k, 16k, 32k}` |
-| 8 | Markdown | تفسیر نتایج | توصیه نسبت بهینه برای کاربردهای مختلف |
+| 1 | Markdown | SSM vs. Attention Trade-Off Taxonomy | Comparison of computational complexity, memory scaling, and contextual recall. |
+| 2 | Code | Hybrid Model Instantiation | `HybridModel(attn_ratio=0.25, ssm_type="mamba", attn_type="flash_v3")`. |
+| 3 | Code | Long-Context Forward Evaluation | Evaluate forward pass with $S = 32,768$; record peak VRAM usage. |
+| 4 | Code | Local Context Retention Assessment | Measure token representation fidelity over the initial 100 sequence positions. |
+| 5 | Code | Global Needle Retrieval (NIAH) Test | Run synthetic passkey retrieval across varied sequence depths. |
+| 6 | Code | Interleaving Ratio Sweep | Evaluate configurations across $\text{attn\_ratio} \in \{0.0, 0.125, 0.25, 0.5, 1.0\}$. |
+| 7 | Code | Dynamic Memory Footprint Profiling | Profile VRAM consumption across sequence horizons $S \in \{4k, 8k, 16k, 32k\}$. |
+| 8 | Markdown | Empirical Synthesis & Ratio Guidelines | Recommendations for balancing throughput and retrieval accuracy in production. |
 
-**🔬 جزئیات پیاده‌سازی:**
-- نسبت پیش‌فرض: ۱ لایه Attention به ازای هر ۷ لایه SSM (مشابه Jamba)
-- پروفایل حافظه با `torch.cuda.memory_stats()` در هر نسبت
-- آزمون NIAH: دقت بازیابی به عنوان تابعی از موقعیت needle در دنباله
+**Implementation Invariants & Constraints:**
+- Baseline interleaving configuration: 1 Attention block per 7 SSM blocks (1:7 ratio, following Jamba).
+- Telemetry profiling: Hardware memory tracking using `torch.cuda.memory_stats()` at each ratio.
+- Synthetic retrieval: Evaluate passkey retrieval across 10 depth percentiles ($0\%$ to $100\%$) at $S = 32k$.
 
-**✅ معیارهای موفقیت (DoD):**
-- [ ] مدل هیبریدی با `attn_ratio=0.25` دقت NIAH بالاتر از SSM خالص داشته باشد
-- [ ] حافظه هیبریدی کمتر از Transformer خالص برای `S=32768` باشد
-- [ ] نمودار دقت/حافظه به ازای نسبت‌های مختلف تولید شود
+**Definition of Done (DoD) Criteria:**
+- [ ] Hybrid architecture with $\text{attn\_ratio} = 0.25$ demonstrates higher NIAH accuracy than pure SSM.
+- [ ] Total memory allocation for $S = 32,768$ measured to be substantially lower than a pure Transformer.
+- [ ] Multi-point trade-off curve generated and documented.
+
+---
 
 #### `30_differential_attention_noise_cancellation.ipynb`
 
-> 💡 *دو ماتریس توجه منهای هم — چگونه Differential Attention صدای پس‌زمینه را خاموش می‌کند و روی سیگنال واقعی تمرکز می‌کند.*
+> 💡 *Dual-softmax subtraction: cancelling cross-attention noise and sharpening focus via learned differential damping.*
 
-**داستان این نوتبوک:** داستان از اینجا شروع می‌شه که در Transformer‌های معمولی، بعضی سرها به توکن‌های نامرتبط توجه می‌کنند — این «نویز توجه» (Attention Noise) دقت مدل را کاهش می‌دهد. Differential Attention یک راه‌حل ظریف دارد: برای هر سر، دو ماتریس توجه مجزا محاسبه و از هم کم می‌کند:
+**Design Rationale & Architectural Narrative:**
+In standard multi-head attention, attention heads often assign non-trivial probability mass to irrelevant or noisy context tokens. This dispersed probability distribution can degrade multi-hop reasoning and long-context comprehension. Differential Attention addresses this by computing two separate softmax attention maps per head and taking their difference:
 
-\[\text{DiffAttn}(Q, K, V) = (\text{softmax}(Q_1 K_1^T / \sqrt{d}) - \lambda \cdot \text{softmax}(Q_2 K_2^T / \sqrt{d})) V\]
+$$\text{DiffAttn}(Q, K, V) = \left( \text{softmax}\left(\frac{Q_1 K_1^T}{\sqrt{d}}\right) - \lambda \cdot \text{softmax}\left(\frac{Q_2 K_2^T}{\sqrt{d}}\right) \right) V$$
 
-\(\lambda\) یک اسکالر یادگیرنده است که به مرور زمان یاد می‌گیرد چه مقدار از ماتریس دوم را کم کند. در واقع اینجاست که جادو اتفاق می‌افته: نویز مشترک در هر دو ماتریس تفریق می‌شود، و سیگنال خالص باقی می‌ماند.
+Here, $\lambda$ is a learned scalar parameter that modulates the cancellation of shared background noise between the two projection subspaces. This notebook implements Differential Attention, tracks the trajectory of $\lambda$ during fine-tuning, analyzes attention entropy reduction, and measures downstream performance on question-answering tasks.
 
-این نوتبوک این مکانیزم را پیاده‌سازی می‌کند، دینامیک \(\lambda\) را در طول آموزش رصد می‌کند، و اثر لغو نویز را روی وظایف QA و خلاصه‌سازی اندازه‌می‌گیرد.
+**Core Engineering Objectives:** Implement Differential Attention, trace the dynamic convergence of the noise cancellation parameter $\lambda$, and evaluate downstream task accuracy.
 
-**🎯 هدف اصلی:** پیاده‌سازی و ارزیابی Differential Attention برای کاهش نویز و بهبود دقت روی وظایف downstream.
+**Prerequisites & Module Topology:**
+- `neuralops.layers.attention` — `ATTENTION_REGISTRY["diff_attn"]`.
+- `datasets` — SQuAD evaluation dataset.
+- `torch.optim` — AdamW optimizer for differential parameter tuning.
 
-**📦 پیش‌نیازها:**
-- `neuralops.layers.attention` — `ATTENTION_REGISTRY["diff_attn"]`
-- `datasets` — داده‌های SQuAD برای ارزیابی QA
-- `torch.optim` — آموزش پارامتر \(\lambda\)
+**Cell Execution Matrix:**
 
-**📋 طرح سلول‌های نوتبوک:**
-
-| شماره سلول | نوع | عنوان سلول | محتوای اصلی / کد کلیدی |
+| Cell # | Type | Cell Title | Key Code & Functional Role |
 | :---: | :---: | :--- | :--- |
-| 1 | Markdown | فرمول Differential Attention | معادله تفریق دو softmax، شماتیک معماری |
-| 2 | Code | وارد کردن ماژول‌ها | `diff_attn = ATTENTION_REGISTRY["diff_attn"](H=16, D=64, lambda_init=0.8)` |
-| 3 | Code | Forward Pass با `(B=2, S=2048)` | محاسبه خروجی و ماتریس توجه خالص |
-| 4 | Code | ویژوالیزاسیون ماتریس توجه | مقایسه ماتریس MHA vs DiffAttn روی یک نمونه متنی |
-| 5 | Code | آموزش \(\lambda\) روی داده ساده | `optimizer.zero_grad(); loss.backward(); optimizer.step()` برای ۱۰۰ مرحله |
-| 6 | Code | رصد دینامیک \(\lambda\) | نمودار تغییر `lambda_` در طول آموزش |
-| 7 | Code | ارزیابی روی SQuAD | `exact_match` و `f1` قبل/بعد از Fine-tuning |
-| 8 | Code | تست جلوگیری از فروپاشی توجه | آنالیز آنتروپی ماتریس‌های توجه |
-| 9 | Markdown | نتیجه‌گیری | مقایسه دقت/سرعت، موارد استفاده توصیه‌شده |
+| 1 | Markdown | Differential Formulation & Noise Cancellation | Mathematical formulation of dual-softmax subtraction and noise damping. |
+| 2 | Code | Module Setup & Initialization | `diff_attn = ATTENTION_REGISTRY["diff_attn"](H=16, D=64, lambda_init=0.8)`. |
+| 3 | Code | Forward Pass & Differential Map Generation | Forward pass with `(B=2, S=2048)`; extract intermediate attention matrices. |
+| 4 | Code | Attention Map Visualization | Compare standard MHA vs. DiffAttn attention distributions on sample text. |
+| 5 | Code | Parameter Optimization Loop | Train $\lambda$ over 100 optimization steps; log parameter values. |
+| 6 | Code | Parameter Trajectory Tracking | Plot convergence curve of $\lambda$ over training steps. |
+| 7 | Code | Downstream SQuAD QA Evaluation | Benchmark Exact Match (EM) and F1 scores before and after fine-tuning. |
+| 8 | Code | Attention Entropy Analysis | Compute and compare Shannon entropy $H = -\sum p \log p$ across attention maps. |
+| 9 | Markdown | Performance Synthesis | Recommendations for applying differential attention to multi-hop reasoning tasks. |
 
-**🔬 جزئیات پیاده‌سازی:**
-- \(\lambda\) با مقدار اولیه `0.8` آغاز می‌شود و به سمت `0.05` همگرا می‌شود
-- هر سر دو `Q_i, K_i` مجزا دارد — ابعاد `W_Q` دو برابر می‌شود
-- آنتروپی ماتریس توجه: `H = -sum(p * log(p + eps))`
+**Implementation Invariants & Constraints:**
+- Parameter initialization: $\lambda$ initialized at $0.80$, with unconstrained gradient updates.
+- Projection dimensionality: Doubled $Q, K$ projection dimensions ($Q_1, Q_2, K_1, K_2$) with equal head counts.
+- Attention entropy formula: $H(A) = -\sum_{j} A_{ij} \log(A_{ij} + \epsilon)$.
 
-**✅ معیارهای موفقیت (DoD):**
-- [ ] \(\lambda\) در ۱۰۰ مرحله آموزش به مقدار `< 0.1` همگرا شود
-- [ ] آنتروپی توجه DiffAttn کمتر از MHA معمولی (تمرکز بیشتر)
-- [ ] F1 روی SQuAD بعد از Fine-tuning بهبود `≥ 0.5` نقطه نشان دهد
+**Definition of Done (DoD) Criteria:**
+- [ ] Stable convergence of $\lambda$ verified across 100 training steps without oscillations.
+- [ ] Attention entropy of DiffAttn verified to be lower than standard MHA (indicating sharper focus).
+- [ ] Measurable improvement in downstream SQuAD F1 score ($\ge +0.5$ points) demonstrated.
+
+---
 
 #### `31_chunkwise_parallel_attention_kernels.ipynb`
 
-> 💡 *چانک‌بندی هوشمند — راز دستیابی به محاسبه‌ی موازی کامل با حافظه‌ی خطی برای دنباله‌های میلیونی.*
+> 💡 *Chunk-parallel Triton kernels: combining local intra-chunk GEMM with inter-chunk parallel scans for long sequences.*
 
-**داستان این نوتبوک:** داستان از اینجا شروع می‌شه که می‌خوای یک مدل را روی دنباله‌های ۱۲۸k توکنی آموزش بدی، ولی حافظه \(O(S^2)\) اجازه نمی‌دهد. Linear Attention حافظه‌ی \(O(S \cdot D^2)\) دارد — اما چون ترتیبی است، GPU را کم‌استفاده می‌گذارد.
+**Design Rationale & Architectural Narrative:**
+Scaling attention to extreme sequence lengths (e.g., $128k+$ tokens) demands linear computational complexity and high parallel execution efficiency. While pure linear attention exhibits $O(S \cdot D^2)$ algorithmic scaling, naive sequential recurrent implementations underutilize the thousands of concurrent execution threads available on modern GPUs.
 
-Chunk-parallel Attention این دو مشکل را با هم حل می‌کند: دنباله را به چانک‌های کوچک (مثلاً ۱۲۸ توکن) تقسیم می‌کند، درون هر چانک Attention معمولی می‌زند (با FlashAttention)، و میان چانک‌ها حالت خطی را با اسکن انجمنی به روز می‌کند. نتیجه؟ هم موازی است، هم حافظه خطی دارد.
+Chunk-parallel attention resolves this tension by decomposing the sequence into discrete tiles (e.g., 128 tokens each). Within each tile, dense attention operations are evaluated in parallel using Tensor Core GEMM operations via `tl.dot`. Across tile boundaries, state recurrences are propagated using logarithmic parallel scans (as covered in NB26). This tutorial details the implementation of a custom chunk-parallel Triton kernel, verifies shared memory tiling parameters, and benchmarks throughput up to $S = 131,072$.
 
-در واقع اینجاست که جادو اتفاق می‌افته: کرنل تریتون با انتقال بلوک‌های K,V به حافظه مشترک (Shared Memory) و محاسبه‌ی موازی درون چانک، اشباع کامل SM‌ها را فراهم می‌کند.
+**Core Engineering Objectives:** Construct, tune, and benchmark a chunk-parallel linear attention Triton JIT kernel achieving linear memory scaling and high hardware utilization.
 
-**🎯 هدف اصلی:** پیاده‌سازی Chunk-parallel Attention Kernel با حافظه خطی و موازی‌سازی کامل GPU.
+**Prerequisites & Module Topology:**
+- `neuralops.ops.triton.chunk_attn` — Chunk-parallel attention kernel.
+- `neuralops.layers.attention` — `ATTENTION_REGISTRY["chunk_linear"]`.
+- `triton` — Low-level Triton JIT backend (excluding deprecated block pointers).
 
-**📦 پیش‌نیازها:**
-- `neuralops.ops.triton.chunk_attn` — کرنل تریتون چانکی
-- `neuralops.layers.attention` — `ATTENTION_REGISTRY["chunk_linear"]`
-- `triton` — JIT kernel بدون Block Pointer
+**Cell Execution Matrix:**
 
-**📋 طرح سلول‌های نوتبوک:**
-
-| شماره سلول | نوع | عنوان سلول | محتوای اصلی / کد کلیدی |
+| Cell # | Type | Cell Title | Key Code & Functional Role |
 | :---: | :---: | :--- | :--- |
-| 1 | Markdown | معماری Chunk-parallel | نمودار تقسیم دنباله، جریان محاسبه داخل/میان چانک |
-| 2 | Code | وارد کردن ماژول‌ها | `from neuralops.ops.triton.chunk_attn import chunk_parallel_attention` |
-| 3 | Code | اجرا با چانک ۱۲۸ | `out = chunk_parallel_attention(q, k, v, chunk_size=128)` با `(B=2, S=16384, H=16, D=64)` |
-| 4 | Code | بررسی صحت خروجی | `torch.testing.assert_close(out, ref_linear_attn, atol=1e-3)` |
-| 5 | Code | آزمون چانک‌های مختلف | `chunk_size∈{64, 128, 256, 512}` — اثر روی سرعت و دقت |
-| 6 | Code | پروفایل حافظه مشترک | تأیید استفاده از `tl.load` با mask برای بارگذاری K,V |
-| 7 | Code | بنچ‌مارک مقیاس‌پذیری | سرعت به ازای `S∈{4k, 16k, 64k, 128k}` — باید خطی باشد |
-| 8 | Code | مقایسه با FlashAttention | تاخیر و حافظه در `S=16384` |
-| 9 | Markdown | خلاصه و توصیه | جدول بهترین `chunk_size` به ازای سخت‌افزار |
+| 1 | Markdown | Chunk-Parallel Mechanics & Tiling Diagrams | Algorithmic structure: intra-chunk dense GEMM and inter-chunk parallel state scan. |
+| 2 | Code | Module Importation & JIT Setup | `from neuralops.ops.triton.chunk_attn import chunk_parallel_attention`. |
+| 3 | Code | Baseline Chunk Execution (Chunk=128) | Execute kernel with `chunk_size=128` over `(B=2, S=16384, H=16, D=64)`. |
+| 4 | Code | Output Parity Validation | Validate against analytical reference: `assert_close(out, ref, atol=1e-3)`. |
+| 5 | Code | Chunk Size Exploration Sweep | Evaluate performance across `chunk_size` $\in \{64, 128, 256, 512\}$. |
+| 6 | Code | Shared Memory Usage Audit | Inspect memory bounds; verify masked loading via `tl.load(..., mask=mask)`. |
+| 7 | Code | Long-Sequence Scaling Benchmark | Measure execution latency across $S \in \{4k, 16k, 64k, 128k\}$. |
+| 8 | Code | Comparative Benchmark vs. FlashAttention | Compare latency and memory scaling against standard FlashAttention. |
+| 9 | Markdown | Optimization Synthesis & Hardware Tuning | Optimal chunk size configurations mapped to GPU SRAM capacity. |
 
-**🔬 جزئیات پیاده‌سازی:**
-- محاسبه داخل چانک با `tl.dot` برای GEMM بهینه
-- اسکن میان چانک با `chunk_linear_scan` از NB26
-- بارگذاری K,V: `tl.load(K_ptr + ..., mask=mask, other=0.0)` — بدون Block Pointer
-- `num_warps=4, num_stages=2` برای بهترین اشباع SM
+**Implementation Invariants & Constraints:**
+- Matrix multiplication primitive: `tl.dot` utilized for all intra-chunk GEMM calculations.
+- Memory access protocol: Direct masked pointer arithmetic (`tl.load(ptr + offsets, mask=mask)`) with zero block pointer syntax.
+- Kernel launch configuration: `num_warps=4, num_stages=2` for shared memory footprint management.
 
-**✅ معیارهای موفقیت (DoD):**
-- [ ] خطای عددی `< 1e-3` نسبت به مرجع PyTorch
-- [ ] حافظه مقیاس \(O(S \cdot D^2)\) نه \(O(S^2)\) تأیید شود
-- [ ] سرعت خطی در `S∈{4k..128k}` — شیب ≈ ۱.۰ در نمودار log-log
+**Definition of Done (DoD) Criteria:**
+- [ ] Numerical parity confirmed with $\text{max\_diff} < 10^{-3}$ against PyTorch reference.
+- [ ] Confirmed $O(S \cdot D^2)$ linear memory scaling over long sequence lengths.
+- [ ] Linear execution scaling demonstrated across $S \in [4k, 128k]$ (empirical slope $\approx 1.0$ on log-log plot).
+
+---
 
 #### `32_sparse_sinkhorn_and_routing_attentions.ipynb`
 
-> 💡 *Sinkhorn-Knopp — یک الگوریتم بهینه‌سازی کلاسیک که توکن‌ها را هوشمندانه به سرهای توجه مرتبط هدایت می‌کند.*
+> 💡 *Doubly stochastic normalization: Sinkhorn-Knopp token assignment for load-balanced sparse routing.*
 
-**داستان این نوتبوک:** داستان از اینجا شروع می‌شه که در Mixture-of-Experts (MoE) و Sparse Attention، مشکل اصلی «مسیریابی» (Routing) است: کدام توکن به کدام سر یا متخصص برود؟ یک روتر Softmax ساده کار می‌کند اما توازن بار (Load Balancing) ندارد — بعضی سرها بیش از حد بار دریافت می‌کنند.
+**Design Rationale & Architectural Narrative:**
+In sparse routing mechanisms and Mixture-of-Experts (MoE) attention layers, token allocation across heads often suffers from representation collapse and load imbalance: a small subset of heads or experts receives the majority of tokens, while remaining units sit idle. Standard softmax routing addresses this heuristically using auxiliary loss penalties, which can be challenging to tune.
 
-الگوریتم Sinkhorn-Knopp این مشکل را حل می‌کند. با نرمال‌سازی ماتریس توجه به صورت دوبل تصادفی (Doubly Stochastic) — ردیف‌ها و ستون‌ها هر دو مجموع یک دارند — توازن بار کامل برقرار می‌شود. در واقع اینجاست که جادو اتفاق می‌افته: هر سر دقیقاً همان تعداد توکن را دریافت می‌کند.
+The Sinkhorn-Knopp algorithm offers a principled alternative. By iteratively scaling the rows and columns of an affinity matrix, it projects the token-to-head routing assignment into a doubly stochastic matrix where row and column sums strictly equal 1. This guarantees balanced token allocation across all attention heads. This notebook implements Sinkhorn routing, visualizes routing distributions, and benchmarks throughput during high-concurrency batched inference.
 
-این نوتبوک الگوریتم Sinkhorn را پیاده‌سازی می‌کند، تخصیص دینامیک سر به کلاسترهای معنایی را نشان می‌دهد، و عملکرد در استنتاج با بچ‌های بزرگ را بنچ‌مارک می‌کند.
+**Core Engineering Objectives:** Implement Sinkhorn-Knopp doubly stochastic routing for sparse attention, verifying balanced token distribution across heads and measuring inference performance.
 
-**🎯 هدف اصلی:** پیاده‌سازی Sparse Routing Attention با Sinkhorn normalization و ارزیابی توازن بار.
+**Prerequisites & Module Topology:**
+- `neuralops.layers.attention` — `ATTENTION_REGISTRY["sinkhorn_routing"]`.
+- `neuralops.ops.routing` — `sinkhorn_normalize`, `TopK_router`.
+- `torch` — Vectorized doubly stochastic matrix operators.
 
-**📦 پیش‌نیازها:**
-- `neuralops.layers.attention` — `ATTENTION_REGISTRY["sinkhorn_routing"]`
-- `neuralops.ops.routing` — `sinkhorn_normalize`, `TopK_router`
-- `torch` — عملیات ماتریسی Doubly Stochastic
+**Cell Execution Matrix:**
 
-**📋 طرح سلول‌های نوتبوک:**
-
-| شماره سلول | نوع | عنوان سلول | محتوای اصلی / کد کلیدی |
+| Cell # | Type | Cell Title | Key Code & Functional Role |
 | :---: | :---: | :--- | :--- |
-| 1 | Markdown | الگوریتم Sinkhorn | فرمول تکرار نرمال‌سازی ردیف/ستون، اثبات همگرایی |
-| 2 | Code | پیاده‌سازی Sinkhorn | `def sinkhorn(M, n_iters=3): for _ in range(n_iters): M /= M.sum(-1, keepdim=True); M /= M.sum(-2, keepdim=True)` |
-| 3 | Code | آزمون Doubly Stochastic | `assert (M.sum(-1) - 1).abs().max() < 1e-5` |
-| 4 | Code | روتر TopK با Sinkhorn | `from neuralops.ops.routing import TopKSinkhornRouter`، \(k=2\) |
-| 5 | Code | Forward Pass Sparse Attention | `out = sinkhorn_attn(q, k, v)` با `(B=2, S=4096, H=32, D=128)` |
-| 6 | Code | تحلیل توازن بار | هیستوگرام توکن‌های تخصیص‌یافته به هر سر |
-| 7 | Code | مقایسه با Softmax Routing | واریانس توزیع بار بین سرها |
-| 8 | Code | بنچ‌مارک با بچ بزرگ | `B=32, S=2048`، اندازه‌گیری throughput tokens/s |
-| 9 | Code | آزمون cluster‌های معنایی | تأیید که توکن‌های مشابه به سرهای مشابه می‌روند |
-| 10 | Markdown | خلاصه | بهترین تعداد تکرار Sinkhorn برای tradeoff سرعت/توازن |
+| 1 | Markdown | Sinkhorn-Knopp Algorithm & Doubly Stochastic Theory | Mathematical formulation, iterative row/column normalization, and convergence proofs. |
+| 2 | Code | Sinkhorn Iterative Algorithm Implementation | Implement `def sinkhorn(M, n_iters=3): ...` using vectorized PyTorch operations. |
+| 3 | Code | Doubly Stochastic Convergence Test | Assert row/column balance: `assert (M.sum(-1) - 1.0).abs().max() < 1e-4`. |
+| 4 | Code | Top-K Sparse Routing Integration | Combine Sinkhorn normalization with Top-K sparse routing ($k = 2$). |
+| 5 | Code | Forward Pass & Output Computation | Forward execution over `(B=2, S=4096, H=32, D=128)`. |
+| 6 | Code | Routing Load Distribution Analysis | Generate histograms of token allocations across all 32 attention heads. |
+| 7 | Code | Comparative Load Variance Assessment | Compare allocation variance between standard Softmax and Sinkhorn routing. |
+| 8 | Code | High-Batch Concurrency Benchmarking | Benchmark token generation throughput under heavy batch loads ($B = 32, S = 2048$). |
+| 9 | Code | Semantic Cluster Alignment Verification | Confirm that semantically related tokens are routed to shared head subsets. |
+| 10 | Markdown | Implementation Synthesis & Iteration Tuning | Analysis of optimal Sinkhorn iteration counts balancing normalization accuracy and latency. |
 
-**🔬 جزئیات پیاده‌سازی:**
-- تعداد تکرار Sinkhorn: `n_iters=3` برای همگرایی کافی بدون overhead زیاد
-- `k=2` توکن به ازای هر سر در حالت Sparse
-- واریانس توزیع: باید `< 0.01` با Sinkhorn (در مقایسه با `~0.3` بدون آن) باشد
+**Implementation Invariants & Constraints:**
+- Iteration budget: `n_iters = 3` providing convergence within required tolerances without excessive overhead.
+- Sparsity parameters: $k = 2$ active routing heads per token in the sparse configuration.
+- Allocation variance threshold: Head distribution variance must remain $< 0.01$ (versus $> 0.10$ for unconstrained softmax).
 
-**✅ معیارهای موفقیت (DoD):**
-- [ ] ماتریس مسیریابی Doubly Stochastic با `tol < 1e-4` پس از ۳ تکرار
-- [ ] واریانس توزیع بار `< 0.01` در مقایسه با `> 0.1` برای Softmax معمولی
-- [ ] throughput با Sparse Routing حداقل ۱.۵× بیشتر از Full Attention برای `H=32`
+**Definition of Done (DoD) Criteria:**
+- [ ] Doubly stochastic property confirmed with tolerance $< 10^{-4}$ within 3 Sinkhorn iterations.
+- [ ] Token load variance across heads verified $< 0.01$.
+- [ ] Throughput under sparse routing measured $\ge 1.5\times$ higher than full quadratic attention for $H = 32$.
 
 ---
 
-### دسته ۲: موتورهای فشرده‌سازی و کوانتیزاسیون پیشرفته (۷ نوتبوک)
+### Category 2: Advanced Compression & Quantization Engines (7 Notebooks)
 
 #### `33_outlier_aware_smoothquant_pipeline.ipynb`
-- **هدف**: خط لوله مهار مقادیر پرت (Outliers) در ابعاد مخفی و کوانتیزاسیون W8A8.
-- **بخش‌های کلیدی**:
-  1. انتقال سختی کوانتیزاسیون از اکتیویشن به وزن با مقیاس‌بندی کانالی \(s_j\).
-  2. اجرای عملیات کوانتیزاسیون متقارن و نامتقارن ماتریس‌های جراحی‌شده.
-  3. مقایسه Perplexity مدل قبل و بعد از مقیاس‌بندی SmoothQuant.
+- **Objective**: Implement an end-to-end W8A8 quantization pipeline using SmoothQuant to mitigate systematic activation outlier dimensions.
+- **Key Modules**:
+  1. Channel-wise migration of quantization difficulty from activations to weights via learned scaling factors $s_j$.
+  2. Symmetric and asymmetric integer quantization passes across surgically transformed layers.
+  3. Pre- and post-quantization validation on calibration datasets to verify minimal perplexity degradation.
 
 #### `34_microscaling_fp4_and_mx_formats.ipynb`
-- **هدف**: استانداردسازی میکرومقیاس‌بندی (Microscaling - MX) با فرمت‌های FP4 و FP6 برای سخت‌افزارهای نوین.
-- **بخش‌های کلیدی**:
-  1. بلاک‌بندی المان‌ها (Block size = 32) و انتساب مقیاس‌های مشترک E8M0.
-  2. کرنل شبیه‌ساز Triton برای تبدیل فرمت‌ها بدون اتلاف اطلاعات کلیدی.
-  3. تحلیل خطای تقریب در گرادیان‌های پس‌انتشار.
+- **Objective**: Standardize Microscaling (MX) formats (FP4 and FP6) with shared block exponents for next-generation hardware backends.
+- **Key Modules**:
+  1. Element-wise block tiling (block size = 32) and shared E8M0 scale-factor allocation.
+  2. Emulation of MX quantization in Triton JIT kernels to validate numerical stability.
+  3. Gradient backpropagation variance tracking under low-precision microscaling regimes.
 
 #### `35_admm_structured_2_4_sparsity.ipynb`
-- **هدف**: پیاده‌سازی الگوریتم بهینه‌سازی جهت‌دار ADMM برای تنکی ساختاریافته ۲:۴ سخت‌افزاری.
-- **بخش‌های کلیدی**:
-  1. تعریف تابع زیان با جریمه‌های لاگرانژی تقاطعی برای الگوهای ۲:۴.
-  2. شتاب‌دهی ضرب ماتریسی تنک با استفاده از Sparse Tensor Cores.
-  3. تست بازیابی دقت بعد از بازتنظیم وزن‌ها در رژیم‌های متراکم.
+- **Objective**: Implement Alternating Direction Method of Multipliers (ADMM) optimization to enforce hardware-aligned 2:4 structured sparsity.
+- **Key Modules**:
+  1. ADMM formulation with augmented Lagrangian multipliers penalizing non-2:4 weight matrix configurations.
+  2. Sparse matrix multiplication acceleration leveraging Ampere/Ada Sparse Tensor Cores.
+  3. Fine-tuning recovery protocols to restore baseline dense task accuracy post-pruning.
 
 #### `36_activation_covariance_and_fisher_pruning.ipynb`
-- **هدف**: انتخاب وزن‌های هرس بر پایه ماتریس اطلاعات فیشر تجربی و کانتکست کوواریانس.
-- **بخش‌های کلیدی**:
-  1. محاسبه قطری یا کرونکر فیشر (K-FAC) روی داده‌های واقعی بدون برچسب.
-  2. رتبه‌بندی اهمیت لایه‌ها و کانال‌ها بر اساس تخمین انحنای تابع زیان.
-  3. برش حداقل انحنا و حفظ پایداری شبکه‌های بازسازی‌شده.
+- **Objective**: Establish second-order structured pruning driven by empirical Fisher Information Matrix (FIM) estimates and activation covariance whitening.
+- **Key Modules**:
+  1. Kronecker-Factored Approximate Curvature (K-FAC) computation on unlabeled calibration streams.
+  2. Channel and attention head saliency ranking derived from loss landscape curvature bounds.
+  3. Minimal-curvature pruning with verification of model stability and representation retention.
 
 #### `37_cross_layer_matrix_factorization_svd.ipynb`
-- **هدف**: اشتراک پایه‌های طیفی در لایه‌های متوالی با تجزیه چندلایه SVD.
-- **بخش‌های کلیدی**:
-  1. الحاق ماتریس‌های وزن لایه‌های مجاور و استخراج فضاهای پوچ مشترک.
-  2. بازسازی لایه‌ها با بلوک‌های پایینی ادغام‌شده و بالایی تفکیک‌شده.
-  3. اندازه‌گیری ضریب فشرده‌سازی موثر پارامترها و حافظه کش وزن.
+- **Objective**: Share low-rank spectral subspaces across contiguous Transformer layers via multi-layer cross-tensor Singular Value Decomposition.
+- **Key Modules**:
+  1. Concatenation of weight matrices across adjacent layers and extraction of joint nullspaces.
+  2. Subspace reconstruction separating shared cross-layer projection bases from layer-specific adapters.
+  3. Evaluation of parameter footprint reduction and weight-cache memory reuse.
 
 #### `38_weight_ternarization_and_1bit_architectures.ipynb`
-- **هدف**: کاوش در فضاهای بیتی بسیار پایین (BitNet b1.58 و وزن‌های ۳ حالته \(\{-1, 0, +1\}\)).
-- **بخش‌های کلیدی**:
-  1. کوانتیزاسیون ترمودینامیک و محاسبه گرادیان مستقیم با STE (Straight-Through Estimator).
-  2. جایگزینی ضرب ماتریسی با جمع و تفریق‌های صحیحی در سطح هسته.
-  3. ارزیابی راندمان مصرف انرژی و تاخیر در دیوایس‌های لبه.
+- **Objective**: Explore ultra-low bitwidth quantization including BitNet b1.58 ternary architectures (weights in $\{-1, 0, +1\}$).
+- **Key Modules**:
+  1. Absmean quantization functions and Straight-Through Estimator (STE) gradient propagation.
+  2. Replacement of floating-point GEMM with integer addition and subtraction operators at the kernel level.
+  3. Energy efficiency, memory bandwidth utilization, and inference latency profiling on edge architectures.
 
 #### `39_dynamic_token_shedding_and_early_exit.ipynb`
-- **هدف**: حذف دینامیک توکن‌های نامهم در لایه‌های میانی و استراتژی‌های خروج زودهنگام (Early Exit).
-- **بخش‌های کلیدی**:
-  1. آموزش گیت‌های تصمیم‌گیری برای افت توکن (Token Dropping) بر پایه انتروپی.
-  2. حفظ پیوستگی توکن‌های توجه و ترمیم ماسک‌های علّی.
-  3. اندازه‌گیری شتاب واقعی بر حسب توکن بر ثانیه روی سناریوهای متنوع طول دنباله.
+- **Objective**: Implement dynamic token shedding and intermediate-layer early exit policies to accelerate inference on long sequences.
+- **Key Modules**:
+  1. Classifier-free entropy-based routing gates trained to drop uninformative tokens at intermediate layers.
+  2. Attention mask reconstruction maintaining causal consistency despite token sequence pruning.
+  3. End-to-end throughput measurements across varying sequence length distributions.
 
 ---
 
-### دسته ۳: میکرومعماری هسته‌ها، شتاب‌دهنده‌ها و NPU (۷ نوتبوک)
+### Category 3: Microarchitectural Kernels, Accelerators & Custom Silicon (7 Notebooks)
 
 #### `40_cuda_cpp_warp_shuffle_and_shared_memory.ipynb`
-- **هدف**: بهینه‌سازی سطح پایین در کرنل‌های CUDA C++: استفاده از اینترینسیک‌های `__shfl_sync` و حذف بن‌بست‌های بانک حافظه اشتراکی.
-- **بخش‌های کلیدی**:
-  1. آنالیز تصادم بانک‌های حافظه اشتراکی (Shared Memory Bank Conflicts) در ابعاد ۳۲ تایی.
-  2. تبادل داده میان نخ‌ها با دستورات Warp Shuffle بدون مراجعه به حافظه مشترک.
-  3. لودهای برداری ۱۲۸ بیتی (`float4` / `int4`) برای اشباع گذرگاه DRAM.
+- **Objective**: Low-level microarchitectural optimization in native CUDA C++: leveraging `__shfl_sync` intrinsics and eliminating shared memory bank conflicts.
+- **Key Modules**:
+  1. Diagnosis and resolution of shared memory bank conflicts across 32-thread warps using memory padding.
+  2. High-throughput intra-warp reductions using warp shuffle intrinsics without shared memory staging.
+  3. 128-bit vectorized memory load instructions (`float4`, `int4`) to saturate physical DRAM bus bandwidth.
 
 #### `41_triton_2d_tiling_without_block_pointers.ipynb`
-- **هدف**: الگوی استاندارد تایلینگ دو‌بعدی تریتون و مدیریت مرزها بدون استفاده از Block Pointerهای منسوخ.
-- **بخش‌های کلیدی**:
-  1. استفاده از آفست‌های چند‌بعدی با ماسک‌های تایلینگ ایمن (`tl.load(..., mask=mask)`).
-  2. پیکربندی بهینه تعداد وارپ‌ها (`num_warps=4, 8`) و مراحل پایپ‌لاین (`num_stages=3, 4`).
-  3. اعتبارسنجی مقایسه‌ای تاخیر کرنل تریتون در برابر PyTorch معادل.
+- **Objective**: Establish standardized 2D tiling patterns and boundary protection in Triton JIT kernels without deprecated block pointer abstractions.
+- **Key Modules**:
+  1. Multi-dimensional pointer offsets and boundary masking via `tl.load(..., mask=mask)`.
+  2. Optimization of kernel launch parameters: warp configurations (`num_warps=4, 8`) and software pipeline stages (`num_stages=3, 4`).
+  3. Comparative microbenchmarking against equivalent native CUDA C++ kernels.
 
 #### `42_huawei_ascend_npu_cann_adaptation.ipynb`
-- **هدف**: انطباق و کامپایل هسته‌ها برای معماری Ascend با استفاده از تول‌کیت CANN و حافظه Unified Buffer.
-- **بخش‌های کلیدی**:
-  1. اصول انتقال داده GM-to-UB DMA و تراز فرکتالی داده‌ها (Fractal Alignment).
-  2. بررسی استثنای Block Pointer برای Triton بر روی معماری NPU Ascend 910B.
-  3. مانیتورینگ عملکرد و مقایسه بهره‌وری محاسباتی با ابزار `msprof`.
+- **Objective**: Port and compile NeuralOps attention and compression kernels to the Huawei Ascend NPU platform using the CANN framework and Unified Buffer architectures.
+- **Key Modules**:
+  1. DMA transfers between Global Memory (GM) and Unified Buffer (UB) with fractal memory alignment.
+  2. Specialized Triton compiler configurations for Ascend 910B NPU architectures.
+  3. Hardware profiling and execution efficiency validation using Huawei's `msprof` toolkit.
 
 #### `43_amd_rocm_hip_cross_compilation.ipynb`
-- **هدف**: سازگاری و کامپایل دوگانه هسته‌های CUDA با موتور HIP روی کارت‌های محاسباتی AMD ROCm (MI200/MI300).
-- **بخش‌های کلیدی**:
-  1. نگاشت اینترینسیک‌های NVIDIA به معادل‌های AMD Wavefront (اندازه وارپ ۶۴ در برابر ۳۲).
-  2. تنظیم خودکار اندازه بلوک‌ها و حافظه اشتراکی با ماکروهای پیش‌پردازنده.
-  3. تست عملکردی لایه‌های Attention پیاده‌سازی شده در HIP.
+- **Objective**: Cross-compile native CUDA C++ extensions to AMD ROCm architectures (MI200 / MI300) using the Heterogeneous-compute Interface for Portability (HIP).
+- **Key Modules**:
+  1. Mapping NVIDIA CUDA intrinsics to AMD ROCm wavefront operations (wavefront size 64 vs. warp size 32).
+  2. Preprocessor-driven block sizing and shared memory allocation across hardware targets.
+  3. Parity validation of ported HIP attention operators on AMD accelerators.
 
 #### `44_tensorrt_engine_building_and_plugins.ipynb`
-- **هدف**: ساخت موتورهای استنتاج با TensorRT و ایجاد پلاگین‌های سفارشی C++ برای لایه‌های اختصاصی.
-- **بخش‌های کلیدی**:
-  1. تعریف IPluginV2DynamicExt برای لایه‌های نوآورانه بدون معادل استاندارد در ONNX.
-  2. تعریف پروفایل‌های بهینه‌سازی برای ابعاد متغیر ورودی (Min, Opt, Max Shapes).
-  3. صدور و اجرای فایل‌های باینری موتور بدون رخداد فال‌بک نامعتبر.
+- **Objective**: Construct optimized TensorRT inference engines and implement custom C++ plugins for non-standard NeuralOps operators.
+- **Key Modules**:
+  1. Implementation of the `IPluginV2DynamicExt` interface for novel attention mechanisms lacking native ONNX representations.
+  2. Optimization profile definition for variable batch and sequence dimensions (Min, Opt, Max profiles).
+  3. Serialization, runtime engine deserialization, and fail-closed validation of exported plans.
 
 #### `45_register_pressure_and_occupancy_tuning.ipynb`
-- **هدف**: عیب‌یابی و مهار فشار رجیستر و ماکسیمم کردن Occupancy پردازنده گرافیکی در هسته‌های کاستوم.
-- **بخش‌های کلیدی**:
-  1. استفاده از ویژگی `__launch_bounds__` جهت بهینه‌سازی تخصیص منابع به ازای SM.
-  2. کنترل ریختن متغیرها به حافظه محلی (Local Memory Spills).
-  3. بازرسی کدهای باینری PTX و Sass برای شناسایی وقفه‌های حافظه.
+- **Objective**: Profile register pressure, minimize local memory spilling, and maximize theoretical warp occupancy in custom GPU kernels.
+- **Key Modules**:
+  1. Applying `__launch_bounds__` decorators to optimize hardware resource allocation per Streaming Multiprocessor (SM).
+  2. Analyzing compiler PTX and SASS assembly to detect local memory register spills.
+  3. Correlating theoretical warp occupancy with empirical kernel execution latency.
 
 #### `46_gluon_experimental_dialect_kernels.ipynb`
-- **هدف**: ارزیابی تجربی گویش Gluon برای کنترل سخت‌افزاری پایپ‌لاین‌های انتقال داده ناهمگام (Async TMA / cp.async).
-- **بخش‌های کلیدی**:
-  1. تعریف طرح‌بندی دقیق تنسورها (Explicit Tensor Layouts) در سخت‌افزارهای Hopper به بعد.
-  2. پیاده‌سازی بافرهای دوگانه (Double-buffering) جهت پوشش تاخیر خواندن داده از حافظه.
-  3. تحلیل سقف تئوری کارایی در ضرب‌های ماتریسی با ابعاد بزرگ.
+- **Objective**: Evaluate the experimental Gluon compiler dialect for explicit tensor layout scheduling and asynchronous memory operations (TMA / `cp.async`).
+- **Key Modules**:
+  1. Explicit tensor layout definitions tailored to NVIDIA Hopper (SM 90) and Blackwell architectures.
+  2. Asynchronous multi-stage double-buffering pipelines designed to hide global memory load latencies.
+  3. Roofline benchmarking comparing Gluon-compiled kernels against standard Triton JIT implementations.
 
 ---
 
-### دسته ۴: آموزش توزیع‌شده، تقطیر و تطبیق زمینه (۷ نوتبوک)
+### Category 4: Distributed Training, Distillation & Context Adaptation (7 Notebooks)
 
 #### `47_warmup_stable_decay_wsd_scheduler.ipynb`
-- **هدف**: پیاده‌سازی و ارزیابی عمیق زمان‌بندی نرخ یادگیری Warmup-Stable-Decay (WSD) در بهبود پایداری تقطیر.
-- **بخش‌های کلیدی**:
-  1. پیکربندی فاز نرخ ثابت (Stable Phase) و افت سریع در فاز فرود (Annealing Decay).
-  2. تحلیل توانایی ذخیره چک‌پوینت در هر کجای فاز پایدار و ادامه آموزش بدون افت دقت.
-  3. بنچ‌مارک نرخ همگرایی در تقطیر ۶ ستونه پس از جراحی مدل‌های بزرگ.
+- **Objective**: Implement and evaluate the Warmup-Stable-Decay (WSD) learning rate schedule for stabilizing post-surgery multi-pillar distillation.
+- **Key Modules**:
+  1. Configuring extended constant-learning-rate Stable phases followed by rapid annealing decay schedules.
+  2. Checkpoint restoration from arbitrary points within the Stable phase without convergence degradation.
+  3. Empirical convergence rate benchmarking across large model distillation runs.
 
 #### `48_multi_dataset_ingestion_and_flame_packing.ipynb`
-- **هدف**: ورودی چندمجموعه داده‌ای موازی با پکینگ متغیر و حذف کامل توکن‌های پدینگ (Zero-padding Variable-length Packing).
-- **بخش‌های کلیدی**:
-  1. تولید آفست‌های مرزی `cu_seqlens` به شکل `[0, len_1, len_1+len_2, ..., seq_len]`.
-  2. تغذیه همزمان مجموعه‌های داده‌ای ترکیبی چندزبانه با نسبت‌های وزن‌دار.
-  3. اندازه‌گیری صرفه‌جویی زمان آموزش به دلیل حذف محاسبات روی توکن‌های پدینگ پوچ.
+- **Objective**: Construct a multi-corpus data ingestion pipeline utilizing zero-padding variable-length sequence packing (Flame packing).
+- **Key Modules**:
+  1. Generation of cumulative sequence length boundary tensors: `cu_seqlens = [0, S_1, S_1 + S_2, ..., S_{	ext{total}}]`.
+  2. Proportional interleaved streaming across heterogeneous multi-domain training corpora.
+  3. Quantifying speedup and compute savings achieved by eliminating padding token operations.
 
 #### `49_ring_and_zigzag_context_parallelism.ipynb`
-- **هدف**: توسعه سیستم Context Parallelism برای متون عظیم (تا 128k+) با استفاده از معماری حلقه (Ring Attention).
-- **بخش‌های کلیدی**:
-  1. ارسال بلوک‌های کلید و مقدار در سراسر نودهای توزیع‌شده به صورت P2P ناهمگام.
-  2. ماسک‌گذاری علّی بهینه به روش زیگ‌زاگ برای برقراری توازن بار محاسباتی میان دستگاه‌ها.
-  3. مقایسه زمان ارتباط میان‌کارت‌ها (All-to-All) با محاسبات همپوشان (Overlap).
+- **Objective**: Implement Context Parallelism (CP) for long-sequence training ($128k+$ tokens) using Ring Attention and Zig-Zag causal masking.
+- **Key Modules**:
+  1. Asynchronous point-to-point (P2P) ring communication pipelines for circulating Key and Value tensor blocks across nodes.
+  2. Zig-Zag block-level causal masking balancing computational load across participating devices.
+  3. Inter-device communication overhead analysis comparing All-to-All against overlapping compute-communication designs.
 
 #### `50_activation_checkpointing_strategies.ipynb`
-- **هدف**: مقایسه استراتژی‌های چک‌پوینت اکتیویشن (انتخابی در برابر کامل) جهت آموزش در رژیم‌های حافظه محدود.
-- **بخش‌های کلیدی**:
-  1. تفکیک لایه‌های گران‌قیمت از نظر حافظه و لایه‌های ارزان از نظر محاسبه برای محاسبه مجدد.
-  2. ثبت ردپای حافظه گرافیکی با `torch.cuda.memory_allocated()`.
-  3. ایجاد توازن بهینه بین سربار زمان اجرا و صرفه‌جویی در فضای VRAM.
+- **Objective**: Benchmark selective vs. full activation checkpointing strategies to maximize batch concurrency under constrained VRAM.
+- **Key Modules**:
+  1. Identifying memory-intensive, compute-inexpensive activations suitable for recomputation during backpropagation.
+  2. High-resolution memory profiling using `torch.cuda.memory_allocated()` across forward-backward passes.
+  3. Quantifying the trade-off between recomputation runtime overhead and VRAM savings.
 
 #### `51_cross_model_representation_alignment.ipynb`
-- **هدف**: ترازسازی بازنمایی‌های میانی میان لایه‌های مدل والد و مدل جراحی‌شده با ضرایب تصحیح تقارن.
-- **بخش‌های کلیدی**:
-  1. بهینه‌سازی فاصله‌های فضایی با معیارهای Procrustes و شباهت کسینوسی نگاشت‌ها.
-  2. تنظیم ماتریس‌های تبدیل خطی برای لایه‌هایی که ابعاد کانال آنها کاهش یافته است.
-  3. بررسی تاثیر ترازسازی مستقیم ویژگی‌ها در بازیابی توانایی استدلال مدل.
+- **Objective**: Align intermediate representations between teacher models and surgically altered student networks using Procrustes transformation matrices.
+- **Key Modules**:
+  1. Minimizing representation divergence via orthogonal Procrustes distance and directional cosine alignment.
+  2. Learning linear projection adapters for layers subjected to channel-width compression.
+  3. Evaluating representation alignment as a predictor of downstream reasoning recovery.
 
 #### `52_mixture_of_attentions_routing.ipynb`
-- **هدف**: پیاده‌سازی معماری MoA (Mixture of Attentions) با هدایت توکن‌ها به لایه‌های توجه مختلف بر اساس محتوا.
-- **بخش‌های کلیدی**:
-  1. ساخت شبکه روتر با تنظیم نرمال‌سازی Softmax و توازن بار (Load Balancing Loss).
-  2. تخصیص توکن‌ها به رویکردهای سریع (خطی) یا دقیق (غیرخطی).
-  3. پروفایلینگ تاخیر دینامیک لایه در مواجهه با ورودی‌های گوناگون.
+- **Objective**: Implement a Mixture of Attentions (MoA) architecture dynamically routing tokens to specialized attention operators based on context semantics.
+- **Key Modules**:
+  1. Training a lightweight gating router with entropy regularization and load-balancing objectives.
+  2. Routing tokens dynamically between fast linear approximations and expressive quadratic attention heads.
+  3. Dynamic latency profiling across varying input complexity distributions.
 
 #### `53_knowledge_distillation_ablation_matrix.ipynb`
-- **هدف**: طراحی جدول آزمون‌های حذفی (Ablation Matrix) روی ۶ ستون تقطیر برای سنجش سهم هر یک از ضرایب زیان.
-- **بخش‌های کلیدی**:
-  1. غیرفعال‌سازی تک‌به‌تک پایه‌ها (زیان لاجیت، توجه، کسینوس، هسین، وایتنینگ، بازنمایی).
-  2. سنجش افت دقت در بنچ‌مارک‌های متمرکز و ردیابی گرادیان‌های غالب.
-  3. استخراج پارامترهای توازن بهینه ضرایب با الگوریتم جستجوی بیزی.
+- **Objective**: Execute a systematic ablation study isolating the individual contributions of all 6 distillation pillars during surgical recovery.
+- **Key Modules**:
+  1. Systematic deactivation of individual loss components: Logits KL, Hidden MSE, Attention Map, SVD Spectrum, Fisher Curvature, and Sparsity.
+  2. Quantifying perplexity and downstream task degradation under each ablated configuration.
+  3. Optimizing multi-objective loss balance weights via Bayesian hyperparameter optimization.
 
 ---
 
-### دسته ۵: ارزیابی امنیتی، پایداری، سرورینگ و صنعتی (۷ نوتبوک)
+### Category 5: Robustness, Safety, Serving & Industrial Deployment (7 Notebooks)
 
 #### `54_kv_cache_compression_and_eviction_policies.ipynb`
-- **هدف**: پیاده‌سازی و مقایسه الگوریتم‌های مدیریت کیش KV نظیر H2O (Heavy Hitter Oracle) و StreamingLLM Sinks.
-- **بخش‌های کلیدی**:
-  1. استخراج و نگهداشت همیشگی ۴ توکن ابتدایی (Attention Sinks).
-  2. حذف پویا و رتبه‌بندی توکن‌های با وزن توجه پایین در حافظه کش محدود.
-  3. سنجش عملکرد در بازیابی اسناد طولانی و جلوگیری از سرریز حافظه.
+- **Objective**: Implement and benchmark advanced KV-cache management policies, including Heavy Hitter Oracle (H2O) and StreamingLLM attention sinks.
+- **Key Modules**:
+  1. Permanent retention of initial prefix tokens (Attention Sinks) to stabilize long-context generation.
+  2. Dynamic eviction policies pruning tokens with low cumulative attention weights under fixed cache budgets.
+  3. Needle-in-a-haystack retrieval evaluation on context-extended sequences under strict cache caps.
 
 #### `55_speculative_decoding_target_draft_synergy.ipynb`
-- **هدف**: بهینه‌سازی هم‌افزایی مدل پیش‌نویس جراحی‌شده (Draft) با مدل اصلی بزرگ (Target) در دیکودینگ حدسی.
-- **بخش‌های کلیدی**:
-  1. نرخ پذیرش توکن‌ها (\(\alpha\)) با روش‌های نمونه‌گیری گوناگون (Greedy و Nucleus).
-  2. تست مکانیزم پذیرش درختی (Tree-based Verification) برای اعتبارسنجی چند کاندیدا در یک شلیک.
-  3. اندازه‌گیری شتاب واقعی سرعت استنتاج در سرورینگ بدون تغییر در توزیع خروجی.
+- **Objective**: Optimize the integration between surgically compressed draft models and large target architectures in speculative decoding pipelines.
+- **Key Modules**:
+  1. Measuring empirical token acceptance rates ($\alpha$) across greedy and nucleus sampling regimes.
+  2. Tree-based speculative verification evaluating multiple draft candidate paths in a single target model pass.
+  3. Quantifying wall-clock generation speedup while maintaining mathematical equivalence to the target model's output distribution.
 
 #### `56_vllm_sglang_custom_op_integration.ipynb`
-- **هدف**: تزریق لایه‌های توجه نوآورانه به عنوان اپراتور سفارشی به ساختار PagedAttention در vLLM و RadixAttention در SGLang.
-- **بخش‌های کلیدی**:
-  1. پیاده‌سازی رابط کاربری پایتونی و هسته‌های منطبق با فراخوانی پایپ‌لاین سرورینگ.
-  2. هندل کردن مدیریت حافظه مبتنی بر اسلات‌های ناپیوسته بلاک‌ها.
-  3. تست بارگذاری سرور با ده‌ها کاربر همزمان و مانیتورینگ تاخیر TTFT و ITL.
+- **Objective**: Integrate novel NeuralOps attention operators into enterprise serving engines: PagedAttention in vLLM and RadixAttention in SGLang.
+- **Key Modules**:
+  1. Python bindings and C++/CUDA kernel wrappers compatible with production serving runtimes.
+  2. Memory page table management and non-contiguous block indexing.
+  3. Concurrency stress testing measuring Time-To-First-Token (TTFT) and Inter-Token Latency (ITL) under heavy request loads.
 
 #### `57_numerical_precision_and_nan_inf_stress_tests.ipynb`
-- **هدف**: آزمون‌های فشار حداکثری بر روی هسته‌ها و مدل‌ها برای کشف نقاط سرریز عددی و خطاهای NaN/Inf.
-- **بخش‌های کلیدی**:
-  1. تزریق مقادیر ورودی بسیار بزرگ، نزدیک به صفر و توزیع‌های با چولگی بالا.
-  2. بررسی عملکرد کلمپ‌ها و تثبیت‌کننده‌های ریاضی در مخرج کسرها و لوگاریتم‌ها.
-  3. مقایسه رفتار مدهای FP16، BF16 و FP32 در رژیم‌های بحرانی.
+- **Objective**: Execute numerical stress testing across attention and compression kernels to detect precision degradation, underflow, and NaN/Inf anomalies.
+- **Key Modules**:
+  1. Stress injection using extreme input scales, near-zero values, and highly skewed token distributions.
+  2. Validating mathematical clamping safeguards in division, softmax normalization, and logarithmic operators.
+  3. Comparative numerical stability profiling across FP16, BF16, and FP32 precisions.
 
 #### `58_synthetic_stress_testing_and_chaos_engineering.ipynb`
-- **هدف**: مهندسی آشوب در شتاب‌دهنده: تغییر متغیرهای اندازه بچ، کمبود حافظه ناگهانی و طول متون نامتعارف.
-- **بخش‌های کلیدی**:
-  1. شبیه‌سازی OOM و بررسی عملکرد مکانیزم پاکسازی کش و Fallback ایمن.
-  2. پایش نرخ بازنشانی کدهای خطا و خروج از برنامه بدون فریز شدن پروسه.
-  3. اعتبارسنجی تضمین پایداری خط تولید طبق اصل عدم شکست بی‌صدا (§6).
+- **Objective**: Conduct chaos engineering and stress testing across hardware backends: dynamic batch resizing, synthetic OOM injection, and extreme sequence lengths.
+- **Key Modules**:
+  1. Simulating out-of-memory (OOM) conditions to verify cache clearing and graceful fallback mechanisms.
+  2. Validating error return codes to prevent unhandled process hangs or silent terminations.
+  3. Enforcing fail-closed reliability guarantees in accordance with repository integrity policies.
 
 #### `59_reproducible_artifact_generation_and_latex_sync.ipynb`
-- **هدف**: ایجاد پایپ‌لاین تولید خودکار و تضمین تطابق کامل آمار آزمایش‌ها با جداول مقالات علمی در فرمت LaTeX.
-- **بخش‌های کلیدی**:
-  1. استخراج مستقیم متریک‌ها از پایگاه داده لجر بنچ‌مارک (SQLite/JSON).
-  2. اعتبارسنجی صحت فرمت ارقام، شاخص‌های خطا و فواصل اطمینان ۹۵٪.
-  3. تبدیل داده‌های خام به جداول استاندارد `booktabs` بدون دستکاری دستی.
+- **Objective**: Automate the pipeline extracting benchmark results from the master ledger database and generating publication-grade LaTeX tables and figures.
+- **Key Modules**:
+  1. Direct extraction of performance telemetry from `results/master_ledger.sqlite`.
+  2. Automated formatting of numerical metrics, error margins, and 95% confidence intervals.
+  3. Serialization of raw data into standard LaTeX `booktabs` tables and PGFPlots/TikZ figures.
 
 #### `60_end_to_end_industrial_llm_transformation.ipynb`
-- **هدف**: شاهکار سیستم: جراحی یک مدل واقعی ۷ میلیارد پارامتری، فشرده‌سازی کوانتیزه، تقطیر ۶ ستونه، تست و استقرار در vLLM.
-- **بخش‌های کلیدی**:
-  1. بارگذاری ایمن وزن‌ها از HuggingFace و آنالیز طیفی ساختار لایه‌های توجه.
-  2. جایگزینی هسته سنتی با نسخه ترکیبی و تزریق فشرده‌سازی لایه‌ها.
-  3. بازیابی با تقطیر سریع، اعتبارسنجی بنچ‌مارک‌های جامع و صدور نهایی برای استنتاج بلادرنگ.
+- **Objective**: The flagship system integration: transforming a 7-billion parameter language model via surgery, quantization, 6-pillar distillation, and vLLM deployment.
+- **Key Modules**:
+  1. Loading model weights, performing spectral layer audits, and determining optimal surgical targets.
+  2. In-place attention transplantation combined with low-rank channel compression.
+  3. Rapid post-operative healing via 6-pillar distillation, downstream validation, and zero-copy export to a production vLLM serving container.
 
 ---
 
-## ۴. ماتریس وابستگی‌ها و هم‌پوشانی لایه‌ها
+## 4. Cross-Layer Dependency Graph & Topology Matrix
+
+The following dependency diagram illustrates the technical relationships, algorithmic prerequisites, and pipeline dataflows connecting the tutorial suite across functional domains:
 
 ```mermaid
 graph LR
-    subgraph AttentionCore ["هسته توجه و ریاضیات"]
-        NB06["06: ۱۳۱ مکانیزم توجه"] --> NB26["26: اسکن‌های بازگشتی"]
-        NB06 --> NB27["27: توجه KDA"]
-        NB06 --> NB28["28: توجه MLA دپ‌سیک"]
-        NB06 --> NB30["30: توجه تفاضلی"]
+    subgraph AttentionCore ["Attention Mechanisms & Mathematical Foundations"]
+        NB06["06: 131 Attention Taxonomy"] --> NB26["26: Linear Recurrent Scans"]
+        NB06 --> NB27["27: Kronecker Delta Attention"]
+        NB06 --> NB28["28: DeepSeek MLA Latent Attention"]
+        NB06 --> NB30["30: Differential Attention"]
     end
 
-    subgraph CompressionCore ["فشرده‌سازی و کوانتیزاسیون"]
-        NB07["07: ۷۲ موتور فشرده‌سازی"] --> NB33["33: SmoothQuant"]
-        NB07 --> NB34["34: میکرومقیاس FP4"]
-        NB07 --> NB35["35: تنکی ۲:۴ با ADMM"]
-        NB07 --> NB38["38: بیت‌نت و معماری ۱ بیتی"]
+    subgraph CompressionCore ["Compression, SVD & Quantization"]
+        NB07["07: 72 Compressor Matrix"] --> NB33["33: SmoothQuant W8A8"]
+        NB07 --> NB34["34: Microscaling FP4/MX"]
+        NB07 --> NB35["35: ADMM 2:4 Sparsity"]
+        NB07 --> NB38["38: BitNet 1-Bit Architectures"]
     end
 
-    subgraph HardwareKernels ["میکرومعماری و کرنل‌ها"]
-        NB05["05: بنچ‌مارک کرنل‌ها"] --> NB40["40: وارپ شافل و Shmem"]
-        NB05 --> NB41["41: تایلینگ دوبعدی بدون BP"]
-        NB05 --> NB42["42: NPU اسند هوآوی"]
-        NB05 --> NB43["43: پورت HIP رادئون"]
+    subgraph HardwareKernels ["Microarchitectural GPU & Accelerator Kernels"]
+        NB05["05: Master Kernel Benchmarks"] --> NB40["40: CUDA C++ Warp Shuffles"]
+        NB05 --> NB41["41: Triton 2D Tiling"]
+        NB05 --> NB42["42: Huawei Ascend NPU"]
+        NB05 --> NB43["43: AMD ROCm HIP Porting"]
     end
 
-    subgraph DistillationScale ["آموزش و تقطیر مقیاس‌بزرگ"]
-        NB08["08: تقطیر ۶ ستونه"] --> NB47["47: زمان‌بند WSD"]
-        NB08 --> NB48["48: پکینگ متغیر Flame"]
-        NB08 --> NB53["53: ماتریس آزمون حذفی KD"]
+    subgraph DistillationScale ["Large-Scale Training, Distillation & Context"]
+        NB08["08: 6-Pillar Distillation"] --> NB47["47: WSD Learning Rate Scheduling"]
+        NB08 --> NB48["48: Flame Variable Packing"]
+        NB08 --> NB53["53: 6-Pillar KD Ablation Matrix"]
     end
 
-    subgraph ServingProduction ["سرورینگ و استقرار نهایی"]
-        NB09["09: سرورینگ PagedCache"] --> NB54["54: تخلیه کش KV"]
-        NB20["20: ادغام vLLM و SGLang"] --> NB55["55: دیکودینگ حدسی"]
-        NB20 --> NB56["56: اپراتورهای کاستوم"]
-        NB00["00: سیستم جامع"] --> NB60["60: تحول صنعتی سرتاسری"]
+    subgraph ServingProduction ["Production Serving, Inference & Deployment"]
+        NB09["09: PagedCache Serving"] --> NB54["54: KV-Cache Eviction & H2O"]
+        NB20["20: vLLM & SGLang Integration"] --> NB55["55: Speculative Draft Decoding"]
+        NB20 --> NB56["56: Custom Serving Operators"]
+        NB00["00: Master System Walkthrough"] --> NB60["60: End-to-End Industrial LLM"]
     end
 ```
 
 ---
 
-## ۵. چک‌لیست کنترل کیفیت و الزامات پایداری (Quality Gates & Invariants)
+## 5. Quality Gates, Mathematical Invariants & Verification Integrity
 
-در صورتی که هر نوتبوک جدید به پوشه [`notebooks/`](file:///Users/tahamajs/Documents/uni/Project/notebooks) اضافه شود، رعایت موارد زیر الزامی است:
+All tutorial notebooks authored within or contributed to the [`notebooks/`](file:///Users/tahamajs/Documents/uni/Project/notebooks) directory must strictly satisfy the following four engineering quality gates:
 
-1. **انطباق اینوریانت‌ها (Invariants)**:
-2. **پایداری داده‌ها و منع فایل‌های ساختگی (§6.1 و §6.2)**:
-   - تمامی سلول‌های خروجی نوتبوک‌ها باید دارای خروجی‌های واقعی، بدون مقادیر هاردکد شده ساختگی و بدون خطاهای پنهان‌شده (`except: pass`) باشند.
-3. **سازگاری سخت‌افزاری و Fallback سه سطحی (§7)**:
-   - در صورت عدم دسترسی به GPUهای سرور (Sharif HPC)، نوتبوک‌ها باید بدون کراش در سطح Level-3 (Vectorized PyTorch Reference) اجرا شوند و پیام هشداری شفاف صادر کنند.
-4. **تست و ارزیابی در کانتکست‌های بزرگ**:
-   - برای نوتبوک‌های کانتکست طولانی، تولید توالی‌ها باید به درستی از ماسک‌های علّی و کش‌های بلاکی محافظت کند.
+1. **Mathematical Invariant Compliance**:
+   - Notebook code must strictly respect repository invariant counts (131 attention keys, 72 compressor keys, 26 unified Triton modules, 140 CUDA package units). Notebook assertions must verify live registry counts rather than hardcoding static mock integers.
+2. **Data Integrity & Zero Fake Artifacts Policy (§0.1, §0.2)**:
+   - All cell outputs must reflect physical execution on real hardware or deterministic CPU reference fallbacks. Hardcoded throughput, mock speedup metrics, placeholder binary files, or silent error suppressions (`except Exception: pass`) are strictly prohibited in data-producing paths.
+3. **Hardware Compatibility & 3-Tier Dispatch Fallback (§8)**:
+   - In environments without active enterprise GPU accelerators (e.g., Sharif HPC allocation offline), notebooks must automatically fall back to Level 3 (Vectorized PyTorch Reference) and emit clear, structured diagnostic warnings rather than raising unhandled execution errors.
+4. **Long-Context Numerical Verification**:
+   - Long-context evaluation tutorials must explicitly verify numerical stability across sequence horizons, asserting finite loss trajectories, appropriate causal masking, and the absence of NaN or Inf anomalies.
 
 ---
 
-## ۶. ماتریس جامع و رسمی ۹۴ نوتبوک مخزن (Authoritative 94-Notebook Master Matrix)
+## 6. Authoritative 94-Notebook Master Matrix
 
-کاتالوگ زیر شامل تمامی ۹۴ نوتبوک یکتای موجود در دایرکتوری اصلی `notebooks/` است (Consolidated from legacy 188-file dual mirror).
-مطابق مصوبه مهندسی، ۲۹ نوتبوک پایه دارای تله‌متری اجرایی تاییدشده روی GPU فیزیکی بوده و ۶۵ نوتبوک اکوسیستم دارای ساختار و سینتکس تاییدشده هستند:
+The following register indexes all 94 unique Jupyter notebooks physically present within the root `notebooks/` directory (consolidated from the legacy 188-file dual mirror).
+In accordance with engineering certification, 29 foundation notebooks possess verified GPU execution telemetry recorded on physical hardware (RTX 3090 / HPC cluster), while the 65 ecosystem notebooks maintain verified structural syntax, imports, and self-contained execution pipelines:
 
-| شماره | نام فایل نوتبوک (`.ipynb`) | وضعیت اجرا و ارزیابی (Tier Status) |
+| Index | Notebook Filename (`.ipynb`) | Certification & Execution Tier (Tier Status) |
 | :--- | :--- | :--- |
 | **00** | `00_master_neuralops_complete_system_walkthrough.ipynb` | Verified Executed (RTX 3090 / HPC) |
 | **01a** | `01_quickstart_surgery_and_healing.ipynb` | Verified Executed (RTX 3090 / HPC) |
@@ -1046,4 +1045,4 @@ graph LR
 | **90** | `90_layerwise_spectral_decay_and_pareto_sweeper_analysis.ipynb` | Structure Validated (Requires Multi-GPU Allocation) |
 
 ---
-*سند تهیه شده بر اساس استانداردهای مخزن NeuralOps — نوامبر ۲۰۲۶.*
+*Authored in strict compliance with NeuralOps repository engineering standards and architectural integrity protocols — November 2026.*
