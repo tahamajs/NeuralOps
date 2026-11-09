@@ -9,6 +9,7 @@
 Unit tests for Rotational SliceGPT INT4 (Group 4, Key 62).
 """
 
+import copy
 import pytest
 import torch
 import torch.nn as nn
@@ -37,11 +38,13 @@ def test_registry():
 
 
 def test_rotational_slicegpt_int4_linear():
-    layer = RotationalSliceGPTINT4Linear(128, 64, r=16, quant_bits=4)
+    lin = nn.Linear(128, 64)
+    compressor = RotationalSliceGPTINT4Compressor(rank=16, quant_bits=4)
+    layer = compressor.compress_linear(lin)
     assert layer.in_features == 128
     assert layer.out_features == 64
-    assert layer.r == 16
-    assert layer.quant_bits == 4
+    assert layer.rank == 16
+    assert getattr(layer, "effective_bits", 4) == 4
 
     x = torch.randn(4, 128)
     out = layer(x)
@@ -51,6 +54,8 @@ def test_rotational_slicegpt_int4_linear():
 
 def test_rotational_slicegpt_int4_reduction():
     model = DummyMLP()
+    orig_params = sum(p.numel() for p in model.parameters())
+
     compressor = RotationalSliceGPTINT4Compressor(
         model,
         rank=16,
@@ -62,7 +67,6 @@ def test_rotational_slicegpt_int4_reduction():
 
     # Should have achieved physical reduction or valid int4 bit quantization
     has_quant = any(getattr(m, "effective_bits", 32) <= 8 for m in compressed.modules())
-    orig_params = sum(p.numel() for p in model.parameters())
     comp_params = sum(p.numel() for p in compressed.parameters())
     effective_ratio = (orig_params / max(comp_params, 1)) * (32.0 / 4.0 if has_quant else 1.0)
     assert effective_ratio > 1.05

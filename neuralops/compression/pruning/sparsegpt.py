@@ -438,6 +438,7 @@ class SparseGPTCompressor(BaseCompressor):
         stats.update(
             {
                 "pruned_layers": pruned_layers_count,
+                "sparsity": float(total_pruned / max(1, total_params)) if total_params > 0 else self.sparsity,
                 "sparsity_target": self.sparsity,
                 "structured_24": self.structured_24,
                 "layer_errors": self.layer_errors,

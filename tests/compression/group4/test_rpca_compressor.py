@@ -37,8 +37,8 @@ def test_registry():
 
 
 def test_rpca_linear():
-    lin = nn.Linear(128, 64)
-    layer = RPCALinear.from_linear(lin, rank=16, use_triton=False)
+    layer = RPCALinear(128, 64, rank=16, use_triton=False)
+    layer.set_factors(torch.randn(64, 16), torch.randn(16, 128))
     assert layer.in_features == 128
     assert layer.out_features == 64
     assert layer.rank == 16

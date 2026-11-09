@@ -37,8 +37,7 @@ def test_registry():
 
 
 def test_salr_layer():
-    lin = nn.Linear(128, 64)
-    layer = SALRLayer.from_linear(lin, rank=16, sparsity=0.5)
+    layer = SALRLayer(128, 64, rank=16, sparsity=0.5)
     assert layer.in_features == 128
     assert layer.out_features == 64
     assert layer.rank == 16

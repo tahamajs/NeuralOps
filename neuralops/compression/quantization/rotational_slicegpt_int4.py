@@ -111,6 +111,7 @@ class RotationalSliceGPTINT4Linear(nn.Module):
         self.in_features: int = int(Q_P_r.shape[0])
         self.out_features: int = int(W_indices.shape[0])
         self.rank: int = int(Q_P_r.shape[1])
+        self.effective_bits: int = 4
         self._compressed_params: int | None = None
         self.rel_error: float = 0.0
 

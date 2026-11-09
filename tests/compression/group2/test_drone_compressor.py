@@ -37,7 +37,7 @@ def test_registry():
 def test_drone_compressor_reduction():
     model = DummyMLP()
     orig_params = sum(p.numel() for p in model.parameters())
-    compressor = DRONECompressor(model, rank=16, max_error=1.0)
+    compressor = DRONECompressor(model, rank=16, max_error=1.0, target_attention_only=False)
     compressed, stats = compressor.compress()
     assert compressed is not None
     comp_params = sum(p.numel() for p in compressed.parameters())
@@ -51,7 +51,7 @@ def test_drone_compressor_reduction():
 
 def test_drone_compressor_options():
     model = DummyMLP()
-    compressor = DRONECompressor(model, rank=8, max_error=0.8)
+    compressor = DRONECompressor(model, rank=8, max_error=0.8, target_attention_only=False)
     compressed, stats = compressor.compress()
     assert compressed is not None
     assert "effective_parameter_ratio" in stats
