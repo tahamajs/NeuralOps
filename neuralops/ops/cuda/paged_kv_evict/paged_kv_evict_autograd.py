@@ -47,6 +47,30 @@ def paged_kv_compact_pytorch_ref(k_in, v_in, keep_indices):
 
 
 def paged_kv_compact_triton_ref(k_in, v_in, keep_indices):
+    try:
+        from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+        from neuralops.ops.triton.paged_attention import _paged_kv_evict_compact_kernel
+
+        D = k_in.shape[-1]
+        num_keep = keep_indices.shape[0]
+        if HAS_TRITON and k_in.is_cuda and not FORCE_PYTORCH_FALLBACK and D in (16, 32, 64, 128, 256):
+            k_out = torch.empty((num_keep, D), dtype=k_in.dtype, device=k_in.device)
+            v_out = torch.empty((num_keep, D), dtype=v_in.dtype, device=v_in.device)
+            grid = (num_keep,)
+            _paged_kv_evict_compact_kernel[grid](
+                k_in.contiguous(),
+                v_in.contiguous(),
+                k_out,
+                v_out,
+                keep_indices.contiguous(),
+                keep_indices.contiguous(),
+                num_keep,
+                D=D,
+                BLOCK_D=D,
+            )
+            return [k_out, v_out]
+    except Exception:
+        pass
     return paged_kv_compact_pytorch_ref(k_in, v_in, keep_indices)
 
 
@@ -54,7 +78,7 @@ paged_kv_evict_pytorch_ref = paged_kv_compact_pytorch_ref
 paged_kv_evict_ref = paged_kv_compact_pytorch_ref
 
 
-def paged_kv_evict(k_in: torch.Tensor, v_in: torch.Tensor, keep_indices: torch.Tensor) -> torch.Tensor:
+def paged_kv_evict(k_in: torch.Tensor, v_in: torch.Tensor, keep_indices: torch.Tensor) -> list[torch.Tensor]:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
         fn = mod.paged_kv_compact_fwd

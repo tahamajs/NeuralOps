@@ -117,9 +117,10 @@ def _wanda_pytorch(
         act_norm = torch.ones(W.shape[1], device=W.device, dtype=W.dtype)
 
     metric = torch.abs(W.float()) * act_norm.float().unsqueeze(0)
-    k = max(int(metric.shape[1] * sparsity), 1)
-    threshold = torch.kthvalue(metric, k, dim=1, keepdim=True).values
-    mask = metric > threshold
+    n_keep = max(1, min(metric.shape[1], int(round(metric.shape[1] * (1.0 - sparsity)))))
+    _, top_idx = torch.topk(metric, k=n_keep, dim=1, largest=True)
+    mask = torch.zeros_like(W, dtype=torch.bool)
+    mask.scatter_(1, top_idx, True)
     return (W.float() * mask.float()).to(dtype=W.dtype)
 
 

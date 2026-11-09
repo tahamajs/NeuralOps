@@ -70,10 +70,11 @@ class SparseGPTFunction(Function):
         if diag_h_inv is None:
             diag_h_inv = torch.full((W.shape[1],), 0.5, device=W.device, dtype=W.dtype)
         saliency = (W.float() ** 2) / (2.0 * diag_h_inv.float().clamp(min=1e-8).unsqueeze(0))
-        k = max(int(saliency.shape[1] * sparsity), 1)
-        threshold = torch.kthvalue(saliency, k, dim=1, keepdim=True).values
-        keep = saliency > threshold
-        return (W * keep).to(dtype=W.dtype)
+        n_keep = max(1, min(saliency.shape[1], int(round(saliency.shape[1] * (1.0 - sparsity)))))
+        _, top_idx = torch.topk(saliency, k=n_keep, dim=1, largest=True)
+        mask = torch.zeros_like(W, dtype=torch.bool)
+        mask.scatter_(1, top_idx, True)
+        return (W * mask).to(dtype=W.dtype)
 
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor):
