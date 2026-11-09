@@ -32,17 +32,20 @@ logger = logging.getLogger(__name__)
 
 
 class OATSLoRALinear(nn.Module):
-    is_custom_attention: bool = True
     """
-    Linear layer containing OATS decomposed base weights (frozen)
+    Linear layer containing OATS factorized low-rank base weights (frozen)
     with optional trainable LoRA adapters (lora_A, lora_B).
     """
+
+    is_custom_attention: bool = True
 
     def __init__(
         self,
         in_features: int,
         out_features: int,
-        weight: torch.Tensor,
+        weight: torch.Tensor | None = None,
+        U: torch.Tensor | None = None,
+        V: torch.Tensor | None = None,
         bias: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
@@ -53,20 +56,39 @@ class OATSLoRALinear(nn.Module):
         self.in_features = in_features
         self.out_features = out_features
         self.nf = out_features
+        self.nx = in_features
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
 
-        target_device = device if device is not None else weight.device
-        target_dtype = dtype if dtype is not None else weight.dtype
+        ref_t = U if U is not None else weight
+        target_device = device if device is not None else (ref_t.device if ref_t is not None else None)
+        target_dtype = dtype if dtype is not None else (ref_t.dtype if ref_t is not None else torch.float32)
 
-        if weight.shape == (in_features, out_features) and in_features != out_features:
-            weight = weight.t().contiguous()
+        if U is not None and V is not None:
+            self.U = nn.Parameter(
+                U.to(device=target_device, dtype=target_dtype),
+                requires_grad=False,
+            )
+            self.V = nn.Parameter(
+                V.to(device=target_device, dtype=target_dtype),
+                requires_grad=False,
+            )
+            self.register_parameter("weight_param", None)
+            self.rank = U.shape[1]
+        elif weight is not None:
+            if weight.shape == (in_features, out_features) and in_features != out_features:
+                weight = weight.t().contiguous()
+            self.weight_param = nn.Parameter(
+                weight.to(device=target_device, dtype=target_dtype),
+                requires_grad=False,
+            )
+            self.register_parameter("U", None)
+            self.register_parameter("V", None)
+            self.rank = min(in_features, out_features)
+        else:
+            raise ValueError("Either (U, V) or weight must be provided to OATSLoRALinear")
 
-        self.weight = nn.Parameter(
-            weight.to(device=target_device, dtype=target_dtype),
-            requires_grad=False,
-        )
         if bias is not None:
             self.bias = nn.Parameter(
                 bias.to(device=target_device, dtype=target_dtype),
@@ -95,46 +117,55 @@ class OATSLoRALinear(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        if self.U is not None and self.V is not None:
+            base = torch.matmul(self.U.float(), self.V.float()).to(self.U.dtype)
+        else:
+            base = self.weight_param
+        if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+            return base + (self.scaling * torch.matmul(self.lora_B.float(), self.lora_A.float())).to(base.dtype)
+        return base
+
     @classmethod
     def from_linear(
         cls,
         linear: nn.Module,
         weight: torch.Tensor | None = None,
+        U: torch.Tensor | None = None,
+        V: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         **kwargs: Any,
     ) -> OATSLoRALinear:
         base_layer = getattr(linear, "base_layer", linear)
-        if weight is None and hasattr(base_layer, "weight"):
-            weight = base_layer.weight.detach()
-        if "rank" in kwargs and lora_r == 0:
-            lora_r = kwargs["rank"]
         bias = base_layer.bias.detach() if hasattr(base_layer, "bias") and base_layer.bias is not None else None
         in_features = getattr(base_layer, "in_features", getattr(base_layer, "nx", None))
         out_features = getattr(base_layer, "out_features", getattr(base_layer, "nf", None))
-        if in_features is None and out_features is None:
-            out_features, in_features = weight.shape
-        elif in_features is None:
-            in_features = weight.shape[1] if weight.shape[0] == out_features else weight.shape[0]
-        elif out_features is None:
-            out_features = weight.shape[0] if weight.shape[1] == in_features else weight.shape[1]
-
-        if weight.shape == (in_features, out_features) and in_features != out_features:
-            weight = weight.t().contiguous()
+        if in_features is None or out_features is None:
+            if U is not None and V is not None:
+                out_features = U.shape[0]
+                in_features = V.shape[1]
+            elif weight is not None:
+                out_features = out_features or weight.shape[0]
+                in_features = in_features or weight.shape[1]
 
         existing_lora_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
         eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
         eff_lora_alpha = getattr(linear, "lora_alpha", getattr(linear, "alpha", lora_alpha))
 
+        ref_t = U if U is not None else weight
         layer = cls(
             in_features=in_features,
             out_features=out_features,
             weight=weight,
+            U=U,
+            V=V,
             bias=bias,
             lora_r=eff_lora_r,
             lora_alpha=eff_lora_alpha,
-            device=weight.device,
-            dtype=weight.dtype,
+            device=ref_t.device if ref_t is not None else None,
+            dtype=ref_t.dtype if ref_t is not None else None,
         )
 
         if (
@@ -158,7 +189,11 @@ class OATSLoRALinear(nn.Module):
         return layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight, self.bias)
+        if self.U is not None and self.V is not None:
+            h = F.linear(x, self.V)
+            out = F.linear(h, self.U, self.bias)
+        else:
+            out = F.linear(x, self.weight_param, self.bias)
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
 

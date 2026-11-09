@@ -450,6 +450,134 @@ class LIFTRCompressor(BaseCompressor):
 
             self._linearize_module(child, prefix=full_name, _depth=_depth + 1)
 
+    def _collapse_adjacent_linear_layers(self, model: nn.Module) -> None:
+        """Collapse adjacent linear layers separated by linearized activations."""
+        alpha = self.gelu_coefficient
+
+        # Pattern 1: Transformer encoder/decoder intermediate + output layers
+        for layer in model.modules():
+            if hasattr(layer, "intermediate") and hasattr(layer, "output"):
+                inter = getattr(layer, "intermediate")
+                out_mod = getattr(layer, "output")
+                if (
+                    hasattr(inter, "dense")
+                    and hasattr(out_mod, "dense")
+                    and isinstance(inter.dense, nn.Linear)
+                    and isinstance(out_mod.dense, nn.Linear)
+                ):
+                    w1 = inter.dense.weight.data.float()
+                    b1 = inter.dense.bias.data.float() if inter.dense.bias is not None else None
+                    w2 = out_mod.dense.weight.data.float()
+                    b2 = out_mod.dense.bias.data.float() if out_mod.dense.bias is not None else None
+
+                    w_col = alpha * torch.matmul(w2, w1)
+                    if b1 is not None and b2 is not None:
+                        b_col = alpha * torch.matmul(w2, b1) + b2
+                    elif b2 is not None:
+                        b_col = b2
+                    elif b1 is not None:
+                        b_col = alpha * torch.matmul(w2, b1)
+                    else:
+                        b_col = None
+
+                    dev = inter.dense.weight.device
+                    dt = inter.dense.weight.dtype
+                    col_linear = nn.Linear(w1.shape[1], w2.shape[0], bias=(b_col is not None), device=dev, dtype=dt)
+                    col_linear.weight.data.copy_(w_col.to(device=dev, dtype=dt))
+                    if b_col is not None:
+                        col_linear.bias.data.copy_(b_col.to(device=dev, dtype=dt))
+
+                    inter.dense = col_linear
+                    if hasattr(inter, "intermediate_act_fn"):
+                        inter.intermediate_act_fn = nn.Identity()
+                    out_mod.dense = nn.Identity()
+
+        # Pattern 2: Modules with fc1/fc2 or lin1/lin2
+        for parent in model.modules():
+            pairs = [("fc1", "fc2"), ("lin1", "lin2"), ("proj1", "proj2")]
+            for a_name, b_name in pairs:
+                if (
+                    hasattr(parent, a_name)
+                    and hasattr(parent, b_name)
+                    and isinstance(getattr(parent, a_name), nn.Linear)
+                    and isinstance(getattr(parent, b_name), nn.Linear)
+                ):
+                    mod1 = getattr(parent, a_name)
+                    mod2 = getattr(parent, b_name)
+                    w1 = mod1.weight.data.float()
+                    b1 = mod1.bias.data.float() if mod1.bias is not None else None
+                    w2 = mod2.weight.data.float()
+                    b2 = mod2.bias.data.float() if mod2.bias is not None else None
+
+                    act_mod = getattr(parent, "act", getattr(parent, "activation", None))
+                    scale = alpha if isinstance(act_mod, _LinearizedGELU) else 1.0
+
+                    w_col = scale * torch.matmul(w2, w1)
+                    if b1 is not None and b2 is not None:
+                        b_col = scale * torch.matmul(w2, b1) + b2
+                    elif b2 is not None:
+                        b_col = b2
+                    elif b1 is not None:
+                        b_col = scale * torch.matmul(w2, b1)
+                    else:
+                        b_col = None
+
+                    dev = mod1.weight.device
+                    dt = mod1.weight.dtype
+                    col_linear = nn.Linear(w1.shape[1], w2.shape[0], bias=(b_col is not None), device=dev, dtype=dt)
+                    col_linear.weight.data.copy_(w_col.to(device=dev, dtype=dt))
+                    if b_col is not None:
+                        col_linear.bias.data.copy_(b_col.to(device=dev, dtype=dt))
+
+                    setattr(parent, a_name, col_linear)
+                    if act_mod is not None:
+                        if hasattr(parent, "act"):
+                            parent.act = nn.Identity()
+                        if hasattr(parent, "activation"):
+                            parent.activation = nn.Identity()
+                    setattr(parent, b_name, nn.Identity())
+
+        # Pattern 3: Sequential blocks with [Linear, Identity/LinearizedGELU, Linear]
+        for mod in model.modules():
+            if isinstance(mod, nn.Sequential) and len(mod) >= 3:
+                for i in range(len(mod) - 2):
+                    m1 = mod[i]
+                    m_act = mod[i + 1]
+                    m2 = mod[i + 2]
+                    if (
+                        isinstance(m1, nn.Linear)
+                        and isinstance(m2, nn.Linear)
+                        and isinstance(m_act, (nn.Identity, _LinearizedGELU))
+                    ):
+                        w1 = m1.weight.data.float()
+                        b1 = m1.bias.data.float() if m1.bias is not None else None
+                        w2 = m2.weight.data.float()
+                        b2 = m2.bias.data.float() if m2.bias is not None else None
+                        scale = alpha if isinstance(m_act, _LinearizedGELU) else 1.0
+
+                        w_col = scale * torch.matmul(w2, w1)
+                        if b1 is not None and b2 is not None:
+                            b_col = scale * torch.matmul(w2, b1) + b2
+                        elif b2 is not None:
+                            b_col = b2
+                        elif b1 is not None:
+                            b_col = scale * torch.matmul(w2, b1)
+                        else:
+                            b_col = None
+
+                        dev = m1.weight.device
+                        dt = m1.weight.dtype
+                        col_linear = nn.Linear(
+                            w1.shape[1], w2.shape[0], bias=(b_col is not None), device=dev, dtype=dt
+                        )
+                        col_linear.weight.data.copy_(w_col.to(device=dev, dtype=dt))
+                        if b_col is not None:
+                            col_linear.bias.data.copy_(b_col.to(device=dev, dtype=dt))
+
+                        mod[i] = col_linear
+                        mod[i + 1] = nn.Identity()
+                        mod[i + 2] = nn.Identity()
+
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         if getattr(self.model, "_liftr_compressed", False):
             logger.warning("LIFTR: model already compressed; skipping.")
@@ -483,6 +611,7 @@ class LIFTRCompressor(BaseCompressor):
                 orig_out = None
 
         self._linearize_module(self.model)
+        self._collapse_adjacent_linear_layers(self.model)
 
         if self.skipped_layers:
             skipped_set = set(self.skipped_layers)

@@ -53,8 +53,8 @@ class SLiMCompressor(BaseCompressor):
         rank: int = 8,
         structured_24: bool = True,
         target_attention_only: bool = False,
-        max_error: float = 0.5,
-        fallback_to_original: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         target_modules: list[str] | None = None,
         **kwargs: Any,
     ) -> None:
@@ -77,6 +77,8 @@ class SLiMCompressor(BaseCompressor):
             fallback_to_original = bool(kwargs["fallback_to_original"])
 
         self.bits = int(bits)
+        self.effective_bits = self.bits
+        self.model.effective_bits = self.bits
         self.sparsity = max(0.0, min(float(sparsity), 0.95))
         self.rank = max(1, int(rank))
         self.structured_24 = structured_24

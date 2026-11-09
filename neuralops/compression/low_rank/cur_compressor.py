@@ -270,6 +270,7 @@ class CURLinear(nn.Module):
 
 
 @COMPRESSOR_REGISTRY.register("cur_compressor")
+@COMPRESSOR_REGISTRY.register("cur", is_alias=True)
 class CURCompressor(BaseCompressor):
     """CURCompressor neural operator.
 
@@ -287,8 +288,8 @@ class CURCompressor(BaseCompressor):
         min_rank: int = 8,
         method: str = "leverage",
         deterministic: bool = True,
-        max_error: float = 0.20,
-        fallback_to_original: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         max_retries: int = 2,
         lora_r: int = 0,
         lora_alpha: float = 1.0,

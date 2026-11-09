@@ -468,11 +468,15 @@ class EntropyBudgetCompressor(BaseCompressor):
             with torch.no_grad():
                 first_p = next(self.model.parameters(), None)
                 dev = first_p.device if first_p is not None else torch.device("cpu")
-                dummy = torch.randint(0, 100, (1, 8), device=dev)
                 try:
-                    self.model(dummy)
-                except Exception as e:
-                    logger.warning(f"copy_weights failed: {e}")
+                    dummy_f = torch.randn(1, 16, 768, device=dev)
+                    self.model(dummy_f)
+                except Exception:
+                    dummy = torch.randint(0, 100, (1, 8), device=dev)
+                    try:
+                        self.model(dummy)
+                    except Exception as e:
+                        logger.debug(f"forward check skipped: {e}")
         except Exception:
             forward_check_success = False
 

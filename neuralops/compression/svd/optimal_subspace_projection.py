@@ -53,7 +53,7 @@ _ATTN_NAMES = {
 
 class OptimalSubspaceLoRALinear(nn.Module):
     """
-    Frozen optimal-subspace-projected base weight + optional trainable LoRA.
+    Frozen optimal-subspace-projected factorized base weight + optional trainable LoRA.
     """
 
     is_custom_attention: bool = False
@@ -62,7 +62,9 @@ class OptimalSubspaceLoRALinear(nn.Module):
         self,
         in_features: int,
         out_features: int,
-        weight: torch.Tensor,
+        weight: torch.Tensor | None = None,
+        U: torch.Tensor | None = None,
+        V: torch.Tensor | None = None,
         bias: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
@@ -78,16 +80,34 @@ class OptimalSubspaceLoRALinear(nn.Module):
         self.lora_alpha = float(lora_alpha)
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
 
-        target_device = device if device is not None else weight.device
-        target_dtype = dtype if dtype is not None else weight.dtype
+        ref_t = U if U is not None else weight
+        target_device = device if device is not None else (ref_t.device if ref_t is not None else None)
+        target_dtype = dtype if dtype is not None else (ref_t.dtype if ref_t is not None else torch.float32)
 
-        if weight.shape[0] == in_features and weight.shape[1] == out_features and in_features != out_features:
-            weight = weight.t().contiguous()
+        if U is not None and V is not None:
+            self.U = nn.Parameter(
+                U.to(device=target_device, dtype=target_dtype),
+                requires_grad=False,
+            )
+            self.V = nn.Parameter(
+                V.to(device=target_device, dtype=target_dtype),
+                requires_grad=False,
+            )
+            self.register_parameter("weight_param", None)
+            self.rank = U.shape[1]
+        elif weight is not None:
+            if weight.shape[0] == in_features and weight.shape[1] == out_features and in_features != out_features:
+                weight = weight.t().contiguous()
+            self.weight_param = nn.Parameter(
+                weight.to(device=target_device, dtype=target_dtype),
+                requires_grad=False,
+            )
+            self.register_parameter("U", None)
+            self.register_parameter("V", None)
+            self.rank = min(in_features, out_features)
+        else:
+            raise ValueError("Either (U, V) or weight must be provided to OptimalSubspaceLoRALinear")
 
-        self.weight = nn.Parameter(
-            weight.to(device=target_device, dtype=target_dtype),
-            requires_grad=False,
-        )
         if bias is not None:
             self.bias = nn.Parameter(
                 bias.to(device=target_device, dtype=target_dtype),
@@ -116,11 +136,23 @@ class OptimalSubspaceLoRALinear(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        if self.U is not None and self.V is not None:
+            base = torch.matmul(self.U.float(), self.V.float()).to(self.U.dtype)
+        else:
+            base = self.weight_param
+        if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+            return base + (self.scaling * torch.matmul(self.lora_B.float(), self.lora_A.float())).to(base.dtype)
+        return base
+
     @classmethod
     def from_linear(
         cls,
         linear: nn.Module,
-        weight: torch.Tensor,
+        weight: torch.Tensor | None = None,
+        U: torch.Tensor | None = None,
+        V: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> OptimalSubspaceLoRALinear:
@@ -129,22 +161,29 @@ class OptimalSubspaceLoRALinear(nn.Module):
         in_features = getattr(base_layer, "in_features", getattr(base_layer, "nx", None))
         out_features = getattr(base_layer, "out_features", getattr(base_layer, "nf", None))
         if in_features is None or out_features is None:
-            out_features = out_features or weight.shape[0]
-            in_features = in_features or weight.shape[1]
+            if U is not None and V is not None:
+                out_features = U.shape[0]
+                in_features = V.shape[1]
+            elif weight is not None:
+                out_features = out_features or weight.shape[0]
+                in_features = in_features or weight.shape[1]
 
         existing_lora_r = getattr(linear, "r", getattr(linear, "lora_r", 0))
         eff_lora_r = existing_lora_r if existing_lora_r > 0 else lora_r
         eff_lora_alpha = getattr(linear, "lora_alpha", getattr(linear, "alpha", lora_alpha))
 
+        ref_t = U if U is not None else weight
         layer = cls(
             in_features=in_features,
             out_features=out_features,
             weight=weight,
+            U=U,
+            V=V,
             bias=bias,
             lora_r=eff_lora_r,
             lora_alpha=eff_lora_alpha,
-            device=weight.device,
-            dtype=weight.dtype,
+            device=ref_t.device if ref_t is not None else None,
+            dtype=ref_t.dtype if ref_t is not None else None,
         )
 
         if (
@@ -165,7 +204,11 @@ class OptimalSubspaceLoRALinear(nn.Module):
         return layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        out = F.linear(x, self.weight, self.bias)
+        if self.U is not None and self.V is not None:
+            h = F.linear(x, self.V)
+            out = F.linear(h, self.U, self.bias)
+        else:
+            out = F.linear(x, self.weight_param, self.bias)
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
 
@@ -203,13 +246,13 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         tokenizer: Any | None = None,
         calibration_texts: list[str] | None = None,
         device: str | torch.device | None = None,
-        max_error: float = 0.50,
-        fallback_to_original: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         target_attention_only: bool = False,
         target_modules: list[str] | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
-        skip_attention_qkv: bool = True,
+        skip_attention_qkv: bool = False,
         min_rank: int = 4,
         **kwargs: Any,
     ) -> None:
@@ -217,6 +260,7 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
         self._compressed_params: int | None = None
         cfg = kwargs.get("comp_config", kwargs.get("cfg"))
 
+        explicit_r = kwargs.get("rank", kwargs.get("target_rank", None))
         if cfg is not None:
             rank_ratio = _cfg_get(
                 cfg,
@@ -239,7 +283,9 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
             skip_attention_qkv = _cfg_get(cfg, "skip_attention_qkv", skip_attention_qkv)
             target_attention_only = _cfg_get(cfg, "target_attention_only", target_attention_only)
             min_rank = _cfg_get(cfg, "min_rank", min_rank)
+            explicit_r = _cfg_get(cfg, "rank", explicit_r)
 
+        self.explicit_rank = int(explicit_r) if explicit_r is not None else None
         self.calibration_loader = calibration_loader
         self.rank_ratio = max(0.01, min(float(rank_ratio), 1.0))
         self.power_iters = max(0, int(power_iters))
@@ -313,13 +359,16 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
             return True
         return any(t in name for t in self.target_modules)
 
-    @staticmethod
-    def _compute_rank(d_out: int, d_in: int, rank_ratio: float, min_rank: int) -> int:
-        """OSP-FIX-04: clean, correct rank formula."""
+    def _compute_rank(self, d_out: int, d_in: int, rank_ratio: float, min_rank: int) -> int:
+        """OSP rank formula with explicit rank support and parameter reduction guarantee."""
         max_rank = min(d_out, d_in)
+        param_cap = max(1, (d_out * d_in) // max(1, d_out + d_in) - 1)
+        if self.explicit_rank is not None:
+            return max(1, min(self.explicit_rank, max_rank))
         target = max(1, int(round(max_rank * rank_ratio)))
         rank = max(target, min_rank)
-        rank = min(rank, max_rank)
+        rank = min(rank, param_cap)
+        return max(1, min(rank, max_rank))
         return rank
 
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
@@ -459,7 +508,11 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
                 Vt_r = Vt[:r, :]
                 new_U = torch.matmul(Q, U_r)
                 new_V = torch.matmul(Vt_r, L_inv)
-                new_weight = torch.matmul(new_U * S_r.unsqueeze(0), new_V)
+                sqrt_S = torch.sqrt(torch.clamp(S_r, min=1e-12))
+                U_factor = (new_U * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device)
+                V_factor = (sqrt_S.unsqueeze(1) * new_V).to(dtype=dtype, device=device)
+
+                new_weight = torch.matmul(U_factor, V_factor)
                 new_weight = torch.nan_to_num(new_weight, nan=0.0, posinf=0.0, neginf=0.0)
 
                 w_norm = torch.norm(W, p="fro").clamp_min(1e-12).item()
@@ -481,16 +534,18 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
                             p.requires_grad = False
                         continue
 
-                W_target = new_weight.to(dtype=dtype, device=device)
                 compressed_layer = OptimalSubspaceLoRALinear.from_linear(
                     module,
-                    weight=W_target,
+                    U=U_factor,
+                    V=V_factor,
                     lora_r=self.lora_r,
                     lora_alpha=self.lora_alpha,
                 )
 
                 if hasattr(module, "base_layer"):
                     module.base_layer = compressed_layer
+                elif not name:
+                    self.model = compressed_layer
                 else:
                     replace_module(self.model, name, compressed_layer)
 

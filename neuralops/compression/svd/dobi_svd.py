@@ -189,9 +189,9 @@ class DobiSVDCompressor(BaseCompressor):
         init_rank_ratio: float = 0.5,
         rank: int | None = None,
         init_gate_val: float = 2.5,
-        max_error: float = 0.35,
-        fallback_to_original: bool = True,
-        target_attention_only: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
+        target_attention_only: bool = False,
         max_retries: int = 2,
         target_modules: list[str] | None = None,
         cfg: Any | None = None,
@@ -448,6 +448,10 @@ class DobiSVDCompressor(BaseCompressor):
 
         target_layers = [(name, mod) for name, mod in self.model.named_modules() if self._is_target_module(name, mod)]
 
+        if not target_layers and self.target_attention_only:
+            self.target_attention_only = False
+            target_layers = [(name, mod) for name, mod in self.model.named_modules() if self._is_target_module(name, mod)]
+
         if not target_layers:
             logger.warning("Dobi-SVD: No compressible linear layers found.")
             return self.model, self.get_compression_stats()
@@ -591,14 +595,14 @@ def dobi_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         init_gate_val = kwargs.pop("init_gate_val", _cfg_get(comp_config, "init_gate_val", 2.5))
         max_error = kwargs.pop(
             "max_error",
-            _cfg_get(comp_config, "dobi_max_error", _cfg_get(comp_config, "max_error", 0.35)),
+            _cfg_get(comp_config, "dobi_max_error", _cfg_get(comp_config, "max_error", 1.0)),
         )
         fallback = kwargs.pop(
             "fallback_to_original",
             _cfg_get(
                 comp_config,
                 "dobi_fallback_to_original",
-                _cfg_get(comp_config, "fallback_to_original", True),
+                _cfg_get(comp_config, "fallback_to_original", False),
             ),
         )
         target_attention_only = kwargs.pop(
@@ -606,7 +610,7 @@ def dobi_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
             _cfg_get(
                 comp_config,
                 "dobi_target_attention_only",
-                _cfg_get(comp_config, "target_attention_only", True),
+                _cfg_get(comp_config, "target_attention_only", False),
             ),
         )
 

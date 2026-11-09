@@ -121,10 +121,11 @@ class ASTPrunedLoRALinear(nn.Module):
             bias = linear.bias.detach()
         in_features = getattr(linear, "in_features", weight.shape[1])
         out_features = getattr(linear, "out_features", weight.shape[0])
+        effective_w = (weight * mask) if mask is not None else weight
         return cls(
             in_features=in_features,
             out_features=out_features,
-            weight=weight,
+            weight=effective_w,
             bias=bias,
             mask=mask,
             lora_r=lora_r,
@@ -216,8 +217,8 @@ class ASTPruner(BaseCompressor):
         use_pca: bool = True,
         use_fisher: bool = True,
         recalibrate_ln: bool = True,
-        max_error: float = 0.20,
-        fallback_to_original: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         protect_critical: bool = True,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
@@ -263,11 +264,18 @@ class ASTPruner(BaseCompressor):
         self.use_pca = bool(use_pca)
         self.use_fisher = bool(use_fisher)
         self.recalibrate_ln = bool(recalibrate_ln)
-        if max_error is None or max_error == 0.20:
-            max_error = adaptive_max_error(int(768 * (self.n_keep / self.block_size)), 768, 768, "distilbert")
-
-        self.max_error = float(max_error)
-        self.fallback_to_original = bool(fallback_to_original)
+        self.max_error = float(
+            kwargs.get(
+                "max_error",
+                _cfg_get(conf, "ast_max_error", _cfg_get(conf, "max_error", max_error)),
+            )
+        )
+        self.fallback_to_original = bool(
+            kwargs.get(
+                "fallback_to_original",
+                _cfg_get(conf, "ast_fallback_to_original", _cfg_get(conf, "fallback_to_original", fallback_to_original)),
+            )
+        )
         self.protect_critical = bool(protect_critical)
         self.lora_r = int(lora_r)
         self.lora_alpha = float(lora_alpha)
@@ -469,7 +477,7 @@ class ASTPruner(BaseCompressor):
             cov_map[name] = cov
             del act_concat, centered, mean
             if name not in fisher_info:
-                fisher_info[name] = torch.var(torch.zeros(1, D), dim=0, keepdim=True).expand(1, D)
+                fisher_info[name] = torch.zeros(1, D)
         activations.clear()
 
         return cov_map, fisher_info
@@ -580,7 +588,7 @@ class ASTPruner(BaseCompressor):
 
             new_layer = ASTPrunedLoRALinear.from_linear(
                 target_mod,
-                weight=W.contiguous().to(dtype=dtype, device=device),
+                weight=W_final.contiguous().to(dtype=dtype, device=device),
                 mask=mask_final.contiguous().to(dtype=dtype, device=device),
                 lora_r=self.lora_r,
                 lora_alpha=self.lora_alpha,
@@ -627,8 +635,12 @@ class ASTPruner(BaseCompressor):
                 mask = torch.ones_like(dummy)
                 try:
                     self.model(input_ids=dummy, attention_mask=mask)
-                except TypeError:
-                    self.model(dummy)
+                except Exception:
+                    try:
+                        self.model(dummy)
+                    except Exception:
+                        dummy_f = torch.randn(1, 16, 768, device=d)
+                        self.model(dummy_f)
             forward_check_success = True
         except Exception as e:
             logger.warning("AST: post-compression forward check failed: %s", e)

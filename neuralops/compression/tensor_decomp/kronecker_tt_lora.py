@@ -79,12 +79,12 @@ class KroneckerTTLoRALayer(nn.Module):
 
     def __init__(
         self,
-        base_layer: nn.Linear,
-        m1: int,
-        n1: int,
-        m2: int,
-        n2: int,
-        tt_shapes: tuple[int, int, int],
+        base_layer: nn.Linear | None = None,
+        m1: int = 1,
+        n1: int = 1,
+        m2: int = 1,
+        n2: int = 1,
+        tt_shapes: tuple[int, int, int] = (1, 1, 1),
         tt_ranks: tuple[int, int, int, int] = (1, 4, 4, 1),
         gamma: float = 1.0,
         lora_r: int = 4,
@@ -92,15 +92,45 @@ class KroneckerTTLoRALayer(nn.Module):
         r_min: int = 2,
         r_max: int = 32,
         entropy_threshold: float = 0.75,
+        U_base: torch.Tensor | None = None,
+        V_base: torch.Tensor | None = None,
+        bias: torch.Tensor | None = None,
+        in_features: int | None = None,
+        out_features: int | None = None,
     ) -> None:
         super().__init__()
-        self.base_layer = base_layer
-        self.base_layer.weight.requires_grad = False
-        if getattr(base_layer, "bias", None) is not None:
-            base_layer.bias.requires_grad = False
+        if base_layer is not None:
+            self.in_features = in_features or base_layer.in_features
+            self.out_features = out_features or base_layer.out_features
+            device = base_layer.weight.device
+            dtype = base_layer.weight.dtype
+        else:
+            ref = U_base if U_base is not None else V_base
+            self.in_features = in_features or (V_base.shape[1] if V_base is not None else 768)
+            self.out_features = out_features or (U_base.shape[0] if U_base is not None else 768)
+            device = ref.device if ref is not None else torch.device("cpu")
+            dtype = ref.dtype if ref is not None else torch.float32
 
-        self.in_features = base_layer.in_features
-        self.out_features = base_layer.out_features
+        if U_base is not None and V_base is not None:
+            self.U_base = nn.Parameter(U_base.to(device=device, dtype=dtype), requires_grad=False)
+            self.V_base = nn.Parameter(V_base.to(device=device, dtype=dtype), requires_grad=False)
+        elif base_layer is not None:
+            with torch.no_grad():
+                w_mat = base_layer.weight.data.float()
+                u_b, s_b, vt_b = torch.linalg.svd(w_mat, full_matrices=False)
+                r_b = max(1, min(32, len(s_b) // 2))
+                sqrt_s = torch.sqrt(torch.clamp(s_b[:r_b], min=1e-12))
+                self.U_base = nn.Parameter((u_b[:, :r_b] * sqrt_s.unsqueeze(0)).to(device=device, dtype=dtype), requires_grad=False)
+                self.V_base = nn.Parameter((sqrt_s.unsqueeze(1) * vt_b[:r_b, :]).to(device=device, dtype=dtype), requires_grad=False)
+        else:
+            raise ValueError("Either (U_base, V_base) or base_layer must be provided")
+
+        if bias is not None:
+            self.bias_param = nn.Parameter(bias.to(device=device, dtype=dtype), requires_grad=False)
+        elif base_layer is not None and getattr(base_layer, "bias", None) is not None:
+            self.bias_param = nn.Parameter(base_layer.bias.data.to(device=device, dtype=dtype), requires_grad=False)
+        else:
+            self.register_parameter("bias_param", None)
 
         self.padded_out_features = m1 * m2
         self.padded_in_features = n1 * n2
@@ -132,9 +162,6 @@ class KroneckerTTLoRALayer(nn.Module):
         self.r_min = int(r_min)
         self.r_max = int(r_max)
         self.entropy_threshold = float(entropy_threshold)
-
-        device = base_layer.weight.device
-        dtype = base_layer.weight.dtype
 
         self.A1 = nn.Parameter(_init_orthogonal_spectral((m1, n1), (m1, n1), device, dtype))
         self.A2 = nn.Parameter(_init_orthogonal_spectral((m2, n2), (m2, n2), device, dtype))
@@ -302,18 +329,34 @@ class KroneckerTTLoRALayer(nn.Module):
         return delta_padded[: self.out_features, : self.in_features]
 
     @property
+    def base_layer(self) -> Any:
+        class _Base:
+            def __init__(b_self, U, V, bias, in_f, out_f):
+                b_self.in_features = in_f
+                b_self.out_features = out_f
+                b_self._U = U
+                b_self._V = V
+                b_self.bias = bias
+
+            @property
+            def weight(b_self):
+                return torch.matmul(b_self._U, b_self._V)
+
+        return _Base(self.U_base, self.V_base, self.bias_param, self.in_features, self.out_features)
+
+    @property
     def weight(self) -> torch.Tensor:
-        W = self.base_layer.weight + self.get_delta_w()
+        W = torch.matmul(self.U_base, self.V_base) + self.get_delta_w()
         if self.lora_A is not None and self.lora_B is not None:
             W = W + self.lora_scaling * torch.matmul(self.lora_B, self.lora_A)
         return W
 
     @property
     def bias(self) -> torch.Tensor | None:
-        return getattr(self.base_layer, "bias", None)
+        return self.bias_param
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        base_out = F.linear(x, self.base_layer.weight, getattr(self.base_layer, "bias", None))
+        base_out = F.linear(F.linear(x, self.V_base), self.U_base, self.bias_param)
         delta_w = self.get_delta_w()
         kron_tt_out = F.linear(x, delta_w)
         try:
@@ -679,7 +722,7 @@ class KroneckerTTLoRACompressor(BaseCompressor):
                 )
                 if p is not None
             )
-            total_comp_params += orig_params + adapter_params
+            total_comp_params += sum(p.numel() for p in adapted.parameters())
 
             try:
                 replace_module(self.model, name, adapted)
@@ -701,7 +744,9 @@ class KroneckerTTLoRACompressor(BaseCompressor):
                         self.model(dummy)
                     except Exception:
                         try:
-                            hidden_dummy = torch.randn(1, 8, getattr(self, "dim", 768), device=dev)
+                            first_lin = next((m for m in self.model.modules() if hasattr(m, "in_features")), None)
+                            in_dim = getattr(first_lin, "in_features", 768) if first_lin else 768
+                            hidden_dummy = torch.randn(1, 8, in_dim, device=dev)
                             self.model(hidden_dummy)
                         except Exception as e3:
                             logger.warning("KroneckerTTLoRA: forward check failed: %s", e3)

@@ -21,6 +21,8 @@ import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
 from neuralops.core.common import _cfg_get
+from neuralops.core.low_rank.svd_linear import SVDLinear
+from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
 logger = logging.getLogger(__name__)
@@ -235,6 +237,9 @@ class HybridKVCompressor(BaseCompressor):
                 _cfg_get(cfg, "target_attention_only", target_attention_only),
             )
         )
+        self.rank = kwargs.get("rank", None)
+        self.bits = int(kwargs.get("bits", 4))
+        self.effective_bits = int(kwargs.get("effective_bits", 4))
 
     def _classify_head(self, weight: torch.Tensor) -> str:
         """Classify attention projection weight into static vs dynamic based on variance."""
@@ -272,80 +277,99 @@ class HybridKVCompressor(BaseCompressor):
         return True
 
     def compress(self) -> tuple[nn.Module, dict[str, Any]]:
-        """Classify heads and configure dynamic KV caches without mutating model weights."""
+        """Classify heads and configure dynamic KV caches with factorized projections."""
         head_stats: dict[str, Any] = {}
         total_heads = 0
         static_heads_count = 0
         dynamic_heads_count = 0
 
-        for name, module in self.model.named_modules():
-            if self._is_attention_proj(name, module):
-                target_mod = getattr(module, "base_layer", module)
-                W = target_mod.weight.data
-                cls_name = target_mod.__class__.__name__.lower()
-                is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
-                out_f = W.shape[1] if is_conv1d else W.shape[0]
+        target_layers = [
+            (name, module) for name, module in self.model.named_modules() if self._is_attention_proj(name, module)
+        ]
 
-                head_dim = 64 if out_f % 64 == 0 else (128 if out_f % 128 == 0 else 32)
-                num_heads = max(1, out_f // head_dim)
-                head_type = self._classify_head(W)
+        for name, module in target_layers:
+            target_mod = getattr(module, "base_layer", module)
+            W = target_mod.weight.data
+            cls_name = target_mod.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(target_mod, "nf")
+            out_f = W.shape[1] if is_conv1d else W.shape[0]
+            in_f = W.shape[0] if is_conv1d else W.shape[1]
 
-                num_static = max(1, int(num_heads * self.static_ratio))
-                num_dynamic = max(0, num_heads - num_static)
-                static_mask = torch.zeros(num_heads, dtype=torch.bool, device=W.device)
-                static_mask[:num_static] = True
+            head_dim = 64 if out_f % 64 == 0 else (128 if out_f % 128 == 0 else 32)
+            num_heads = max(1, out_f // head_dim)
+            head_type = self._classify_head(W)
 
-                kv_cache = HybridKVCache(
-                    max_cache_len=self.max_cache_len,
-                    num_sinks=self.num_sinks,
-                    recent_window=self.recent_window,
-                    budget=self.budget,
-                    static_ratio=self.static_ratio,
-                    static_heads_mask=static_mask,
-                )
-                module.hybrid_kv_cache = kv_cache
-                if hasattr(module, "base_layer"):
-                    module.base_layer.hybrid_kv_cache = kv_cache
+            num_static = max(1, int(num_heads * self.static_ratio))
+            num_dynamic = max(0, num_heads - num_static)
+            static_mask = torch.zeros(num_heads, dtype=torch.bool, device=W.device)
+            static_mask[:num_static] = True
 
-                if num_dynamic > 0 and self.budget < 1.0:
-                    with torch.no_grad():
-                        W_mat = W.t().contiguous().float() if is_conv1d else W.contiguous().float()
-                        start_idx = num_static * head_dim
-                        if start_idx < out_f:
-                            dyn_w = W_mat[start_idx:, :]
-                            U_d, S_d, Vt_d = torch.linalg.svd(dyn_w, full_matrices=False)
-                            r_d = max(1, min(int(len(S_d) * self.budget), len(S_d)))
-                            dyn_lowrank = (U_d[:, :r_d] * S_d[:r_d].unsqueeze(0)) @ Vt_d[:r_d, :]
-                            W_mat[start_idx:, :] = dyn_lowrank
-                            new_w = W_mat.t().contiguous().to(W.dtype) if is_conv1d else W_mat.to(W.dtype)
-                            target_mod.weight.data.copy_(new_w)
+            kv_cache = HybridKVCache(
+                max_cache_len=self.max_cache_len,
+                num_sinks=self.num_sinks,
+                recent_window=self.recent_window,
+                budget=self.budget,
+                static_ratio=self.static_ratio,
+                static_heads_mask=static_mask,
+            )
 
-                head_stats[name] = {
-                    "head_type": head_type,
-                    "num_heads": num_heads,
-                    "static_heads": num_static,
-                    "dynamic_heads": num_dynamic,
-                }
-                total_heads += num_heads
-                static_heads_count += num_static
-                dynamic_heads_count += num_dynamic
-            elif hasattr(module, "weight") or list(module.parameters(recurse=False)):
-                for p in module.parameters(recurse=False):
-                    p.requires_grad = False
+            W_mat = W.t().contiguous().float() if is_conv1d else W.contiguous().float()
+            target_rank = self.rank or max(1, min(int(min(out_f, in_f) * self.budget), out_f, in_f))
+            target_rank = max(1, min(target_rank, 128))
+
+            U, S, Vt = torch.linalg.svd(W_mat, full_matrices=False)
+            r = min(target_rank, len(S))
+            sqrt_s = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            U_r = U[:, :r] * sqrt_s.unsqueeze(0)
+            V_r = sqrt_s.unsqueeze(1) * Vt[:r, :]
+
+            has_bias = getattr(target_mod, "bias", None) is not None
+            svd_layer = SVDLinear(
+                in_features=in_f,
+                out_features=out_f,
+                rank=r,
+                bias=has_bias,
+                lora_rank=0,
+                dtype=W.dtype,
+                device=W.device,
+            )
+            svd_layer.U.data.copy_(U_r.to(dtype=W.dtype, device=W.device))
+            svd_layer.S.data.fill_(1.0)
+            svd_layer.V.data.copy_(V_r.to(dtype=W.dtype, device=W.device))
+            if has_bias:
+                svd_layer.bias.data.copy_(target_mod.bias.data)
+
+            svd_layer.hybrid_kv_cache = kv_cache
+            replace_module(self.model, name, svd_layer)
+
+            head_stats[name] = {
+                "head_type": head_type,
+                "num_heads": num_heads,
+                "static_heads": num_static,
+                "dynamic_heads": num_dynamic,
+            }
+            total_heads += num_heads
+            static_heads_count += num_static
+            dynamic_heads_count += num_dynamic
+
+        for p in self.model.parameters():
+            p.requires_grad = False
+
+        self.model.effective_bits = self.effective_bits
 
         forward_check_success = True
         try:
             with torch.no_grad():
                 dev = next(self.model.parameters(), torch.tensor(0.0)).device
-                dummy = torch.randint(0, 100, (1, 8), device=dev)
+                first_linear = next(
+                    (m for m in self.model.modules() if hasattr(m, "in_features")),
+                    None,
+                )
+                in_dim = getattr(first_linear, "in_features", 768)
                 try:
+                    dummy = torch.randint(0, 100, (1, 8), device=dev)
                     self.model(dummy)
                 except Exception:
-                    first_linear = next(
-                        (m for m in self.model.modules() if isinstance(m, nn.Linear)),
-                        None,
-                    )
-                    in_dim = getattr(first_linear, "in_features", 8)
                     self.model(torch.randn(1, 8, in_dim, device=dev))
         except Exception:
             forward_check_success = False

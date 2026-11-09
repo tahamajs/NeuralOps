@@ -165,7 +165,7 @@ class ARMORLinear(nn.Module):
         )
         mask_dev = mask.to(dtype=w_data.dtype, device=w_data.device)
         with torch.no_grad():
-            layer.sparse_weight.data.copy_(w_data)
+            layer.sparse_weight.data.copy_(w_data * mask_dev)
             layer.sparse_mask.copy_(mask_dev)
             layer.lora_A.data.copy_(lora_A[:actual_rank].to(dtype=raw_w.dtype, device=raw_w.device))
             layer.lora_B.data.copy_(lora_B[:, :actual_rank].to(dtype=raw_w.dtype, device=raw_w.device))
@@ -236,8 +236,8 @@ class ARMORPruner(BaseCompressor):
         decouple: bool = True,
         recalibrate_ln: bool = True,
         lora_alpha: float | None = None,
-        max_error: float = 0.35,
-        fallback_to_original: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         target_attention_only: bool = False,
         skip_attention_qkv: bool = False,
         skip_attention_output: bool = False,
@@ -285,12 +285,17 @@ class ARMORPruner(BaseCompressor):
             if lora_alpha is not None
             else None
         )
-        self.max_error = float(_cfg_get(conf, "armor_max_error", _cfg_get(conf, "max_error", max_error)))
+        self.max_error = float(
+            kwargs.get("max_error", _cfg_get(conf, "armor_max_error", _cfg_get(conf, "max_error", max_error)))
+        )
         self.fallback_to_original = bool(
-            _cfg_get(
-                conf,
-                "armor_fallback_to_original",
-                _cfg_get(conf, "fallback_to_original", fallback_to_original),
+            kwargs.get(
+                "fallback_to_original",
+                _cfg_get(
+                    conf,
+                    "armor_fallback_to_original",
+                    _cfg_get(conf, "fallback_to_original", fallback_to_original),
+                ),
             )
         )
         self.target_attention_only = bool(

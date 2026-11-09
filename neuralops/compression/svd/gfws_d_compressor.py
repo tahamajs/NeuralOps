@@ -32,19 +32,21 @@ logger = logging.getLogger(__name__)
 class GFWSLoRALinear(nn.Module):
     """
     Linear layer containing Fisher/Covariance-whitened SVD compressed base weights (frozen)
-    with optional trainable LoRA adapters (lora_A, lora_B).
+    factorized into low-rank components (U, V) with optional trainable LoRA adapters.
     """
 
     def __init__(
         self,
         in_features: int,
         out_features: int,
-        weight: torch.Tensor,
+        weight: torch.Tensor | None = None,
         bias: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
+        U: torch.Tensor | None = None,
+        V: torch.Tensor | None = None,
     ) -> None:
         super().__init__()
         self.in_features = in_features
@@ -54,13 +56,30 @@ class GFWSLoRALinear(nn.Module):
         self.lora_alpha = float(lora_alpha)
         self.scaling = (self.lora_alpha / self.lora_r) if self.lora_r > 0 else 1.0
 
-        target_device = device if device is not None else weight.device
-        target_dtype = dtype if dtype is not None else weight.dtype
+        ref_tensor = U if U is not None else (weight if weight is not None else torch.tensor(0.0))
+        target_device = device if device is not None else ref_tensor.device
+        target_dtype = dtype if dtype is not None else ref_tensor.dtype
 
-        self.weight = nn.Parameter(
-            weight.to(device=target_device, dtype=target_dtype),
-            requires_grad=False,
-        )
+        if U is not None and V is not None:
+            self.U = nn.Parameter(
+                U.to(device=target_device, dtype=target_dtype),
+                requires_grad=False,
+            )
+            self.V = nn.Parameter(
+                V.to(device=target_device, dtype=target_dtype),
+                requires_grad=False,
+            )
+            self.register_parameter("weight_param", None)
+        elif weight is not None:
+            self.register_parameter("U", None)
+            self.register_parameter("V", None)
+            self.weight_param = nn.Parameter(
+                weight.to(device=target_device, dtype=target_dtype),
+                requires_grad=False,
+            )
+        else:
+            raise ValueError("Either (U, V) or weight must be provided to GFWSLoRALinear")
+
         if bias is not None:
             self.bias = nn.Parameter(
                 bias.to(device=target_device, dtype=target_dtype),
@@ -89,17 +108,32 @@ class GFWSLoRALinear(nn.Module):
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
+    @property
+    def weight(self) -> torch.Tensor:
+        """Backward-compatibility property returning effective full weight matrix."""
+        if self.U is not None and self.V is not None:
+            return torch.matmul(self.U, self.V)
+        return self.weight_param
+
     @classmethod
     def from_linear(
         cls,
         linear: nn.Module,
-        weight: torch.Tensor,
+        weight: torch.Tensor | None = None,
+        U: torch.Tensor | None = None,
+        V: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> GFWSLoRALinear:
         bias = linear.bias.detach() if hasattr(linear, "bias") and linear.bias is not None else None
-        in_features = getattr(linear, "in_features", weight.shape[1])
-        out_features = getattr(linear, "out_features", weight.shape[0])
+        in_features = getattr(linear, "in_features", None)
+        out_features = getattr(linear, "out_features", None)
+        if in_features is None:
+            in_features = V.shape[1] if V is not None else weight.shape[1]
+        if out_features is None:
+            out_features = U.shape[0] if U is not None else weight.shape[0]
+
+        ref = U if U is not None else weight
         return cls(
             in_features=in_features,
             out_features=out_features,
@@ -107,14 +141,19 @@ class GFWSLoRALinear(nn.Module):
             bias=bias,
             lora_r=lora_r,
             lora_alpha=lora_alpha,
-            device=weight.device,
-            dtype=weight.dtype,
+            device=ref.device,
+            dtype=ref.dtype,
+            U=U,
+            V=V,
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
-        out = F.linear(x_flat, self.weight, self.bias)
+        if self.U is not None and self.V is not None:
+            out = F.linear(F.linear(x_flat, self.V), self.U, self.bias)
+        else:
+            out = F.linear(x_flat, self.weight_param, self.bias)
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
@@ -172,8 +211,8 @@ class GFWSCompressor(BaseCompressor):
         model: nn.Module,
         rank: int = 64,
         damping: float = 0.01,
-        max_error: float = 0.20,
-        fallback_to_original: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         skip_attention_qkv: bool = True,
@@ -203,9 +242,6 @@ class GFWSCompressor(BaseCompressor):
 
         self.rank = int(rank)
         self.damping = float(damping)
-        if max_error is None or max_error == 0.20:
-            max_error = adaptive_max_error(self.rank, 768, 768, "distilbert")
-
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
         self.lora_r = int(lora_r)
@@ -400,6 +436,8 @@ class GFWSCompressor(BaseCompressor):
 
             used_cov = False
             W_approx = None
+            U_approx = None
+            V_approx = None
             final_err = 1.0
 
             cov = covariances.get(name, None)
@@ -421,14 +459,17 @@ class GFWSCompressor(BaseCompressor):
                     M = torch.matmul(W, cov_sqrt)
                     U, S, Vt = torch.linalg.svd(M, full_matrices=False)
 
-                    M_r = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
-
-                    candidate = torch.matmul(M_r, cov_inv_sqrt)
+                    sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+                    U_cand = U[:, :r] * sqrt_S.unsqueeze(0)
+                    V_cand = (sqrt_S.unsqueeze(1) * Vt[:r, :]) @ cov_inv_sqrt
+                    candidate = torch.matmul(U_cand, V_cand)
 
                     if not (torch.isnan(candidate).any() or torch.isinf(candidate).any()):
                         err = float(torch.norm(W - candidate, p="fro").item() / max(W_norm, 1e-12))
                         if err <= self.max_error:
                             W_approx = candidate
+                            U_approx = U_cand
+                            V_approx = V_cand
                             final_err = err
                             used_cov = True
                         else:
@@ -448,15 +489,22 @@ class GFWSCompressor(BaseCompressor):
             if W_approx is None:
                 try:
                     U, S, Vt = torch.linalg.svd(W, full_matrices=False)
-                    candidate = (U[:, :r] * S[:r].unsqueeze(0)) @ Vt[:r, :]
+                    sqrt_S = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+                    U_cand = U[:, :r] * sqrt_S.unsqueeze(0)
+                    V_cand = sqrt_S.unsqueeze(1) * Vt[:r, :]
+                    candidate = torch.matmul(U_cand, V_cand)
                     if not (torch.isnan(candidate).any() or torch.isinf(candidate).any()):
                         err = float(torch.norm(W - candidate, p="fro").item() / max(W_norm, 1e-12))
                         W_approx = candidate
+                        U_approx = U_cand
+                        V_approx = V_cand
                         final_err = err
                         used_cov = False
                 except Exception as e:
                     logger.warning("GFWS standard SVD failed on %s: %s", name, e)
                     W_approx = None
+                    U_approx = None
+                    V_approx = None
                     final_err = 1.0
 
             self.layer_errors[name] = final_err
@@ -479,7 +527,9 @@ class GFWSCompressor(BaseCompressor):
 
             new_layer = GFWSLoRALinear.from_linear(
                 target_mod,
-                weight=W_approx.to(dtype=dtype, device=device),
+                U=U_approx.to(dtype=dtype, device=device) if U_approx is not None else None,
+                V=V_approx.to(dtype=dtype, device=device) if V_approx is not None else None,
+                weight=W_approx.to(dtype=dtype, device=device) if U_approx is None else None,
                 lora_r=self.lora_r,
                 lora_alpha=self.lora_alpha,
             )
@@ -523,7 +573,7 @@ class GFWSCompressor(BaseCompressor):
                         (m for m in self.model.modules() if isinstance(m, (nn.Linear, GFWSLoRALinear))),
                         None,
                     )
-                    in_dim = getattr(first_linear, "in_features", 8)
+                    in_dim = getattr(first_linear, "in_features", 768)
                     self.model(torch.randn(1, 8, in_dim, device=dev))
         except Exception as e:
             logger.warning("GFWS post-compression forward check warning: %s", e)

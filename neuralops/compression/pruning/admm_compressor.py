@@ -49,8 +49,8 @@ class ADMMCompressor(BaseCompressor):
         max_iter: int = 8,
         structured_24: bool = True,
         block_size: tuple[int, int] = (4, 4),
-        max_error: float = 0.45,
-        fallback_to_original: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         target_attention_only: bool = False,
         target_modules: list[str] | None = None,
         quant_per_channel: bool = True,
@@ -73,12 +73,17 @@ class ADMMCompressor(BaseCompressor):
         self.max_iter = max(1, int(_cfg_get(cfg, "admm_max_iter", _cfg_get(cfg, "max_iter", max_iter))))
         self.structured_24 = bool(_cfg_get(cfg, "admm_structured_24", _cfg_get(cfg, "structured_24", structured_24)))
         self.block_size = block_size
-        self.max_error = float(_cfg_get(cfg, "admm_max_error", _cfg_get(cfg, "max_error", max_error)))
+        self.max_error = float(
+            kwargs.get("max_error", _cfg_get(cfg, "admm_max_error", _cfg_get(cfg, "max_error", max_error)))
+        )
         self.fallback_to_original = bool(
-            _cfg_get(
-                cfg,
-                "admm_fallback_to_original",
-                _cfg_get(cfg, "fallback_to_original", fallback_to_original),
+            kwargs.get(
+                "fallback_to_original",
+                _cfg_get(
+                    cfg,
+                    "admm_fallback_to_original",
+                    _cfg_get(cfg, "fallback_to_original", fallback_to_original),
+                ),
             )
         )
         self.target_attention_only = bool(

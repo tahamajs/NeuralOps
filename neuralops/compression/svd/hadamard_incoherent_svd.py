@@ -20,6 +20,8 @@ import torch
 import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
+from neuralops.core.low_rank.svd_linear import SVDLinear
+from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.ops.triton.elementwise import fast_hadamard_transform
 
@@ -36,6 +38,7 @@ class HadamardIncoherentSVDCompressor(BaseCompressor):
       W_rot = W H, SVD(W_rot) = U_r S_r V_r^T
     When folded back into V_r^T <- V_r^T H^T, the linear layer achieves 40%-65%
     lower truncation/quantization error with ZERO extra runtime parameters.
+    Factorizes dense linear layers into SVDLinear representations.
     """
 
     def __init__(
@@ -44,12 +47,16 @@ class HadamardIncoherentSVDCompressor(BaseCompressor):
         rank: int = 32,
         hadamard_block_size: int = 128,
         quantize_factors_int4: bool = False,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, rank=rank, **kwargs)
         self.rank = rank
         self.hadamard_block_size = hadamard_block_size
         self.quantize_factors_int4 = quantize_factors_int4
+        self.max_error = float(max_error)
+        self.fallback_to_original = bool(fallback_to_original)
         self.compressed_layers: list[str] = []
         self.layer_errors: dict[str, float] = {}
 
@@ -58,6 +65,8 @@ class HadamardIncoherentSVDCompressor(BaseCompressor):
         total_error = 0.0
 
         for name, module in list(self.model.named_modules()):
+            if isinstance(module, SVDLinear):
+                continue
             if isinstance(module, nn.Linear) or hasattr(module, "nf"):
                 is_conv1d = hasattr(module, "nf")
                 w_orig = module.weight.data.t().contiguous() if is_conv1d else module.weight.data.contiguous()
@@ -81,14 +90,33 @@ class HadamardIncoherentSVDCompressor(BaseCompressor):
                 norm_orig = torch.norm(w_orig.float(), p="fro").item()
                 err = float(torch.norm(w_orig.float() - w_rec.float(), p="fro").item() / max(norm_orig, 1e-8))
 
-                res_w = w_rec.t().contiguous() if is_conv1d else w_rec
-                module.weight.data.copy_(res_w)
+                if err > self.max_error and self.fallback_to_original:
+                    continue
+
+                has_bias = getattr(module, "bias", None) is not None
+                svd_layer = SVDLinear(
+                    in_features=d_in,
+                    out_features=d_out,
+                    rank=r,
+                    bias=has_bias,
+                    lora_rank=0,
+                    dtype=w_orig.dtype,
+                    device=w_orig.device,
+                )
+                svd_layer.U.data.copy_(U_r.to(dtype=w_orig.dtype, device=w_orig.device))
+                svd_layer.S.data.fill_(1.0)
+                svd_layer.V.data.copy_(Vh_orig.to(dtype=w_orig.dtype, device=w_orig.device))
+                if has_bias:
+                    svd_layer.bias.data.copy_(module.bias.data)
+
+                replace_module(self.model, name, svd_layer)
 
                 self.compressed_layers.append(name)
                 self.layer_errors[name] = err
                 total_error += err
                 total_layers += 1
 
+        self._compressed_params = self._count_params(self.model)
         avg_err = total_error / max(total_layers, 1)
         stats = {
             "compressed_layers": self.compressed_layers,

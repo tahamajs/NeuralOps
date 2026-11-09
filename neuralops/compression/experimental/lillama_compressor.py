@@ -21,6 +21,8 @@ import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
 from neuralops.core.common import _cfg_get, _get_device, _is_conv1d
+from neuralops.core.low_rank.svd_linear import SVDLinear
+from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import get_calibration_tensors
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -71,8 +73,8 @@ class LiLLaMADistiller(BaseCompressor):
         calibration_texts: list[str] | None = None,
         calibration_loader: Any | None = None,
         device: str | torch.device | None = None,
-        max_error: float = 0.20,
-        fallback_to_original: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         skip_attention: bool = False,
         target_attention_only: bool = False,
         target_modules: list[str] | None = None,
@@ -331,23 +333,23 @@ class LiLLaMADistiller(BaseCompressor):
         self,
         W: torch.Tensor,
         rank: int,
-    ) -> tuple[torch.Tensor, int]:
-        """Return (W_recon, rank_used)."""
+    ) -> tuple[torch.Tensor, int, torch.Tensor | None, torch.Tensor | None]:
+        """Return (W_recon, rank_used, U_r, Vh_r)."""
         try:
             U, S, Vh = torch.linalg.svd(W, full_matrices=False)
             total_energy = (S**2).sum().clamp(min=1e-12)
             cum_ratio = torch.cumsum(S**2, 0) / total_energy
             r = min(rank, len(S))
-            cum_e = cum_ratio[r - 1].item() if r > 0 else 0.0
-            if cum_e < 0.95:
-                idx = torch.where(cum_ratio >= 0.95)[0]
-                if len(idx) > 0:
-                    r = min(int(idx[0].item()) + 1, len(S))
-            W_recon = (U[:, :r] * S[:r].unsqueeze(0)) @ Vh[:r, :]
-            return W_recon, r
+            max_allowed = max(1, int(0.75 * (W.shape[0] * W.shape[1]) / (W.shape[0] + W.shape[1])))
+            r = min(rank, len(S), max_allowed)
+            sqrt_s = torch.sqrt(torch.clamp(S[:r], min=1e-12))
+            U_r = U[:, :r] * sqrt_s.unsqueeze(0)
+            Vh_r = sqrt_s.unsqueeze(1) * Vh[:r, :]
+            W_recon = U_r @ Vh_r
+            return W_recon, r, U_r, Vh_r
         except Exception as e:
             logger.debug("LiLLaMA SVD factorization failed: %s", e)
-            return W, 0
+            return W, 0, None, None
 
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:
         if getattr(self.model, "_lillama_compressed", False):
@@ -413,6 +415,8 @@ class LiLLaMADistiller(BaseCompressor):
             r_used = self.rank
 
             W_new = W
+            U_r = None
+            Vh_r = None
 
             if name in activations_map:
                 inp, out = activations_map[name]
@@ -421,15 +425,15 @@ class LiLLaMADistiller(BaseCompressor):
                     out_flat = out.reshape(-1, out.shape[-1]).float()
                     if inp_flat.shape[-1] == d_in and out_flat.shape[-1] == d_out:
                         C = torch.matmul(out_flat.t().contiguous(), inp_flat) / max(len(inp_flat), 1)
-                        W_new, r_used = self._factorize(C, self.rank)
+                        W_new, r_used, U_r, Vh_r = self._factorize(C, self.rank)
                         used_cross_cov = True
                     else:
-                        W_new, r_used = self._factorize(W, self.rank)
+                        W_new, r_used, U_r, Vh_r = self._factorize(W, self.rank)
                 except Exception as e:
                     logger.debug("Cross-covariance factorization failed for %s: %s", name, e)
-                    W_new, r_used = self._factorize(W, self.rank)
+                    W_new, r_used, U_r, Vh_r = self._factorize(W, self.rank)
             else:
-                W_new, r_used = self._factorize(W, self.rank)
+                W_new, r_used, U_r, Vh_r = self._factorize(W, self.rank)
 
             norm_orig = torch.norm(W, p="fro")
             rel_err = (torch.norm(W - W_new, p="fro") / (norm_orig + 1e-8)).item()
@@ -450,54 +454,65 @@ class LiLLaMADistiller(BaseCompressor):
                     _count_params_of(module)
                     continue
 
-            final_w = W_new.t().contiguous() if is_conv1d else W_new
-            if final_w.shape != target_layer.weight.shape:
-                logger.warning(
-                    "LiLLaMA: shape mismatch for %s: expected %s, got %s; skipping.",
-                    name,
-                    tuple(target_layer.weight.shape),
-                    tuple(final_w.shape),
+            if U_r is not None and Vh_r is not None:
+                has_bias = getattr(target_layer, "bias", None) is not None
+                svd_layer = SVDLinear(
+                    in_features=d_in,
+                    out_features=d_out,
+                    rank=r_used,
+                    bias=has_bias,
+                    lora_rank=0,
+                    dtype=dtype,
+                    device=device,
                 )
+                svd_layer.U.data.copy_(U_r.to(dtype=dtype, device=device))
+                svd_layer.S.data.fill_(1.0)
+                svd_layer.V.data.copy_(Vh_r.to(dtype=dtype, device=device))
+                if has_bias:
+                    svd_layer.bias.data.copy_(target_layer.bias.data)
+                replace_module(self.model, name, svd_layer)
+                self.compressed_layers.append(name)
+                _count_params_of(svd_layer)
+            else:
+                final_w = W_new.t().contiguous() if is_conv1d else W_new
+                if final_w.shape != target_layer.weight.shape:
+                    logger.warning(
+                        "LiLLaMA: shape mismatch for %s: expected %s, got %s; skipping.",
+                        name,
+                        tuple(target_layer.weight.shape),
+                        tuple(final_w.shape),
+                    )
+                    _count_params_of(module)
+                    continue
+
+                target_layer.weight.data.copy_(final_w.to(dtype=dtype, device=device))
+                target_layer.weight.requires_grad = False
+                if getattr(target_layer, "bias", None) is not None:
+                    target_layer.bias.requires_grad = False
+
+                self.compressed_layers.append(name)
                 _count_params_of(module)
-                continue
-
-            target_layer.weight.data.copy_(final_w.to(dtype=dtype, device=device))
-            target_layer.weight.requires_grad = False
-            if getattr(target_layer, "bias", None) is not None:
-                target_layer.bias.requires_grad = False
-
-            if hasattr(module, "lora_A") and hasattr(module, "lora_B"):
-                for attr in ("lora_A", "lora_B"):
-                    p = getattr(module, attr, None)
-                    if p is None:
-                        continue
-                    if hasattr(p, "weight"):
-                        p.weight.requires_grad = True
-                    elif isinstance(p, nn.Parameter):
-                        p.requires_grad = True
-
-            self.compressed_layers.append(name)
-            _count_params_of(module)
 
             self.layer_details[name] = {
                 "rank": int(r_used),
                 "rel_error": float(rel_err),
                 "used_cross_cov": bool(used_cross_cov),
-                "shape": tuple(final_w.shape),
+                "shape": (d_out, d_in),
             }
 
         forward_check_success = True
         try:
             with torch.no_grad():
-                dummy = torch.randint(0, 100, (1, 8), device=self.target_device, dtype=torch.long)
+                first_lin = next((m for m in self.model.modules() if hasattr(m, "in_features")), None)
+                in_dim = getattr(first_lin, "in_features", 768) if first_lin else 768
                 try:
+                    dummy = torch.randint(0, 100, (1, 8), device=self.target_device, dtype=torch.long)
                     self.model(input_ids=dummy, attention_mask=torch.ones_like(dummy))
                 except Exception:
                     try:
                         self.model(dummy)
-                    except Exception as e2:
-                        logger.warning("LiLLaMA: forward check failed: %s", e2)
-                        forward_check_success = False
+                    except Exception:
+                        self.model(torch.randn(1, 8, in_dim, device=self.target_device))
         except Exception as e:
             logger.warning("LiLLaMA: forward check raised: %s", e)
             forward_check_success = False

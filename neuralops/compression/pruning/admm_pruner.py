@@ -100,8 +100,9 @@ class ADMMMaskedLinear(nn.Module):
             device=raw_w.device,
         )
         with torch.no_grad():
-            layer.weight.data.copy_(w_data)
-            layer.mask.copy_(mask.to(dtype=raw_w.dtype, device=raw_w.device))
+            mask_aligned = mask.to(dtype=raw_w.dtype, device=raw_w.device)
+            layer.weight.data.copy_(w_data * mask_aligned)
+            layer.mask.copy_(mask_aligned)
             if linear.bias is not None and layer.bias is not None:
                 layer.bias.data.copy_(linear.bias.data)
         return layer
@@ -149,8 +150,8 @@ class ADMMPruner(BaseCompressor):
         dynamic_rho: bool = True,
         use_ste: bool = True,
         recalibrate_ln: bool = True,
-        max_error: float = 0.45,
-        fallback_to_original: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         protect_critical: bool = True,
         target_attention_only: bool = False,
         target_modules: list[str] | None = None,
@@ -238,17 +239,23 @@ class ADMMPruner(BaseCompressor):
             )
         )
         self.max_error = float(
-            _cfg_get(
-                conf,
-                "admm_pruner_max_error",
-                _cfg_get(conf, "admm_max_error", _cfg_get(conf, "max_error", max_error)),
+            kwargs.get(
+                "max_error",
+                _cfg_get(
+                    conf,
+                    "admm_pruner_max_error",
+                    _cfg_get(conf, "admm_max_error", _cfg_get(conf, "max_error", max_error)),
+                ),
             )
         )
         self.fallback_to_original = bool(
-            _cfg_get(
-                conf,
-                "admm_pruner_fallback_to_original",
-                _cfg_get(conf, "fallback_to_original", fallback_to_original),
+            kwargs.get(
+                "fallback_to_original",
+                _cfg_get(
+                    conf,
+                    "admm_pruner_fallback_to_original",
+                    _cfg_get(conf, "fallback_to_original", fallback_to_original),
+                ),
             )
         )
         self.protect_critical = bool(_cfg_get(conf, "protect_critical", protect_critical))

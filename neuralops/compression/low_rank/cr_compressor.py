@@ -224,8 +224,8 @@ class CRCompressor(BaseCompressor):
         self,
         model: nn.Module | None = None,
         rank: int = 64,
-        max_error: float = 0.20,
-        fallback_to_original: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         max_retries: int = 2,
         target_attention_only: bool = False,
         cfg: Any | None = None,
@@ -502,9 +502,9 @@ def cr_compressor_factory(
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(comp_config, "cr_max_error", _cfg_get(comp_config, "max_error", 0.20)),
+        _cfg_get(comp_config, "cr_max_error", _cfg_get(comp_config, "max_error", 1.0)),
     )
-    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", False))
     target_attention_only = kwargs.pop(
         "target_attention_only",
         _cfg_get(

@@ -86,6 +86,7 @@ class LowRankLinear(nn.Module):
         return out
 
 
+@COMPRESSOR_REGISTRY.register("soka_compressor")
 class LowRankCompressor(BaseCompressor):
     """LowRankCompressor neural operator.
 
@@ -317,7 +318,6 @@ class LowRankCompressor(BaseCompressor):
 SoKACompressor = LowRankCompressor
 
 
-@COMPRESSOR_REGISTRY.register("soka_compressor")
 def soka_factory(
     model: Any,
     comp_config: Any = None,

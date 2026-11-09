@@ -21,6 +21,7 @@ from typing import Any
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from neuralops.core.common import _cfg_get
 
@@ -35,6 +36,42 @@ from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
 logger = logging.getLogger(__name__)
+
+
+class LowRankExpert(nn.Module):
+    """Low-rank factorized expert module: y = (x @ V.T) @ U.T + b."""
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int,
+        bias: bool = True,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+    ) -> None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.rank = max(1, min(rank, in_features, out_features))
+
+        self.V = nn.Parameter(torch.empty((self.rank, in_features), device=device, dtype=dtype))
+        self.U = nn.Parameter(torch.empty((out_features, self.rank), device=device, dtype=dtype))
+
+        if bias:
+            self.bias = nn.Parameter(torch.zeros(out_features, device=device, dtype=dtype))
+        else:
+            self.register_parameter("bias", None)
+
+    @property
+    def weight(self) -> torch.Tensor:
+        """Effective reconstructed weight matrix (out_features, in_features)."""
+        return torch.matmul(self.U, self.V)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        bottleneck = F.linear(x, self.V)
+        out = F.linear(bottleneck, self.U, self.bias)
+        return out
 
 
 class ToMoELinear(nn.Module):
@@ -59,6 +96,7 @@ class ToMoELinear(nn.Module):
         bias: torch.Tensor | None = None,
         num_experts: int = 4,
         top_k: int = 2,
+        rank: int = 32,
         lora_r: int = 0,
         lora_alpha: float = 16.0,
         freeze_experts: bool = True,
@@ -113,6 +151,7 @@ class ToMoELinear(nn.Module):
         self.lora_scale = (lora_alpha / lora_r) if lora_r > 0 else 1.0
         self.freeze_experts = freeze_experts
         self.max_error = max_error
+        self.rank = max(1, int(rank))
 
         W_fp32 = orig_w.detach().float().cpu().numpy()
         assignments = None
@@ -190,21 +229,41 @@ class ToMoELinear(nn.Module):
             n_neurons = len(indices)
             cluster_sizes.append(n_neurons)
 
-            expert = nn.Linear(
-                self.in_features,
-                n_neurons,
-                bias=orig_b is not None,
-                device=device,
-                dtype=dtype,
-            )
-            expert.weight.data.copy_(orig_w[mask_bool])
-            if orig_b is not None:
-                expert.bias.data.copy_(orig_b[mask_bool])
+            W_e = orig_w[mask_bool]
+            param_cap = max(1, (n_neurons * self.in_features) // (n_neurons + self.in_features) - 1)
+            eff_r = max(1, min(self.rank, n_neurons, self.in_features, param_cap))
+            try:
+                U_e, S_e, Vh_e = torch.linalg.svd(W_e.float(), full_matrices=False)
+                eff_r = min(eff_r, len(S_e))
+                sqrt_S = torch.sqrt(torch.clamp(S_e[:eff_r], min=1e-12))
+                expert = LowRankExpert(
+                    in_features=self.in_features,
+                    out_features=n_neurons,
+                    rank=eff_r,
+                    bias=orig_b is not None,
+                    device=device,
+                    dtype=dtype,
+                )
+                expert.U.data.copy_((U_e[:, :eff_r] * sqrt_S.unsqueeze(0)).to(dtype=dtype, device=device))
+                expert.V.data.copy_((sqrt_S.unsqueeze(1) * Vh_e[:eff_r, :]).to(dtype=dtype, device=device))
+                if orig_b is not None:
+                    expert.bias.data.copy_(orig_b[mask_bool])
+            except Exception as ex_svd:
+                logger.debug("ToMoE: Expert SVD failed (%s); using dense fallback", ex_svd)
+                expert = nn.Linear(
+                    self.in_features,
+                    n_neurons,
+                    bias=orig_b is not None,
+                    device=device,
+                    dtype=dtype,
+                )
+                expert.weight.data.copy_(W_e)
+                if orig_b is not None:
+                    expert.bias.data.copy_(orig_b[mask_bool])
 
             if self.freeze_experts:
-                expert.weight.requires_grad = False
-                if expert.bias is not None:
-                    expert.bias.requires_grad = False
+                for p in expert.parameters():
+                    p.requires_grad = False
 
             self.experts.append(expert)
 
@@ -358,21 +417,11 @@ class ToMoELinear(nn.Module):
         return out.reshape(*orig_shape[:-1], self.out_features)
 
 
+@COMPRESSOR_REGISTRY.register("tomoe_compressor")
 class ToMoECompressor(BaseCompressor):
     """
     ToMoE Compressor: dynamically replaces dense feed-forward and projection layers
     with an MoE-fied equivalent.
-
-    Args:
-        model: PyTorch model.
-        num_experts: Number of expert sub-layers to form (default: 4).
-        top_k: Number of experts to route each token to (default: 2).
-        max_error: Maximum allowed relative Frobenius error on reconstruction (default: 0.20).
-        lora_r: LoRA adapter rank on experts and router (0 = disabled).
-        lora_alpha: LoRA scaling factor (default: 16.0).
-        freeze_experts: Whether to freeze expert base weights (default: True).
-        target_attention_only: Whether to restrict to attention layers only.
-        target_modules: Optional list of target layer name substrings.
     """
 
     PROTECTED_KEYWORDS = [
@@ -394,6 +443,7 @@ class ToMoECompressor(BaseCompressor):
         model: nn.Module,
         num_experts: int = 4,
         top_k: int = 2,
+        rank: int = 32,
         max_error: float = 1.0,
         lora_r: int = 0,
         lora_alpha: float = 16.0,
@@ -411,6 +461,7 @@ class ToMoECompressor(BaseCompressor):
         if cfg is not None:
             num_experts = _cfg_get(cfg, "num_experts", _cfg_get(cfg, "tomoe_num_experts", num_experts))
             top_k = _cfg_get(cfg, "top_k", _cfg_get(cfg, "tomoe_top_k", top_k))
+            rank = _cfg_get(cfg, "rank", _cfg_get(cfg, "tomoe_rank", rank))
             max_error = _cfg_get(cfg, "max_error", _cfg_get(cfg, "max_reconstruction_error_legacy", max_error))
             lora_r = _cfg_get(cfg, "lora_r", _cfg_get(cfg, "tomoe_lora_r", lora_r))
             lora_alpha = _cfg_get(cfg, "lora_alpha", lora_alpha)
@@ -419,6 +470,7 @@ class ToMoECompressor(BaseCompressor):
 
         num_experts = int(kwargs.pop("num_experts", num_experts))
         top_k = int(kwargs.pop("top_k", top_k))
+        rank = int(kwargs.pop("rank", rank))
         max_error = float(kwargs.pop("max_error", max_error))
         lora_r = int(kwargs.pop("lora_r", lora_r))
         lora_alpha = float(kwargs.pop("lora_alpha", lora_alpha))
@@ -427,6 +479,7 @@ class ToMoECompressor(BaseCompressor):
 
         self.num_experts = max(1, num_experts)
         self.top_k = max(1, min(top_k, self.num_experts))
+        self.rank = max(1, rank)
         self.max_error = float(max_error)
         self.lora_r = max(0, lora_r)
         self.lora_alpha = float(lora_alpha)
@@ -466,8 +519,10 @@ class ToMoECompressor(BaseCompressor):
         return any(
             t in low
             for t in [
+                "fc",
                 "mlp",
                 "ffn",
+                "dense",
                 "intermediate",
                 "output.dense",
                 "c_fc",
@@ -577,6 +632,7 @@ class ToMoECompressor(BaseCompressor):
                     original=module,
                     num_experts=eff_num_experts,
                     top_k=eff_top_k,
+                    rank=self.rank,
                     lora_r=self.lora_r,
                     lora_alpha=self.lora_alpha,
                     freeze_experts=self.freeze_experts,
@@ -665,7 +721,6 @@ class ToMoECompressor(BaseCompressor):
         return self.model, self.stats
 
 
-@COMPRESSOR_REGISTRY.register("tomoe_compressor")
 def tomoe_compressor_factory(
     model: nn.Module,
     comp_config: Any = None,

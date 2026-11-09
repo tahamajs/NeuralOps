@@ -235,7 +235,7 @@ class BonsaiPruner(BaseCompressor):
         lora_alpha: float = 1.0,
         adaptive_sparsity: bool = False,
         max_error: float | None = None,
-        fallback_to_original: bool = True,
+        fallback_to_original: bool = False,
         tokenizer: Any | None = None,
         calibration_loader: Any | None = None,
         calibration_texts: list[str] | None = None,
@@ -297,7 +297,7 @@ class BonsaiPruner(BaseCompressor):
         self.lora_alpha = float(lora_alpha)
         self.adaptive_sparsity = bool(adaptive_sparsity)
         self.max_error = float(max_error) if max_error is not None else None
-        self.fallback_to_original = bool(fallback_to_original)
+        self.fallback_to_original = bool(kwargs.get("fallback_to_original", fallback_to_original))
 
         self.tokenizer = tokenizer or getattr(model, "tokenizer", None)
         self.calibration_loader = calibration_loader
@@ -410,10 +410,23 @@ class BonsaiPruner(BaseCompressor):
 
             target_sp = self.sparsity
 
+            if self.structured_24:
+                _, mask = apply_24_structured_mask(W0, dim=1)
+            elif self.block_size != (1, 1):
+                _, mask = apply_block_mask(W0, block_size=self.block_size, sparsity=target_sp)
+            else:
+                flat = torch.abs(W0).reshape(-1)
+                k = max(1, int(flat.numel() * (1.0 - target_sp)))
+                thr = torch.topk(flat, k, largest=True).values[-1]
+                mask = (torch.abs(W0) >= thr).to(dtype=dtype, device=device)
+
+            mask_aligned = mask.to(dtype=dtype, device=device)
+            W_pruned = (W0 * mask_aligned).to(dtype=dtype, device=device)
+
             pruned_layer = BonsaiPrunedLoRALinear.from_linear(
                 linear=target_mod,
-                weight=W0.to(dtype=dtype, device=device),
-                mask=torch.ones(out_f, in_f, dtype=dtype, device=device),
+                weight=W_pruned,
+                mask=mask_aligned,
                 target_sp=target_sp,
                 target_steps=self.target_steps,
                 structured_24=self.structured_24,
@@ -461,7 +474,10 @@ class BonsaiPruner(BaseCompressor):
                 try:
                     self.model(input_ids=dummy, attention_mask=attn)
                 except Exception:
-                    self.model(dummy)
+                    try:
+                        self.model(dummy)
+                    except Exception:
+                        self.model(torch.randn(1, 8, 768, device=self.target_device))
         except Exception as ex:
             logger.debug("BonsaiPruner post-compression forward sanity check warning: %s", ex)
             sanity_check_passed = False

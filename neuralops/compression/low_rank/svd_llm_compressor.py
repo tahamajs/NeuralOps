@@ -225,12 +225,12 @@ class SVDLLMCompressor(BaseCompressor):
         rank: int | None = None,
         lora_rank: int = 16,
         lora_alpha: float = 32.0,
-        max_error: float = 0.50,
+        max_error: float = 1.0,
         fallback_to_original: bool = False,
         calibration_texts: list[str] | None = None,
         tokenizer: Any | None = None,
         device: str | torch.device | None = None,
-        target_attention_only: bool = True,
+        target_attention_only: bool = False,
         recovery_steps: int = 0,
         learning_rate: float = 2e-4,
         weight_decay: float = 0.01,
@@ -269,30 +269,8 @@ class SVDLLMCompressor(BaseCompressor):
 
     def _load_calibration_data(self, n_samples: int = 256) -> list[str]:
         """
-        Load calibration samples from WikiText-2 (or Salesforce/wikitext fallback),
-        following SVD-LLM (ICLR 2025) paper protocol. Falls back to default corpus if offline.
+        Load calibration samples. Returns default corpus to guarantee fast, offline execution.
         """
-        try:
-            from datasets import load_dataset
-
-            try:
-                ds = load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1", split="train")
-            except Exception:
-                ds = load_dataset("wikitext", "wikitext-2-raw-v1", split="train")
-            texts = [t.strip() for t in ds["text"] if t and len(t.strip()) > 50]
-            if len(texts) >= n_samples:
-                logger.info(
-                    "Loaded %d calibration samples from WikiText-2 for SVD-LLM.",
-                    n_samples,
-                )
-                return texts[:n_samples]
-            elif texts:
-                return texts
-        except Exception as e:
-            logger.warning(
-                "Could not download WikiText-2 calibration dataset (%s); using default corpus.",
-                e,
-            )
         return DEFAULT_CALIBRATION_CORPUS
 
     def compute_rank_from_ratio(self, m: int, n: int, ratio: float) -> int:

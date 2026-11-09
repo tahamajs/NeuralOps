@@ -201,12 +201,16 @@ class SliceGPTPCACompressor(BaseCompressor):
         fallback_to_original: bool = False,
         min_numel: int = 16,
         target_modules: list[str] | None = None,
+        rank: int | None = None,
         device: str | torch.device | None = None,
         cfg: Any | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="slicegpt_pca", **kwargs)
         cfg_obj = cfg or kwargs.get("comp_config")
+
+        resolved_rank = rank or kwargs.get("target_rank", _cfg_get(cfg_obj, "rank", None))
+        self.rank = int(resolved_rank) if resolved_rank is not None else None
 
         self.calibration_loader = calibration_loader
         self.sparsity = max(
@@ -420,7 +424,15 @@ class SliceGPTPCACompressor(BaseCompressor):
                     )
                     try:
                         dummy_ids = torch.randint(0, 100, (1, 16), device=self.target_device)
-                        self.model(input_ids=dummy_ids)
+                        try:
+                            self.model(input_ids=dummy_ids)
+                        except Exception:
+                            try:
+                                self.model(dummy_ids)
+                            except Exception:
+                                first_lin = next((m for m in self.model.modules() if isinstance(m, nn.Linear)), None)
+                                in_f = getattr(first_lin, "in_features", 768) if first_lin else 768
+                                self.model(torch.randn(1, 16, in_f, device=self.target_device))
                     except Exception as ex_synth:
                         logger.warning("SliceGPTPCA calibration forward pass skipped: %s", ex_synth)
         finally:
@@ -563,7 +575,11 @@ class SliceGPTPCACompressor(BaseCompressor):
                 else:
                     keep = max(1, int(d_in * (1.0 - self.sparsity)))
 
+                param_cap = max(1, (d_out * d_in) // (d_out + d_in) - 1)
                 effective_keep = min(keep, d_out, d_in)
+                if self.rank is not None:
+                    effective_keep = min(effective_keep, self.rank)
+                effective_keep = max(1, min(effective_keep, param_cap))
 
                 W_pca = torch.matmul(W, V)
                 W_trunc = W_pca.clone()
@@ -676,7 +692,15 @@ class SliceGPTPCACompressor(BaseCompressor):
         try:
             with torch.no_grad():
                 dummy_input = torch.randint(0, 100, (1, 8), device=self.target_device)
-                self.model(dummy_input)
+                try:
+                    self.model(dummy_input)
+                except Exception:
+                    try:
+                        self.model(input_ids=dummy_input)
+                    except Exception:
+                        first_lin = next((m for m in self.model.modules() if isinstance(m, nn.Linear)), None)
+                        in_f = getattr(first_lin, "in_features", 768) if first_lin else 768
+                        self.model(torch.randn(1, 8, in_f, device=self.target_device))
         except Exception as ex_sanity:
             logger.warning(
                 "SliceGPTPCA post-compression forward sanity check warning: %s",

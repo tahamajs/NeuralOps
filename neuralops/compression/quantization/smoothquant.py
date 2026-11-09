@@ -109,8 +109,7 @@ def smoothquant_layer(
         Tuple of (modified module, scale factor s).
     """
     if calib_data is None and act_scales is None:
-        s_id = torch.ones(module.weight.shape[1], device=module.weight.device, dtype=module.weight.dtype)
-        return module, s_id
+        act_scales = module.weight.abs().amax(dim=0).clamp(min=1e-5)
 
     if act_scales is None:
         if isinstance(calib_data, list):
@@ -199,6 +198,8 @@ class SmoothQuantCompressor(BaseCompressor):
         super().__init__(model, name="smoothquant", **kwargs)
         self.alpha = alpha
         self.bits = bits
+        self.effective_bits = bits
+        self.model.effective_bits = bits
         self.calib_data = calib_data
         self.scales: dict[str, torch.Tensor] = {}
 

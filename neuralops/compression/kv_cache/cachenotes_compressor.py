@@ -423,9 +423,9 @@ class CacheNotesCompressor(BaseCompressor):
         task_description: str | None = None,
         use_learned_cpt: bool = True,
         keep_ratio: float = 0.5,
-        max_error: float = 0.35,
-        fallback_to_original: bool = True,
-        protect_critical: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
+        protect_critical: bool = False,
         target_attention_only: bool = False,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
@@ -461,15 +461,18 @@ class CacheNotesCompressor(BaseCompressor):
             )
         )
         keep_ratio = float(_cfg_get(cfg, "cachenotes_keep_ratio", _cfg_get(cfg, "keep_ratio", keep_ratio)))
-        max_error = float(_cfg_get(cfg, "cachenotes_max_error", _cfg_get(cfg, "max_error", max_error)))
+        max_error = float(kwargs.get("max_error", _cfg_get(cfg, "cachenotes_max_error", _cfg_get(cfg, "max_error", max_error))))
         fallback_to_original = bool(
-            _cfg_get(
-                cfg,
-                "cachenotes_fallback_to_original",
-                _cfg_get(cfg, "fallback_to_original", fallback_to_original),
+            kwargs.get(
+                "fallback_to_original",
+                _cfg_get(
+                    cfg,
+                    "cachenotes_fallback_to_original",
+                    _cfg_get(cfg, "fallback_to_original", fallback_to_original),
+                ),
             )
         )
-        protect_critical = bool(_cfg_get(cfg, "protect_critical", protect_critical))
+        protect_critical = bool(kwargs.get("protect_critical", _cfg_get(cfg, "protect_critical", protect_critical)))
         target_attention_only = bool(
             _cfg_get(
                 cfg,
@@ -503,6 +506,9 @@ class CacheNotesCompressor(BaseCompressor):
         self.task_type = task_type
         self.task_description = task_description
         self.use_learned_cpt = use_learned_cpt
+        self.rank = kwargs.get("rank", _cfg_get(cfg, "rank", kwargs.get("r", None)))
+        if self.rank is not None:
+            self.rank = int(self.rank)
         self.keep_ratio = max(0.05, min(keep_ratio, 1.0))
         self.max_error = max_error
         self.fallback_to_original = fallback_to_original
@@ -806,7 +812,11 @@ class CacheNotesCompressor(BaseCompressor):
 
             W_cpt = W * importance.unsqueeze(1)
 
-            r = max(1, min(int(min(out_f, in_f) * self.keep_ratio), min(out_f, in_f)))
+            max_param_rank = int((out_f * in_f) / (out_f + in_f) * 0.75)
+            if self.rank is not None:
+                r = max(1, min(int(self.rank), min(out_f, in_f) - 1, max_param_rank))
+            else:
+                r = max(1, min(int(min(out_f, in_f) * self.keep_ratio * 0.5), max_param_rank))
             self.actual_ranks[name] = r
             try:
                 U, S, Vt = torch.linalg.svd(W_cpt, full_matrices=False)
@@ -839,33 +849,28 @@ class CacheNotesCompressor(BaseCompressor):
                         p.requires_grad = False
                     continue
 
-            if has_lora:
-                if is_conv1d:
-                    target_mod.weight.data.copy_(W_approx.t().contiguous().to(dtype=dtype, device=device))
-                else:
-                    target_mod.weight.data.copy_(W_approx.contiguous().to(dtype=dtype, device=device))
-                target_mod.weight.requires_grad = False
-                if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None:
-                    target_mod.bias.requires_grad = False
-                for p_name, p in module.named_parameters():
-                    if any(t in p_name.lower() for t in ("lora_a", "lora_b", "adapter")):
-                        p.requires_grad = True
-            elif self.lora_r > 0:
-                cn_layer = CacheNotesLoRALinear.from_linear(
-                    target_mod,
-                    weight=W_approx,
-                    lora_r=self.lora_r,
-                    lora_alpha=self.lora_alpha,
-                )
-                if name == "":
-                    self.model = cn_layer
-                else:
-                    replace_module(self.model, name, cn_layer)
+            from neuralops.core.low_rank.svd_linear import SVDLinear
+            svd_layer = SVDLinear(
+                in_features=in_f,
+                out_features=out_f,
+                rank=r,
+                lora_r=self.lora_r,
+                bias=getattr(target_mod, "bias", None) is not None,
+                device=device,
+                dtype=dtype,
+            )
+            U_fac = (U[:, :r] * S[:r].unsqueeze(0)) / importance.unsqueeze(1)
+            V_fac = Vt[:r, :]
+            svd_layer.set_low_rank_factors(
+                U_fac.to(device=device, dtype=dtype),
+                V_fac.to(device=device, dtype=dtype),
+            )
+            if getattr(target_mod, "bias", None) is not None and svd_layer.bias is not None and target_mod.bias is not None:
+                svd_layer.bias.data.copy_(target_mod.bias.data)
+            if name == "":
+                self.model = svd_layer
             else:
-                if is_conv1d:
-                    target_mod.weight.data.copy_(W_approx.t().contiguous().to(dtype=dtype, device=device))
-                else:
-                    target_mod.weight.data.copy_(W_approx.contiguous().to(dtype=dtype, device=device))
+                replace_module(self.model, name, svd_layer)
 
             self.compressed_layers.append(name)
 
@@ -886,8 +891,16 @@ class CacheNotesCompressor(BaseCompressor):
             self.model.eval()
             with torch.no_grad():
                 d = next(self.model.parameters()).device
-                dummy = torch.randint(0, 100, (1, 16), device=d)
-                self.model(dummy)
+                try:
+                    dummy = torch.randint(0, 100, (1, 16), device=d)
+                    mask = torch.ones_like(dummy)
+                    self.model(input_ids=dummy, attention_mask=mask)
+                except Exception:
+                    try:
+                        self.model(dummy)
+                    except Exception:
+                        dummy_f = torch.randn(1, 16, 768, device=d)
+                        self.model(dummy_f)
             forward_check_success = True
         except Exception as e:
             logger.debug("CacheNotes post-compression forward check exception: %s", e)

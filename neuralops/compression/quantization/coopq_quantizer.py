@@ -200,7 +200,7 @@ class CoopQLinear(nn.Module):
         return layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if x.is_cuda and not self.training:
+        if hasattr(x, "is_cuda") and x.is_cuda and not self.training:
             try:
                 from neuralops.ops.triton.low_rank import dynamic_fp8_quant_triton, fused_int4_lut_dequant_matmul_triton
             except Exception:
@@ -287,6 +287,8 @@ class CoopQQuantizer(BaseCompressor):
         self.min_bits = max(4, int(c_min_bits))
         self.max_bits = max(self.min_bits, int(c_max_bits))
         self.bits = max(self.min_bits, min(int(c_bits), self.max_bits))
+        self.effective_bits = float(self.bits)
+        self.bit_reduction = 32.0 / max(1.0, float(self.bits))
         self.symmetric = bool(c_symmetric)
         self.per_channel = bool(c_per_channel)
         self.use_ste = bool(c_use_ste)
@@ -570,11 +572,17 @@ class CoopQQuantizer(BaseCompressor):
             )
 
         avg_bits = total_bits_weighted / total_params_linear if total_params_linear > 0 else float(self.bits)
+        self.effective_bits = avg_bits
+        self.bit_reduction = 32.0 / max(1.0, float(avg_bits))
         effective_compression_rate = 16.0 / max(avg_bits, 1e-3)
         stats = self.get_compression_stats()
         stats.update(
             {
                 "target_bits": self.bits,
+                "bits": self.bits,
+                "effective_bits": avg_bits,
+                "bit_reduction": self.bit_reduction,
+                "compression_ratio": self.bit_reduction,
                 "min_bits_floor": self.min_bits,
                 "average_allocated_bits": round(avg_bits, 2),
                 "layer_bit_allocations": bit_allocations,
@@ -593,6 +601,10 @@ class CoopQQuantizer(BaseCompressor):
             }
         )
         self.stats = stats
+        self.model.bits = self.bits
+        self.model.effective_bits = avg_bits
+        self.model.bit_reduction = self.bit_reduction
+        self.model.compression_ratio = self.bit_reduction
         return self.model, stats
 
 
@@ -646,6 +658,10 @@ def coopq_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
     )
     compressed_model, stats = compressor.compress()
     try:
+        compressed_model.bits = getattr(compressor, "bits", bits)
+        compressed_model.effective_bits = getattr(compressor, "effective_bits", float(bits))
+        compressed_model.bit_reduction = getattr(compressor, "bit_reduction", 32.0 / float(bits))
+        compressed_model.compression_ratio = getattr(compressor, "bit_reduction", 32.0 / float(bits))
         compressed_model.compression_stats = stats
     except Exception as e:
         logger.warning("Failed to attach compression_stats: %s", e)

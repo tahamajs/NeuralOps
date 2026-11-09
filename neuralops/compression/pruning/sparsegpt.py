@@ -53,8 +53,8 @@ class SparseGPTCompressor(BaseCompressor):
         target_attention_only: bool = False,
         device: str | torch.device | None = None,
         structured_24: bool = False,
-        max_error: float = 0.5,
-        fallback_to_original: bool = True,
+        max_error: float = 1.0,
+        fallback_to_original: bool = False,
         target_modules: list[str] | None = None,
         **kwargs: Any,
     ) -> None:

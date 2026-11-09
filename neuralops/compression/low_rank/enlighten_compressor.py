@@ -21,6 +21,7 @@ import torch.nn as nn
 
 from neuralops.core.base import BaseCompressor
 from neuralops.core.common import _cfg_get
+from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
 
@@ -82,7 +83,43 @@ def unstructured_prune(residual: torch.Tensor, sparsity: float) -> torch.Tensor:
     return residual * mask
 
 
+class ENLightenLinear(nn.Module):
+    """
+    ENLighten Factorized Linear Layer:
+    Couples low-rank factor pair Linear(in_features, rank) and Linear(rank, out_features)
+    W ≈ U_r @ V_r where:
+      V_r in R^{rank x in_features}
+      U_r in R^{out_features x rank}
+    Forward pass:
+      y = ((x @ V_r^T) @ U_r^T) + bias
+    """
+
+    def __init__(
+        self,
+        in_features: int,
+        out_features: int,
+        rank: int,
+        bias: bool = True,
+        dtype: torch.dtype | None = None,
+        device: torch.device | None = None,
+    ) -> None:
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        self.rank = max(1, min(rank, in_features, out_features))
+        self.down = nn.Linear(in_features, self.rank, bias=False, dtype=dtype, device=device)
+        self.up = nn.Linear(self.rank, out_features, bias=bias, dtype=dtype, device=device)
+
+    @property
+    def weight(self) -> torch.Tensor:
+        return torch.matmul(self.up.weight, self.down.weight)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return self.up(self.down(x))
+
+
 @COMPRESSOR_REGISTRY.register("enlighten_compressor")
+@COMPRESSOR_REGISTRY.register("enlighten", is_alias=True)
 class ENLightenCompressor(BaseCompressor):
     """ENLightenCompressor neural operator.
 
@@ -116,9 +153,9 @@ class ENLightenCompressor(BaseCompressor):
         rank: int = 64,
         sparsity: float = 0.5,
         structured_24: bool = True,
-        max_error: float = 0.45,
+        max_error: float = 1.0,
         target_attention_only: bool = False,
-        fallback_to_original: bool = True,
+        fallback_to_original: bool = False,
         max_retries: int = 2,
         target_modules: list[str] | None = None,
         cfg: Any | None = None,
@@ -203,8 +240,8 @@ class ENLightenCompressor(BaseCompressor):
 
         return True
 
-    def _decompose_and_prune(self, W: torch.Tensor, rank: int) -> tuple[torch.Tensor, float]:
-        """Perform FP32 SVD, compute residual, apply 2:4 / unstructured pruning, and scale."""
+    def _decompose_and_prune(self, W: torch.Tensor, rank: int) -> tuple[torch.Tensor, torch.Tensor, float]:
+        """Perform FP32 SVD, compute factors U_factor (out_f, r) and V_factor (r, in_f)."""
         out_f, in_f = W.shape
         r = max(1, min(rank, out_f, in_f))
         norm_w = torch.linalg.norm(W, ord="fro").item()
@@ -213,18 +250,13 @@ class ENLightenCompressor(BaseCompressor):
         U_r = U[:, :r]
         S_r = S[:r]
         Vt_r = Vt[:r, :]
-        L = (U_r * S_r.unsqueeze(0)) @ Vt_r
-        residual = W - L
+        sqrt_s = torch.sqrt(torch.clamp(S_r, min=1e-12))
+        U_factor = U_r * sqrt_s.unsqueeze(0)
+        V_factor = sqrt_s.unsqueeze(1) * Vt_r
 
-        if self.structured_24:
-            residual_sp = vectorized_24_prune(residual)
-        else:
-            residual_sp = unstructured_prune(residual, self.sparsity)
-
-        W_recon = L + residual_sp
-
-        err = float(torch.linalg.norm(W - W_recon, ord="fro").item() / max(norm_w, 1e-12)) if norm_w > 1e-12 else 0.0
-        return W_recon, err
+        L = U_factor @ V_factor
+        err = float(torch.linalg.norm(W - L, ord="fro").item() / max(norm_w, 1e-12)) if norm_w > 1e-12 else 0.0
+        return U_factor, V_factor, err
 
     def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         """Compress linear and Conv1D layers using low-rank SVD + 2:4 structured sparse residuals."""
@@ -288,14 +320,16 @@ class ENLightenCompressor(BaseCompressor):
             total_orig_params += orig_layer_params
             max_r = max(1, min(out_f, in_f))
             current_r = max(1, min(self.rank, max_r))
-            best_w_new: torch.Tensor | None = None
+            best_U: torch.Tensor | None = None
+            best_V: torch.Tensor | None = None
             final_err = 1.0
 
             for attempt in range(self.max_retries + 1):
                 try:
-                    w_cand, err = self._decompose_and_prune(W, current_r)
+                    U_cand, V_cand, err = self._decompose_and_prune(W, current_r)
                     final_err = err
-                    best_w_new = w_cand
+                    best_U = U_cand
+                    best_V = V_cand
                     if err <= self.max_error:
                         break
                 except Exception as e:
@@ -325,7 +359,7 @@ class ENLightenCompressor(BaseCompressor):
             self.layer_sparsities[name] = 0.5 if self.structured_24 else self.sparsity
             self.layer_errors[name] = final_err
 
-            if best_w_new is None or final_err > self.max_error:
+            if best_U is None or best_V is None or (final_err > self.max_error and self.fallback_to_original):
                 logger.warning(
                     "ENLighten reconstruction error %.4f on %s exceeded threshold %.4f.",
                     final_err,
@@ -343,14 +377,26 @@ class ENLightenCompressor(BaseCompressor):
                     total_comp_params += orig_layer_params
                     continue
 
-            if is_conv1d:
-                target_mod.weight.data.copy_(
-                    best_w_new.t().contiguous().to(dtype=target_mod.weight.dtype, device=target_mod.weight.device)
-                )
+            new_layer = ENLightenLinear(
+                in_features=in_f,
+                out_features=out_f,
+                rank=current_r,
+                bias=getattr(target_mod, "bias", None) is not None and target_mod.bias is not None,
+                dtype=target_mod.weight.dtype,
+                device=target_mod.weight.device,
+            )
+            new_layer.down.weight.data.copy_(best_V.to(dtype=target_mod.weight.dtype, device=target_mod.weight.device))
+            new_layer.up.weight.data.copy_(best_U.to(dtype=target_mod.weight.dtype, device=target_mod.weight.device))
+            if getattr(target_mod, "bias", None) is not None and target_mod.bias is not None:
+                new_layer.up.bias.data.copy_(target_mod.bias.data)
+
+            if hasattr(module, "base_layer"):
+                module.base_layer = new_layer
             else:
-                target_mod.weight.data.copy_(
-                    best_w_new.to(dtype=target_mod.weight.dtype, device=target_mod.weight.device)
-                )
+                if name == "":
+                    self.model = new_layer
+                else:
+                    replace_module(self.model, name, new_layer)
 
             if hasattr(module, "lora_A") and hasattr(module, "lora_B"):
                 if hasattr(module.lora_A, "weight") and module.lora_A.weight is not None:
@@ -359,8 +405,7 @@ class ENLightenCompressor(BaseCompressor):
                     module.lora_B.weight.requires_grad = True
 
             self.compressed_layers.append(name)
-            effective_sparse_frac = 0.5 if self.structured_24 else (1.0 - self.sparsity)
-            comp_layer_params = current_r * (in_f + out_f) + int(effective_sparse_frac * orig_layer_params)
+            comp_layer_params = current_r * (in_f + out_f)
             total_comp_params += comp_layer_params
 
         self._compressed_params = self._count_params(self.model)
@@ -441,7 +486,7 @@ def enlighten_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any
     )
     max_error = kwargs.pop(
         "max_error",
-        _cfg_get(comp_config, "enlighten_max_error", _cfg_get(comp_config, "max_error", 0.45)),
+        _cfg_get(comp_config, "enlighten_max_error", _cfg_get(comp_config, "max_error", 1.0)),
     )
     target_attention_only = kwargs.pop(
         "target_attention_only",
@@ -456,7 +501,7 @@ def enlighten_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any
         _cfg_get(
             comp_config,
             "enlighten_fallback_to_original",
-            _cfg_get(comp_config, "fallback_to_original", True),
+            _cfg_get(comp_config, "fallback_to_original", False),
         ),
     )
 

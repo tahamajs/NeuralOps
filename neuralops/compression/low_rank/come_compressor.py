@@ -703,6 +703,7 @@ class CoMeCompressor(BaseCompressor):
         orig_len = 0
         keep_len = 0
 
+        shed_done = False
         if layers is not None and parent is not None and attr_name is not None:
             orig_len = len(layers)
             keep_len = max(1, int(round(orig_len * (1.0 - self.sparsity))))
@@ -740,7 +741,9 @@ class CoMeCompressor(BaseCompressor):
                     container = bridged_module_list
                 setattr(parent, attr_name, container)
                 self.compressed_layers.append(f"{attr_name} (shed {orig_len - keep_len} layers)")
-        else:
+                shed_done = True
+
+        if not shed_done:
             seen_weights: set[int] = set()
             for name, module in list(self.model.named_modules()):
                 if self._is_target_module(name, module):
@@ -768,6 +771,7 @@ class CoMeCompressor(BaseCompressor):
                             in_features=in_features,
                             out_features=out_features,
                             rank=r,
+                            lora_r=0,
                             bias=getattr(target_mod, "bias", None) is not None,
                             device=raw_w.device,
                             dtype=raw_w.dtype,
@@ -786,7 +790,7 @@ class CoMeCompressor(BaseCompressor):
                         for p in module.parameters():
                             p.requires_grad = False
 
-        if self.lora_r > 0:
+        if shed_done and self.lora_r > 0:
             seen_weights: set[int] = set()
             for name, module in list(self.model.named_modules()):
                 if self._is_target_module(name, module):
@@ -831,12 +835,14 @@ class CoMeCompressor(BaseCompressor):
                 d = next(self.model.parameters()).device
                 try:
                     dummy = torch.randint(0, 100, (1, 16), device=d)
-                    self.model(dummy)
+                    mask = torch.ones_like(dummy)
+                    self.model(input_ids=dummy, attention_mask=mask)
                 except Exception:
-                    p0 = next(self.model.parameters())
-                    in_dim = p0.shape[1] if p0.dim() >= 2 and p0.shape[1] > 0 else 64
-                    dummy = torch.randn(1, 16, in_dim, device=d)
-                    self.model(dummy)
+                    try:
+                        self.model(dummy)
+                    except Exception:
+                        dummy_f = torch.randn(1, 16, 768, device=d)
+                        self.model(dummy_f)
             forward_check_success = True
         except Exception as e:
             logger.warning("CoMe post-compression forward sanity check failed: %s", e)

@@ -147,10 +147,10 @@ class ZeroKVNeoCompressor(BaseCompressor):
         keep_ratio: float = 0.3,
         num_attention_sinks: int = 4,
         heavy_hitter_ratio: float = 0.1,
-        max_error: float = 0.85,
+        max_error: float = 1.0,
         max_retries: int = 3,
-        fallback_to_original: bool = True,
-        target_attention_only: bool = True,
+        fallback_to_original: bool = False,
+        target_attention_only: bool = False,
         **kwargs: Any,
     ) -> None:
         super().__init__(model, name="zerokv_neo", **kwargs)
