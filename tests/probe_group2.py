@@ -15,6 +15,17 @@ import json
 import os
 import sys
 import traceback
+
+# Ensure repository root is first in sys.path and tests directory does not shadow stdlib
+_repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if _repo_root not in sys.path:
+    sys.path.insert(0, _repo_root)
+if len(sys.path) > 1 and os.path.basename(sys.path[1]) == "tests":
+    sys.path.pop(1)
+if len(sys.path) > 0 and os.path.basename(sys.path[0]) == "tests":
+    sys.path.pop(0)
+    sys.path.insert(0, _repo_root)
+
 from typing import Any, Dict, Tuple
 
 import torch
@@ -271,11 +282,28 @@ def main():
         }
 
     os.makedirs("results/compressor_zoo", exist_ok=True)
-    with open("results/compressor_zoo/group2_initial_probe.json", "w") as f:
+    out_path = "results/compressor_zoo/group2_verified.json"
+    with open(out_path, "w") as f:
         json.dump(results, f, indent=2)
 
     print("\n" + "=" * 80)
-    print("Summary saved to results/compressor_zoo/group2_initial_probe.json")
+    print(f"Summary saved to {out_path}")
+    print("=" * 80)
+
+    # Print summary table
+    print(f"{'Key':<28} | {'MLP Status':<10} | {'MLP Ratio':<10} | {'BERT Status':<11} | {'BERT Ratio':<10}")
+    print("-" * 80)
+    all_passed = True
+    for key, data in results.items():
+        mlp_s = data["mlp"].get("status", "UNKNOWN")
+        mlp_r = data["mlp"].get("effective_ratio", 1.0)
+        bert_s = data["bert"].get("status", "UNKNOWN")
+        bert_r = data["bert"].get("effective_ratio", 1.0)
+        if mlp_s != "PASS" or bert_s != "PASS":
+            all_passed = False
+        print(f"{key:<28} | {mlp_s:<10} | {mlp_r:<9.2f}x | {bert_s:<11} | {bert_r:<9.2f}x")
+    print("-" * 80)
+    print(f"ALL 17 COMPRESSORS PASSED: {all_passed}")
     print("=" * 80)
 
 

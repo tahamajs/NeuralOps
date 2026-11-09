@@ -39,7 +39,11 @@ def upload_directory(
     """Uploads one checkpoint directory to Hugging Face Hub and deletes heavy weights."""
     token = token or os.environ.get("HF_TOKEN")
     if not token:
-        logger.error("HF_TOKEN is unset. Cannot upload to Hugging Face Hub.")
+        token_path = Path.home() / ".cache" / "huggingface" / "token"
+        if token_path.exists():
+            token = token_path.read_text().strip()
+    if not token:
+        logger.error("HF_TOKEN is unset and ~/.cache/huggingface/token not found. Cannot upload to Hugging Face Hub.")
         return False
 
     attn_key = target_dir.name

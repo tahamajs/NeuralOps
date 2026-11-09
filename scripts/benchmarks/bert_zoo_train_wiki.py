@@ -31,6 +31,10 @@ import math
 import os
 import sys
 import time
+
+os.environ["HF_HUB_OFFLINE"] = "1"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
 from pathlib import Path
 from typing import Any, Optional, Tuple
 
@@ -444,6 +448,8 @@ def train_single_attention(
 
             scaler.scale(loss).backward()
             step_s1 += 1
+            if step_s1 % 25 == 0:
+                logger.info("[%s] [Stage 1 Step %d] Alignment Loss: %.4f", attn_key, step_s1, float(loss.item() * grad_accum))
 
             if step_s1 % grad_accum == 0:
                 scaler.unscale_(opt1)
@@ -488,6 +494,8 @@ def train_single_attention(
 
             scaler.scale(loss).backward()
             step_s2 += 1
+            if step_s2 % 25 == 0:
+                logger.info("[%s] [Stage 2 Step %d] Distillation Loss: %.4f", attn_key, step_s2, float(loss.item() * grad_accum))
 
             if step_s2 % grad_accum == 0:
                 scaler.unscale_(opt2)
@@ -607,8 +615,8 @@ def main() -> None:
     logger.info("Loaded %d keys from %s", len(keys), args.keys_json)
 
     # 2. Tokenizer & Teacher
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
-    teacher = AutoModelForMaskedLM.from_pretrained(args.model).to(device)
+    tokenizer = AutoTokenizer.from_pretrained(args.model, local_files_only=True)
+    teacher = AutoModelForMaskedLM.from_pretrained(args.model, local_files_only=True).to(device)
     teacher.eval()
 
     # 3. In-VRAM Pre-tokenized Datasets
