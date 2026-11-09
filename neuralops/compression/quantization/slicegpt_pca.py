@@ -545,7 +545,7 @@ class SliceGPTPCACompressor(BaseCompressor):
                         idx = torch.argsort(eigvals, descending=True)
                         eigvals = eigvals[idx]
                         V = V[:, idx]
-                        eye_diff = torch.norm(torch.matmul(V.T, V) - torch.eye(d_in), p="fro").item()
+                        eye_diff = torch.norm(torch.matmul(V.T, V) - torch.eye(d_in, device=V.device), p="fro").item()
                         if eye_diff > 1e-2 or torch.isnan(V).any():
                             raise ValueError(f"Eigh basis non-orthogonal (diff={eye_diff:.4f})")
                     except Exception as e_eigh:

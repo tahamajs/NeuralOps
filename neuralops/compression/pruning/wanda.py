@@ -66,9 +66,10 @@ def wanda_prune_layer(
 
     metric = torch.abs(W) * act_norm.unsqueeze(0)
 
-    k = max(int(metric.shape[1] * sparsity), 1)
-    threshold = torch.kthvalue(metric, k, dim=1, keepdim=True).values
-    mask = metric > threshold
+    n_keep = max(1, min(metric.shape[1], int(round(metric.shape[1] * (1.0 - sparsity)))))
+    _, top_idx = torch.topk(metric, k=n_keep, dim=1, largest=True)
+    mask = torch.zeros_like(W, dtype=torch.bool)
+    mask.scatter_(1, top_idx, True)
 
     module.weight.data *= mask.to(module.weight.dtype)
     module.register_buffer("pruning_mask", mask)
@@ -136,9 +137,14 @@ def wanda_factory(
     model: nn.Module,
     comp_config: Any = None,
     sparsity: float = 0.5,
+    return_stats: bool = False,
+    return_tuple: bool = False,
     **kwargs: Any,
-) -> nn.Module:
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
     """Factory function for Wanda compressor."""
+    ret_stats = return_stats or return_tuple or kwargs.pop("return_both", False)
     compressor = WandaCompressor(model, comp_config=comp_config, sparsity=sparsity, **kwargs)
-    compressed_model, _ = compressor.compress()
+    compressed_model, stats = compressor.compress()
+    if ret_stats:
+        return compressed_model, stats
     return compressed_model

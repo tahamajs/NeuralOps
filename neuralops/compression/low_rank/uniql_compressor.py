@@ -209,6 +209,8 @@ class UniQLCompressor(BaseCompressor):
 
         self.rank = max(1, int(rank))
         self.bits = max(2, min(16, int(bits)))
+        self.effective_bits = self.bits
+        self.model.effective_bits = self.bits
         self.max_error = float(max_error)
         self.max_retries = max(0, int(max_retries))
         self.fallback_to_original = bool(fallback_to_original)
@@ -430,9 +432,12 @@ class UniQLCompressor(BaseCompressor):
                     if "lora_" in p_name.lower() and not p_name.startswith("base_layer"):
                         p.requires_grad = False
             else:
-                parent_name, _, child_name = name.rpartition(".")
-                parent = self.model.get_submodule(parent_name) if parent_name else self.model
-                setattr(parent, child_name, new_layer)
+                if name == "":
+                    self.model = new_layer
+                else:
+                    parent_name, _, child_name = name.rpartition(".")
+                    parent = self.model.get_submodule(parent_name) if parent_name else self.model
+                    setattr(parent, child_name, new_layer)
 
             orig_bytes = raw_w.numel() * raw_w.element_size()
             comp_bytes = result["U_q"].numel() + result["S_q"].numel() + result["Vt_q"].numel()

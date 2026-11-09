@@ -335,6 +335,9 @@ class ZeroKVNeoCompressor(BaseCompressor):
                 continue
 
             base_layer.weight.data.copy_(W_assigned)
+            binary_mask = (W_assigned != 0.0)
+            base_layer.register_buffer("pruning_mask", binary_mask)
+            base_layer.register_buffer("mask", binary_mask.to(dtype=orig_dtype))
             compressed_layer = base_layer
             if (
                 hasattr(module, "lora_A")
@@ -483,3 +486,10 @@ def zerokv_neo_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any)
     if return_stats:
         return compressed_model, stats
     return compressed_model
+
+
+__all__ = [
+    "ZeroKVNeoCache",
+    "ZeroKVNeoCompressor",
+    "zerokv_neo_factory",
+]

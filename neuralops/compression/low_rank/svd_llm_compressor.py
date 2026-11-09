@@ -281,11 +281,12 @@ class SVDLLMCompressor(BaseCompressor):
         Factorized params = r * (m + n)
         r = (R * m * n) / (m + n)
         """
+        param_cap = max(1, (m * n) // max(1, m + n) - 1)
         if self.explicit_rank is not None and self.explicit_rank > 0:
-            return min(self.explicit_rank, min(m, n))
+            return max(1, min(self.explicit_rank, min(m, n), param_cap))
         r_calc = (ratio * m * n) / (m + n)
         r = int(round(r_calc))
-        return max(1, min(r, min(m, n)))
+        return max(1, min(r, min(m, n), param_cap))
 
     def _is_target_module(self, name: str, module: nn.Module) -> bool:
         if isinstance(module, SVDLLMLinear):
@@ -734,3 +735,27 @@ class SVDLLMCompressor(BaseCompressor):
         }
         self.model.compression_stats = stats
         return self.model, stats
+
+
+def svd_llm_factory(
+    model: nn.Module,
+    comp_config: Any = None,
+    rank: int | None = None,
+    return_stats: bool = False,
+    return_tuple: bool = False,
+    **kwargs: Any,
+) -> nn.Module | tuple[nn.Module, dict[str, Any]]:
+    """Factory function for SVD-LLM compressor."""
+    ret_stats = return_stats or return_tuple or kwargs.pop("return_both", False)
+    compressor = SVDLLMCompressor(model, rank=rank, **kwargs)
+    compressed_model, stats = compressor.compress()
+    if ret_stats:
+        return compressed_model, stats
+    return compressed_model
+
+
+__all__ = [
+    "SVDLLMLinear",
+    "SVDLLMCompressor",
+    "svd_llm_factory",
+]

@@ -769,3 +769,13 @@ def inject_tomoe(model: Any = None, **kwargs: Any) -> Any:
     except Exception as e:
         logger.error("inject_tomoe failed: %s", e)
         return None
+
+
+__all__ = [
+    "LowRankExpert",
+    "ToMoELinear",
+    "ToMoECompressor",
+    "tomoe_compressor_factory",
+    "tomoe_factory",
+    "inject_tomoe",
+]

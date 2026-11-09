@@ -273,7 +273,7 @@ def slim_factory(
         ),
     )
     max_error = kwargs.pop("max_error", _cfg_get(comp_config, "max_error", 0.20))
-    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", True))
+    fallback = kwargs.pop("fallback_to_original", _cfg_get(comp_config, "fallback_to_original", False))
     target_attention_only = kwargs.pop("target_attention_only", _cfg_get(comp_config, "target_attention_only", False))
 
     compressor = SLiMCompressor(
