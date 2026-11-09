@@ -353,6 +353,7 @@ def train_single_attention(
     grad_accum: int = 2,
 ) -> dict[str, Any]:
     """Train one attention mechanism on BERT with strict 300s budget."""
+    t_start = time.time()
     logger.info("\n" + "=" * 80)
     logger.info("[START] Distilling Attention Module: %s (%ds budget)", attn_key, int(train_secs))
     logger.info("=" * 80)
