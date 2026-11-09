@@ -113,8 +113,8 @@ class SliceGPTPCALoRALinear(nn.Module):
     ) -> SliceGPTPCALoRALinear:
         base_mod = getattr(linear, "base_layer", linear)
         bias = base_mod.bias.detach() if hasattr(base_mod, "bias") and base_mod.bias is not None else None
-        in_features = getattr(base_mod, "in_features", sliced_weight.shape[1])
-        out_features = getattr(base_mod, "out_features", sliced_weight.shape[0])
+        in_features = sliced_weight.shape[1]
+        out_features = sliced_weight.shape[0]
 
         has_existing_lora = hasattr(linear, "lora_A") and hasattr(linear, "lora_B")
         effective_lora_r = lora_r
