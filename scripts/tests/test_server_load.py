@@ -10,8 +10,23 @@ Test loading distilled BERT models directly on server using AutoModelForSequence
 """
 from __future__ import annotations
 
+import os
 import sys
+
+# Ensure offline mode if testing local folder on GPU node
+if len(sys.argv) > 1 and not sys.argv[1].startswith("tahamajs/"):
+    os.environ["HF_HUB_OFFLINE"] = "1"
+    os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
 import torch
+import torch.nn as nn
+
+# Compatibility shim: PyTorch 1.12 with Accelerate >= 1.0 (named_parameters remove_duplicate)
+_orig_named_params = nn.Module.named_parameters
+def _compat_named_parameters(self, prefix: str = '', recurse: bool = True, **kwargs):
+    return _orig_named_params(self, prefix=prefix, recurse=recurse)
+nn.Module.named_parameters = _compat_named_parameters
+
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 def test_load(model_path: str):
@@ -19,10 +34,17 @@ def test_load(model_path: str):
     print(f"TESTING MODEL LOADING: {model_path}")
     print("=" * 70)
 
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
+    is_hub = model_path.startswith("tahamajs/") or "/" in model_path and not os.path.exists(model_path)
+    local_only = not is_hub
+
+    tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=local_only)
     print("Tokenizer successfully loaded!")
 
-    model = AutoModelForSequenceClassification.from_pretrained(model_path, trust_remote_code=True)
+    model = AutoModelForSequenceClassification.from_pretrained(
+        model_path,
+        trust_remote_code=True,
+        local_files_only=local_only,
+    )
     device = "cuda" if torch.cuda.is_available() else "cpu"
     model = model.eval().to(device)
     print(f"Model successfully loaded and moved to {device}!")

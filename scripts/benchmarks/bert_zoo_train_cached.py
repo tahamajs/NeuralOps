@@ -277,7 +277,14 @@ def train_single_attention_cached(
 
     modeling_py = f"""# Self-contained HuggingFace Hub loading shim for NeuralOps BERT ({attn_key})
 import torch
+import torch.nn as nn
 from transformers import BertConfig, BertModel, BertForSequenceClassification
+
+# Compatibility shim: PyTorch < 2.0 with Accelerate >= 1.0 (named_parameters remove_duplicate)
+_orig_named_params = nn.Module.named_parameters
+def _compat_named_parameters(self, prefix: str = '', recurse: bool = True, **kwargs):
+    return _orig_named_params(self, prefix=prefix, recurse=recurse)
+nn.Module.named_parameters = _compat_named_parameters
 
 class NeuralOpsBertConfig(BertConfig):
     model_type = "bert"
@@ -286,21 +293,15 @@ class NeuralOpsBertModel(BertModel):
     config_class = NeuralOpsBertConfig
     def __init__(self, config, add_pooling_layer=True):
         super().__init__(config, add_pooling_layer=add_pooling_layer)
-        try:
-            from neuralops.api import replace_attention
-            replace_attention(self, attention="{attn_key}", copy_weights=False)
-        except Exception:
-            pass
+        from neuralops.utils.replace_attention import replace_attention
+        replace_attention(self, attention="{attn_key}", copy_weights=False)
 
 class NeuralOpsBertForSequenceClassification(BertForSequenceClassification):
     config_class = NeuralOpsBertConfig
     def __init__(self, config):
         super().__init__(config)
-        try:
-            from neuralops.api import replace_attention
-            replace_attention(self, attention="{attn_key}", copy_weights=False)
-        except Exception:
-            pass
+        from neuralops.utils.replace_attention import replace_attention
+        replace_attention(self, attention="{attn_key}", copy_weights=False)
 """
     (out_dir / "modeling_neuralops_bert.py").write_text(modeling_py, encoding="utf-8")
     (out_dir / "training_metrics.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
