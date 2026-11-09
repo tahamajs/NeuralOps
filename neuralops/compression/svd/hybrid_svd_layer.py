@@ -197,25 +197,28 @@ class HybridSVDCompressor(BaseCompressor):
                 _cfg_get(cfg, "svd_rank", _cfg_get(cfg, "rank", rank_arg)),
             )
         )
-        self.use_full_layer_replacement = bool(_cfg_get(cfg, "use_full_layer_replacement", use_full_layer_replacement))
-        self.lora_r = int(_cfg_get(cfg, "lora_r", _cfg_get(cfg, "lora_rank", lora_r)))
-        self.lora_alpha = float(_cfg_get(cfg, "lora_alpha", lora_alpha))
-        self.max_error = float(_cfg_get(cfg, "hybrid_svd_max_error", _cfg_get(cfg, "max_error", max_error)))
+        self.use_full_layer_replacement = bool(_cfg_get(cfg, "use_full_layer_replacement", kwargs.get("use_full_layer_replacement", use_full_layer_replacement)))
+        self.lora_r = int(_cfg_get(cfg, "lora_r", _cfg_get(cfg, "lora_rank", kwargs.get("lora_r", lora_r))))
+        self.lora_alpha = float(_cfg_get(cfg, "lora_alpha", kwargs.get("lora_alpha", lora_alpha)))
+        max_error_arg = kwargs.get("max_error", max_error)
+        self.max_error = float(_cfg_get(cfg, "hybrid_svd_max_error", _cfg_get(cfg, "max_error", max_error_arg)))
+        target_attn_arg = kwargs.get("target_attention_only", target_attention_only)
         self.target_attention_only = bool(
             _cfg_get(
                 cfg,
                 "hybrid_svd_target_attention_only",
-                _cfg_get(cfg, "target_attention_only", target_attention_only),
+                _cfg_get(cfg, "target_attention_only", target_attn_arg),
             )
         )
+        fallback_arg = kwargs.get("fallback_to_original", fallback_to_original)
         self.fallback_to_original = bool(
             _cfg_get(
                 cfg,
                 "hybrid_svd_fallback_to_original",
-                _cfg_get(cfg, "fallback_to_original", fallback_to_original),
+                _cfg_get(cfg, "fallback_to_original", fallback_arg),
             )
         )
-        self.target_modules = target_modules or _cfg_get(cfg, "target_modules", None)
+        self.target_modules = target_modules or _cfg_get(cfg, "target_modules", kwargs.get("target_modules", None))
 
         self.compressed_layers: list[str] = []
         self.fallback_layers: list[str] = []
@@ -305,7 +308,7 @@ class HybridSVDCompressor(BaseCompressor):
             total_orig_params += orig_params
 
             max_rank = min(in_f, out_f)
-            bound_r = (in_f * out_f) // (in_f + out_f)
+            bound_r = max(1, int(0.90 * (in_f * out_f) // (in_f + out_f + 1)))
             if max_rank < 16 or bound_r < 4:
                 self.fallback_layers.append(name)
                 for p in module.parameters():
