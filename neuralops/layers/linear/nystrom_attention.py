@@ -541,7 +541,7 @@ class NystromAttention(BaseAttention):
             mask_c = valid_mask[:, start:end]
 
             scale = 1.0 / math.sqrt(d)
-            scores_intra = torch.matmul(Q_c.float(), K_c.float().transpose(-2, -1)) * scale
+            scores_intra = torch.matmul(Q_c.float(), K_c.float().transpose(-2, -1).contiguous()) * scale
             causal = torch.tril(torch.ones(C_len, C_len, device=device, dtype=torch.bool))
             scores_intra = scores_intra.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
             scores_intra = scores_intra.masked_fill(~mask_c.unsqueeze(1).unsqueeze(2), -1e4)
@@ -561,15 +561,15 @@ class NystromAttention(BaseAttention):
             K_flat = K_prev.reshape(B * H, start, d).transpose(1, 2).contiguous()
             K_landmarks = F.adaptive_avg_pool1d(K_flat, m_prev).transpose(1, 2).contiguous().reshape(B, H, m_prev, d)
 
-            scores1 = torch.matmul(Q_c.float(), K_landmarks.float().transpose(-2, -1)) * scale
+            scores1 = torch.matmul(Q_c.float(), K_landmarks.float().transpose(-2, -1).contiguous()) * scale
             F1 = F.softmax(scores1, dim=-1).to(dtype)
 
             Q_flat = Q_c.reshape(B * H, C_len, d).transpose(1, 2).contiguous()
             Q_landmarks = F.adaptive_avg_pool1d(Q_flat, m_prev).transpose(1, 2).contiguous().reshape(B, H, m_prev, d)
-            scores2 = torch.matmul(Q_landmarks.float(), K_landmarks.float().transpose(-2, -1)) * scale
+            scores2 = torch.matmul(Q_landmarks.float(), K_landmarks.float().transpose(-2, -1).contiguous()) * scale
             F2 = F.softmax(scores2, dim=-1).to(dtype)
 
-            scores3 = torch.matmul(Q_landmarks.float(), K_prev.float().transpose(-2, -1)) * scale
+            scores3 = torch.matmul(Q_landmarks.float(), K_prev.float().transpose(-2, -1).contiguous()) * scale
             scores3 = scores3.masked_fill(~mask_prev.unsqueeze(1).unsqueeze(2), -1e4)
             F3 = F.softmax(scores3, dim=-1).to(dtype)
 
@@ -604,9 +604,9 @@ class NystromAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        Q = self.query(hidden_states).view(B, N, H, d).transpose(1, 2).contiguous()
-        K = self.key(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        V = self.value(hidden_states).view(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        Q = self.query(hidden_states).reshape(B, N, H, d).transpose(1, 2).contiguous()
+        K = self.key(hidden_states).reshape(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V = self.value(hidden_states).reshape(B, N, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         if position_embeddings is not None:
             cos, sin = position_embeddings

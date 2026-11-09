@@ -818,8 +818,11 @@ def slicegpt_pca_factory(
     return compressed_model
 
 
+SliceGPTPCALinear = SliceGPTPCALoRALinear
+
 __all__ = [
     "SliceGPTPCALoRALinear",
+    "SliceGPTPCALinear",
     "SliceGPTPCACompressor",
     "slicegpt_pca_factory",
 ]

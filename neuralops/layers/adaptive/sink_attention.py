@@ -522,9 +522,9 @@ class SinkAttention(BaseAttention):
         past_k, past_v, past_pos, cache_type = self._read_cache(past_key_value, layer_idx)
         past_len = 0 if past_k is None else past_k.shape[-2]
 
-        q = self.q_lin(x).view(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3)
-        k_new = self.k_lin(x).view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
-        v_new = self.v_lin(x).view(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3)
+        q = self.q_lin(x).reshape(B, N, self.num_heads, self.head_dim).permute(0, 2, 1, 3).contiguous()
+        k_new = self.k_lin(x).reshape(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3).contiguous()
+        v_new = self.v_lin(x).reshape(B, N, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")

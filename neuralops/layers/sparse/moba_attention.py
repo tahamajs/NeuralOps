@@ -458,9 +458,9 @@ class MoBAAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         L_kv = kv_input.shape[1]
 
-        Q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
-        K = self.k_proj(kv_input).view(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        V = self.v_proj(kv_input).view(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        Q = self.q_proj(hidden_states).reshape(B, L, H, d).transpose(1, 2).contiguous()
+        K = self.k_proj(kv_input).reshape(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V = self.v_proj(kv_input).reshape(B, L_kv, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -585,9 +585,9 @@ class MoBAAttention(BaseAttention):
             nb = Lp // self.block_size
             bs = self.block_size
 
-            Qb = Q_pad.view(B, H, nb, bs, d)
-            Kb = K_pad.view(B, H, nb, bs, d)
-            Vb = V_pad.view(B, H, nb, bs, d)
+            Qb = Q_pad.reshape(B, H, nb, bs, d)
+            Kb = K_pad.reshape(B, H, nb, bs, d)
+            Vb = V_pad.reshape(B, H, nb, bs, d)
 
             from neuralops.ops.triton.block_sparse import (
                 fused_moba_block_router_combine_pytorch,

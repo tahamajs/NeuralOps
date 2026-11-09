@@ -189,11 +189,12 @@ class HybridSVDCompressor(BaseCompressor):
         cfg = cfg or kwargs.get("comp_config")
         self.cfg = cfg
 
+        rank_arg = kwargs.get("rank", svd_rank)
         self.svd_rank = int(
             _cfg_get(
                 cfg,
                 "hybrid_svd_rank",
-                _cfg_get(cfg, "svd_rank", _cfg_get(cfg, "rank", svd_rank)),
+                _cfg_get(cfg, "svd_rank", _cfg_get(cfg, "rank", rank_arg)),
             )
         )
         self.use_full_layer_replacement = bool(_cfg_get(cfg, "use_full_layer_replacement", use_full_layer_replacement))

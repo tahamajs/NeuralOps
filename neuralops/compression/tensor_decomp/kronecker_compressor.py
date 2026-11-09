@@ -220,8 +220,17 @@ class KroneckerLinear(nn.Module):
         return out
 
     def _forward_kron(self, x: torch.Tensor) -> torch.Tensor:
-        """(A ⊗ B) x computed without materializing the full weight."""
+        """(A ⊗ B) x computed with 3-level fallback hierarchy (CUDA -> Triton -> PyTorch)."""
         if x.is_cuda and not self.training:
+            # Level 1: Native CUDA C++ Kronecker GEMM
+            try:
+                from neuralops.ops.cuda.kronecker_gemm import kronecker_matmul
+
+                return kronecker_matmul(x, self.A, self.B, bias=self.bias)
+            except Exception:
+                pass
+
+            # Level 2: Triton JIT Kronecker kernel
             try:
                 from neuralops.ops.triton.low_rank import triton_fused_kronecker_matmul
 
@@ -235,6 +244,7 @@ class KroneckerLinear(nn.Module):
                     # allowed-swallow: best-effort-telemetry
                     pass
 
+        # Level 3: Vectorized PyTorch reference
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
         if x_flat.dtype != self.B.dtype:
@@ -258,6 +268,15 @@ class KroneckerLinear(nn.Module):
         u_w = self.U.to(x.dtype)
         b_w = self.bias.to(x.dtype) if self.bias is not None else None
         if x.is_cuda:
+            # Level 1: Native CUDA C++ fused SVD projection
+            try:
+                from neuralops.ops.cuda.fused_svd_projection import fused_svd_projection
+
+                return fused_svd_projection(x, v_w.t(), S=None, V_T=u_w.t(), bias=b_w)
+            except Exception:
+                pass
+
+            # Level 2: Triton JIT low-rank kernel
             try:
                 from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
 
@@ -269,6 +288,8 @@ class KroneckerLinear(nn.Module):
             except Exception:
                 # allowed-swallow: best-effort-telemetry
                 pass
+
+        # Level 3: Vectorized PyTorch reference
         return F.linear(F.linear(x, v_w), u_w, b_w)
 
     def _fit_svd(

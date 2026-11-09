@@ -74,14 +74,14 @@ class DecayDecayLinearAttention(SVDLinearAttention):
 
         decay_logits = self.decay_gate(hidden_states)
         if self.decay_channel_wise:
-            decay_logits = decay_logits.view(B, N, H, D_k).permute(0, 2, 1, 3)
+            decay_logits = decay_logits.reshape(B, N, H, D_k).permute(0, 2, 1, 3).contiguous()
             lambda_decay = (
                 compute_exponential_decay(decay_logits, activation=self.decay_activation)
                 .unsqueeze(-1)
                 .to(compute_dtype)
             )
         else:
-            decay_logits = decay_logits.permute(0, 2, 1).unsqueeze(-1).unsqueeze(-1)
+            decay_logits = decay_logits.permute(0, 2, 1).contiguous().unsqueeze(-1).unsqueeze(-1)
             lambda_decay = compute_exponential_decay(decay_logits, activation=self.decay_activation).to(compute_dtype)
 
         if mask_expanded is not None:
@@ -90,7 +90,13 @@ class DecayDecayLinearAttention(SVDLinearAttention):
                 m_dec = m_dec.unsqueeze(-1)
             lambda_decay = torch.where(m_dec > 0, lambda_decay, torch.ones_like(lambda_decay))
 
-        context = svd_linear_decay(q, k_masked, v, lambda_decay, eps=self.eps)
+        context = svd_linear_decay(
+            q.contiguous(),
+            k_masked.contiguous(),
+            v.contiguous(),
+            lambda_decay.contiguous(),
+            eps=self.eps,
+        )
         D_v = v.shape[-1]
         S_final = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=compute_dtype)
         Z_final = torch.zeros(B, H, D_k, 1, device=q.device, dtype=compute_dtype)

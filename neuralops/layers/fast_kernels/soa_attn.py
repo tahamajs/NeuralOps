@@ -685,9 +685,9 @@ class SOAAttention(BaseAttention):
         H_kv = self.num_kv_heads
         head_dim = self.head_dim
 
-        q = q.view(B, N, H, head_dim).transpose(1, 2).contiguous()
-        k_new = k_new.view(B, kv_len_new, H_kv, head_dim).transpose(1, 2).contiguous()
-        v_new = v_new.view(B, kv_len_new, H_kv, head_dim).transpose(1, 2).contiguous()
+        q = q.reshape(B, N, H, head_dim).transpose(1, 2).contiguous()
+        k_new = k_new.reshape(B, kv_len_new, H_kv, head_dim).transpose(1, 2).contiguous()
+        v_new = v_new.reshape(B, kv_len_new, H_kv, head_dim).transpose(1, 2).contiguous()
 
         past_k, past_v, past_len = (None, None, 0)
         if past_key_value is not None and not is_cross:

@@ -134,16 +134,6 @@ model, tokenizer = load_pretrained_bert(
 ```
 """
 
-```bibtex
-@software{{neuralops2026bertzoo,
-  title   = {{NeuralOps: Pretrained BERT-131 Subquadratic Attention Zoo}},
-  author  = {{Majlesi, Taha}},
-  year    = {{2026}},
-  url     = {{https://github.com/tahamajs/NeuralOps}}
-}}
-```
-"""
-
 
 def list_pretrained_bert_models(
     metrics_path: Optional[str] = None,

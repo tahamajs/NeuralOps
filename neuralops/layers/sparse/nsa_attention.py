@@ -54,21 +54,35 @@ class LearnedBlockRouter(nn.Module):
 
     def __init__(self, d: int, num_blocks: int, router_hidden: int = 64) -> None:
         super().__init__()
-        self.d = d
-        self.num_blocks = num_blocks
-        self.router_hidden = router_hidden
+        self.d = int(d)
+        self.num_blocks = max(1, int(num_blocks))
+        self.router_hidden = int(router_hidden)
         self.router = nn.Sequential(
-            nn.Linear(d, router_hidden),
+            nn.Linear(self.d, self.router_hidden),
             nn.GELU(),
-            nn.Linear(router_hidden, num_blocks),
+            nn.Linear(self.router_hidden, self.num_blocks),
         )
+        self.reset_parameters()
 
-    def forward(self, q: torch.Tensor, top_k: int | None = None) -> tuple[torch.Tensor, torch.Tensor]:
+    def reset_parameters(self) -> None:
+        for m in self.router:
+            if isinstance(m, nn.Linear):
+                nn.init.kaiming_uniform_(m.weight, a=math.sqrt(5))
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
+
+    def forward(
+        self,
+        q: torch.Tensor,
+        top_k: int | None = None,
+        num_blocks: int | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """Route query representation to top-k key/value blocks.
 
         Args:
             q: Query tensor of shape [B, L, d] (or [B, d]).
             top_k: Number of blocks to select.
+            num_blocks: Optional dynamic block count.
 
         Returns:
             block_logits: Tensor of shape [B, num_blocks]
@@ -76,11 +90,73 @@ class LearnedBlockRouter(nn.Module):
         """
         if q.ndim == 3:
             q_rep = q.mean(dim=1)
-        else:
+        elif q.ndim == 2:
             q_rep = q
-        block_logits = self.router(q_rep)
-        k_val = top_k if top_k is not None else self.num_blocks
-        k_val = min(k_val, block_logits.shape[-1])
+        elif q.ndim == 4:
+            q_rep = q.mean(dim=(1, 2))
+        else:
+            q_rep = q.reshape(-1, q.shape[-1])
+
+        # Guard contiguity and numerical hygiene against cuBLAS Tensor Op crashes
+        q_rep = q_rep.contiguous()
+        q_rep = torch.nan_to_num(q_rep, nan=0.0, posinf=1.0, neginf=-1.0)
+
+        # Validate in_features vs representation dimension
+        first_linear = self.router[0]
+        in_dim = getattr(first_linear, "in_features", self.d)
+        if q_rep.shape[-1] != in_dim:
+            if q_rep.shape[-1] > in_dim:
+                q_rep = q_rep[..., :in_dim]
+            else:
+                q_rep = F.pad(q_rep, (0, in_dim - q_rep.shape[-1]))
+            q_rep = q_rep.contiguous()
+
+        # Ensure device and dtype consistency
+        target_device = first_linear.weight.device
+        target_dtype = first_linear.weight.dtype
+        if q_rep.device != target_device or q_rep.dtype != target_dtype:
+            q_rep = q_rep.to(device=target_device, dtype=target_dtype)
+
+        # Execute router with cuBLAS protection and FP32 fallback
+        try:
+            h = q_rep
+            for layer in self.router:
+                if isinstance(layer, nn.Linear):
+                    h = h.contiguous()
+                    if h.device != layer.weight.device or h.dtype != layer.weight.dtype:
+                        h = h.to(device=layer.weight.device, dtype=layer.weight.dtype)
+                h = layer(h)
+                if isinstance(layer, nn.Linear):
+                    h = torch.nan_to_num(h, nan=0.0, posinf=1.0, neginf=-1.0)
+            block_logits = h
+        except (RuntimeError, Exception) as exc:
+            logger.warning(
+                "LearnedBlockRouter cuBLAS/forward error: %s. Falling back to FP32 calculation.", exc
+            )
+            with torch.no_grad():
+                h_fp32 = q_rep.float().contiguous()
+                for layer in self.router:
+                    if isinstance(layer, nn.Linear):
+                        w = layer.weight.float()
+                        b = layer.bias.float() if layer.bias is not None else None
+                        h_fp32 = F.linear(h_fp32, w, b)
+                    elif isinstance(layer, nn.GELU):
+                        h_fp32 = F.gelu(h_fp32)
+                    else:
+                        h_fp32 = layer(h_fp32)
+                    h_fp32 = torch.nan_to_num(h_fp32, nan=0.0)
+                block_logits = h_fp32.to(dtype=target_dtype)
+
+        eff_num_blocks = num_blocks if num_blocks is not None else self.num_blocks
+        if block_logits.shape[-1] > eff_num_blocks:
+            block_logits = block_logits[..., :eff_num_blocks]
+        elif block_logits.shape[-1] < eff_num_blocks:
+            pad_size = eff_num_blocks - block_logits.shape[-1]
+            block_logits = F.pad(block_logits, (0, pad_size), value=-1e4)
+
+        block_logits = torch.nan_to_num(block_logits, nan=0.0)
+        k_val = top_k if top_k is not None else eff_num_blocks
+        k_val = max(1, min(int(k_val), block_logits.shape[-1]))
         selected_blocks = torch.topk(block_logits, k=k_val, dim=-1).indices
         return block_logits, selected_blocks
 
@@ -176,7 +252,13 @@ class NativeSparseAttention(BaseAttention):
         self.top_k = getattr(config, "nsa_top_k", top_k) if config else top_k
         self.router_hidden = int(kwargs.get("router_hidden", getattr(config, "router_hidden", 64)))
 
-        self._learned_router: LearnedBlockRouter | None = None
+        init_max_len = getattr(config, "max_position_embeddings", 512) if config else 512
+        init_blocks = max(16, (int(init_max_len) + self.block_size - 1) // self.block_size)
+        self._learned_router: LearnedBlockRouter = LearnedBlockRouter(
+            d=self.all_head_size,
+            num_blocks=init_blocks,
+            router_hidden=self.router_hidden,
+        )
 
         model_type = getattr(config, "model_type", "").lower() if config else ""
         is_dec = (
@@ -474,33 +556,40 @@ class NativeSparseAttention(BaseAttention):
 
         return_mask = return_mask or kwargs.get("return_mask", False)
 
-        q_raw = self.q_proj(hidden_states)
-        k_raw = self.k_proj(hidden_states)
-        v_raw = self.v_proj(hidden_states)
+        q_raw = self.q_proj(hidden_states).contiguous()
+        k_raw = self.k_proj(hidden_states).contiguous()
+        v_raw = self.v_proj(hidden_states).contiguous()
 
         num_blocks = max(1, (L + self.block_size - 1) // self.block_size)
-        k_val = min(self.top_k, num_blocks)
+        k_val = max(1, min(self.top_k, num_blocks))
+
+        if (
+            self._learned_router is None
+            or self._learned_router.d != self.all_head_size
+            or self._learned_router.num_blocks < num_blocks
+        ):
+            self._learned_router = LearnedBlockRouter(
+                d=self.all_head_size,
+                num_blocks=max(num_blocks, 16),
+                router_hidden=self.router_hidden,
+            ).to(device=device, dtype=q_raw.dtype)
+        else:
+            router_param = next(self._learned_router.parameters(), None)
+            if router_param is not None and (router_param.device != device or router_param.dtype != q_raw.dtype):
+                self._learned_router = self._learned_router.to(device=device, dtype=q_raw.dtype)
+
         try:
-            if self._learned_router is not None and self._learned_router.num_blocks == num_blocks:
-                _, selected_blocks = self._learned_router(q_raw.contiguous(), top_k=k_val)
-            else:
-                # Direct block importance scoring via L2 energy (fast, stable, zero-leak)
-                padded_L = num_blocks * self.block_size
-                if padded_L > L:
-                    q_pad = F.pad(q_raw, (0, 0, 0, padded_L - L))
-                else:
-                    q_pad = q_raw
-                q_blk = q_pad.view(B, num_blocks, self.block_size, D).norm(dim=(2, 3))
-                selected_blocks = torch.topk(q_blk, k=k_val, dim=-1).indices
-        except Exception:
-            # Fallback to contiguous uniform selection
+            _, selected_blocks = self._learned_router(q_raw, top_k=k_val, num_blocks=num_blocks)
+        except Exception as router_exc:
+            logger.warning("NSA router forward failed: %s. Using default block routing.", router_exc)
             selected_blocks = torch.arange(k_val, device=device).unsqueeze(0).expand(B, -1)
 
+        selected_blocks = selected_blocks.clamp(0, num_blocks - 1)
         block_mask = torch.zeros(B, num_blocks, device=device, dtype=torch.bool).scatter_(-1, selected_blocks, True)
 
-        Q = q_raw.view(B, L, H, d).permute(0, 2, 1, 3)
-        K = k_raw.view(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3)
-        V = v_raw.view(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3)
+        Q = q_raw.reshape(B, L, H, d).permute(0, 2, 1, 3).contiguous()
+        K = k_raw.reshape(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3).contiguous()
+        V = v_raw.reshape(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3).contiguous()
         is_cross = bool(kwargs.get("is_cross_attention", False))
 
         if position_embeddings is not None:
@@ -548,12 +637,6 @@ class NativeSparseAttention(BaseAttention):
         token_block_mask = block_mask.repeat_interleave(self.block_size, dim=-1)[..., :L].unsqueeze(1).unsqueeze(2)
 
         idx = torch.arange(L, device=device)
-        if self.is_decoder:
-            local_mask = (idx.unsqueeze(1) - idx.unsqueeze(0) <= self.window_size) & (
-                idx.unsqueeze(1) >= idx.unsqueeze(0)
-            )
-        else:
-            local_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
         is_dec = bool(
             self.is_decoder
             or getattr(self, "is_causal", False)
@@ -653,7 +736,7 @@ class NativeSparseAttention(BaseAttention):
 
             context = torch.matmul(attn, V)
         context = context * valid_mask_2d.unsqueeze(1).unsqueeze(-1).to(dtype)
-        context = context.permute(0, 2, 1, 3).contiguous().view(B, L, self.all_head_size)
+        context = context.permute(0, 2, 1, 3).contiguous().reshape(B, L, self.all_head_size)
 
         if self.is_nested_encoder:
             output = context

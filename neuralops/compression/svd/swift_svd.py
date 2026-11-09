@@ -495,3 +495,11 @@ def inject_swift_svd(model: Any = None, **kwargs: Any) -> Any:
     except Exception as e:
         logger.error("inject_swift_svd failed: %s", e)
         return None
+
+
+__all__ = [
+    "SwiftSVDCompressor",
+    "swift_svd_factory",
+    "inject_swift_svd",
+]
+

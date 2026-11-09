@@ -356,7 +356,24 @@ class KroneckerTTLoRALayer(nn.Module):
         return self.bias_param
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        base_out = F.linear(F.linear(x, self.V_base), self.U_base, self.bias_param)
+        if x.is_cuda and not self.training:
+            # Level 1: Native CUDA C++ fused SVD projection
+            try:
+                from neuralops.ops.cuda.fused_svd_projection import fused_svd_projection
+
+                base_out = fused_svd_projection(x, self.V_base.t(), S=None, V_T=self.U_base.t(), bias=self.bias_param)
+            except Exception:
+                # Level 2: Triton JIT low-rank kernel
+                try:
+                    from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
+                    base_out = fused_down_up_gemm_bias_triton(x, self.V_base, self.U_base.t().contiguous(), bias=self.bias_param)
+                except Exception:
+                    base_out = F.linear(F.linear(x, self.V_base), self.U_base, self.bias_param)
+        else:
+            # Level 3: Vectorized PyTorch reference
+            base_out = F.linear(F.linear(x, self.V_base), self.U_base, self.bias_param)
+
         delta_w = self.get_delta_w()
         kron_tt_out = F.linear(x, delta_w)
         try:

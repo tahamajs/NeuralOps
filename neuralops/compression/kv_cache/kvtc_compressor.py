@@ -275,18 +275,21 @@ class KVTCQuantizedLoRALinear(nn.Module):
         return new_layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if x.is_cuda and not self.training:
-            try:
-                from neuralops.ops.triton.low_rank import fused_int4_lut_dequant_matmul_triton
-            except Exception:
-                # allowed-swallow: best-effort-telemetry
-                pass
         w_eff = self.int_weight.to(dtype=x.dtype) * self.scale.to(dtype=x.dtype) + self.zero_point.to(dtype=x.dtype)
         bias = self.bias.to(dtype=x.dtype) if self.bias is not None else None
         out = F.linear(x, w_eff, bias)
+
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            lora_out = F.linear(F.linear(x.to(dtype=self.lora_A.dtype), self.lora_A), self.lora_B).to(dtype=out.dtype)
-            out = out + self.scaling * lora_out
+            if x.is_cuda and not self.training:
+                try:
+                    from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
+                    lora_out = fused_down_up_gemm_bias_triton(x, self.lora_A.t(), self.lora_B.t())
+                except Exception:
+                    lora_out = F.linear(F.linear(x.to(dtype=self.lora_A.dtype), self.lora_A), self.lora_B)
+            else:
+                lora_out = F.linear(F.linear(x.to(dtype=self.lora_A.dtype), self.lora_A), self.lora_B)
+            out = out + self.scaling * lora_out.to(dtype=out.dtype)
         return out
 
 

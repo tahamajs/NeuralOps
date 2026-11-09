@@ -250,21 +250,29 @@ class LSCPrunedLoRALinear(nn.Module):
                 out = out + self.bias
         else:
             if x.is_cuda:
+                # Level 1: Native CUDA C++ fused SVD projection
                 try:
-                    from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+                    from neuralops.ops.cuda.fused_svd_projection import fused_svd_projection
 
-                    suitable, _ = check_triton_suitability(x, "low_rank")
-                    if not FORCE_PYTORCH_FALLBACK and suitable:
-                        from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
-
-                        out = fused_down_up_gemm_bias_triton(
-                            x, self.V.t().contiguous(), self.U.t().contiguous(), bias=self.bias
-                        )
-                    else:
-                        out = F.linear(F.linear(x, self.V), self.U, self.bias)
+                    out = fused_svd_projection(x, self.V.t(), S=None, V_T=self.U.t(), bias=self.bias)
                 except Exception:
-                    out = F.linear(F.linear(x, self.V), self.U, self.bias)
+                    # Level 2: Triton JIT low-rank kernel
+                    try:
+                        from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
+                        suitable, _ = check_triton_suitability(x, "low_rank")
+                        if not FORCE_PYTORCH_FALLBACK and suitable:
+                            from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
+                            out = fused_down_up_gemm_bias_triton(
+                                x, self.V.t().contiguous(), self.U.t().contiguous(), bias=self.bias
+                            )
+                        else:
+                            out = F.linear(F.linear(x, self.V), self.U, self.bias)
+                    except Exception:
+                        out = F.linear(F.linear(x, self.V), self.U, self.bias)
             else:
+                # Level 3: Vectorized PyTorch reference
                 out = F.linear(F.linear(x, self.V), self.U, self.bias)
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:

@@ -510,9 +510,9 @@ class RoutingAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        Q = self.q_proj(hidden_states).view(B, L, H, d).permute(0, 2, 1, 3).contiguous()
-        K = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3).contiguous()
-        V = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3).contiguous()
+        Q = self.q_proj(hidden_states).reshape(B, L, H, d).permute(0, 2, 1, 3).contiguous()
+        K = self.k_proj(hidden_states).reshape(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3).contiguous()
+        V = self.v_proj(hidden_states).reshape(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -546,7 +546,7 @@ class RoutingAttention(BaseAttention):
             # Global clustering lets future tokens change past routing decisions.
             # Use the exact causal reference path so autoregressive outputs are
             # invariant to tokens beyond the current query position.
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
             causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
             pair_mask = causal_mask.view(1, 1, L, L) & valid_mask_2d.view(B, 1, 1, L)
             scores = scores.masked_fill(~pair_mask, -1e4)

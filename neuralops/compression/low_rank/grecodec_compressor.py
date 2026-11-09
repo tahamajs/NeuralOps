@@ -118,30 +118,45 @@ class GreCoDeCLinear(nn.Module):
         orig_shape = x.shape
         x_flat = x.reshape(-1, self.in_features)
 
-        from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+        # 3-level fallback hierarchy (Native CUDA C++ -> Triton JIT -> Vectorized PyTorch)
+        if x.is_cuda:
+            # Level 1: Native CUDA C++ fused SVD projection
+            if self.lora_r == 0 or self.lora_A is None:
+                try:
+                    from neuralops.ops.cuda.fused_svd_projection import fused_svd_projection
 
-        suitable, _ = check_triton_suitability(x_flat, "low_rank")
-        if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
-            try:
-                from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+                    out = fused_svd_projection(x_flat, self.V.t(), S=None, V_T=self.U.t(), bias=self.bias)
+                    return out.view(*orig_shape[:-1], self.out_features)
+                except Exception:
+                    pass
 
-                base_bias = self.bias if (self.lora_r == 0 or self.lora_A is None) else None
-                out = fused_down_up_gemm_bias_triton(x_flat, self.V, self.U.t().contiguous(), bias=base_bias)
-                if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-                    lora_out = (
-                        fused_down_up_gemm_bias_triton(
-                            x_flat,
-                            self.lora_A.to(x_flat.dtype),
-                            self.lora_B.t().to(x_flat.dtype).contiguous(),
-                            bias=self.bias,
+            # Level 2: Triton JIT low-rank kernel
+            from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
+
+            suitable, _ = check_triton_suitability(x_flat, "low_rank")
+            if not FORCE_PYTORCH_FALLBACK and suitable:
+                try:
+                    from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
+
+                    base_bias = self.bias if (self.lora_r == 0 or self.lora_A is None) else None
+                    out = fused_down_up_gemm_bias_triton(x_flat, self.V, self.U.t().contiguous(), bias=base_bias)
+                    if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
+                        lora_out = (
+                            fused_down_up_gemm_bias_triton(
+                                x_flat,
+                                self.lora_A.to(x_flat.dtype),
+                                self.lora_B.t().to(x_flat.dtype).contiguous(),
+                                bias=self.bias,
+                            )
+                            * self.scaling
                         )
-                        * self.scaling
-                    )
-                    return (out + lora_out).view(*orig_shape[:-1], self.out_features)
-                return out.view(*orig_shape[:-1], self.out_features)
-            except Exception:
-                # allowed-swallow: best-effort-telemetry
-                pass
+                        return (out + lora_out).view(*orig_shape[:-1], self.out_features)
+                    return out.view(*orig_shape[:-1], self.out_features)
+                except Exception:
+                    # allowed-swallow: best-effort-telemetry
+                    pass
+
+        # Level 3: Vectorized PyTorch reference
 
         x_v = F.linear(x_flat, self.V)
         out = F.linear(x_v, self.U, self.bias)
