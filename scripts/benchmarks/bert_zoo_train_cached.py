@@ -252,25 +252,45 @@ def train_single_attention_cached(
 
     # Save self-contained checkpoint
     out_dir.mkdir(parents=True, exist_ok=True)
-    student.save_pretrained(str(out_dir))
+    student.save_pretrained(str(out_dir), safe_serialization=True)
     tokenizer.save_pretrained(str(out_dir))
 
-    # Add auto_map and shim
+    # Also save attention_weights.safetensors for neuralops.load_attention_from_hub
+    try:
+        from safetensors.torch import save_file
+        save_file(student.state_dict(), str(out_dir / "attention_weights.safetensors"))
+    except Exception:
+        pass
+
+    # Add auto_map and shim for instant loading via AutoModel / AutoModelForSequenceClassification
     cfg_file = out_dir / "config.json"
     if cfg_file.exists():
         cfg_dict = json.loads(cfg_file.read_text())
+        cfg_dict["attention_type"] = attn_key
         cfg_dict["neuralops_attention_type"] = attn_key
         cfg_dict["auto_map"] = {
             "AutoConfig": "modeling_neuralops_bert.NeuralOpsBertConfig",
+            "AutoModel": "modeling_neuralops_bert.NeuralOpsBertModel",
             "AutoModelForSequenceClassification": "modeling_neuralops_bert.NeuralOpsBertForSequenceClassification",
         }
         cfg_file.write_text(json.dumps(cfg_dict, indent=2), encoding="utf-8")
 
     modeling_py = f"""# Self-contained HuggingFace Hub loading shim for NeuralOps BERT ({attn_key})
-from transformers import BertConfig, BertForSequenceClassification
+import torch
+from transformers import BertConfig, BertModel, BertForSequenceClassification
 
 class NeuralOpsBertConfig(BertConfig):
     model_type = "bert"
+
+class NeuralOpsBertModel(BertModel):
+    config_class = NeuralOpsBertConfig
+    def __init__(self, config, add_pooling_layer=True):
+        super().__init__(config, add_pooling_layer=add_pooling_layer)
+        try:
+            from neuralops.api import replace_attention
+            replace_attention(self, attention="{attn_key}", copy_weights=False)
+        except Exception:
+            pass
 
 class NeuralOpsBertForSequenceClassification(BertForSequenceClassification):
     config_class = NeuralOpsBertConfig
