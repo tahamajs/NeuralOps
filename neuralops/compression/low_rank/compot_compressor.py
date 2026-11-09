@@ -115,6 +115,16 @@ class COMPOTLinear(nn.Module):
         )[idx]
 
     @classmethod
+    def from_linear(
+        cls,
+        layer: nn.Module,
+        rank: int = 64,
+        **kwargs: Any,
+    ) -> COMPOTLinear:
+        compot_layer, _, _ = cls.from_linear_and_activations(layer, activations=None, rank=rank)
+        return compot_layer
+
+    @classmethod
     def from_linear_and_activations(
         cls,
         layer: nn.Module,

@@ -74,8 +74,11 @@ class CoMeBridge(nn.Module):
         hidden_size: int,
         bridge_rank: int = 64,
         alpha_init: float = 0.1,
+        **kwargs: Any,
     ) -> None:
         super().__init__()
+        if "rank" in kwargs:
+            bridge_rank = kwargs.pop("rank")
         self.hidden_size = int(hidden_size)
         self.bridge_rank = int(max(1, min(bridge_rank, hidden_size)))
         self.A = nn.Parameter(torch.empty(self.bridge_rank, self.hidden_size))

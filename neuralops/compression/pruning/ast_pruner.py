@@ -111,11 +111,17 @@ class ASTPrunedLoRALinear(nn.Module):
     def from_linear(
         cls,
         linear: nn.Module,
-        weight: torch.Tensor,
+        weight: torch.Tensor | None = None,
         mask: torch.Tensor | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> ASTPrunedLoRALinear:
+        if weight is None:
+            raw_w = getattr(linear, "weight", None)
+            if raw_w is not None:
+                weight = raw_w.data
+            else:
+                raise ValueError("linear module must have a weight attribute if weight is None")
         bias = None
         if hasattr(linear, "bias") and linear.bias is not None:
             bias = linear.bias.detach()

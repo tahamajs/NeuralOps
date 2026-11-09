@@ -56,7 +56,14 @@ def test_a3_linear_forward_and_reconstruction():
 def test_a3_compressor_reduction_and_forward():
     model = DummyMLP()
     orig_params = sum(p.numel() for p in model.parameters())
-    compressor = A3Compressor(model, rank=16, lora_rank=4, max_error=1.0)
+    compressor = A3Compressor(
+        model,
+        rank=16,
+        lora_rank=4,
+        max_error=1.0,
+        target_attention_only=False,
+        fallback_to_original=False,
+    )
     compressed, stats = compressor.compress()
     assert compressed is not None
 

@@ -169,7 +169,7 @@ class BonsaiPrunedLoRALinear(nn.Module):
     def from_linear(
         cls,
         linear: nn.Linear | Any,
-        weight: torch.Tensor,
+        weight: torch.Tensor | None = None,
         mask: torch.Tensor | None = None,
         target_sp: float = 0.5,
         target_steps: int = 200,
@@ -178,7 +178,16 @@ class BonsaiPrunedLoRALinear(nn.Module):
         lora_r: int = 0,
         lora_alpha: float = 1.0,
         freeze_base: bool = False,
+        **kwargs: Any,
     ) -> BonsaiPrunedLoRALinear:
+        if weight is None:
+            raw_w = getattr(linear, "weight", None)
+            if raw_w is not None:
+                weight = raw_w.data
+            else:
+                raise ValueError("linear module must have a weight attribute if weight is None")
+        if "sparsity" in kwargs:
+            target_sp = float(kwargs.pop("sparsity"))
         out_features, in_features = weight.shape
         bias_present = getattr(linear, "bias", None) is not None
         layer = cls(
