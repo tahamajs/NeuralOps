@@ -22,12 +22,16 @@ from neuralops._optional import _require_torch
 _require_torch("neuralops.layers")
 
 from neuralops.core.registry import ATTENTION_REGISTRY, LOAD_ERRORS, get_attention, list_attentions
+from neuralops.layers.bert_adapter import BertAttentionAdapter
+from neuralops.layers.qwen_adapter import QwenAttentionAdapter
 
 logger = logging.getLogger(__name__)
 
 ATTENTION_REGISTRY = ATTENTION_REGISTRY
 get_attention = get_attention
 list_attentions = list_attentions
+BertAttentionAdapter = BertAttentionAdapter
+QwenAttentionAdapter = QwenAttentionAdapter
 
 _SUBPACKAGES = [
     "adaptive",
