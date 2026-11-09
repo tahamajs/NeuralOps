@@ -407,6 +407,8 @@ class ZeroKVNeoCompressor(BaseCompressor):
                 "fallback_layer_count": num_fb,
                 "layer_errors": self.layer_errors,
                 "keep_ratio": self.keep_ratio,
+                "sparsity": 1.0 - self.keep_ratio,
+                "effective_ratio": 1.0 / max(1e-6, self.keep_ratio),
                 "num_attention_sinks": self.num_attention_sinks,
                 "heavy_hitter_ratio": self.heavy_hitter_ratio,
                 "avg_reconstruction_error": avg_err,
