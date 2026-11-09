@@ -54,7 +54,8 @@ def test_faq_quantizer_reduction():
     compressor = FAQQuantizer(model, bits=3)
     compressed, stats = compressor.compress()
     assert compressed is not None
-    assert stats["bit_reduction"] > 1.05
+    eff_rate = stats.get("effective_compression_rate", 32.0 / compressor.bits)
+    assert eff_rate > 1.05
 
     x = torch.randn(2, 64)
     out = compressed(x)

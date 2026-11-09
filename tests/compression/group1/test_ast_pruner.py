@@ -13,7 +13,7 @@ import pytest
 import torch
 import torch.nn as nn
 from neuralops.compression.pruning.ast_pruner import (
-    ASTLinear,
+    ASTPrunedLoRALinear,
     ASTPruner,
     ast_pruner_factory,
 )
@@ -39,7 +39,7 @@ def test_ast_registry():
 def test_ast_linear_forward_and_masking():
     lin = nn.Linear(128, 64)
     mask = (torch.rand(64, 128) > 0.4).float()
-    ast_layer = ASTLinear.from_linear(lin, mask=mask, lora_r=8)
+    ast_layer = ASTPrunedLoRALinear.from_linear(lin, mask=mask, lora_r=8)
 
     assert ast_layer.in_features == 128
     assert ast_layer.out_features == 64

@@ -13,7 +13,7 @@ import pytest
 import torch
 import torch.nn as nn
 from neuralops.compression.pruning.bonsai_pruner import (
-    BonsaiLinear,
+    BonsaiPrunedLoRALinear,
     BonsaiPruner,
     bonsai_pruner_factory,
 )
@@ -38,7 +38,7 @@ def test_bonsai_registry():
 
 def test_bonsai_linear_forward_and_sparsity():
     lin = nn.Linear(128, 64)
-    bonsai_layer = BonsaiLinear.from_linear(lin, sparsity=0.5, lora_r=8)
+    bonsai_layer = BonsaiPrunedLoRALinear.from_linear(lin, sparsity=0.5, lora_r=8)
 
     assert bonsai_layer.in_features == 128
     assert bonsai_layer.out_features == 64
