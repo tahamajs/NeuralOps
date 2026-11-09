@@ -52,6 +52,7 @@ class QwenAttentionAdapter(nn.Module):
         head_dim: int = 64,
         inherit_weights_from: Optional[nn.Module] = None,
         is_causal: bool = True,
+        bypass_internal_out_proj: bool = True,
     ) -> None:
         super().__init__()
         self.core = core_attention
@@ -61,24 +62,29 @@ class QwenAttentionAdapter(nn.Module):
         self.head_dim = head_dim
         self.is_causal = is_causal
 
-        # Ensure output projection exists and is registered
-        self.o_proj = self._resolve_or_create_o_proj()
+        # Single-o_proj Contract: Dedicated canonical output projection for Qwen
+        self.o_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=False)
+
+        # Enforce Single-o_proj Contract: bypass duplicate internal out_proj if present
+        if bypass_internal_out_proj:
+            self._enforce_single_o_proj_contract()
 
         if inherit_weights_from is not None:
             self._inherit_weights(inherit_weights_from)
 
-    def _resolve_or_create_o_proj(self) -> nn.Module:
-        """Finds or creates the output projection layer for Qwen."""
-        for attr_name in ("o_proj", "out_proj", "wo", "proj"):
+    def _enforce_single_o_proj_contract(self) -> None:
+        """
+        Detects duplicate internal output projections inside core_attention and replaces
+        them with nn.Identity() so that self.o_proj remains the single authoritative
+        output projection executing strictly once at the end of forward().
+        """
+        for attr_name in ("out_proj", "o_proj", "wo", "proj"):
             mod = getattr(self.core, attr_name, None)
             if mod is not None and isinstance(mod, nn.Linear):
-                if mod.out_features == self.embed_dim:
-                    return mod
-
-        # If core does not have an internal output projection, provide one
-        proj = nn.Linear(self.embed_dim, self.embed_dim, bias=False)
-        nn.init.eye_(proj.weight)
-        return proj
+                if mod.in_features == self.embed_dim and mod.out_features == self.embed_dim:
+                    setattr(self.core, attr_name, nn.Identity())
+                    logger.debug("Single-o_proj Contract: Bypassed %s with nn.Identity() in %s", attr_name, type(self.core).__name__)
+                    break
 
     def _inherit_weights(self, source_attn: nn.Module) -> None:
         """
@@ -160,7 +166,9 @@ class QwenAttentionAdapter(nn.Module):
                     logger.debug("Transplanted Value projection with GQA (14:2) repeat_interleave factor %d", repeat_factor)
 
             # 4. Output projection (896, 896)
-            if o_src is not None and isinstance(self.o_proj, nn.Linear):
+            if o_src is not None and isinstance(o_src, nn.Linear):
+                if o_src.bias is not None and self.o_proj.bias is None:
+                    self.o_proj = nn.Linear(self.embed_dim, self.embed_dim, bias=True)
                 if self.o_proj.weight.shape == o_src.weight.shape:
                     self.o_proj.weight.data.copy_(o_src.weight.data)
                     if self.o_proj.bias is not None and o_src.bias is not None:
@@ -243,16 +251,8 @@ class QwenAttentionAdapter(nn.Module):
                 )
             context = self._dim_proj(context)
 
-        # Apply output projection if not executed inside core
-        has_internal_out = False
-        for attr in ("o_proj", "out_proj", "wo"):
-            mod = getattr(self.core, attr, None)
-            if mod is not None and isinstance(mod, nn.Linear) and mod is self.o_proj:
-                has_internal_out = True
-                break
-
-        if not has_internal_out and isinstance(self.o_proj, nn.Linear):
-            context = self.o_proj(context)
+        # Single-o_proj Contract: apply canonical output projection strictly once
+        context = self.o_proj(context)
 
         return (context, attn_weights)
 

@@ -564,8 +564,10 @@ def calibrate_surgically_replaced_model(
         orig_list = list(orig_attns.values())
         surg_list = list(surg_attns.values())
         pairs = list(zip(orig_list, surg_list))
+        surg_names = ["" for _ in pairs]
     else:
         pairs = [(orig_attns[n], surg_attns[n]) for n in common_names]
+        surg_names = [n for n in common_names]
 
     if not pairs:
         return surg_model
@@ -638,44 +640,86 @@ def calibrate_surgically_replaced_model(
         if torch.isnan(W_align).any() or torch.isinf(W_align).any():
             continue
 
-        out_proj = None
-        for child_name, child in surg_mod.named_modules():
-            leaf = child_name.split(".")[-1]
-            if any(p.match(leaf) for p in PROJ_REGEX_PATTERNS["o"]):
-                if isinstance(child, nn.Linear):
-                    out_proj = child
-                    break
-                elif hasattr(child, "up") and isinstance(child.up, nn.Linear):
-                    out_proj = child.up
+        # 1. Search for downstream sibling in parent module FIRST (e.g. BERT/RoBERTa layer.attention.output.dense)
+        # Because hooks are attached to layer.attention.self, Z is the INPUT to layer.attention.output.dense
+        # Update formula: W_target = W_cur @ W_align^T, b_target = b_cur + b_align @ W_cur^T
+        downstream_proj = None
+        surg_name = surg_names[idx] if idx < len(surg_names) else ""
+        if not surg_name:
+            for n, m in surg_model.named_modules():
+                if m is surg_mod:
+                    surg_name = n
                     break
 
-        if out_proj is not None and out_proj.weight.shape[0] == D:
-            W_cur = out_proj.weight.data.float()
-            W_new = (1.0 - blend_alpha) * W_cur + blend_alpha * torch.matmul(W_align.t(), W_cur)
-            out_proj.weight.data.copy_(W_new.to(dtype=out_proj.weight.dtype, device=out_proj.weight.device))
-            if getattr(out_proj, "bias", None) is not None:
-                b_cur = out_proj.bias.data.float()
-                b_new = (1.0 - blend_alpha) * b_cur + blend_alpha * (
-                    torch.matmul(b_cur.unsqueeze(0), W_align).squeeze(0) + b_align
-                )
-                out_proj.bias.data.copy_(b_new.to(dtype=out_proj.bias.dtype, device=out_proj.bias.device))
-        else:
-            W_hook = W_align.to(dtype=dtype, device=device)
-            b_hook = b_align.to(dtype=dtype, device=device)
-
-            def _affine_forward_hook(m, inp, out):
-                if isinstance(out, tuple):
-                    val = out[0]
-                    aligned = (1.0 - blend_alpha) * val + blend_alpha * (
-                        torch.matmul(val.float(), W_hook.float()) + b_hook.float()
-                    ).to(val.dtype)
-                    return (aligned,) + out[1:]
+        if surg_name:
+            parent_name = ".".join(surg_name.split(".")[:-1])
+            curr = surg_model
+            for p in parent_name.split("."):
+                if hasattr(curr, p):
+                    curr = getattr(curr, p)
                 else:
-                    return (1.0 - blend_alpha) * out + blend_alpha * (
-                        torch.matmul(out.float(), W_hook.float()) + b_hook.float()
-                    ).to(out.dtype)
+                    curr = None
+                    break
+            parent_mod = curr
 
-            surg_mod.register_forward_hook(_affine_forward_hook)
+            if parent_mod is not None:
+                if hasattr(parent_mod, "output") and hasattr(parent_mod.output, "dense") and isinstance(parent_mod.output.dense, nn.Linear):
+                    downstream_proj = parent_mod.output.dense
+                elif hasattr(parent_mod, "dense") and isinstance(parent_mod.dense, nn.Linear):
+                    downstream_proj = parent_mod.dense
+
+        if downstream_proj is not None and downstream_proj.in_features == D:
+            W_cur = downstream_proj.weight.data.float()
+            W_target = torch.matmul(W_cur, W_align.t())
+            W_new = (1.0 - blend_alpha) * W_cur + blend_alpha * W_target
+            downstream_proj.weight.data.copy_(W_new.to(dtype=downstream_proj.weight.dtype, device=downstream_proj.weight.device))
+            if getattr(downstream_proj, "bias", None) is not None:
+                b_cur = downstream_proj.bias.data.float()
+                b_target = b_cur + torch.matmul(b_align.unsqueeze(0), W_cur.t()).squeeze(0)
+                b_new = (1.0 - blend_alpha) * b_cur + blend_alpha * b_target
+                downstream_proj.bias.data.copy_(b_new.to(dtype=downstream_proj.bias.dtype, device=downstream_proj.bias.device))
+        else:
+            # 2. Check for upstream internal projection inside surg_mod (e.g. decoder models where hook is on self_attn)
+            # Update formula: W_target = W_align^T @ W_cur, b_target = b_cur @ W_align + b_align
+            out_proj = None
+            for child_name, child in surg_mod.named_modules():
+                leaf = child_name.split(".")[-1]
+                if any(p.match(leaf) for p in PROJ_REGEX_PATTERNS["o"]):
+                    if isinstance(child, nn.Linear):
+                        out_proj = child
+                        break
+                    elif hasattr(child, "up") and isinstance(child.up, nn.Linear):
+                        out_proj = child.up
+                        break
+
+            if out_proj is not None and out_proj.weight.shape[0] == D:
+                W_cur = out_proj.weight.data.float()
+                W_target = torch.matmul(W_align.t(), W_cur)
+                W_new = (1.0 - blend_alpha) * W_cur + blend_alpha * W_target
+                out_proj.weight.data.copy_(W_new.to(dtype=out_proj.weight.dtype, device=out_proj.weight.device))
+                if getattr(out_proj, "bias", None) is not None:
+                    b_cur = out_proj.bias.data.float()
+                    b_target = torch.matmul(b_cur.unsqueeze(0), W_align).squeeze(0) + b_align
+                    b_new = (1.0 - blend_alpha) * b_cur + blend_alpha * b_target
+                    out_proj.bias.data.copy_(b_new.to(dtype=out_proj.bias.dtype, device=out_proj.bias.device))
+            else:
+                # 3. Fallback to affine hook
+                W_hook = W_align.to(dtype=dtype, device=device)
+                b_hook = b_align.to(dtype=dtype, device=device)
+
+                def _affine_forward_hook(m, inp, out):
+                    if isinstance(out, tuple):
+                        val = out[0]
+                        aligned = (1.0 - blend_alpha) * val + blend_alpha * (
+                            torch.matmul(val.float(), W_hook.float()) + b_hook.float()
+                        ).to(val.dtype)
+                        return (aligned,) + out[1:]
+                    else:
+                        return (1.0 - blend_alpha) * out + blend_alpha * (
+                            torch.matmul(out.float(), W_hook.float()) + b_hook.float()
+                        ).to(out.dtype)
+
+                surg_mod.register_forward_hook(_affine_forward_hook)
 
     if attach_convex_anchor:
         if hasattr(orig_model, "roberta") and hasattr(surg_model, "roberta"):

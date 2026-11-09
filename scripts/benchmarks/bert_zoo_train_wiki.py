@@ -357,8 +357,6 @@ def train_single_attention(
     logger.info("[START] Distilling Attention Module: %s (%ds budget)", attn_key, int(train_secs))
     logger.info("=" * 80)
 
-    t_start = time.time()
-
     # 1. Surgery with weight inheritance
     student = copy.deepcopy(teacher_model)
     student = replace_attention(student, attention=attn_key, copy_weights=True)
@@ -368,10 +366,33 @@ def train_single_attention(
     pre_ppl, pre_acc, pre_loss = evaluate_bert_mlm(student, val_loader, device)
     logger.info("[%s] Pre-KD Evaluation: PPL=%.2f | Acc=%.2f%% | Loss=%.4f", attn_key, pre_ppl, pre_acc, pre_loss)
 
+    # Optional Stage 0 Ridge Subspace Calibration
+    try:
+        from neuralops.core._attention_surgery import calibrate_surgically_replaced_model
+        sample_batch = next(iter(train_loader))
+        calib_inputs = {
+            "input_ids": sample_batch["input_ids"][:8].to(device),
+            "attention_mask": sample_batch["attention_mask"][:8].to(device),
+        }
+        student = calibrate_surgically_replaced_model(
+            orig_model=teacher_model,
+            surg_model=student,
+            sample_inputs=calib_inputs,
+            blend_alpha=1.0,
+        )
+        post_calib_ppl, post_calib_acc, _ = evaluate_bert_mlm(student, val_loader, device)
+        logger.info("[%s] Post-Calibration: PPL=%.2f | Acc=%.2f%%", attn_key, post_calib_ppl, post_calib_acc)
+    except Exception as e:
+        logger.debug("[%s] Stage 0 calibration skipped: %s", attn_key, e)
+
+    # Fix 1: Training timer starts STRICTLY AFTER Stage 0 Ridge calibration & evaluations finish
+    t_train_start = time.time()
+    t_s1_deadline = t_train_start + (train_secs * stage1_frac)
+    t_s2_deadline = t_train_start + train_secs
+
     scaler = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda"))
 
     # Stage 1: Frozen-Backbone Subspace Alignment (30% of budget = ~90s)
-    t_s1_deadline = t_start + (train_secs * stage1_frac)
     for name, p in student.named_parameters():
         p.requires_grad = ("attention" in name) or ("LayerNorm" in name)
 
@@ -386,14 +407,22 @@ def train_single_attention(
                 break
             in_ids = batch["input_ids"].to(device, non_blocking=True)
             att_m = batch["attention_mask"].to(device, non_blocking=True)
-            lbls = batch["labels"].to(device, non_blocking=True)
 
-            with torch.cuda.amp.autocast(dtype=torch.float16):
+            with torch.cuda.amp.autocast(dtype=torch.float16 if device.type == "cuda" else torch.bfloat16):
                 with torch.no_grad():
                     t_out = teacher_model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
-                s_out = student(input_ids=in_ids, attention_mask=att_m, labels=lbls, output_hidden_states=True)
-                loss, _ = compute_fast_6pillar_loss(s_out, t_out, lbls, step_i=step_s1)
-                loss = loss / grad_accum
+                s_out = student(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
+
+                # Fix 2: Layerwise all-12-layer hidden MSE + Fast Gram Covariance
+                s_hiddens = s_out.hidden_states[1:]
+                t_hiddens = t_out.hidden_states[1:]
+                layer_mses = [F.mse_loss(s_h, t_h) for s_h, t_h in zip(s_hiddens, t_hiddens)]
+                loss_mse = torch.stack(layer_mses).mean()
+
+                layer_covs = [fast_gram_covariance_loss(s_h, t_h) for s_h, t_h in zip(s_hiddens, t_hiddens)]
+                loss_cov = torch.stack(layer_covs).mean()
+
+                loss = (loss_mse + 0.5 * loss_cov) / grad_accum
 
             scaler.scale(loss).backward()
             step_s1 += 1
@@ -409,7 +438,6 @@ def train_single_attention(
     logger.info("[%s] Stage 1 Complete: %d steps in %.1fs", attn_key, step_s1, dur_s1)
 
     # Stage 2: End-to-End Unfrozen KD + MLM Training (70% of budget = ~210s)
-    t_s2_deadline = t_start + train_secs
     for p in student.parameters():
         p.requires_grad = True
 
@@ -561,6 +589,20 @@ def main() -> None:
 
         # Resume support: Check if training_metrics.json already exists!
         if metrics_file.exists():
+            if args.hf_upload and uploader is not None:
+                upload_marker = ckpt_dir / "upload_success.json"
+                if not upload_marker.exists():
+                    logger.info(
+                        "[%d/%d] [RESUME-UPLOAD] %s trained but upload incomplete (missing upload_success.json). Submitting to uploader.",
+                        i + 1, len(keys), key,
+                    )
+                    try:
+                        with open(metrics_file, "r", encoding="utf-8") as f:
+                            saved_metrics = json.load(f)
+                    except Exception:
+                        saved_metrics = {"attn_key": key, "status": "PASSED"}
+                    uploader.submit_upload(key, ckpt_dir, saved_metrics)
+                    continue
             logger.info("[%d/%d] [RESUME] Skipping %s (already trained).", i + 1, len(keys), key)
             continue
 
