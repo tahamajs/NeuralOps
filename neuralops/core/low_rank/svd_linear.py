@@ -190,7 +190,7 @@ class SVDLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         target_dtype = x.dtype
-        if x.is_cuda and not (self.use_rms_norm and self.norm_weight is not None) and self.rank <= 128:
+        if self.use_fused_kernel and x.is_cuda and not (self.use_rms_norm and self.norm_weight is not None) and self.rank <= 128:
             b = self.bias.to(target_dtype) if self.bias is not None else None
             V_eff = self.S.view(-1, 1) * self.V if self.S is not None else self.V
             dispatched = False

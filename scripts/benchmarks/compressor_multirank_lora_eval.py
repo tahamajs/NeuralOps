@@ -39,18 +39,19 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader, TensorDataset
 
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 os.environ["HF_DATASETS_OFFLINE"] = "1"
 
-# PyTorch 1.12 compatibility
-try:
-    _orig_named_parameters = nn.Module.named_parameters
-    def _compat_named_parameters(self, prefix="", recurse=True, remove_duplicate=True):
-        return _orig_named_parameters(self, prefix=prefix, recurse=recurse)
-    nn.Module.named_parameters = _compat_named_parameters
-except Exception:
-    pass
+import torch
+torch.set_num_threads(1)
+import torch.nn as nn
 
 sys.path.insert(0, "/tmp/neuralops_run")
 from neuralops.core.registry import COMPRESSOR_REGISTRY, create_compressor
@@ -238,7 +239,7 @@ def main():
             try:
                 # Clone base model and apply compression
                 student = copy.deepcopy(base_teacher)
-                cfg = {"compressors": [{"method": key, "rank": k}]}
+                cfg = {"compressors": [{"method": key, "rank": k, "force_rank": True, "use_strs": False}]}
                 student = compress_model(student, cfg)
                 student = student.to(device)
 
