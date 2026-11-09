@@ -462,13 +462,16 @@ def compot_compressor_factory(
     effective_rank = rank or getattr(comp_config, "compot_rank", None) or getattr(comp_config, "rank", 64)
     cal_texts = getattr(comp_config, "compot_calibration_texts", None)
     tokenizer = getattr(comp_config, "tokenizer", None) or getattr(model, "tokenizer", None)
-    max_error = getattr(comp_config, "compot_max_error", getattr(comp_config, "max_error", 0.20))
+    max_error = kwargs.pop(
+        "max_error",
+        getattr(comp_config, "compot_max_error", getattr(comp_config, "max_error", 1.0)),
+    )
     fallback = kwargs.pop(
         "fallback_to_original",
         getattr(
             comp_config,
             "compot_fallback_to_original",
-            getattr(comp_config, "fallback_to_original", True),
+            getattr(comp_config, "fallback_to_original", False),
         ),
     )
 
