@@ -26,6 +26,9 @@ import time
 from pathlib import Path
 from typing import Any
 
+# Force official Hugging Face Hub endpoint (bypass any read-only mirrors like devneeds.ir)
+os.environ["HF_ENDPOINT"] = "https://huggingface.co"
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("bert_zoo_uploader")
 

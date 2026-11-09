@@ -285,8 +285,47 @@ class NeuralOpsBertForSequenceClassification(BertForSequenceClassification):
     (out_dir / "modeling_neuralops_bert.py").write_text(modeling_py, encoding="utf-8")
     (out_dir / "training_metrics.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
 
+    # Canonical BenchmarkResult persistence across all 5 formats (JSON, JSONL, CSV, MD, Parquet)
+    try:
+        from neuralops.benchmarks.results.schema import BenchmarkResult, BenchmarkStatus
+        from neuralops.benchmarks.results.saver import save_all_formats
+
+        bench_res = BenchmarkResult(
+            run_name=f"distill_bert_{attn_key}_sst2",
+            status=BenchmarkStatus.SUCCESS,
+            module={"name": attn_key, "type": "attention", "registry": "attention"},
+            model={"name": "bert-base-uncased", "family": "bert", "num_layers": 12, "hidden_size": 768},
+            dataset={"name": "sst2", "task": "classification", "num_train": 12800, "num_eval": len(val_data)},
+            config={
+                "training_type": "distillation",
+                "train_secs": total_time,
+                "batch_size": batch_size,
+                "grad_accum": grad_accum,
+                "lr_stage1": 2.0e-4,
+                "lr_stage2": 5.0e-5,
+            },
+            metrics={
+                "accuracy": round(post_acc, 2),
+                "pre_accuracy": round(pre_acc, 2),
+                "teacher_accuracy": 91.63,
+                "loss": round(post_loss, 4),
+                "acc_delta": round(post_acc - pre_acc, 2),
+                "tokens_per_sec": round(throughput, 1),
+            },
+            resources={
+                "duration_s": round(total_time, 1),
+                "peak_vram_mb": peak_vram,
+                "steps_s1": step_s1,
+                "steps_s2": step_s2,
+            },
+        )
+        saved_paths = save_all_formats(bench_res, output_dir="results")
+        logger.info("[%s] Canonical BenchmarkResult saved: %s", attn_key, list(saved_paths.keys()))
+    except Exception as e:
+        logger.warning("[%s] Canonical benchmark saver warning: %s", attn_key, e)
+
     slug = attn_key.replace("_", "-")
-    repo_id = f"Hooshaai/bert-{slug}-sst2"
+    repo_id = f"tahamajs/bert-{slug}-sst2"
     card_md = generate_bert_model_card_markdown(attn_key, result, repo_id)
     (out_dir / "README.md").write_text(card_md, encoding="utf-8")
 
@@ -301,7 +340,8 @@ class NeuralOpsBertForSequenceClassification(BertForSequenceClassification):
 def main() -> None:
     parser = argparse.ArgumentParser(description="Authoritative Cached Distillation Engine for BERT Dual Zoo")
     parser.add_argument("--keys_json", default="results/bert_attention_zoo/registry_keys.json")
-    parser.add_argument("--cache_path", default="data/cached_teacher_representations.pt")
+    default_cache = "/dev/shm/cached_teacher_representations.pt" if os.path.exists("/dev/shm/cached_teacher_representations.pt") else "data/cached_teacher_representations.pt"
+    parser.add_argument("--cache_path", default=default_cache)
     parser.add_argument("--teacher_path", default="models/bert_sst2_teacher")
     parser.add_argument("--train_secs", type=float, default=300.0)
     parser.add_argument("--batch_size", type=int, default=64)
