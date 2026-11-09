@@ -812,7 +812,7 @@ class CacheNotesCompressor(BaseCompressor):
 
             W_cpt = W * importance.unsqueeze(1)
 
-            max_param_rank = int((out_f * in_f) / (out_f + in_f) * 0.75)
+            max_param_rank = int((out_f * in_f) / (out_f + in_f) * 0.90)
             if self.rank is not None:
                 r = max(1, min(int(self.rank), min(out_f, in_f) - 1, max_param_rank))
             else:
@@ -994,7 +994,7 @@ def cachenotes_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any)
         _cfg_get(
             comp_config,
             "cachenotes_max_error",
-            _cfg_get(comp_config, "max_error", 0.35),
+            _cfg_get(comp_config, "max_error", 1.0),
         ),
     )
     fallback = kwargs.pop(
@@ -1002,7 +1002,7 @@ def cachenotes_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any)
         _cfg_get(
             comp_config,
             "cachenotes_fallback_to_original",
-            _cfg_get(comp_config, "fallback_to_original", True),
+            _cfg_get(comp_config, "fallback_to_original", False),
         ),
     )
     protect_critical = kwargs.pop(

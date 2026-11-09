@@ -15,7 +15,7 @@ import torch.nn as nn
 from neuralops.compression.quantization.coopq_quantizer import (
     CoopQLinear,
     CoopQQuantizer,
-    coopq_quantizer_factory,
+    coopq_factory,
     quantize_dequantize_coopq,
 )
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -77,6 +77,6 @@ def test_coopq_compressor_full():
 
 def test_coopq_factory():
     model = DummyMLP()
-    compressed, stats = coopq_quantizer_factory(model, bits=4, return_stats=True)
+    compressed, stats = coopq_factory(model, bits=4, return_stats=True)
     assert compressed is not None
     assert "bit_reduction" in stats

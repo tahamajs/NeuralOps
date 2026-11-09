@@ -14,7 +14,7 @@ import torch
 import torch.nn as nn
 from neuralops.compression.low_rank.cur_moe_compressor import (
     CURMoECompressor,
-    cur_moe_compressor_factory,
+    cur_moe_factory,
 )
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
@@ -54,6 +54,6 @@ def test_cur_moe_compressor_basic():
 
 def test_cur_moe_factory():
     model = DummyMoE(d=128)
-    compressed, stats = cur_moe_compressor_factory(model, rank=16, return_stats=True)
+    compressed, stats = cur_moe_factory(model, rank=16, return_stats=True)
     assert compressed is not None
     assert "effective_parameter_ratio" in stats

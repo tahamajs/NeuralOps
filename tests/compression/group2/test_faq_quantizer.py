@@ -15,7 +15,7 @@ import torch.nn as nn
 from neuralops.compression.quantization.faq_quantizer import (
     FAQLinear,
     FAQQuantizer,
-    faq_quantizer_factory,
+    faq_factory,
 )
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
@@ -64,6 +64,6 @@ def test_faq_quantizer_reduction():
 
 def test_faq_factory():
     model = DummyMLP()
-    compressed, stats = faq_quantizer_factory(model, bits=3, return_stats=True)
+    compressed, stats = faq_factory(model, bits=3, return_stats=True)
     assert compressed is not None
     assert "bit_reduction" in stats

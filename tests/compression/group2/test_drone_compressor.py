@@ -14,7 +14,6 @@ import torch
 import torch.nn as nn
 from neuralops.compression.low_rank.drone_compressor import (
     DRONECompressor,
-    drone_compressor_factory,
 )
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
@@ -48,8 +47,9 @@ def test_drone_compressor_reduction():
     assert torch.isfinite(out).all()
 
 
-def test_drone_factory():
+def test_drone_compressor_options():
     model = DummyMLP()
-    compressed, stats = drone_compressor_factory(model, rank=16, return_stats=True)
+    compressor = DRONECompressor(model, rank=8, max_error=0.8)
+    compressed, stats = compressor.compress()
     assert compressed is not None
     assert "effective_parameter_ratio" in stats

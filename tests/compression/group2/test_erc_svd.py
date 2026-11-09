@@ -14,7 +14,7 @@ import torch
 import torch.nn as nn
 from neuralops.compression.svd.erc_svd import (
     ERCSVDCompressor,
-    erc_svd_factory,
+    erc_factory,
 )
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 
@@ -49,6 +49,6 @@ def test_erc_svd_reduction():
 
 def test_erc_svd_factory():
     model = DummyMLP()
-    compressed, stats = erc_svd_factory(model, rank=16, return_stats=True)
+    compressed, stats = erc_factory(model, rank=16, return_stats=True)
     assert compressed is not None
     assert "effective_parameter_ratio" in stats
