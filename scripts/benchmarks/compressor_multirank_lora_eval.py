@@ -214,6 +214,16 @@ def main():
     base_teacher.cpu()
     logger.info("Uncompressed Teacher Baseline: SST-2 Acc = %.2f%% | Params = %d", base_acc, orig_params)
 
+    completed_pairs = set()
+    if ledger_path.exists():
+        for line in ledger_path.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                try:
+                    data = json.loads(line)
+                    completed_pairs.add((data.get("compressor"), data.get("rank")))
+                except Exception:
+                    pass
+
     # Master evaluation loop
     for i, key in enumerate(comp_keys):
         logger.info("\n" + "=" * 80)
@@ -221,12 +231,15 @@ def main():
         logger.info("=" * 80)
 
         for k in ranks:
+            if (key, k) in completed_pairs:
+                logger.info("[%s | rank=%d] Already evaluated. Skipping.", key, k)
+                continue
             t0 = time.time()
             try:
                 # Clone base model and apply compression
                 student = copy.deepcopy(base_teacher)
                 cfg = {"compressors": [{"method": key, "rank": k}]}
-                student, comp_meta = compress_model(student, cfg)
+                student = compress_model(student, cfg)
                 student = student.to(device)
 
                 comp_params = sum(p.numel() for p in student.parameters())

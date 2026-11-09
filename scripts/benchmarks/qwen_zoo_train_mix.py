@@ -626,7 +626,22 @@ def main() -> None:
             cleanup_weights=(args.keep_local_weights == 0),
         )
 
+    completed_keys = set()
+    metrics_log_path = Path(args.metrics_log)
+    if metrics_log_path.exists():
+        for line in metrics_log_path.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                try:
+                    d = json.loads(line)
+                    if d.get("status") == "PASSED":
+                        completed_keys.add(d.get("attn_key"))
+                except Exception:
+                    pass
+
     for i, key in enumerate(keys):
+        if key in completed_keys:
+            logger.info("[%d/%d] [RESUME] Skipping %s (already PASSED in metrics.jsonl).", i + 1, len(keys), key)
+            continue
         ckpt_dir = out_base / key
         metrics_file = ckpt_dir / "training_metrics.json"
 
