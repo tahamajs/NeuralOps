@@ -862,6 +862,8 @@ _API_EXPORTS = {
     "plot_niah_heatmap": "neuralops.evaluation.niah_passkey",
     "NeuralOpsLMEvalAdapter": "neuralops.evaluation.lm_eval_adapter",
     "evaluate_zero_shot_tasks": "neuralops.evaluation.lm_eval_adapter",
+    "load_pretrained_bert": ("neuralops.hub", "load_pretrained_bert"),
+    "list_pretrained_bert_models": ("neuralops.hub", "list_pretrained_bert_models"),
 }
 
 _PKG_DIR = Path(__file__).resolve().parent

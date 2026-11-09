@@ -318,6 +318,7 @@ NeuralOps powers the official **[Hooshaai](https://huggingface.co/Hooshaai)** re
 - **[⚡ Hooshaai General Space & Documentation Hub](https://huggingface.co/spaces/Hooshaai/README)**: Complete architecture atlas, model cards, and interactive execution primers.
 - **[📊 Master Benchmark Ledger Dataset (`Hooshaai/neuralops-results`)](https://huggingface.co/datasets/Hooshaai/neuralops-results)**: Complete Parquet, CSV, and SQLite benchmark ledgers certified on physical silicon (NVIDIA RTX 4070 SM 8.9).
 - **[🤗 Published Model Zoo (15 Checkpoints: 14 Hooshaai + 1 author checkpoint; repo-counted, Hub-unverified)](https://huggingface.co/Hooshaai)**: Pre-trained and post-surgery models including DistilBERT FWSVD, GPT-2 Medium FWSVD, RoBERTa FWSVD, Cosformer, Adaptive Span, Cluster Attention, Griffin SSD, Hymba TransX, RPC, and AdaSplash.
+- **[🧠 Pretrained BERT Attention Zoo (115 Models on Hugging Face Hub)](https://huggingface.co/Hooshaai)**: `bert-base-uncased` surgically transplanted with all 115 registered attention mechanisms, distilled on WikiText-2 for 5 minutes via 6-Pillar Knowledge Distillation on NVIDIA RTX 3090 (24GB VRAM). Download any mechanism with `model, tokenizer = neuralops.load_pretrained_bert("gated_delta_net", task="masked-lm")`. Interactive Demo: **[bert-attention-zoo-demo Space](https://huggingface.co/spaces/Hooshaai/bert-attention-zoo-demo)** | Master Plan: [`docs/BERT_ATTENTION_ZOO_TRAINING_PLAN.md`](docs/BERT_ATTENTION_ZOO_TRAINING_PLAN.md).
 
 ---
 

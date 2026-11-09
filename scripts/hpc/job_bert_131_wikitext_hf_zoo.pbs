@@ -1,0 +1,71 @@
+#!/bin/bash
+#PBS -N bert_zoo_115_wiki
+#PBS -q N3090
+#PBS -l nodes=1:ppn=8:gpus=1
+#PBS -l walltime=14:00:00
+#PBS -l mem=48gb
+#PBS -o /home/tahamajlesi.ut/NeuralOps/results/bert_attention_zoo/pbs_stdout.log
+#PBS -e /home/tahamajlesi.ut/NeuralOps/results/bert_attention_zoo/pbs_stderr.log
+
+set -euo pipefail
+
+WORK_DIR="/home/tahamajlesi.ut/NeuralOps"
+CONDA_ENV="/home/tahamajlesi.ut/.conda/envs/neuralops_cu113"
+PYTHON="${CONDA_ENV}/bin/python3"
+OUT_DIR="${WORK_DIR}/results/bert_attention_zoo"
+
+mkdir -p "${OUT_DIR}/upload_logs"
+cd "${WORK_DIR}"
+
+echo "================================================================="
+echo "NeuralOps Pretrained BERT Attention Zoo Pipeline"
+echo "Host: $(hostname) | Date: $(date)"
+echo "GPU: $(nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader)"
+echo "================================================================="
+
+${PYTHON} -c "import torch; print('PyTorch:', torch.__version__, '| CUDA Device:', torch.cuda.get_device_name(0))"
+${PYTHON} -c "from neuralops.core.registry import ATTENTION_REGISTRY; print('Registry Count:', len(ATTENTION_REGISTRY))"
+
+if [ -z "${HF_TOKEN:-}" ]; then
+    echo "WARNING: HF_TOKEN is unset in environment. Checkpoints will be staged locally." >&2
+fi
+
+echo ""
+echo "=== Phase 0: Dynamic Attention Key Discovery ==="
+${PYTHON} scripts/benchmarks/bert_zoo_discover_keys.py \
+    --output "${OUT_DIR}/registry_keys.json" \
+    --skipped_output "${OUT_DIR}/skipped_keys.json" \
+    --device cuda
+
+echo ""
+echo "=== Phase 1: Deterministic 15% Masked LM Baseline PPL ==="
+${PYTHON} scripts/benchmarks/bert_zoo_baseline_ppl.py \
+    --model      bert-base-uncased \
+    --dataset    wikitext-2-raw-v1 \
+    --seq_len    128 \
+    --batch_size 128 \
+    --output     "${OUT_DIR}/baseline_ppl.json" \
+    --device     cuda
+
+echo ""
+echo "=== Phase 2+3: 100% GPU-Saturated 5-Min KD Engine + Async Upload ==="
+${PYTHON} scripts/benchmarks/bert_zoo_train_wiki.py \
+    --keys_json          "${OUT_DIR}/registry_keys.json" \
+    --model              bert-base-uncased \
+    --dataset            wikitext-2-raw-v1 \
+    --seq_len            128 \
+    --batch_size         128 \
+    --grad_accum         2 \
+    --train_secs         300 \
+    --out_dir            "${OUT_DIR}" \
+    --metrics_log        "${OUT_DIR}/metrics.jsonl" \
+    --hf_org             Hooshaai \
+    --hf_upload          1 \
+    --keep_local_weights 0 \
+    --device             cuda
+
+echo ""
+echo "================================================================="
+echo "Pipeline completed at $(date)."
+echo "Metrics ledger written to: ${OUT_DIR}/metrics.jsonl"
+echo "================================================================="
