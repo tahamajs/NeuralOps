@@ -61,7 +61,7 @@ class GatedRecurrentMemory(nn.Module):
         vw = self.value_proj.weight.to(target_dtype)
         vb = self.value_proj.bias.to(target_dtype) if self.value_proj.bias is not None else None
 
-        g = torch.sigmoid(F.linear(x, gw, gb))
+        g = torch.sigmoid(F.linear(x, gw, gb)).clamp(min=1e-5, max=1.0 - 1e-5)
         v = torch.tanh(F.linear(x, vw, vb))
         B, L, D = x.shape
 

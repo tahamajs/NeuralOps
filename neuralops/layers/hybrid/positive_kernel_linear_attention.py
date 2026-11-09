@@ -462,21 +462,21 @@ class PositiveKernelLinearAttention(BaseAttention):
             return w, b
 
         with torch.no_grad():
-            w_q, _ = extracted["q"]
-            w_k, _ = extracted["k"]
-            w_v, _ = extracted["v"]
+            w_q, b_q = extracted["q"]
+            w_k, b_k = extracted["k"]
+            w_v, b_v = extracted["v"]
             w_o, b_o = extracted["o"]
 
             if w_q is not None:
-                self._svd_init(_orient(w_q, self.hidden_size), None, self.query)
+                self._svd_init(_orient(w_q, self.hidden_size), b_q, self.query)
             if w_k is not None:
                 w_k_o = _orient(w_k, self.hidden_size)
-                w_k_res, _ = _resize_gqa(w_k_o, None, self.key.out_features)
-                self._svd_init(w_k_res, None, self.key)
+                w_k_res, b_k_res = _resize_gqa(w_k_o, b_k, self.key.out_features)
+                self._svd_init(w_k_res, b_k_res, self.key)
             if w_v is not None:
                 w_v_o = _orient(w_v, self.hidden_size)
-                w_v_res, _ = _resize_gqa(w_v_o, None, self.value.out_features)
-                self._svd_init(w_v_res, None, self.value)
+                w_v_res, b_v_res = _resize_gqa(w_v_o, b_v, self.value.out_features)
+                self._svd_init(w_v_res, b_v_res, self.value)
             if w_o is not None:
                 self._svd_init(_orient(w_o, self.all_head_size), b_o, self.out_proj)
             elif self.is_nested_encoder:
@@ -507,7 +507,7 @@ class PositiveKernelLinearAttention(BaseAttention):
                     pass
 
             for mod in (self.query, self.key, self.value, self.out_proj):
-                mod.freeze_base_weights()
+                mod.unfreeze_base_weights()
 
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
@@ -719,11 +719,11 @@ class PositiveKernelLinearAttention(BaseAttention):
 
         if self.is_nested_encoder:
             attn_out = context
+            out = attn_out
         else:
             attn_out = self.out_proj(context)
-
-        alpha = torch.sigmoid(self.lora_pres_gate)
-        out = alpha * attn_out + (1.0 - alpha) * hidden_states
+            alpha = torch.sigmoid(self.lora_pres_gate)
+            out = alpha * attn_out + (1.0 - alpha) * hidden_states
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_decoder:

@@ -48,43 +48,25 @@ def _extract_valid_mask(
         return torch.ones(batch_size, seq_len, device=device, dtype=torch.bool)
 
     with torch.no_grad():
-        if mask.dim() == 2:
-            if mask.dtype in (
-                torch.bool,
-                torch.int8,
-                torch.int16,
-                torch.int32,
-                torch.int64,
-            ):
-                return mask.bool()
-            return mask > -1e4
+        if mask.dtype.is_floating_point:
+            valid = mask > -1e4
+        else:
+            valid = mask.bool() if mask.dtype == torch.bool else mask > 0
 
-        if mask.dim() == 3:
-            if mask.shape[1] == 1:
-                m = mask[:, 0, :]
-            else:
-                m = mask.any(dim=1)
-            if m.dtype not in (
-                torch.bool,
-                torch.int8,
-                torch.int16,
-                torch.int32,
-                torch.int64,
-            ):
-                m = m > -1e4
-            return m.bool()
+        if valid.dim() == 2:
+            return valid
 
-        if mask.dim() == 4:
-            m = mask.any(dim=1).any(dim=1)
-            if m.dtype not in (
-                torch.bool,
-                torch.int8,
-                torch.int16,
-                torch.int32,
-                torch.int64,
-            ):
-                m = m > -1e4
-            return m.bool()
+        if valid.dim() == 3:
+            if valid.shape[1] == 1:
+                return valid[:, 0, :]
+            return valid.any(dim=1)
+
+        if valid.dim() == 4:
+            if valid.shape[1] == 1 and valid.shape[2] == 1:
+                return valid[:, 0, 0, :]
+            if valid.shape[1] == 1:
+                return valid[:, 0].any(dim=1)
+            return valid.any(dim=1).any(dim=1)
 
     return torch.ones(batch_size, seq_len, device=device, dtype=torch.bool)
 
