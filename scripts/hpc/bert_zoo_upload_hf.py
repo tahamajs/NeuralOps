@@ -115,7 +115,7 @@ def upload_directory(
             p for p in target_dir.iterdir()
             if p.is_file()
             and not p.name.startswith((".", "upload_"))
-            and (p.name not in ["pytorch_model.bin", "model.safetensors", "optimizer.pt"] if not is_qwen else p.name not in ["pytorch_model.bin", "optimizer.pt"])
+            and (p.name not in ["pytorch_model.bin", "model.safetensors", "optimizer.pt"] if not is_qwen else p.name != "optimizer.pt")
         ])
         uploaded_count = 0
         for fpath in files_to_upload:

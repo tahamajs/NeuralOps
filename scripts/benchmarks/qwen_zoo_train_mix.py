@@ -504,13 +504,16 @@ def train_single_qwen_attention(
     # Save checkpoint - full model + attention weights in FP16
     out_dir.mkdir(parents=True, exist_ok=True)
     tokenizer.save_pretrained(str(out_dir))
-    student.half().save_pretrained(str(out_dir))
+    try:
+        student.half().save_pretrained(str(out_dir))
+    except Exception:
+        student.half().save_pretrained(str(out_dir), safe_serialization=False)
 
     attn_state: dict[str, torch.Tensor] = {}
     for k, v in student.state_dict().items():
         k_lower = k.lower()
         if any(term in k_lower for term in ("self_attn", "attention", "adapter", "lora", "qwen_att")):
-            attn_state[k] = v.detach().cpu().half().contiguous()
+            attn_state[k] = v.detach().cpu().half().clone().contiguous()
 
     from safetensors.torch import save_file
     save_file(attn_state, str(out_dir / "attention_weights.safetensors"))
