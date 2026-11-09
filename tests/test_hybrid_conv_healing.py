@@ -154,3 +154,64 @@ def test_forward_backward_autograd(bert_teacher, sample_batch, module_name):
         if p.requires_grad
     )
     assert has_grads, f"{module_name} produced zero parameter gradients"
+
+
+@pytest.mark.parametrize("module_name", HEALED_MODULES)
+def test_multidim_mask_support(bert_teacher, module_name):
+    """Verify that 2D, 3D, and None attention masks execute cleanly without shape exceptions."""
+    cfg, teacher = bert_teacher
+    cls = ATTENTION_REGISTRY.resolve(module_name)
+    mod = cls(config=cfg, pretrained_attn=teacher).eval()
+
+    B, N, D = 2, 64, 768
+    x = torch.randn(B, N, D)
+
+    # 1. None mask
+    out_none = mod(x, attention_mask=None)
+    if isinstance(out_none, (tuple, list)):
+        out_none = out_none[0]
+    assert out_none.shape == (B, N, D)
+    assert not torch.isnan(out_none).any()
+
+    # 2. 2D boolean mask
+    mask_2d = torch.ones(B, N, dtype=torch.bool)
+    mask_2d[:, -8:] = False
+    out_2d = mod(x, attention_mask=mask_2d)
+    if isinstance(out_2d, (tuple, list)):
+        out_2d = out_2d[0]
+    assert out_2d.shape == (B, N, D)
+    assert not torch.isnan(out_2d).any()
+
+    # 3. 3D additive mask (B, 1, N)
+    mask_3d = torch.zeros(B, 1, N)
+    mask_3d[:, :, -8:] = -10000.0
+    out_3d = mod(x, attention_mask=mask_3d)
+    if isinstance(out_3d, (tuple, list)):
+        out_3d = out_3d[0]
+    assert out_3d.shape == (B, N, D)
+    assert not torch.isnan(out_3d).any()
+
+
+@pytest.mark.parametrize("module_name", HEALED_MODULES)
+def test_unfreeze_base_weights(bert_teacher, module_name):
+    """Verify that unfreezing base weights enables active parameter gradient computation."""
+    cfg, teacher = bert_teacher
+    cls = ATTENTION_REGISTRY.resolve(module_name)
+    mod = cls(config=cfg, pretrained_attn=teacher).train()
+
+    if hasattr(mod, "unfreeze_base_weights"):
+        mod.unfreeze_base_weights()
+
+    B, N, D = 2, 32, 768
+    x = torch.randn(B, N, D, requires_grad=True)
+    out = mod(x)
+    if isinstance(out, (tuple, list)):
+        out = out[0]
+    loss = out.sum()
+    loss.backward()
+
+    # Ensure key projection parameters have non-zero gradients
+    active_grad_count = sum(
+        1 for p in mod.parameters() if p.grad is not None and p.grad.abs().sum().item() > 0.0
+    )
+    assert active_grad_count > 0, f"{module_name} had zero parameters with active gradients"

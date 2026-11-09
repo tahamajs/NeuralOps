@@ -170,7 +170,7 @@ class HybridAttention(BaseAttention):
         self.all_kv_head_size: int = self.num_kv_heads * self.head_dim
 
         self.is_decoder = _detect_decoder(config, is_decoder, pretrained_attn)
-        self.is_nested_encoder: bool = False
+        self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", False))
 
         self.q_proj = nn.Linear(self.hidden_size, self.all_head_size, bias=True)
         self.k_proj = nn.Linear(self.hidden_size, self.all_kv_head_size, bias=True)
@@ -552,7 +552,8 @@ class HybridAttention(BaseAttention):
             hasattr(old_attn, attr) for attr in ("dense", "out_proj", "c_proj", "out_lin", "o_proj", "wo", "o")
         )
         self.is_nested_encoder = (
-            cls_name in ("BertSelfAttention", "RobertaSelfAttention")
+            self.is_nested_encoder
+            or cls_name in ("BertSelfAttention", "RobertaSelfAttention")
             or (cls_name.endswith("SelfAttention") and not has_out_proj)
             or (
                 hasattr(old_attn, "self")

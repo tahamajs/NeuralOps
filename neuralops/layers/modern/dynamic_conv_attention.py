@@ -136,7 +136,7 @@ class DynamicConvAttention(BaseAttention):
         )
 
         self.is_decoder = _detect_decoder(config, is_decoder, src_attn)
-        self.is_nested_encoder = False
+        self.is_nested_encoder = bool(kwargs.get("is_nested_encoder", False))
 
         comp_config = kwargs.get("comp_config") or (getattr(config, "compression_config", None) if config else None)
         self.lora_rank = int(
@@ -145,7 +145,7 @@ class DynamicConvAttention(BaseAttention):
         self.lora_alpha = float(
             _cfg_get(config, "lora_alpha", _cfg_get(comp_config, "lora_alpha", kwargs.get("lora_alpha", 32.0)))
         )
-        self.freeze_base = self.lora_rank > 0
+        self.freeze_base = bool(kwargs.get("freeze_base", False))
 
         target_dtype = kwargs.get("dtype")
         if target_dtype is None and src_attn is not None:
@@ -249,7 +249,7 @@ class DynamicConvAttention(BaseAttention):
             or (cls_name.endswith("SelfAttention") and "distil" not in cls_name.lower() and not has_out_lin)
         ):
             is_nested = True
-        self.is_nested_encoder = bool(is_nested)
+        self.is_nested_encoder = bool(is_nested or self.is_nested_encoder)
 
         q_weight: torch.Tensor | None = None
         q_bias: torch.Tensor | None = None
@@ -391,8 +391,19 @@ class DynamicConvAttention(BaseAttention):
                     nn.init.zeros_(self.out_proj.bias)
 
         if self.freeze_base:
-            for mod in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
+            self.freeze_base_weights()
+        else:
+            self.unfreeze_base_weights()
+
+    def freeze_base_weights(self) -> None:
+        for mod in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
+            if hasattr(mod, "freeze_base_weights"):
                 mod.freeze_base_weights()
+
+    def unfreeze_base_weights(self) -> None:
+        for mod in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
+            if hasattr(mod, "unfreeze_base_weights"):
+                mod.unfreeze_base_weights()
 
     @staticmethod
     def _read_past_v(past_key_value: Any, layer_idx: int) -> torch.Tensor | None:

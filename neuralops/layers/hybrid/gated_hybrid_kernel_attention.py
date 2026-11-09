@@ -439,7 +439,7 @@ class GatedHybridKernelAttention(BaseAttention):
                 )
             )
         )
-        self.is_nested_encoder = False
+        self.is_nested_encoder = bool(kwargs.get("is_nested_encoder", False))
 
         self.q_proj = FactorisedLinear(
             self.hidden_size,
@@ -572,6 +572,9 @@ class GatedHybridKernelAttention(BaseAttention):
         if mask.dim() == 2:
             v = mask.bool() if mask.dtype == torch.bool else (mask > -1e4 if mask.dtype.is_floating_point else mask > 0)
             return v[:, None, None, :].to(torch.bool)
+        if mask.dim() == 3:
+            v = mask.bool() if mask.dtype == torch.bool else (mask > -1e4 if mask.dtype.is_floating_point else mask > 0)
+            return v[:, None, :, :].to(torch.bool)
         if mask.dim() == 4:
             v = mask.bool() if mask.dtype == torch.bool else (mask > -1e4 if mask.dtype.is_floating_point else mask > 0)
             return v.to(torch.bool)
@@ -911,7 +914,7 @@ class GatedHybridKernelAttention(BaseAttention):
         ):
             self.is_nested_encoder = True
         else:
-            self.is_nested_encoder = False
+            self.is_nested_encoder = bool(self.is_nested_encoder)
 
         extracted = {"q": (None, None), "k": (None, None), "v": (None, None), "o": (None, None)}
 

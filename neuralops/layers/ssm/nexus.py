@@ -367,7 +367,8 @@ class NEXUSAttention(BaseAttention):
                 else False
             )
 
-        self.is_nested_encoder: bool = False
+        self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", False))
+        self.freeze_base: bool = bool(kwargs.get("freeze_base", False))
 
         src_p = next(pretrained_attn.parameters(), None) if pretrained_attn is not None else None
         target_dtype = kwargs.get("dtype", src_p.dtype if src_p is not None else torch.float32)
@@ -379,7 +380,7 @@ class NEXUSAttention(BaseAttention):
             bias=True,
             lora_rank=self.lora_rank,
             lora_alpha=self.lora_alpha,
-            freeze_base=True,
+            freeze_base=self.freeze_base,
             device=target_device,
             dtype=target_dtype,
         )
@@ -389,7 +390,7 @@ class NEXUSAttention(BaseAttention):
             bias=True,
             lora_rank=self.lora_rank,
             lora_alpha=self.lora_alpha,
-            freeze_base=True,
+            freeze_base=self.freeze_base,
             device=target_device,
             dtype=target_dtype,
         )
@@ -399,7 +400,7 @@ class NEXUSAttention(BaseAttention):
             bias=True,
             lora_rank=self.lora_rank,
             lora_alpha=self.lora_alpha,
-            freeze_base=True,
+            freeze_base=self.freeze_base,
             device=target_device,
             dtype=target_dtype,
         )
@@ -409,7 +410,7 @@ class NEXUSAttention(BaseAttention):
             bias=True,
             lora_rank=self.lora_rank,
             lora_alpha=self.lora_alpha,
-            freeze_base=True,
+            freeze_base=self.freeze_base,
             device=target_device,
             dtype=target_dtype,
         )
@@ -775,7 +776,7 @@ class NEXUSAttention(BaseAttention):
             )
         ) and not has_out_proj:
             is_nested = True
-        self.is_nested_encoder = bool(is_nested)
+        self.is_nested_encoder = bool(is_nested or self.is_nested_encoder)
         if hasattr(self, "dss_attn"):
             self.dss_attn.is_nested_encoder = self.is_nested_encoder
 
@@ -839,12 +840,26 @@ class NEXUSAttention(BaseAttention):
 
                 if hasattr(target, "lora_B") and target.lora_B is not None:
                     target.lora_B.data.zero_()
-                target.freeze_base_weights()
+
+        if self.freeze_base:
+            self.freeze_base_weights()
+        else:
+            self.unfreeze_base_weights()
 
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
             if hasattr(self, "dss_attn"):
                 self.dss_attn.is_decoder = self.is_decoder
+
+    def freeze_base_weights(self) -> None:
+        for mod in (self.query, self.key, self.value, self.out_proj):
+            if hasattr(mod, "freeze_base_weights"):
+                mod.freeze_base_weights()
+
+    def unfreeze_base_weights(self) -> None:
+        for mod in (self.query, self.key, self.value, self.out_proj):
+            if hasattr(mod, "unfreeze_base_weights"):
+                mod.unfreeze_base_weights()
 
     def forward(
         self,
