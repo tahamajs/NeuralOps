@@ -203,11 +203,6 @@ class GoldFinchAHNBlock(BaseAttention):
         else:
             self.window_size = int(kwargs.get("window_size", window_size))
 
-        if full_ctx or self.window_size <= 0:
-            self.window_radius = None
-        else:
-            self.window_radius = max(1, self.window_size // 2)
-
         model_type = str(getattr(config, "model_type", "") or "").lower() if config else ""
         is_dec = False
         if config is not None:
@@ -238,6 +233,16 @@ class GoldFinchAHNBlock(BaseAttention):
         self.is_decoder = bool(is_dec)
         self.is_causal = self.is_decoder
         self.is_nested_encoder = False
+
+        if kwargs.get("window_size") is not None or (config is not None and hasattr(config, "window_size")):
+            if self.window_size <= 0:
+                self.window_radius = None
+            else:
+                self.window_radius = max(1, self.window_size // 2)
+        elif not is_dec or full_ctx or self.window_size <= 0:
+            self.window_radius = None
+        else:
+            self.window_radius = max(1, self.window_size // 2)
 
         if config is not None:
             self.lora_rank = int(
@@ -548,9 +553,6 @@ class GoldFinchAHNBlock(BaseAttention):
                 if w_norm < 1e-4:
                     raise RuntimeError(f"Goldfinch copy_weights: '{key}' norm too small ({w_norm:.2e})")
 
-                if self.freeze_base:
-                    target.freeze_base_weights()
-
         try:
             for m in (self.W_q, self.W_k, self.W_v, self.out_proj, self.delta_mem, self.gate):
                 for p in m.parameters():
@@ -560,8 +562,7 @@ class GoldFinchAHNBlock(BaseAttention):
             # allowed-swallow: best-effort-telemetry
             pass
 
-        if self.freeze_base:
-            self.freeze_base_weights()
+        self.unfreeze_base_weights()
 
     @classmethod
     def from_distilbert_pretrained(cls, old_attn, model_config=None, **kwargs):
