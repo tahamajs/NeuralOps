@@ -222,15 +222,27 @@ def compute_fast_6pillar_loss(
 ) -> tuple[torch.Tensor, dict[str, float]]:
     """
     Computes the 6-Pillar KD loss with fast Tensor-Core covariance matching.
+    Logit KL and MLM cross entropy are calculated strictly over masked tokens (labels != -100)
+    to eliminate unnecessary multi-gigabyte memory allocations.
     """
     s_logits = student_out.logits
     t_logits = teacher_out.logits
 
-    # 1. Logits KL (with tau^2 scale)
     tau = temperature
-    p_s = F.log_softmax(s_logits / tau, dim=-1)
-    p_t = F.softmax(t_logits / tau, dim=-1)
-    loss_logits = F.kl_div(p_s, p_t, reduction="batchmean") * (tau * tau)
+    mask = (labels != -100)
+
+    if mask.any():
+        s_sub = s_logits[mask]
+        t_sub = t_logits[mask]
+        p_s = F.log_softmax(s_sub / tau, dim=-1)
+        p_t = F.softmax(t_sub / tau, dim=-1)
+        loss_logits = F.kl_div(p_s, p_t, reduction="batchmean") * (tau * tau)
+        loss_mlm = F.cross_entropy(s_sub, labels[mask])
+    else:
+        p_s = F.log_softmax(s_logits / tau, dim=-1)
+        p_t = F.softmax(t_logits / tau, dim=-1)
+        loss_logits = F.kl_div(p_s, p_t, reduction="batchmean") * (tau * tau)
+        loss_mlm = torch.tensor(0.0, device=s_logits.device)
 
     # 2. Hidden Representation Alignment (MSE + Cosine)
     s_hiddens = student_out.hidden_states
@@ -264,11 +276,6 @@ def compute_fast_6pillar_loss(
 
     # 6. Sparsity / Entropy regularization
     loss_sparsity = s_last.abs().mean()
-
-    # Ground-truth MLM Cross Entropy
-    loss_mlm = torch.tensor(0.0, device=s_logits.device)
-    if student_out.loss is not None:
-        loss_mlm = student_out.loss
 
     total_loss = (
         0.50 * loss_logits
@@ -475,7 +482,7 @@ def train_single_attention(
             with torch.cuda.amp.autocast(dtype=torch.float16):
                 with torch.no_grad():
                     t_out = teacher_model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
-                s_out = student(input_ids=in_ids, attention_mask=att_m, labels=lbls, output_hidden_states=True)
+                s_out = student(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
                 loss, _ = compute_fast_6pillar_loss(s_out, t_out, lbls, step_i=step_s2)
                 loss = loss / grad_accum
 
@@ -574,8 +581,8 @@ def main() -> None:
     parser.add_argument("--model", default="bert-base-uncased")
     parser.add_argument("--dataset", default="wikitext-2-raw-v1")
     parser.add_argument("--seq_len", type=int, default=128)
-    parser.add_argument("--batch_size", type=int, default=128)
-    parser.add_argument("--grad_accum", type=int, default=2)
+    parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--grad_accum", type=int, default=4)
     parser.add_argument("--train_secs", type=float, default=300.0)
     parser.add_argument("--out_dir", default="results/bert_attention_zoo")
     parser.add_argument("--metrics_log", default="results/bert_attention_zoo/metrics.jsonl")
@@ -660,30 +667,33 @@ def main() -> None:
                 batch_size=args.batch_size,
                 grad_accum=args.grad_accum,
             )
-        except torch.cuda.OutOfMemoryError:
-            logger.warning("[%s] OOM at batch_size=%d. Halving batch size to %d and retrying...", key, args.batch_size, args.batch_size // 2)
-            torch.cuda.empty_cache()
-            gc.collect()
-            try:
-                halved_loader = DataLoader(train_dataset, batch_size=args.batch_size // 2, shuffle=True, drop_last=True)
-                res = train_single_attention(
-                    attn_key=key,
-                    teacher_model=teacher,
-                    train_loader=halved_loader,
-                    val_loader=val_loader,
-                    device=device,
-                    tokenizer=tokenizer,
-                    out_dir=ckpt_dir,
-                    train_secs=args.train_secs,
-                    batch_size=args.batch_size // 2,
-                    grad_accum=args.grad_accum * 2,
-                )
-            except Exception as e:
-                logger.error("[%s] OOM retry failed: %s", key, e)
-                res = {"attn_key": key, "status": "SKIPPED_OOM", "error": str(e), "timestamp": datetime.datetime.utcnow().isoformat()}
         except Exception as e:
-            logger.error("[%s] Training exception: %s", key, e, exc_info=True)
-            res = {"attn_key": key, "status": "FAIL_TRAINING", "error": str(e), "timestamp": datetime.datetime.utcnow().isoformat()}
+            err_str = str(e).lower()
+            if "out of memory" in err_str or "cuda out of memory" in err_str:
+                logger.warning("[%s] OOM at batch_size=%d. Halving batch size to %d and retrying...", key, args.batch_size, max(args.batch_size // 2, 16))
+                torch.cuda.empty_cache()
+                gc.collect()
+                try:
+                    retry_bs = max(args.batch_size // 2, 16)
+                    halved_loader = DataLoader(train_dataset, batch_size=retry_bs, shuffle=True, drop_last=True)
+                    res = train_single_attention(
+                        attn_key=key,
+                        teacher_model=teacher,
+                        train_loader=halved_loader,
+                        val_loader=val_loader,
+                        device=device,
+                        tokenizer=tokenizer,
+                        out_dir=ckpt_dir,
+                        train_secs=args.train_secs,
+                        batch_size=retry_bs,
+                        grad_accum=args.grad_accum * 2,
+                    )
+                except Exception as retry_err:
+                    logger.error("[%s] OOM retry failed: %s", key, retry_err)
+                    res = {"attn_key": key, "status": "SKIPPED_OOM", "error": str(retry_err), "timestamp": datetime.datetime.utcnow().isoformat()}
+            else:
+                logger.error("[%s] Training exception: %s", key, e, exc_info=True)
+                res = {"attn_key": key, "status": "FAIL_TRAINING", "error": str(e), "timestamp": datetime.datetime.utcnow().isoformat()}
 
         # Append to append-only JSONL ledger
         with open(args.metrics_log, "a", encoding="utf-8") as f:

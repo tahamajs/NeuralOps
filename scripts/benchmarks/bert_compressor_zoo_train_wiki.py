@@ -157,9 +157,20 @@ def fast_gram_covariance_loss(s_hidden: torch.Tensor, t_hidden: torch.Tensor) ->
 def compute_fast_6pillar_loss(student_out: Any, teacher_out: Any, labels: torch.Tensor, temperature: float = 2.0):
     s_logits, t_logits = student_out.logits, teacher_out.logits
     tau = temperature
-    p_s = F.log_softmax(s_logits / tau, dim=-1)
-    p_t = F.softmax(t_logits / tau, dim=-1)
-    loss_logits = F.kl_div(p_s, p_t, reduction="batchmean") * (tau * tau)
+    mask = (labels != -100)
+
+    if mask.any():
+        s_sub = s_logits[mask]
+        t_sub = t_logits[mask]
+        p_s = F.log_softmax(s_sub / tau, dim=-1)
+        p_t = F.softmax(t_sub / tau, dim=-1)
+        loss_logits = F.kl_div(p_s, p_t, reduction="batchmean") * (tau * tau)
+        loss_mlm = F.cross_entropy(s_sub, labels[mask])
+    else:
+        p_s = F.log_softmax(s_logits / tau, dim=-1)
+        p_t = F.softmax(t_logits / tau, dim=-1)
+        loss_logits = F.kl_div(p_s, p_t, reduction="batchmean") * (tau * tau)
+        loss_mlm = torch.tensor(0.0, device=s_logits.device)
 
     s_hiddens, t_hiddens = student_out.hidden_states, teacher_out.hidden_states
     loss_hidden_mse = torch.tensor(0.0, device=s_logits.device)
@@ -171,7 +182,6 @@ def compute_fast_6pillar_loss(student_out: Any, teacher_out: Any, labels: torch.
         loss_hidden_mse = torch.stack(mse_accum).mean()
         loss_cov = fast_gram_covariance_loss(s_hiddens[-1], t_hiddens[-1])
 
-    loss_mlm = student_out.loss if student_out.loss is not None else torch.tensor(0.0, device=s_logits.device)
     total_loss = 0.50 * loss_logits + 0.35 * loss_hidden_mse + 0.15 * loss_cov + 0.30 * loss_mlm
     return total_loss
 
