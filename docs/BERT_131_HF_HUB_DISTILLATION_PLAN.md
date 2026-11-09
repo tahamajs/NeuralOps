@@ -1,323 +1,280 @@
-# 🏛️ NeuralOps Pretrained BERT-131 Attention Hub Zoo — Master Engineering & Distillation Plan
+# 🏛️ NeuralOps Pretrained Attention Hub Zoo — Master Architectural & Engineering Plan
+## Unified Pretrained Foundation Model Zoo: 131 Canonical Attention Mechanisms on Hugging Face Hub (`Hooshaai`)
 
-**Document ID:** `NOP-ENG-ZOO-131-v2.1`  
-**Status:** Canonical Master Plan  
-**Target Architecture:** `bert-base-uncased` (110M params, 12 layers, 768 hidden, 12 heads)  
-**Distillation Corpus:** `WikiText-2` (Masked Language Modeling, Sequence Length = 256)  
-**Primary Compute Host:** Sharif HPC Cluster (`GPU-3090-1`, NVIDIA RTX 3090 24GB GDDR6X, CUDA 11.3)  
-**Secondary Distributed Hosts:** `ssh gpu` (RTX 4070 8GB SM 8.9) & `ssh tahoora` (GTX 1060 6GB SM 6.1)  
-**Hugging Face Hub Organization:** `Hooshaai` (Primary) / `tahamajs` (Mirror)  
-**Canonical Scope:** All 131 Registered & Extended Attention Mechanisms in NeuralOps  
+**Document ID:** `NOP-ARCH-ZOO-MASTER-v3.0`
+**Status:** Authoritative Architectural Master Plan
+**Primary Backbones:**
+  - **Track A (Encoder Foundation):** `bert-base-uncased` (110M params, 12 layers, 768-dim, 12 heads) on `WikiText-2`
+  - **Track B (Causal Generation & Downstream NLP):** `Qwen/Qwen2.5-0.5B` / `SmolLM-135M` on `SST-2` / `WikiText-103`
+**HPC Compute Hardware:** Sharif HPC Cluster (`GPU-3090-1`, NVIDIA RTX 3090 24GB GDDR6X, CUDA 11.3, GCC 8.2)
+**Distributed Secondary Nodes:** `ssh gpu` (RTX 4070 8GB SM 8.9) & `ssh tahoora` (GTX 1060 6GB SM 6.1)
+**Target Hugging Face Hub Organization:** `Hooshaai` (Official Hub Org)
+**Security Policy:** Zero credential leakage — `$HF_TOKEN` dynamically passed via environment variables only
 
 ---
 
-## 1. Architectural Vision & Strategic Value
+## Executive Summary & Vision
 
-The goal of this initiative is to transition `NeuralOps` from a high-performance kernel library into an **end-to-end Pretrained Foundation Model Zoo on the Hugging Face Hub**. 
+This master specification establishes the engineering protocol to transition `NeuralOps` from a high-performance attention kernel repository into an **open, consumable Pretrained Foundation Model Zoo on the Hugging Face Hub**.
 
-Currently, evaluating a new subquadratic, linear, sparse, or SVD-compressed attention mechanism requires researchers to train a transformer from scratch (computationally prohibitive) or patch a raw architecture without weights. By providing **131 ready-to-use, pre-distilled BERT checkpoints on Hugging Face Hub**, researchers can download any attention mechanism with **a single line of Python code**:
+Rather than requiring downstream researchers to train transformers from scratch or perform fragile code-level monkey patching, `NeuralOps` delivers **131 fully pre-distilled, plug-and-play model repositories** on the Hugging Face Hub under the **`Hooshaai`** organization. Researchers can load, evaluate, or fine-tune any model with a single line of standard Python:
 
 ```python
 import neuralops
 
-# Instant 1-line download and instantiation for any downstream NLP task
-model, tokenizer = neuralops.load_pretrained_bert(
-    attention_type="gated_delta_net",    # Any of the 131 attention mechanisms
-    task="sequence-classification",      # Or "masked-lm", "token-classification"
-    num_labels=2,
+# 1-Line download, automatic caching, and instantiation
+model, tokenizer = neuralops.load_pretrained_model(
+    model_name="bert-base-uncased",          # Or "Qwen2.5-0.5B"
+    attention_type="gated_delta_net",        # Any of the 131 canonical attentions
+    task="masked-lm",                        # Or "sequence-classification", "text-generation"
 )
 ```
 
-### The Core Engineering Challenge & Solution
+---
 
-| Challenge | Root Cause | NeuralOps Engineering Solution |
-|---|---|---|
-| **BERT Perplexity Metric** | BERT is bidirectional; unmasked causal PPL is mathematically invalid ($\text{Loss}=0$). | **Deterministic MLM Pseudo-Perplexity ($\text{MLM-PPL}$)** on 15% masked tokens with fixed seed + **Masked Token Accuracy (%)**. |
-| **Storage Exhaustion** | 131 BERT checkpoints $\times$ 440 MB = **~57.6 GB** of disk space. | **Asynchronous Auto-Cleanup Queue**: Background daemon verifies HF Hub remote commit, records metrics, then immediately deletes local `.safetensors`. Active disk stays $< 2\text{ GB}$. |
-| **GPU Starvation** | Standard PyTorch DataLoaders and repeated teacher forward passes waste 50–70% of compute. | **In-VRAM Pre-tokenized WikiText-2** + **Pre-cached Teacher Hidden States/Logits** + **AutoBatchSizer** locking SMs at 100% duty cycle. |
-| **Layer Interface Mismatch** | Attention mechanisms have divergent forward signatures (SSM states, MoE logits, tuple outputs). | **Universal `BertAttentionAdapter`**: Wraps any attention mechanism into a strict `[Batch, Seq, 768] -> [Batch, Seq, 768]` contract. |
-| **Strict Time Budget** | 131 modules cannot take weeks of cluster time. | **5-Minute (300-Second) 3-Stage Curriculum**: Closed-form Ridge initialization (5s) $\rightarrow$ Operator alignment (90s) $\rightarrow$ End-to-end KD polish (205s). Total runtime: **~11 hours**. |
+## Table of Contents
+
+1. [Architectural Principles & 5 Critical Surgery Upgrades](#1-architectural-principles--5-critical-surgery-upgrades)
+2. [Dual-Track Ecosystem: BERT Encoder Zoo & Modern Causal LM Roadmap](#2-dual-track-ecosystem-bert-encoder-zoo--modern-causal-lm-roadmap)
+3. [Mathematical Formulation: MLM Pseudo-Perplexity & Metric Integrity](#3-mathematical-formulation-mlm-pseudo-perplexity--metric-integrity)
+4. [The 5-Minute (300s) 3-Stage Distillation Curriculum](#4-the-5-minute-300s-3-stage-distillation-curriculum)
+5. [Hardware Saturation Architecture (100% RTX 3090 SM & VRAM Load)](#5-hardware-saturation-architecture-100-rtx-3090-sm--vram-load)
+6. [Asynchronous Background HF Uploader Daemon & Storage Protection](#6-asynchronous-background-hf-uploader-daemon--storage-protection)
+7. [Self-Contained Model Export (`auto_map` & `modeling_neuralops_bert.py`)](#7-self-contained-model-export-auto_map--modeling_neuralops_bertpy)
+8. [Automated Model Card Specification (`README.md`)](#8-automated-model-card-specification-readmemd)
+9. [Public APIs & CLI Command Interfaces](#9-public-apis--cli-command-interfaces)
+10. [Sharif HPC Production PBS Execution Job](#10-sharif-hpc-production-pbs-execution-job)
+11. [Gradio Interactive Model Arena (`Hooshaai/bert-attention-zoo-demo`)](#11-gradio-interactive-model-arena-hooshaaibert-attention-zoo-demo)
+12. [Registry Manifest: All 131 Canonical Attention Units](#12-registry-manifest-all-131-canonical-attention-units)
+13. [Failure Policies, Recovery Matrix & Verification Protocol](#13-failure-policies-recovery-matrix--verification-protocol)
 
 ---
 
-## 2. End-to-End System Topology
+## 1. Architectural Principles & 5 Critical Surgery Upgrades
 
-The pipeline separates heavy GPU compute from network I/O using a producer-consumer architecture:
+To guarantee that transplanted attention mechanisms preserve zero-shot semantic capabilities and converge smoothly during distillation, the core Model Surgery Engine (`neuralops/core/`) must eliminate five architectural flaws:
 
 ```text
-┌─────────────────────────────────────────────────────────────────────────────────────────┐
-│                                GPU WORKER PROCESS (100% LOAD)                           │
-│                                                                                         │
-│  ┌─────────────────────────────────┐       ┌─────────────────────────────────────────┐  │
-│  │ In-VRAM WikiText-2 Tokens (FP16) │       │ Pre-Cached Teacher Hidden States/Logits │  │
-│  └────────────────┬────────────────┘       └────────────────────┬────────────────────┘  │
-│                   │                                             │                       │
-│                   ▼                                             ▼                       │
-│     ┌─────────────────────────────────────────────────────────────────────────────┐     │
-│     │                      FOR MODULE i IN 1..131 ATTENTIONS                      │     │
-│     │                                                                             │     │
-│     │  1. In-Place Surgery: Inject Module into 12 BertSelfAttention layers        │     │
-│     │  2. Stage 0 (0-5s):   Closed-Form Ridge Alignment W_align = (Z^T Z + λI)^-1 │     │
-│     │  3. Pre-Eval:         Record Pre-KD MLM PPL & Masked Token Accuracy         │     │
-│     │  4. Stage 1 (5-95s):  Frozen-Backbone Subspace MSE + Linear CKA Distill    │     │
-│     │  5. Stage 2 (95-300s):Unfrozen End-to-End Fused KL + MLM Cross-Entropy     │     │
-│     │  6. Post-Eval:        Record Post-KD MLM PPL, Accuracy, VRAM, Throughput    │     │
-│     │  7. Staging:          Dump .safetensors, config.json, README to /tmp/stage  │     │
-│     └──────────────────────────────────────┬──────────────────────────────────────┘     │
-└────────────────────────────────────────────┼────────────────────────────────────────────┘
-                                             │ Non-blocking Queue.put(module_meta)
-                                             ▼
-┌─────────────────────────────────────────────────────────────────────────────────────────┐
-│                        ASYNC BACKGROUND UPLOADER DAEMON (CPU / I/O)                     │
-│                                                                                         │
-│  While GPU immediately begins training Module i+1 (Zero GPU Idle Time):                 │
-│   1. Read staging directory `/tmp/neuralops_hf_staging/bert-{module_name}/`             │
-│   2. Generate publication-grade `README.md` Model Card with empirical tables            │
-│   3. Call `huggingface_hub.HfApi.upload_folder(...)` to `Hooshaai/bert-{module_name}`   │
-│   4. Verify remote commit hash from Hugging Face Hub API response                       │
-│   5. Execute Atomic Cleanup: `os.remove("model.safetensors")` (Frees ~440 MB disk)      │
-│   6. Append verification entry to Master Ledgers:                                       │
-│      - `results/bert_wikitext_131_hub_zoo.json`                                         │
-│      - `results/bert_wikitext_131_hub_zoo.csv`                                          │
-│      - `results/bert_wikitext_131_hub_zoo.md`                                           │
-└─────────────────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                    THE "DOUBLE OUTPUT PROJECTION (W_O)" BUG                      │
+├──────────────────────────────────────────────────────────────────────────────────┤
+│ FLAWED SURGERY (Previous Behavior):                                              │
+│   Input X ──► [new_attn: Q, K, V ──► Core Attn ──► new_attn.out_proj (W_O1)]    │
+│                              │                                                   │
+│                              ▼                                                   │
+│               [layer.attention.output.dense (W_O2)] ──► Residual & LayerNorm     │
+│   Result: Hidden state multiplied by TWO output projections! Zero-shot ruined!   │
+├──────────────────────────────────────────────────────────────────────────────────┤
+│ UPGRADED SURGERY (Rigorous Single-Projection Contract):                          │
+│   1. Extract (W_Q, b_Q, W_K, b_K, W_V, b_V) from layer.attention.self           │
+│   2. Extract (W_O, b_O) from layer.attention.output.dense                        │
+│   3. Transplant all 4 projections into new_attn                                  │
+│   4. Replace layer.attention.output.dense with nn.Identity()                     │
+│   Result: Strictly ONE output projection per layer: W_dense_eff = W_O.           │
+└──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
----
+### Upgrade 1: Elimination of the Double Output Projection ($W_O$)
+- **Root Cause:** In Hugging Face BERT/RoBERTa, `layer.attention` is composed of `self` (`BertSelfAttention`, projecting Q, K, V) and `output` (`BertSelfOutput`, which applies `dense` $W_O$, dropout, and LayerNorm). However, NeuralOps modules in `ATTENTION_REGISTRY` already bundle their own internal output projection (`out_proj`). Injecting a NeuralOps module into `layer.attention.self` resulted in two output projections chained sequentially ($x \mapsto W_{O, \text{BERT}} \cdot W_{O, \text{new}} \cdot (\dots)$).
+- **Canonical Fix:**
+  1. Extract $(W_Q, b_Q, W_K, b_K, W_V, b_V)$ from `layer.attention.self` and $(W_O, b_O)$ from `layer.attention.output.dense`.
+  2. Transplant all four matrices into the new module (`q_proj`, `k_proj`, `v_proj`, `out_proj`).
+  3. Replace `layer.attention.output.dense` with `nn.Identity()`.
+  4. Ensure `UniversalAttentionWrapper` forces `is_causal=False` whenever the parent model is an encoder (`not config.is_decoder`), returning `(context_layer,)`.
 
-## 3. Mathematical Formulation & 3-Stage Curriculum
+### Upgrade 2: Family-Specific Smart Weight Transplantation
+During `replace_attention(..., copy_weights=True)`, weight initialization must match the operator's mathematical paradigm:
+- **Standard / Linear / Sparse / Gated (`q_proj, k_proj, v_proj, out_proj`):** Direct tensor copy. For gated mechanisms (`gated_delta_net`, `gla_attention`, `hgrn2`, `kda_attention`), initialize the forget-gate bias vector $b_g$ such that the initial state retention gate is high:
+  $$\sigma(b_g) \approx 0.88 - 0.95 \implies b_g \sim \mathcal{U}(2.0, 3.0)$$
+- **SVD & Low-Rank Attention (`svd_linear_attention`, `asvd_attention`, `compressed_mha_attention`):** Perform exact truncated SVD ($\text{SVD}(W) = U \Sigma V^\top$) on the pretrained $W_Q, W_K, W_V, W_O$ matrices at surgery time. Factorize into rank-$r$ factors:
+  $$U_r = U_{:, :r} \sqrt{\Sigma_{:r}}, \quad V_r = \sqrt{\Sigma_{:r}} V_{:r, :}^\top$$
+- **State-Space & Mamba Modules (`mamba_block`, `selective_ssm`, `simple_ssm`, `svd_mamba`):** Map $[W_V; W_Q]$ into the primary input projections of `in_proj` and map $W_O$ into `out_proj`, preserving the principal semantic subspace on step 0.
 
-BERT is an autoencoding bidirectional Transformer ($h \in \mathbb{R}^{B \times S \times D}$, $D = 768$). Training an attention mechanism inside it without full pretraining from scratch requires a structured distillation curriculum.
+### Upgrade 3: Instant Closed-Form Stage 0 Ridge Calibration (`calibrate_surgical_model`)
+- **Mathematical Principle:** Before backpropagation begins, collect layer input activations $X_\ell$ across 16 calibration sequences (taking $< 2.5$ seconds on GPU). Let $Z_\ell \in \mathbb{R}^{N \times D}$ be the output of the new attention module, and $Y_\ell \in \mathbb{R}^{N \times D}$ be the output of the teacher's original attention.
+- Solve the Tikhonov-regularized Ridge problem in closed form:
+  $$W_{\text{align}}^{(\ell)} = \left( Z_\ell^\top Z_\ell + \lambda I \right)^{-1} Z_\ell^\top Y_\ell, \quad \lambda = 10^{-2}$$
+- Fold $W_{\text{align}}^{(\ell)}$ directly into `out_proj`:
+  $$W_{\text{out, calibrated}}^{(\ell)} \leftarrow W_{\text{align}}^{(\ell)} \cdot W_{\text{out}}^{(\ell)}$$
+- Eliminates zero-shot distribution shift and prevents initial loss spikes.
 
-### 3.1. Exact MLM Pseudo-Perplexity & Accuracy Formulation
+### Upgrade 4: Self-Contained Hugging Face `AutoModel` Export & Reload
+- Each checkpoint directory generates:
+  1. `model.safetensors` (or `pytorch_model.bin`)
+  2. `config.json` containing `auto_map` linking `AutoModelForMaskedLM` to `modeling_neuralops_bert.NeuralOpsBertForMaskedLM`
+  3. `modeling_neuralops_bert.py`: A self-contained Python module embedding `BertAttentionAdapter` that reconstructs the architecture dynamically upon loading.
+- Enables downstream researchers to execute:
+  ```python
+  from transformers import AutoModelForMaskedLM
+  model = AutoModelForMaskedLM.from_pretrained("Hooshaai/bert-gated-delta-net-wiki", trust_remote_code=True)
+  ```
+  without having `neuralops` installed as a local package.
 
-For a token sequence $X = (x_1, \dots, x_S)$, a deterministic subset of token indices $\mathcal{M} \subset \{1, \dots, S\}$ is selected with probability $p = 0.15$ using a fixed generator seed (`seed=42`).
-
-- $80\%$ of tokens in $\mathcal{M}$ are replaced with `[MASK]`.
-- $10\%$ of tokens in $\mathcal{M}$ are replaced with a random token from $\mathcal{V}$.
-- $10\%$ of tokens in $\mathcal{M}$ remain unchanged.
-
-The Masked Language Modeling loss is evaluated strictly over the masked positions $\mathcal{M}$:
-
-$$\mathcal{L}_{\text{MLM}}(S) = -\frac{1}{|\mathcal{M}|} \sum_{i \in \mathcal{M}} \log P_{\text{student}}(x_i \mid \tilde{X})$$
-
-The **MLM Pseudo-Perplexity ($\text{PPL}$)** and **Masked Token Accuracy ($\text{Acc}_{\text{MLM}}$)** are computed as:
-
-$$\text{PPL}_{\text{MLM}} = \exp\left(\min\left(\mathcal{L}_{\text{MLM}}, 20.0\right)\right)$$
-
-$$\text{Acc}_{\text{MLM}} = \frac{1}{|\mathcal{M}|} \sum_{i \in \mathcal{M}} \mathbb{I}\left( \arg\max_{v \in \mathcal{V}} z_{S, i}(v) = x_i \right) \times 100\%$$
-
-Both metrics are recorded at:
-1. **Zero-Shot / Uncalibrated**: Immediately after surgery.
-2. **Pre-KD**: Following closed-form Ridge alignment (Stage 0).
-3. **Post-KD**: Following the 300-second distillation window (Stage 2).
-
----
-
-### 3.2. Stage 0: Instant Closed-Form Ridge Output Calibration ($t = 0\dots 5\,\text{s}$)
-
-Before backpropagation begins, we align the output subspace of the newly injected attention module with the teacher's original attention output space.
-
-For each of the 12 encoder layers $l \in \{1, \dots, 12\}$, we collect calibration activation representations $Z_l \in \mathbb{R}^{N_{\text{cal}} \times D}$ from 16 WikiText sequences passed through the new attention layer, and the corresponding teacher representations $Y_l \in \mathbb{R}^{N_{\text{cal}} \times D}$. We solve the Tikhonov-regularized Ridge regression problem in closed form:
-
-$$W_{\text{align}}^{(l)} = \left( Z_l^\top Z_l + \lambda I \right)^{-1} Z_l^\top Y_l, \quad \lambda = 10^{-4}$$
-
-The projection $W_{\text{align}}^{(l)}$ is absorbed directly into the output projection layer `attention.output.dense.weight`:
-
-$$W_{\text{dense, new}}^{(l)} = W_{\text{align}}^{(l)} \cdot W_{\text{dense, orig}}^{(l)}$$
-
-**Execution time:** $\le 3.5$ seconds across all 12 layers on GPU. Eliminates gradient explosion in early steps.
+### Upgrade 5: Fast Tensor-Core Pillar 4 & Auto-Cleanup Daemon
+- Replaces iterative, CPU-blocking `torch.linalg.svdvals` calls with **Fast Normalized Gram Covariance Matching** in FP16 Tensor Cores:
+  $$\mathcal{L}_{\text{Cov}} = \frac{1}{D^2} \left\| \frac{h_S^\top h_S}{\|h_S\|_F} - \frac{h_T^\top h_T}{\|h_T\|_F} \right\|_F^2$$
+- The background upload daemon automatically deletes local `.safetensors` files once Hugging Face confirms the remote commit hash, keeping local disk footprint strictly under **2 GB** across the entire 131-module sweep.
 
 ---
 
-### 3.3. Stage 1: Subspace & Operator Alignment ($t = 5\dots 95\,\text{s}$, 30% of budget)
+## 2. Dual-Track Ecosystem: BERT Encoder Zoo & Modern Causal LM Roadmap
 
-In this stage, the core backbone is frozen to force the new attention parameters to learn the representation manifold of standard Multi-Head Attention without corrupting the downstream Feed-Forward Networks (FFNs) or LayerNorms.
+```text
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                              NEURALOPS ATTENTION HUB ZOO                               │
+├───────────────────────────────────────────┬────────────────────────────────────────────┤
+│ TRACK A: Encoder Backbone (Primary / Now) │ TRACK B: Causal LM Expansion (Phase Next)  │
+├───────────────────────────────────────────┼────────────────────────────────────────────┤
+│ Model: bert-base-uncased (110M params)    │ Model: Qwen/Qwen2.5-0.5B / SmolLM-135M     │
+│ Paradigm: Bidirectional Autoencoding      │ Paradigm: Autoregressive Causal Decoder    │
+│ Target Corpus: WikiText-2 (seq_len=128)   │ Target Corpus: WikiText-103 / SST-2 GLUE   │
+│ Metric: 15% Deterministic MLM-PPL & Acc   │ Metric: Autoregressive PPL & GLUE Accuracy │
+│ Focus: Representation, Embeddings, NLU    │ Focus: Text Generation, Reasoning, Chat    │
+│ Scope: 131 Models to Hooshaai Hub         │ Scope: Top-20 High-Speed Linear Attentions │
+└───────────────────────────────────────────┴────────────────────────────────────────────┘
+```
 
-- **Frozen parameters:** Embeddings, all intermediate FFN layers, output classification/MLM head.
-- **Trainable parameters:** Injected `attention.self.*` and `attention.output.LayerNorm`.
-- **Optimizer:** AdamW ($\beta_1 = 0.9, \beta_2 = 0.98, \epsilon = 10^{-8}$), $\text{lr} = 1.0 \times 10^{-3}$, weight decay $= 0.01$.
-- **Loss Function:**
-
-$$\mathcal{L}_{\text{Stage 1}} = \sum_{l=1}^{12} \left[ \mu_1 \cdot \text{MSE}\left(h_S^{(l)}, h_T^{(l)}\right) + \mu_2 \cdot \left(1 - \text{LinearCKA}\left(h_S^{(l)}, h_T^{(l)}\right)\right) \right] + \mu_3 \cdot \mathcal{L}_{\text{MLM-KL}}$$
-
-Where Linear Centered Kernel Alignment ($\text{CKA}$) measures invariant subspace similarity:
-
-$$\text{LinearCKA}(X, Y) = \frac{\|Y^\top X\|_F^2}{\|X^\top X\|_F \|Y^\top Y\|_F}$$
-
-Coefficients: $\mu_1 = 0.6, \mu_2 = 0.3, \mu_3 = 0.1$.
+Track A provides the bedrock: establishing complete empirical verification across all 131 attention mechanisms under identical, controlled conditions. Track B takes the highest-performing linear and subquadratic mechanisms from Track A and applies them to modern generative decoders (`Qwen2.5-0.5B`), unlocking generative text capabilities.
 
 ---
 
-### 3.4. Stage 2: End-to-End Differential-LR KD + MLM Recovery ($t = 95\dots 300\,\text{s}$, 70% of budget)
+## 3. Mathematical Formulation: MLM Pseudo-Perplexity & Metric Integrity
 
-All parameters across the entire BERT student model are unfrozen to allow joint adaptation and recover masked language modeling perplexity.
+Because BERT is a bidirectional encoder, feeding unmasked tokens causes attention to attend to the target token directly, collapsing cross-entropy loss to zero and yielding trivial, mathematically invalid perplexity ($\text{PPL} \approx 1.0$).
 
-- **Unfrozen parameters:** Entire model (Embeddings + 12 Transformer Layers + Prediction Head).
+### Deterministic Masked Language Modeling Evaluation Protocol
+
+1. **Deterministic Masking:** For validation sequences $X = (x_1, \dots, x_S)$ with $S=128$, a fixed generator seed (`torch.Generator().manual_seed(42 + batch_idx)`) selects exactly $15\%$ of token positions $\mathcal{M} \subset \{1, \dots, S\}$ (excluding `[CLS]` and `[SEP]`).
+2. **Standard 80/10/10 Rule:**
+   - $80\%$ of tokens in $\mathcal{M}$ are replaced by `[MASK]` (token ID 103).
+   - $10\%$ are replaced by a uniform random token from $\mathcal{V}$ ($0 \le v < 30522$).
+   - $10\%$ remain unchanged.
+3. **Loss Computation:** Non-masked tokens are assigned label $-100$. Loss is strictly the mean cross-entropy over masked positions:
+   $$\mathcal{L}_{\text{MLM}} = -\frac{1}{|\mathcal{M}|} \sum_{i \in \mathcal{M}} \log P_{\text{model}}(x_i \mid \tilde{X})$$
+4. **Metric Equations:**
+   $$\text{MLM-PPL} = \exp\left( \min\left( \mathcal{L}_{\text{MLM}}, 20.0 \right) \right)$$
+   $$\text{Masked Token Accuracy (\%)} = \frac{1}{|\mathcal{M}|} \sum_{i \in \mathcal{M}} \mathbb{I}\left( \arg\max_{v \in \mathcal{V}} z_i(v) = x_i \right) \times 100\%$$
+
+---
+
+## 4. The 5-Minute (300s) 3-Stage Distillation Curriculum
+
+Each attention module undergoes a strict 300.0-second distillation window executed on the RTX 3090:
+
+```text
+  0s            5s                                    95s                                   300s
+  ┌─────────────┬──────────────────────────────────────┬──────────────────────────────────────┐
+  │   STAGE 0   │               STAGE 1                │               STAGE 2                │
+  │ Ridge Calib │   Operator Subspace Distillation     │     End-to-End KD Polish + MLM       │
+  │  (Analytic) │  (Backbone Frozen, lr = 1.0e-3)      │  (Full Unfreeze, Diff LR, Cosine)    │
+  └─────────────┴──────────────────────────────────────┴──────────────────────────────────────┘
+   Measure Raw   Measure Pre-KD                         Measure Post-KD & Acc
+   MLM-PPL       MLM-PPL & Acc                          Save Checkpoint & Push to HF
+```
+
+### Stage 0: Analytic Closed-Form Ridge Calibration ($t = 0\dots 5\,\text{s}$)
+- Runs 16 calibration batches through teacher and student.
+- Solves $W_{\text{align}} = (Z^\top Z + 10^{-2} I)^{-1} Z^\top Y$ on GPU in FP32.
+- Folds alignment into `out_proj`. Evaluates `raw_ppl` vs `calibrated_pre_ppl`.
+
+### Stage 1: Frozen-Backbone Subspace Mimicry ($t = 5\dots 95\,\text{s}$, 30% of budget)
+- **Trainable Parameters:** Injected `attention.self.*` and `attention.output.LayerNorm`.
+- **Frozen Parameters:** Embeddings, intermediate FFNs, classifier heads.
+- **Optimizer:** AdamW ($\text{lr} = 1.0 \times 10^{-3}$, weight decay $= 0.01$).
+- **Loss Formulation:**
+  $$\mathcal{L}_{\text{Stage 1}} = 0.5 \mathcal{L}_{\text{Logits-KL}}(\tau=2.0) + 0.3 \mathcal{L}_{\text{Hidden-MSE}} + 0.2 \mathcal{L}_{\text{Hidden-Cos}} + 0.15 \mathcal{L}_{\text{Cov}}$$
+
+### Stage 2: End-to-End Differential-LR Polish ($t = 95\dots 300\,\text{s}$, 70% of budget)
+- **Trainable Parameters:** All parameters unfrozen.
 - **Differential Learning Rates:**
-  - $\text{lr}_{\text{attention}} = 5.0 \times 10^{-4}$ (higher adaptation rate for newly initialized weights)
-  - $\text{lr}_{\text{backbone}} = 5.0 \times 10^{-5}$ (conservative rate preserving pretrained features)
-  - Schedule: Cosine decay with 10-step linear warmup, decaying to $\text{lr}_{\text{min}} = 1.0 \times 10^{-5}$.
-- **Loss Function:**
-
-$$\mathcal{L}_{\text{Stage 2}} = \alpha \cdot T^2 \cdot D_{\text{KL}}\left( \sigma\left(\frac{z_S}{T}\right) \,\middle\|\, \sigma\left(\frac{z_T}{T}\right) \right) + \beta \cdot \mathcal{L}_{\text{MLM-CE}}(z_S, y_{\text{masked}}) + \gamma \cdot \frac{1}{12}\sum_{l=1}^{12}\text{MSE}\left(h_S^{(l)}, h_T^{(l)}\right)$$
-
-Parameters: Temperature $T = 2.0$, $\alpha = 0.5$, $\beta = 0.3$, $\gamma = 0.2$.  
-Mixed precision: `torch.amp.autocast("cuda", dtype=torch.float16)`.
+  - $\text{lr}_{\text{attention}} = 5.0 \times 10^{-4}$ (rapid adaptation of novel projection geometry)
+  - $\text{lr}_{\text{backbone}} = 5.0 \times 10^{-5}$ (conservative preservation of pretrained semantic features)
+  - Schedule: Cosine decay with 10-step linear warmup decaying to $\text{lr}_{\text{min}} = 1.0 \times 10^{-5}$.
+- **Loss Formulation:**
+  $$\mathcal{L}_{\text{Stage 2}} = 0.5 \tau^2 \mathcal{L}_{\text{KL}} + 0.3 \mathcal{L}_{\text{MLM-CE}} + 0.2 \mathcal{L}_{\text{Hidden-MSE}} + 0.15 \mathcal{L}_{\text{Cov}} + 0.1 \mathcal{L}_{\text{Fisher}}$$
 
 ---
 
-## 4. Hardware Saturation Strategy (100% SM & VRAM Duty Cycle)
+## 5. Hardware Saturation Architecture (100% RTX 3090 SM & VRAM Load)
 
-To prevent the GPU from idling while waiting for batches or CPU operations:
+### Zero-Wait In-Memory Dataset
+The entire `wikitext-2-raw-v1` corpus is pre-tokenized at startup into contiguous 2D tensors ($N \times 128$) held in host pinned memory and streamed to GPU via non-blocking DMA transfers:
+$$\text{Batch Slicing Latency} = 0.00\,\text{ms}$$
 
-### 4.1. In-VRAM Pre-Tokenized WikiText-2 Dataset
+### Teacher Representation Caching
+Running the teacher forward pass on every step wastes $50\%$ of GPU compute. The engine evaluates `bert-base-uncased` once over the training chunks at startup, caching hidden states and logits in FP16:
+$$\text{FLOPs Saved} = 50\% \implies 100\% \text{ of GPU compute allocated to student learning}$$
 
-The raw `wikitext-2-raw-v1` validation and train sets are tokenized once into contiguous token matrices of sequence length $S = 256$:
+### Dynamic Saturation Batch Sizer
+- Initial configuration: `batch_size = 128`, `grad_accum = 2` (effective batch size $= 256$).
+- Targets **18 to 20 GB of VRAM utilization** (~75%–85% duty cycle on RTX 3090).
+- If an attention module raises `torch.cuda.OutOfMemoryError`, the exception handler catches it, clears cache (`torch.cuda.empty_cache(); gc.collect()`), halves batch size to $64$, doubles accumulation to $4$, and retries automatically.
 
-```python
-# Contiguous tensor resident in pinned host memory or GPU VRAM
-tokens_train = torch.tensor(token_ids, dtype=torch.long, device="cuda")
-# Shape: (N_chunks, 256) where N_chunks ~ 8,500
+---
+
+## 6. Asynchronous Background HF Uploader Daemon & Storage Protection
+
+With 131 models $\times$ 440 MB $= \mathbf{57.6\,\text{GB}}$, storing all checkpoints on disk risks exhausting cluster storage quotas.
+
+```text
+GPU Worker: Finishes Module i
+   │
+   ├── Writes checkpoint to results/bert_attention_zoo/module_i/
+   └── Submits task to AsyncHFHubUploader (Non-blocking queue)
+          │
+          ├── GPU IMMEDIATELY begins Module i+1 (Zero GPU Idle Time)
+          │
+          └── Background Thread:
+                 1. Creates/Verifies repo: Hooshaai/bert-{slug}-wiki
+                 2. Writes Model Card README.md with empirical metrics
+                 3. Calls HfApi.upload_folder(...)
+                 4. Confirms remote commit hash
+                 5. WRITES upload_success.json
+                 6. DELETES local model.safetensors / pytorch_model.bin
+                 Result: Active local disk space remains strictly < 2 GB!
 ```
 
-During training, mini-batches are sliced directly from this pre-allocated tensor:
-$$\text{batch} = \text{tokens\_train}[i \cdot B : (i+1) \cdot B]$$
-**Data loading latency:** **0.00 milliseconds** per step.
-
-### 4.2. Pre-Cached Teacher Representation Engine
-
-Running `teacher_model(input_ids)` inside the inner training loop consumes 50% of total GPU FLOPs on redundant computation. Instead, before starting the 131-module loop:
-
-1. Pass the entire training set through unmodified `bert-base-uncased` under `torch.no_grad()`.
-2. Cache intermediate layer hidden states $h_T^{(1..12)}$ and output logits $z_T$ in FP16.
-3. For RTX 3090 (24GB), caching 2,048 training sequences $\times$ 12 layers $\times$ 256 tokens $\times$ 768 dims in FP16 takes **~9.6 GB of VRAM**.
-4. The remaining **14.4 GB of VRAM** is dedicated entirely to the student model, optimizer states, and gradient buffers.
-
-### 4.3. Dynamic Auto-Batch-Sizer (`find_optimal_gpu_batch_size`)
-
-Before training Module 0, an automated binary search probes batch sizes:
-$$B \in \{128, 96, 64, 48, 32, 16\}$$
-It allocates memory, performs forward/backward steps with gradient accumulation $= 1$, checks `torch.cuda.max_memory_allocated()`, and selects the largest batch size that fills **85% to 92% of available VRAM**.
-
-| Target Host | Available VRAM | Target Saturation VRAM | Optimal Batch Size ($S=256$) |
-|---|---|---|---|
-| **Sharif HPC (RTX 3090)** | 24,576 MB | 21,500 MB | **$B = 64$** (Effective with accum 2: **128**) |
-| **`ssh gpu` (RTX 4070)** | 8,192 MB | 7,200 MB | **$B = 32$** (Effective with accum 4: **128**) |
-| **`ssh tahoora` (GTX 1060)** | 6,144 MB | 5,200 MB | **$B = 16$** (Effective with accum 8: **128**) |
+### Dual-Mode Execution Support
+1. **In-Process Daemon:** Spawns via `concurrent.futures.ThreadPoolExecutor` directly inside `bert_zoo_train_wiki.py`.
+2. **Login-Node Watcher (`bert_zoo_upload_hf.py`):** If PBS compute nodes have restricted outbound internet access, the watcher runs on the login node polling `results/bert_attention_zoo/` for completed modules and uploading them independently.
 
 ---
 
-## 5. Universal `BertAttentionAdapter` Contract
+## 7. Self-Contained Model Export (`auto_map` & `modeling_neuralops_bert.py`)
 
-In `neuralops`, attention modules implement diverse interfaces. Some return a single tensor, some return `(context, weights)`, some require causal masking, and some require explicit recurrent states.
+To ensure checkpoints are universally usable without installing NeuralOps, every uploaded model includes:
 
-The `BertAttentionAdapter` standardizes all 131 modules into the exact signature expected by `BertLayer`:
+### `config.json` Patch
+```json
+{
+  "architectures": ["NeuralOpsBertForMaskedLM"],
+  "model_type": "bert",
+  "auto_map": {
+    "AutoConfig": "modeling_neuralops_bert.NeuralOpsBertConfig",
+    "AutoModel": "modeling_neuralops_bert.NeuralOpsBertModel",
+    "AutoModelForMaskedLM": "modeling_neuralops_bert.NeuralOpsBertForMaskedLM",
+    "AutoModelForSequenceClassification": "modeling_neuralops_bert.NeuralOpsBertForSequenceClassification"
+  },
+  "neuralops_attention_type": "gated_delta_net"
+}
+```
 
+### Self-Contained `modeling_neuralops_bert.py`
+Contains the universal adapter shim, allowing downstream users to load the model with native Hugging Face code:
 ```python
-class BertAttentionAdapter(nn.Module):
-    """
-    Wraps any NeuralOps attention module into a drop-in replacement
-    for Hugging Face transformers BertSelfAttention.
-    """
-    def __init__(self, core_module: nn.Module, embed_dim: int = 768, num_heads: int = 12):
-        super().__init__()
-        self.core = core_module
-        self.embed_dim = embed_dim
-        self.num_heads = num_heads
+from transformers import AutoModelForMaskedLM, AutoTokenizer
 
-    def forward(
-        self,
-        hidden_states: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None,
-        head_mask: Optional[torch.Tensor] = None,
-        encoder_hidden_states: Optional[torch.Tensor] = None,
-        encoder_attention_mask: Optional[torch.Tensor] = None,
-        past_key_value: Optional[Tuple[torch.Tensor]] = None,
-        output_attentions: bool = False,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-        
-        # 1. Normalize bidirectional attention mask
-        # 2. Forward pass through core module
-        out = self.core(hidden_states, mask=attention_mask)
-        
-        # 3. Unpack return type
-        if isinstance(out, tuple):
-            context = out[0]
-            attn_weights = out[1] if len(out) > 1 and output_attentions else None
-        else:
-            context = out
-            attn_weights = None
-            
-        # 4. Enforce invariant output shape [Batch, SeqLen, EmbedDim]
-        if context.shape[-1] != self.embed_dim:
-            raise ValueError(f"Output dim {context.shape[-1]} != expected {self.embed_dim}")
-            
-        return (context, attn_weights)
+model = AutoModelForMaskedLM.from_pretrained(
+    "Hooshaai/bert-gated-delta-net-wiki",
+    trust_remote_code=True,
+)
 ```
 
 ---
 
-## 6. Asynchronous Background Uploader Daemon & Disk Protection
+## 8. Automated Model Card Specification (`README.md`)
 
-Uploading 131 models sequentially over a cluster network connection would add 3 to 5 minutes of dead time per module ($131 \times 4\text{ min} \approx 8.7\text{ hours}$ of wasted GPU time).
-
-The `AsyncHFHubUploader` runs as a completely decoupled thread/process:
-
-```python
-class AsyncHFHubUploader:
-    def __init__(self, hf_org: str, max_workers: int = 2, cleanup_weights: bool = True):
-        self.hf_org = hf_org
-        self.cleanup_weights = cleanup_weights
-        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers)
-        self.futures = []
-
-    def submit_upload(self, module_name: str, local_staging_dir: Path, metrics: dict):
-        future = self.executor.submit(
-            self._worker_upload_and_cleanup,
-            module_name,
-            local_staging_dir,
-            metrics,
-        )
-        self.futures.append(future)
-
-    def _worker_upload_and_cleanup(self, module_name: str, staging_dir: Path, metrics: dict):
-        from huggingface_hub import HfApi
-        api = HfApi(token=os.environ["HF_TOKEN"])
-        repo_id = f"{self.hf_org}/bert-{module_name.replace('_', '-')}-wiki"
-
-        # 1. Ensure remote repository exists
-        api.create_repo(repo_id=repo_id, repo_type="model", exist_ok=True)
-
-        # 2. Generate and write publication Model Card
-        model_card = generate_bert_model_card_markdown(module_name, metrics, repo_id)
-        (staging_dir / "README.md").write_text(model_card)
-
-        # 3. Upload entire folder to Hugging Face Hub
-        commit_info = api.upload_folder(
-            folder_path=str(staging_dir),
-            repo_id=repo_id,
-            commit_message=f"Distill bert-{module_name} on WikiText-2 (PPL: {metrics['post_kd_ppl']:.2f})",
-        )
-
-        # 4. Verify remote commit hash
-        assert commit_info.commit_id is not None, "Remote commit failed!"
-
-        # 5. ATOMIC DISK CLEANUP: Delete heavy model weights
-        if self.cleanup_weights:
-            weight_file = staging_dir / "model.safetensors"
-            if not weight_file.exists():
-                weight_file = staging_dir / "pytorch_model.bin"
-            if weight_file.exists():
-                os.remove(weight_file)
-                logger.info(f"[CLEANUP] Deleted local weight file for {module_name} to free disk space.")
-```
-
----
-
-## 7. Automated Model Card Generator (`README.md`)
-
-Every model uploaded to Hugging Face Hub will feature a fully populated, professional Model Card:
+Every repository on `Hooshaai` receives an auto-generated Model Card:
 
 ```markdown
 ---
@@ -337,241 +294,222 @@ tags:
   - attention-zoo
   - knowledge-distillation
   - subquadratic-attention
-  - {module_name}
+  - {attn_key}
 pipeline_tag: fill-mask
 ---
 
-# 🧠 BERT-Base ({module_name}) — Distilled on WikiText-2
+# 🧠 BERT-Base ({attn_key}) — Distilled on WikiText-2
 
-This model is a surgically modified variant of **`bert-base-uncased`** where all 12 standard Multi-Head Self-Attention layers have been replaced with the **`{module_name}`** mechanism from the [NeuralOps Library](https://github.com/tahamajs/NeuralOps).
+This repository hosts a pretrained variant of **`bert-base-uncased`** where all 12 self-attention layers have been replaced with the **`{attn_key}`** mechanism from the [NeuralOps Library](https://github.com/tahamajs/NeuralOps).
 
-The model was distilled on **WikiText-2** using the **NeuralOps 3-Stage GPU-Saturated Knowledge Distillation Pipeline** for 300 seconds on an NVIDIA RTX 3090.
+Distilled on **WikiText-2** using the **NeuralOps 3-Stage GPU-Saturated Knowledge Distillation Engine** on an NVIDIA RTX 3090.
 
 ---
 
 ## 📊 Empirical Evaluation & Distillation Benchmark
 
-Evaluated using **Deterministic Masked Language Modeling Pseudo-Perplexity ($\text{MLM-PPL}$)** on WikiText-2 (15% token masking, `seed=42`):
+Evaluated using **Deterministic Masked Language Modeling Pseudo-Perplexity ($\text{MLM-PPL}$)** (15% token masking, `seed=42`):
 
 | Evaluation Phase | MLM Perplexity ($\text{PPL}$) | Masked Token Acc (%) | Delta vs Baseline |
 |---|:---:|:---:|:---:|
-| **Vanilla BERT Teacher (`bert-base-uncased`)** | `{teacher_ppl:.2f}` | `{teacher_acc:.2f}%` | *Reference* |
-| **Zero-Shot Surgery (Uncalibrated)** | `{raw_ppl:.2f}` | `{raw_acc:.2f}%` | `{raw_delta:+.2f}` |
+| **Teacher BERT Baseline (`bert-base-uncased`)** | `{teacher_ppl:.2f}` | `{teacher_acc:.2f}%` | *Reference* |
 | **Stage 0 (Closed-Form Ridge Calibration)** | `{pre_kd_ppl:.2f}` | `{pre_kd_acc:.2f}%` | `{pre_delta:+.2f}` |
 | **Stage 2 (Post-KD Distilled Model)** | **`{post_kd_ppl:.2f}`** | **`{post_kd_acc:.2f}%`** | **`{post_delta:+.2f}`** |
 
-### Hardware & Training Telemetry
-- **Distillation Hardware:** `{hardware_name}`
-- **Training Time:** `300.0s (5.0 minutes)`
-- **Peak GPU VRAM:** `{peak_vram_mb} MB`
+### Telemetry & Hardware Footprint
+- **Hardware:** NVIDIA RTX 3090 24GB (Sharif HPC Cluster)
+- **Training Duration:** `300.0s (5.0 minutes)`
+- **Peak VRAM:** `{peak_vram_mb} MB`
 - **Throughput:** `{tokens_per_sec:.1f} tokens/sec`
-- **Distillation Stages:** Stage 0 (Closed-Form Ridge) $\rightarrow$ Stage 1 (Frozen-Backbone CKA/MSE) $\rightarrow$ Stage 2 (Differential-LR Fused Logit KD)
+- **Distillation Stages:** Stage 0 (Ridge Alignment) $\rightarrow$ Stage 1 (Frozen Subspace MSE/CKA) $\rightarrow$ Stage 2 (Differential-LR Polish)
 
 ---
 
-## 🚀 Quick Start & Usage
-
-### 1. Using NeuralOps High-Level API (Recommended)
+## 🚀 Usage
 
 ```python
 import neuralops
 
-# Instant load from Hugging Face Hub
-model, tokenizer = neuralops.load_pretrained_bert(
-    attention_type="{module_name}",
+model, tokenizer = neuralops.load_pretrained_model(
+    attention_type="{attn_key}",
     task="masked-lm",
 )
 ```
-
-### 2. Standard Transformers Pipeline
-
-```python
-from transformers import pipeline
-
-unmasker = pipeline("fill-mask", model="{repo_id}")
-results = unmasker("NeuralOps makes attention mechanisms [MASK] and efficient.")
-for res in results:
-    print(f"{{res['token_str']}}: {{res['score']:.4f}}")
 ```
 
 ---
 
-## 📜 Citation
+## 9. Public APIs & CLI Command Interfaces
 
-```bibtex
-@software{{neuralops2026bertzoo,
-  title   = {{NeuralOps: Pretrained BERT-131 Subquadratic Attention Zoo}},
-  author  = {{Majlesi, Taha}},
-  year    = {{2026}},
-  url     = {{https://github.com/tahamajs/NeuralOps}}
-}}
-```
-```
-
----
-
-## 8. End-User Python API & CLI Specification
-
-### 8.1. Python API (`neuralops.load_pretrained_bert`)
-
+### Python API: `neuralops.load_pretrained_model`
 ```python
-def load_pretrained_bert(
+def load_pretrained_model(
     attention_type: str,
+    model_name: str = "bert-base-uncased",
     task: str = "masked-lm",
     num_labels: int = 2,
     hf_org: str = "Hooshaai",
     device: str = "auto",
-    revision: Optional[str] = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> Tuple[nn.Module, Any]:
     """
-    Downloads and instantiates a pretrained, KD-distilled BERT model with the
-    specified NeuralOps attention mechanism directly from Hugging Face Hub.
-    
-    Supported tasks:
-      - "masked-lm": BertForMaskedLM
-      - "sequence-classification": BertForSequenceClassification
-      - "token-classification": BertForTokenClassification
-      - "feature-extraction": BertModel
+    Downloads and instantiates a pretrained attention model from Hugging Face Hub.
+    Gracefully falls back to local surgery if offline.
     """
 ```
 
-### 8.2. CLI Subcommands (`neuralops hub`)
-
+### CLI Interface: `neuralops hub`
 ```bash
-# 1. List all available models, PPL scores, and download links
-neuralops hub list --backbone bert-base-uncased
+# List all 131 models, PPL scores, and download statuses
+neuralops hub list
 
-# 2. Pull and verify a specific attention model
-neuralops hub pull --attention gated_delta_net --task sequence-classification
+# Pull a specific attention checkpoint locally
+neuralops hub pull --attention gated_delta_net --task masked-lm
 
-# 3. Launch or resume the 5-minute zoo distillation pipeline
-neuralops hub train-zoo \
-    --minutes-per-module 5.0 \
-    --upload-hf \
-    --hf-org Hooshaai \
-    --cleanup-after-upload
+# Launch the automated 5-minute training and upload engine
+neuralops hub train-zoo --minutes-per-module 5.0 --upload-hf --hf-org Hooshaai
 ```
 
 ---
 
-## 9. Full Canonical Attention Inventory Mapping (131 Units)
+## 10. Sharif HPC Production PBS Execution Job
 
-The repository currently registers 115 core attention mechanisms in `ATTENTION_REGISTRY` and 82 compression/hybrid modules in `COMPRESSOR_REGISTRY`. To reach the canonical target of **131 attention mechanisms**, the 16 remaining units represent canonical hybrid/fused attention variants:
-
-```
-[001-010] adaptive_span_attention, adaptive_sparse_attention, adaptive_svd_attention, adasplash_attention, alibi, asvd_attention, bam_umoe, block_transformer_hiba, chela_slay, cluster_attention
-[011-020] compressed_attention, compressed_mha_attention, cosformer, cross_attention, decay_linear_attention, delta_product_attention, dynamic_conv_attention, eat, expert_choice_moe, factorised_matrix_state
-[021-030] flash_attention3, flash_attention3_fp8, full_attention, fused_svd_kernel, fusion_attn, galerkin_attention, gated_delta_net, gated_deltanet_block, gated_hybrid_kernel_attention, gdn2_attention
-[031-040] gla_attention, goldfinch_ahn, gqa_attention, granite_hybrid, griffin_ssd, halo_regla, hamming_attention, hgrn2_gated_deltanet, hgrn2_gated_layer, hgrn2_gated_outer
-[041-050] hla_attention, hybrid_attention, hybrid_local_kernel, hymba_transx, jamba, jamba_info, kda_attention, landmark_local_attention, linformer_attention, lola_attention
-[051-060] lora_attention, lsh_attention, mamba_block, mamba_svd_flash, minimal_nova, minimal_svd, mixattention_moska, mla_attention, moba_attention, moe_deltakv_paged
-[061-070] mqa, naive_svd, nasc_attention, nexus, nha_attention, nsa_attention, nystrom_attention, optimized_hybrid_attention, orion, padre_attention
-[071-080] performer_attention, phantom, positive_kernel_linear_attention, preconditioned_gdn_attention, primal_attention, progressive_token_pruning, projection_factorized_attn, qcqa_attention, rala_attention, reap_moe
-[081-090] refined_landmark_attention, regla_attention, residual_svd_attention, routing_attention, rpc_attention, salt_attention, samba_m3, samba_moe, selective_ssm, simple_ssm
-[091-100] sink_attention, soa_attn, spectraformer_attention, spectron, spectron_fp8, split_head_hybrid, svd_attention, svd_compressed, svd_linear_attention, svd_linear_decay
-[101-110] svd_llm_v2_attention, svd_mamba, svd_projection_attention, token_compressed_attention, tri_branch_hybrid, triton_cosformer, triton_svd_linear_attention, ttt_linear_attention, unified_rope, upi_stuffed_mamba
-[111-115] vig_attention, vspec, wgqa_attention, xattention, zeros_attention
-[116-131] Canonical Extensible Units:
-          116: chunk_gla_attention
-          117: multi_scale_retention
-          118: rwkv6_linear_attention
-          119: hgrn_linear_attention
-          120: lightning_attention2
-          121: focused_linear_attention
-          122: flash_linear_attention
-          123: gated_linear_attention_v2
-          124: polynomial_kernel_attention
-          125: relu_linear_attention
-          126: elu_linear_attention
-          127: taylor_series_linear_attention
-          128: randomized_svd_attention
-          129: truncated_svd_attention
-          130: orthogonal_svd_attention
-          131: fused_recurrent_attention
-```
-
----
-
-## 10. Production PBS Job Script for Sharif HPC
-
-**Path:** `scripts/hpc/job_bert_131_wikitext_hf_zoo.pbs`
+**File:** `scripts/hpc/job_bert_131_wikitext_hf_zoo.pbs`
 
 ```bash
 #!/bin/bash
-#PBS -N bert_131_hf_zoo
+#PBS -N bert_zoo_131_wiki
 #PBS -q N3090
 #PBS -l nodes=1:ppn=8:gpus=1
 #PBS -l walltime=14:00:00
 #PBS -l mem=48gb
-#PBS -o /home/tahamajlesi.ut/NeuralOps/results/bert_wikitext_131_hub_zoo/pbs_stdout.log
-#PBS -e /home/tahamajlesi.ut/NeuralOps/results/bert_wikitext_131_hub_zoo/pbs_stderr.log
+#PBS -o /home/tahamajlesi.ut/NeuralOps/results/bert_attention_zoo/pbs_stdout.log
+#PBS -e /home/tahamajlesi.ut/NeuralOps/results/bert_attention_zoo/pbs_stderr.log
 
 set -euo pipefail
 
 WORK_DIR="/home/tahamajlesi.ut/NeuralOps"
 CONDA_ENV="/home/tahamajlesi.ut/.conda/envs/neuralops_cu113"
 PYTHON="${CONDA_ENV}/bin/python3"
-OUT_DIR="${WORK_DIR}/results/bert_wikitext_131_hub_zoo"
+OUT_DIR="${WORK_DIR}/results/bert_attention_zoo"
 
-mkdir -p "${OUT_DIR}/staging"
-
+mkdir -p "${OUT_DIR}/upload_logs"
 cd "${WORK_DIR}"
 
-echo "================================================================="
-echo "NeuralOps Pretrained BERT-131 Attention Zoo Pipeline"
-echo "Host: $(hostname) | Date: $(date)"
-echo "GPU: $(nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader)"
-echo "================================================================="
+echo "=== System Telemetry ==="
+hostname && date
+nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader
+${PYTHON} -c "import torch; print('PyTorch', torch.__version__, '| GPU:', torch.cuda.get_device_name(0))"
 
-# Pre-flight sanity checks
-${PYTHON} -c "import torch; assert torch.cuda.is_available(), 'CUDA Required!'"
-${PYTHON} -c "from neuralops.core.registry import ATTENTION_REGISTRY; print(f'Core Registry: {len(ATTENTION_REGISTRY)} modules')"
-
-# Ensure HF_TOKEN is configured in environment
+# Check token
 if [ -z "${HF_TOKEN:-}" ]; then
-    echo "ERROR: HF_TOKEN environment variable is not set. Aborting." >&2
-    exit 1
+    echo "WARNING: HF_TOKEN is unset in environment. Checkpoints will be staged locally." >&2
 fi
 
-# Run the 100% GPU-Saturated 5-Minute KD Engine with Background HF Upload
-${PYTHON} scripts/train_bert_131_wikitext_hf_zoo.py \
-    --model               bert-base-uncased \
-    --dataset             wikitext-2-raw-v1 \
-    --seq-len             256 \
-    --minutes-per-module  5.0 \
-    --output-dir          "${OUT_DIR}" \
-    --staging-dir         "${OUT_DIR}/staging" \
-    --hf-org              Hooshaai \
-    --upload-hf \
-    --cleanup-after-upload \
-    --device              cuda
+echo "=== Phase 0: Dynamic Key Discovery ==="
+${PYTHON} scripts/benchmarks/bert_zoo_discover_keys.py \
+    --output "${OUT_DIR}/registry_keys.json" \
+    --skipped_output "${OUT_DIR}/skipped_keys.json" \
+    --device cuda
 
-echo "================================================================="
-echo "Pipeline completed successfully at $(date)."
-echo "Master Ledger: ${OUT_DIR}/master_ledger.json"
-echo "================================================================="
+echo "=== Phase 1: Baseline PPL Evaluation ==="
+${PYTHON} scripts/benchmarks/bert_zoo_baseline_ppl.py \
+    --model      bert-base-uncased \
+    --dataset    wikitext-2-raw-v1 \
+    --seq_len    128 \
+    --batch_size 128 \
+    --output     "${OUT_DIR}/baseline_ppl.json" \
+    --device     cuda
+
+echo "=== Phase 2+3: 5-Minute KD Engine + Async Upload ==="
+${PYTHON} scripts/benchmarks/bert_zoo_train_wiki.py \
+    --keys_json          "${OUT_DIR}/registry_keys.json" \
+    --model              bert-base-uncased \
+    --dataset            wikitext-2-raw-v1 \
+    --seq_len            128 \
+    --batch_size         128 \
+    --grad_accum         2 \
+    --train_secs         300 \
+    --out_dir            "${OUT_DIR}" \
+    --metrics_log        "${OUT_DIR}/metrics.jsonl" \
+    --hf_org             Hooshaai \
+    --hf_upload          1 \
+    --keep_local_weights 0 \
+    --device             cuda
+
+echo "=== Completed Successfully at $(date) ==="
 ```
 
 ---
 
-## 11. Implementation & Execution Checklist
+## 11. Gradio Interactive Model Arena (`Hooshaai/bert-attention-zoo-demo`)
 
-- [x] **Master Architectural Plan Documented:** `docs/BERT_131_HF_HUB_DISTILLATION_PLAN.md`
-- [ ] **Universal Adapter:** Create `neuralops/layers/bert_adapter.py` (`BertAttentionAdapter`)
-- [ ] **Master Training Engine:** Create `scripts/train_bert_131_wikitext_hf_zoo.py`
-  - [ ] Deterministic `evaluate_bert_mlm` with $\text{MLM-PPL} = \exp(\mathcal{L}_{\text{MLM}})$
-  - [ ] `InMemoryWikiTextDataset` with pinned memory
-  - [ ] `AutoBatchSizer` finding 85%–92% VRAM saturation
-  - [ ] Teacher representation pre-caching
-  - [ ] 3-Stage KD loop with strict 300.0s time budget
-- [ ] **Async Background Uploader:** Create `neuralops/hub/uploader.py` (`AsyncHFHubUploader`)
-  - [ ] Non-blocking upload to `Hooshaai/bert-{module}-wiki`
-  - [ ] Commit verification
-  - [ ] Local `.safetensors` weight cleanup
-- [ ] **End-User Interface:**
-  - [ ] `neuralops/hub/bert_zoo.py` (`load_pretrained_bert`, `list_pretrained_bert_models`)
-  - [ ] CLI subcommand `neuralops hub {list, pull, train-zoo}`
-- [ ] **Test Suite:** Create `tests/test_bert_hf_hub_zoo.py`
-- [ ] **PBS Execution:** Submit job to Sharif HPC `N3090` queue
-- [ ] **Documentation:** Update `README.md` with Model Zoo badges, recipes, and benchmark tables
+**Deployment:** Hugging Face Spaces (`spaces/bert_attention_demo/app.py`)
+**Features:**
+- Dropdown selector for all 131 attention mechanisms.
+- Live `[MASK]` token probability inspector.
+- Real-time side-by-side comparison: Vanilla BERT PPL vs Pre-KD PPL vs Post-KD PPL.
+- Instant copy-paste Python snippet for downstream fine-tuning.
+
+---
+
+## 12. Registry Manifest: All 131 Canonical Attention Units
+
+```text
+[001-010] adaptive_span_attention, adaptive_sparse_attention, adaptive_svd_attention, adasplash_attention, alibi,
+          asvd_attention, bam_umoe, block_transformer_hiba, chela_slay, cluster_attention
+[011-020] compressed_attention, compressed_mha_attention, cosformer, cross_attention, decay_linear_attention,
+          delta_product_attention, dynamic_conv_attention, eat, expert_choice_moe, factorised_matrix_state
+[021-030] flash_attention3, flash_attention3_fp8, full_attention, fused_svd_kernel, fusion_attn,
+          galerkin_attention, gated_delta_net, gated_deltanet_block, gated_hybrid_kernel_attention, gdn2_attention
+[031-040] gla_attention, goldfinch_ahn, gqa_attention, granite_hybrid, griffin_ssd,
+          halo_regla, hamming_attention, hgrn2_gated_deltanet, hgrn2_gated_layer, hgrn2_gated_outer
+[041-050] hla_attention, hybrid_attention, hybrid_local_kernel, hymba_transx, jamba,
+          jamba_info, kda_attention, landmark_local_attention, linformer_attention, lola_attention
+[051-060] lora_attention, lsh_attention, mamba_block, mamba_svd_flash, minimal_nova,
+          minimal_svd, mixattention_moska, mla_attention, moba_attention, moe_deltakv_paged
+[061-070] mqa, naive_svd, nasc_attention, nexus, nha_attention,
+          nsa_attention, nystrom_attention, optimized_hybrid_attention, orion, padre_attention
+[071-080] performer_attention, phantom, positive_kernel_linear_attention, preconditioned_gdn_attention, primal_attention,
+          progressive_token_pruning, projection_factorized_attn, qcqa_attention, rala_attention, reap_moe
+[081-090] refined_landmark_attention, regla_attention, residual_svd_attention, routing_attention, rpc_attention,
+          salt_attention, samba_m3, samba_moe, selective_ssm, simple_ssm
+[091-100] sink_attention, soa_attn, spectraformer_attention, spectron, spectron_fp8,
+          split_head_hybrid, svd_attention, svd_compressed, svd_linear_attention, svd_linear_decay
+[101-110] svd_llm_v2_attention, svd_mamba, svd_projection_attention, token_compressed_attention, tri_branch_hybrid,
+          triton_cosformer, triton_svd_linear_attention, ttt_linear_attention, unified_rope, upi_stuffed_mamba
+[111-115] vig_attention, vspec, wgqa_attention, xattention, zeros_attention
+[116-131] Canonical Extensible Units:
+          116: chunk_gla_attention, 117: multi_scale_retention, 118: rwkv6_linear_attention, 119: hgrn_linear_attention,
+          120: lightning_attention2, 121: focused_linear_attention, 122: flash_linear_attention, 123: gated_linear_attention_v2,
+          124: polynomial_kernel_attention, 125: relu_linear_attention, 126: elu_linear_attention, 127: taylor_series_linear_attention,
+          128: randomized_svd_attention, 129: truncated_svd_attention, 130: orthogonal_svd_attention, 131: fused_recurrent_attention
+```
+
+---
+
+## 13. Failure Policies, Recovery Matrix & Verification Protocol
+
+| Fault Condition | Automated Handling & Self-Healing |
+|---|---|
+| **OOM on Attention $i$** | Intercept `torch.cuda.OutOfMemoryError`, empty VRAM cache, halve batch size ($128 \rightarrow 64$), double accumulation ($2 \rightarrow 4$), retry once. |
+| **HPC Outbound Network Blocked** | PBS node stages weights locally; login-node watcher daemon detects `training_metrics.json` and performs upload asynchronously. |
+| **Walltime Preemption** | Resume capability: engine scans `training_metrics.json` and skips previously completed checkpoints upon re-launch. |
+| **Divergent Loss / NaN** | Flagged as `FAIL_NUMERICS` in `metrics.jsonl`; process moves cleanly to module $i+1$. |
+| **Disk Quota Constraint** | Local `.safetensors` deleted immediately upon upload commit verification; active disk usage $< 2\text{ GB}$. |
+
+---
+
+## Master Engineering Checklist
+
+- [x] **Master Architectural Plan Documented:** `docs/BERT_ATTENTION_ZOO_TRAINING_PLAN.md`
+- [x] **Universal BertAttentionAdapter:** `neuralops/layers/bert_adapter.py`
+- [x] **Hub Package & Client APIs:** `neuralops/hub/__init__.py`, `neuralops/hub/bert_zoo.py`, `neuralops/hub/uploader.py`
+- [x] **Dynamic Key Discovery Script:** `scripts/benchmarks/bert_zoo_discover_keys.py`
+- [x] **Deterministic 15% MLM PPL Evaluator:** `scripts/benchmarks/bert_zoo_baseline_ppl.py`
+- [x] **5-Minute 100% GPU-Saturated KD Engine:** `scripts/benchmarks/bert_zoo_train_wiki.py`
+- [x] **Dual-Mode Watcher Uploader:** `scripts/hpc/bert_zoo_upload_hf.py`
+- [x] **Production PBS Job Script:** `scripts/hpc/job_bert_131_wikitext_hf_zoo.pbs`
+- [x] **Interactive Gradio Space:** `spaces/bert_attention_demo/app.py`
+- [x] **Unit & Integration Test Suite:** `tests/test_bert_hf_hub_zoo.py`
+- [x] **README.md Ecosystem Documentation:** Updated with Model Zoo badges & 1-line usage recipes
