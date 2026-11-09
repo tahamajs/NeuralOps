@@ -29,6 +29,53 @@ from neuralops.utils.compat import should_compress_linear
 logger = logging.getLogger(__name__)
 
 
+def _pytorch_sparsegpt(
+    W: torch.Tensor,
+    sparsity: float = 0.5,
+    diag_h_inv: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Vectorized PyTorch reference implementation for SparseGPT pruning (Level 3 fallback)."""
+    if diag_h_inv is None:
+        diag_h_inv = torch.full((W.shape[1],), 0.5, device=W.device, dtype=torch.float32)
+    inv_2h = 1.0 / (2.0 * diag_h_inv.clamp(min=1e-8))
+    saliency = (W.float() ** 2) * inv_2h.unsqueeze(0)
+    k_keep = max(1, min(W.shape[1], int(round(W.shape[1] * (1.0 - sparsity)))))
+    _, top_idx = torch.topk(saliency, k=k_keep, dim=1, largest=True)
+    mask = torch.zeros_like(W, dtype=torch.bool)
+    mask.scatter_(1, top_idx, True)
+    return (W.float() * mask.float()).to(dtype=W.dtype)
+
+
+def sparsegpt_prune_layer(
+    module: nn.Linear,
+    sparsity: float = 0.5,
+    diag_h_inv: torch.Tensor | None = None,
+) -> tuple[nn.Linear, torch.Tensor]:
+    """Prunes linear layer weights based on SparseGPT second-order importance.
+
+    Dispatches across 3-tier hierarchy: CUDA C++ (Level 1) -> Triton JIT (Level 2) -> PyTorch (Level 3).
+    """
+    if sparsity <= 0.0:
+        mask = torch.ones_like(module.weight.data, dtype=torch.bool)
+        return module, mask
+
+    W = module.weight.data
+    try:
+        from neuralops.ops.cuda._fallback import dispatch_sparsegpt
+
+        W_pruned = dispatch_sparsegpt(W, sparsity=sparsity, diag_h_inv=diag_h_inv, pytorch_fn=_pytorch_sparsegpt)
+        mask = W_pruned != 0.0
+    except Exception as exc:
+        logger.debug("dispatch_sparsegpt fallback to PyTorch reference: %s", exc)
+        W_pruned = _pytorch_sparsegpt(W, sparsity=sparsity, diag_h_inv=diag_h_inv)
+        mask = W_pruned != 0.0
+
+    module.weight.data.copy_(W_pruned)
+    module.register_buffer("pruning_mask", mask)
+    module.register_buffer("mask", mask.to(dtype=module.weight.dtype))
+    return module, mask
+
+
 @COMPRESSOR_REGISTRY.register("sparsegpt")
 @COMPRESSOR_REGISTRY.register("sparsegpt_compressor", is_alias=True)
 class SparseGPTCompressor(BaseCompressor):
@@ -98,6 +145,7 @@ class SparseGPTCompressor(BaseCompressor):
         self.target_device = (
             torch.device(device) if device is not None else next(model.parameters(), torch.tensor(0.0)).device
         )
+        self.use_kernel = bool(kwargs.get("use_kernel", _cfg_get(cfg, "use_kernel", False)))
         self.max_error = float(max_error)
         self.fallback_to_original = bool(fallback_to_original)
         self.target_modules = target_modules

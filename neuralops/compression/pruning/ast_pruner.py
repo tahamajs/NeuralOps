@@ -172,10 +172,10 @@ class ASTPrunedLoRALinear(nn.Module):
                 w_pruned = (self.weight * self.mask) if self.mask is not None else self.weight
                 out = fused_svd_lora_sparse_attn_triton(
                     x_flat,
-                    w_down=self.lora_A if (self.lora_r > 0 and self.lora_A is not None) else None,
-                    w_up=self.lora_B if (self.lora_r > 0 and self.lora_B is not None) else None,
-                    lora_A=None,
-                    lora_B=None,
+                    w_down=None,
+                    w_up=None,
+                    lora_A=self.lora_A if (self.lora_r > 0 and self.lora_A is not None) else None,
+                    lora_B=self.lora_B if (self.lora_r > 0 and self.lora_B is not None) else None,
                     lora_scale=self.scaling,
                     sparse_w=w_pruned,
                     bias=self.bias,

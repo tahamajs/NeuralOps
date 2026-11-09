@@ -193,10 +193,10 @@ class ARMORLinear(nn.Module):
                 w_eff = self.sparse_weight * self.sparse_mask
                 out = fused_svd_lora_sparse_attn_triton(
                     x_flat,
-                    w_down=self.lora_A,
-                    w_up=self.lora_B,
-                    lora_A=None,
-                    lora_B=None,
+                    w_down=None,
+                    w_up=None,
+                    lora_A=self.lora_A,
+                    lora_B=self.lora_B,
                     lora_scale=self.scaling,
                     sparse_w=w_eff,
                     bias=self.bias,
