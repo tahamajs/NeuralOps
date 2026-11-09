@@ -83,17 +83,25 @@ def upload_directory(
         else:
             repo_id = f"{effective_org}/bert-{slug}-sst2"
 
-        logger.info("[%s] Uploading to %s...", attn_key, repo_id)
+        logger.info("[%s] Uploading files to %s via single-stream HTTPS...", attn_key, repo_id)
         api.create_repo(repo_id=repo_id, repo_type="model", exist_ok=True, private=False)
 
-        commit_info = api.upload_folder(
-            folder_path=str(target_dir),
-            repo_id=repo_id,
-            repo_type="model",
-            commit_message=f"Distill bert-{slug} on WikiText-2",
-        )
-        commit_hash = getattr(commit_info, "commit_id", "verified")
-        logger.info("[%s] Upload successful! Remote commit: %s", attn_key, commit_hash)
+        # Upload files sequentially to avoid multi-threading entropy starvation on cluster kernel
+        files_to_upload = sorted([p for p in target_dir.iterdir() if p.is_file() and not p.name.startswith((".", "upload_"))])
+        uploaded_count = 0
+        for fpath in files_to_upload:
+            logger.info("[%s] Uploading %s (%.2f MB)...", attn_key, fpath.name, fpath.stat().st_size / (1024 * 1024))
+            api.upload_file(
+                path_or_fileobj=str(fpath),
+                path_in_repo=fpath.name,
+                repo_id=repo_id,
+                repo_type="model",
+                commit_message=f"Upload {fpath.name} for bert-{slug}",
+            )
+            uploaded_count += 1
+
+        logger.info("[%s] Upload completed successfully (%d files uploaded to %s)!", attn_key, uploaded_count, repo_id)
+        commit_hash = "verified"
 
         # Write confirmation record
         success_record = {

@@ -147,7 +147,6 @@ class CRLinear(nn.Module):
             logger.debug("CRLinear pivoted QR failed; using greedy column selection: %s", e)
 
         if col_idx is None:
-            list(range(in_f))
             selected_cols = []
             norms = torch.sum(W_float**2, dim=0)
 

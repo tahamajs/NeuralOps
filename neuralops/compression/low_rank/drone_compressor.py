@@ -250,12 +250,18 @@ class DRONECompressor(BaseCompressor):
         self.fallback_layers = []
         self.layer_errors = {}
         self.layer_ranks = {}
+        total_orig_params = 0
+        total_comp_params = 0
 
         for name, module in list(self.model.named_modules()):
             if self._is_target_module(name, module):
                 svd_layer, err, r = self.compress_linear(module, rank=self.rank)
                 self.layer_errors[name] = err
                 self.layer_ranks[name] = r
+                target_mod = getattr(module, "base_layer", module)
+                w_t = getattr(target_mod, "weight", None)
+                if w_t is not None and w_t.ndim == 2:
+                    total_orig_params += w_t.numel()
 
                 if svd_layer is None or err > self.max_error:
                     if self.fallback_to_original:
@@ -266,10 +272,14 @@ class DRONECompressor(BaseCompressor):
                             self.max_error,
                         )
                         self.fallback_layers.append(name)
+                        if w_t is not None and w_t.ndim == 2:
+                            total_comp_params += w_t.numel()
                         continue
                     else:
                         if svd_layer is None:
                             self.fallback_layers.append(name)
+                            if w_t is not None and w_t.ndim == 2:
+                                total_comp_params += w_t.numel()
                             continue
 
                 if hasattr(module, "base_layer"):
@@ -277,7 +287,10 @@ class DRONECompressor(BaseCompressor):
                 else:
                     replace_module(self.model, name, svd_layer)
                 self.compressed_layers.append(name)
+                if w_t is not None and w_t.ndim == 2:
+                    total_comp_params += r * (w_t.shape[0] + w_t.shape[1])
 
+        eff_ratio = round(total_comp_params / total_orig_params, 4) if total_orig_params > 0 else 1.0
         stats = {
             "compressed_layers": self.compressed_layers,
             "compressed_layer_count": len(self.compressed_layers),
@@ -289,6 +302,7 @@ class DRONECompressor(BaseCompressor):
                 float(sum(self.layer_errors.values()) / max(1, len(self.layer_errors))) if self.layer_errors else 0.0
             ),
             "layer_ranks": self.layer_ranks,
+            "effective_parameter_ratio": eff_ratio,
         }
         self.model.compression_stats = stats
         logger.info(

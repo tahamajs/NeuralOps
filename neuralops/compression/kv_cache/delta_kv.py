@@ -468,7 +468,7 @@ class DeltaKVCompressor(BaseCompressor):
                     p.requires_grad = False
                 total_comp_params += orig_layer_params
 
-        forward_check_success = True
+        forward_check_success = False
         try:
             with torch.no_grad():
                 first_p = next(iter(self.model.parameters()), None)
@@ -476,13 +476,16 @@ class DeltaKVCompressor(BaseCompressor):
                 try:
                     dummy_f = torch.randn(1, 16, 768, device=dev)
                     self.model(dummy_f)
+                    forward_check_success = True
                 except Exception:
                     dummy = torch.randint(0, 100, (1, 8), device=dev, dtype=torch.long)
                     try:
                         self.model(input_ids=dummy, attention_mask=torch.ones_like(dummy))
+                        forward_check_success = True
                     except Exception:
                         try:
                             self.model(dummy)
+                            forward_check_success = True
                         except Exception as e2:
                             logger.debug("DeltaKV: forward check skipped: %s", e2)
         except Exception as e:

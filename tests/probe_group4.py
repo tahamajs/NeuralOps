@@ -134,10 +134,12 @@ def test_model(key: str, model_type: str):
     # Calculate ratios
     param_ratio = orig_params / max(1, new_params)
     sparsity_ratio = orig_nonzero / max(1, new_nonzero)
+    sparsity = max(0.0, 1.0 - (new_nonzero / max(1, new_params)))
     
     # Bit reduction
     bits = stats.get("bits") or stats.get("quant_bits") or (4 if "int4" in key or key == "quarot" else 32)
     bit_reduction = 32.0 / float(bits) if bits < 32 else 1.0
+    effective_ratio = max(param_ratio, sparsity_ratio, bit_reduction)
     
     # Test forward
     with torch.no_grad():
@@ -149,13 +151,19 @@ def test_model(key: str, model_type: str):
             
     finite = torch.isfinite(comp_out).all().item()
     rel_error = (torch.norm(comp_out - orig_out) / torch.norm(orig_out).clamp_min(1e-6)).item()
+    passed = effective_ratio > 1.05 and finite
     
     return {
+        "status": "PASS" if passed else "FAIL_RATIO",
+        "orig_params": orig_params,
+        "comp_params": new_params,
         "param_ratio": param_ratio,
+        "sparsity": sparsity,
         "sparsity_ratio": sparsity_ratio,
         "bit_reduction": bit_reduction,
-        "finite": finite,
+        "effective_ratio": effective_ratio,
         "rel_error": rel_error,
+        "is_finite": finite,
         "stats": {k: v for k, v in stats.items() if isinstance(v, (int, float, str, bool))},
     }
 
@@ -176,11 +184,11 @@ def main():
         except Exception as e:
             bert_err = f"{type(e).__name__}: {e}"
             
-        mlp_status = "PASS" if mlp_res and mlp_res["finite"] and (mlp_res["param_ratio"] > 1.05 or mlp_res["sparsity_ratio"] > 1.05 or mlp_res["bit_reduction"] > 1.05) else ("FAIL" if mlp_res else "ERROR")
-        bert_status = "PASS" if bert_res and bert_res["finite"] and (bert_res["param_ratio"] > 1.05 or bert_res["sparsity_ratio"] > 1.05 or bert_res["bit_reduction"] > 1.05) else ("FAIL" if bert_res else "ERROR")
+        mlp_status = mlp_res["status"] if mlp_res else "ERROR"
+        bert_status = bert_res["status"] if bert_res else "ERROR"
         
-        mlp_ratio_str = f"{max(mlp_res['param_ratio'], mlp_res['sparsity_ratio'], mlp_res['bit_reduction']):.2f}x" if mlp_res else "N/A"
-        bert_ratio_str = f"{max(bert_res['param_ratio'], bert_res['sparsity_ratio'], bert_res['bit_reduction']):.2f}x" if bert_res else "N/A"
+        mlp_ratio_str = f"{mlp_res['effective_ratio']:.2f}x" if mlp_res else "N/A"
+        bert_ratio_str = f"{bert_res['effective_ratio']:.2f}x" if bert_res else "N/A"
         
         print(f"{key:<30} | {mlp_status:<12} | {mlp_ratio_str:<10} | {bert_status:<12} | {bert_ratio_str:<10}")
         if mlp_err:
@@ -192,6 +200,11 @@ def main():
             "mlp": mlp_res or {"error": mlp_err},
             "bert": bert_res or {"error": bert_err},
         }
+
+    os.makedirs("results/compressor_zoo", exist_ok=True)
+    with open("results/compressor_zoo/group4_verified.json", "w") as f:
+        json.dump(results, f, indent=2)
+    print("\nVerified results written to results/compressor_zoo/group4_verified.json")
 
 if __name__ == "__main__":
     main()

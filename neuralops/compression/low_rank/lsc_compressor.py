@@ -622,7 +622,14 @@ class LSCCompressor(BaseCompressor):
                         self.model(dummy_ids)
                     except Exception:
                         try:
-                            in_dim = getattr(first_param, "shape", [768])[-1]
+                            in_dim = 768
+                            for m in self.model.modules():
+                                if hasattr(m, "in_features") and isinstance(m.in_features, int):
+                                    in_dim = m.in_features
+                                    break
+                                elif hasattr(m, "V") and hasattr(m.V, "shape") and len(m.V.shape) >= 2:
+                                    in_dim = m.V.shape[1]
+                                    break
                             dummy_x = torch.randn(
                                 1,
                                 8,
