@@ -295,7 +295,7 @@ class NeuralOpsBertForSequenceClassification(BertForSequenceClassification):
             status=BenchmarkStatus.SUCCESS,
             module={"name": attn_key, "type": "attention", "registry": "attention"},
             model={"name": "bert-base-uncased", "family": "bert", "num_layers": 12, "hidden_size": 768},
-            dataset={"name": "sst2", "task": "classification", "num_train": 12800, "num_eval": len(val_data)},
+            dataset={"name": "sst2", "task": "classification", "num_train": 12800, "num_eval": len(val_loader.dataset)},
             config={
                 "training_type": "distillation",
                 "train_secs": total_time,
