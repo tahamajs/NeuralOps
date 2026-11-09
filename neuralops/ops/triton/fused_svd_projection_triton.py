@@ -151,7 +151,7 @@ def fused_svd_projection_triton(
     beta: float = 1.0,
 ) -> torch.Tensor:
     """Triton Level 2 Fused SVD Projection Kernel Entrypoint."""
-    if not HAS_TRITON or not x.is_cuda:
+    if not HAS_TRITON or not x.is_cuda or U is None or V_T is None:
         from neuralops.ops.cuda.fused_svd_projection.fused_svd_projection_autograd import (
             fused_svd_projection_pytorch_ref,
         )

@@ -184,7 +184,7 @@ class SVDLinearLayer(nn.Module):
                         bias=self.bias,
                     )
                 else:
-                    return fused_down_up_gemm_bias_triton(x, self.U, self.V, bias=self.bias)
+                    return fused_down_up_gemm_bias_triton(x, w_down=self.V, w_up=self.U, bias=self.bias)
             except Exception:
                 # allowed-swallow: best-effort-telemetry
                 pass

@@ -92,14 +92,6 @@ class ZeroKVNeoCache:
         window = min(self.recent_window, cur_len - sinks)
         heavy_budget = max(0, self.max_cache_len - sinks - window)
 
-        if self.k_cache.is_cuda:
-            try:
-                from neuralops.ops.triton.paged_attention import paged_kv_evict_compact_triton
-                from neuralops.ops.triton.sliding_window import fused_sink_prune_triton
-            except Exception:
-                # allowed-swallow: best-effort-telemetry
-                pass
-
         sink_k = self.k_cache[:, :, :sinks, :]
         sink_v = self.v_cache[:, :, :sinks, :]
         win_k = self.k_cache[:, :, -window:, :] if window > 0 else self.k_cache[:, :, :0, :]
@@ -108,13 +100,37 @@ class ZeroKVNeoCache:
         if heavy_budget > 0 and cur_len > (sinks + window):
             mid_k = self.k_cache[:, :, sinks : cur_len - window, :]
             mid_v = self.v_cache[:, :, sinks : cur_len - window, :]
-            mid_norms = torch.norm(mid_k.float(), dim=-1)
-            _, top_idx = torch.topk(mid_norms, min(heavy_budget, mid_norms.size(-1)), dim=-1)
-            top_idx, _ = torch.sort(top_idx, dim=-1)
+            B, H, S_mid, D = mid_k.shape
+            num_keep = min(heavy_budget, S_mid)
 
-            idx_exp = top_idx.unsqueeze(-1).expand(-1, -1, -1, D)
-            sel_mid_k = mid_k.gather(2, idx_exp)
-            sel_mid_v = mid_v.gather(2, idx_exp)
+            if self.k_cache.is_cuda and B == 1 and H == 1 and D in (16, 32, 64, 128, 256):
+                try:
+                    from neuralops.ops.triton.paged_attention import paged_kv_evict_compact_triton
+
+                    k_2d = mid_k.squeeze(0).squeeze(0)
+                    v_2d = mid_v.squeeze(0).squeeze(0)
+                    scores = torch.norm(k_2d.float(), dim=-1)
+                    sel_k_2d, sel_v_2d = paged_kv_evict_compact_triton(
+                        k_2d, v_2d, scores, keep_ratio=float(num_keep) / float(S_mid)
+                    )
+                    sel_mid_k = sel_k_2d.unsqueeze(0).unsqueeze(0)
+                    sel_mid_v = sel_v_2d.unsqueeze(0).unsqueeze(0)
+                except Exception:
+                    mid_norms = torch.norm(mid_k.float(), dim=-1)
+                    _, top_idx = torch.topk(mid_norms, num_keep, dim=-1)
+                    top_idx, _ = torch.sort(top_idx, dim=-1)
+
+                    idx_exp = top_idx.unsqueeze(-1).expand(-1, -1, -1, D)
+                    sel_mid_k = mid_k.gather(2, idx_exp)
+                    sel_mid_v = mid_v.gather(2, idx_exp)
+            else:
+                mid_norms = torch.norm(mid_k.float(), dim=-1)
+                _, top_idx = torch.topk(mid_norms, num_keep, dim=-1)
+                top_idx, _ = torch.sort(top_idx, dim=-1)
+
+                idx_exp = top_idx.unsqueeze(-1).expand(-1, -1, -1, D)
+                sel_mid_k = mid_k.gather(2, idx_exp)
+                sel_mid_v = mid_v.gather(2, idx_exp)
 
             self.k_cache = torch.cat([sink_k, sel_mid_k, win_k], dim=2).contiguous()
             self.v_cache = torch.cat([sink_v, sel_mid_v, win_v], dim=2).contiguous()

@@ -143,16 +143,10 @@ class BonsaiPrunedLoRALinear(nn.Module):
                 w_sparse = self.weight * active_mask
                 out = fused_svd_lora_sparse_attn_triton(
                     x_flat,
-                    w_down=(
-                        self.lora_A
-                        if self.lora_A is not None
-                        else torch.zeros((1, self.in_features), device=x.device, dtype=x.dtype)
-                    ),
-                    w_up=(
-                        self.lora_B
-                        if self.lora_B is not None
-                        else torch.zeros((self.out_features, 1), device=x.device, dtype=x.dtype)
-                    ),
+                    w_down=None,
+                    w_up=None,
+                    lora_A=self.lora_A if (self.lora_r > 0 and self.lora_A is not None) else None,
+                    lora_B=self.lora_B if (self.lora_r > 0 and self.lora_B is not None) else None,
                     lora_scale=self.scaling,
                     sparse_w=w_sparse,
                     bias=self.bias,

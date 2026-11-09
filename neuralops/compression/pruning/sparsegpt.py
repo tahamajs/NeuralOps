@@ -275,69 +275,81 @@ class SparseGPTCompressor(BaseCompressor):
 
         H_inv = H_inv.to(device=device, dtype=torch.float32)
 
-        W_pruned = W.clone()
-        block_cols = min(self.block_size, d_in)
+        if self.use_kernel and not self.structured_24 and self.rank is None:
+            diag_h_inv = torch.diagonal(H_inv)
+            try:
+                from neuralops.ops.cuda._fallback import dispatch_sparsegpt
 
-        for i1 in range(0, d_in, block_cols):
-            i2 = min(i1 + block_cols, d_in)
-            count = i2 - i1
+                W_pruned = dispatch_sparsegpt(
+                    W, sparsity=self.sparsity, diag_h_inv=diag_h_inv, pytorch_fn=_pytorch_sparsegpt
+                )
+            except Exception as exc:
+                logger.debug("dispatch_sparsegpt fallback in _prune_layer: %s", exc)
+                W_pruned = _pytorch_sparsegpt(W, sparsity=self.sparsity, diag_h_inv=diag_h_inv)
+        else:
+            W_pruned = W.clone()
+            block_cols = min(self.block_size, d_in)
 
-            W_block_init = W_pruned[:, i1:i2].clone()
-            W_block = W_block_init.clone()
-            H_inv_block = H_inv[i1:i2, i1:i2].clone()
+            for i1 in range(0, d_in, block_cols):
+                i2 = min(i1 + block_cols, d_in)
+                count = i2 - i1
 
-            for j in range(count):
-                w_col = W_block[:, j].clone()
-                diag_inv = max(H_inv_block[j, j].item(), 1e-8)
-                saliency_col = (w_col**2) / (2.0 * diag_inv)
+                W_block_init = W_pruned[:, i1:i2].clone()
+                W_block = W_block_init.clone()
+                H_inv_block = H_inv[i1:i2, i1:i2].clone()
 
-                if self.structured_24 or (self.prunem > 0 and self.prunen > 0):
-                    M = max(1, self.prunem)
-                    N = max(1, min(self.prunen, M))
-                    if (j + 1) % M == 0 or (j + 1 == count):
-                        start_c = (j // M) * M
-                        sub_w = W_block[:, start_c : j + 1]
-                        sub_h_diag = torch.diagonal(H_inv_block[start_c : j + 1, start_c : j + 1]).clamp(min=1e-8)
-                        sub_saliency = (sub_w**2) / (2.0 * sub_h_diag.unsqueeze(0))
-                        k_keep = min(N, sub_w.shape[1])
-                        _, top_idx = torch.topk(sub_saliency, k=k_keep, dim=1, largest=True)
-                        sub_mask = torch.zeros_like(sub_w)
-                        sub_mask.scatter_(1, top_idx, 1.0)
-                        pruned_sub = sub_w * sub_mask
-                        err_sub = sub_w - pruned_sub
-                        W_block[:, start_c : j + 1] = pruned_sub
+                for j in range(count):
+                    w_col = W_block[:, j].clone()
+                    diag_inv = max(H_inv_block[j, j].item(), 1e-8)
+                    saliency_col = (w_col**2) / (2.0 * diag_inv)
 
-                        if j < count - 1:
-                            err_col = err_sub[:, -1]
-                            h_slice = H_inv_block[j, j + 1 : count] / diag_inv
-                            W_block[:, j + 1 : count] -= torch.outer(err_col, h_slice)
-                else:
-                    if self.rank is not None:
-                        p_keep = max(0.05, min(0.98, float(self.rank * (d_in + d_out)) / max(d_in * d_out, 1)))
-                        eff_sparsity = 1.0 - p_keep
+                    if self.structured_24 or (self.prunem > 0 and self.prunen > 0):
+                        M = max(1, self.prunem)
+                        N = max(1, min(self.prunen, M))
+                        if (j + 1) % M == 0 or (j + 1 == count):
+                            start_c = (j // M) * M
+                            sub_w = W_block[:, start_c : j + 1]
+                            sub_h_diag = torch.diagonal(H_inv_block[start_c : j + 1, start_c : j + 1]).clamp(min=1e-8)
+                            sub_saliency = (sub_w**2) / (2.0 * sub_h_diag.unsqueeze(0))
+                            k_keep = min(N, sub_w.shape[1])
+                            _, top_idx = torch.topk(sub_saliency, k=k_keep, dim=1, largest=True)
+                            sub_mask = torch.zeros_like(sub_w)
+                            sub_mask.scatter_(1, top_idx, 1.0)
+                            pruned_sub = sub_w * sub_mask
+                            err_sub = sub_w - pruned_sub
+                            W_block[:, start_c : j + 1] = pruned_sub
+
+                            if j < count - 1:
+                                err_col = err_sub[:, -1]
+                                h_slice = H_inv_block[j, j + 1 : count] / diag_inv
+                                W_block[:, j + 1 : count] -= torch.outer(err_col, h_slice)
                     else:
-                        eff_sparsity = self.sparsity
-                    k_prune = int(d_out * eff_sparsity)
-                    if k_prune > 0:
-                        _, prune_idx = torch.topk(saliency_col, k=k_prune, largest=False)
-                        mask_col = torch.ones(d_out, device=device)
-                        mask_col[prune_idx] = 0.0
-                        pruned_w_col = w_col * mask_col
-                        err = w_col - pruned_w_col
-                        W_block[:, j] = pruned_w_col
+                        if self.rank is not None:
+                            p_keep = max(0.05, min(0.98, float(self.rank * (d_in + d_out)) / max(d_in * d_out, 1)))
+                            eff_sparsity = 1.0 - p_keep
+                        else:
+                            eff_sparsity = self.sparsity
+                        k_prune = int(d_out * eff_sparsity)
+                        if k_prune > 0:
+                            _, prune_idx = torch.topk(saliency_col, k=k_prune, largest=False)
+                            mask_col = torch.ones(d_out, device=device)
+                            mask_col[prune_idx] = 0.0
+                            pruned_w_col = w_col * mask_col
+                            err = w_col - pruned_w_col
+                            W_block[:, j] = pruned_w_col
 
-                        if j < count - 1:
-                            h_slice = H_inv_block[j, j + 1 : count] / diag_inv
-                            W_block[:, j + 1 : count] -= torch.outer(err, h_slice)
+                            if j < count - 1:
+                                h_slice = H_inv_block[j, j + 1 : count] / diag_inv
+                                W_block[:, j + 1 : count] -= torch.outer(err, h_slice)
 
-            W_pruned[:, i1:i2] = W_block
+                W_pruned[:, i1:i2] = W_block
 
-            if i2 < d_in:
-                err_block = W_block_init - W_block
-                h_cross = H_inv[i1:i2, i2:]
-                inv_diag_block = torch.linalg.pinv(H_inv_block)
-                update = torch.matmul(err_block, torch.matmul(inv_diag_block, h_cross))
-                W_pruned[:, i2:] -= update
+                if i2 < d_in:
+                    err_block = W_block_init - W_block
+                    h_cross = H_inv[i1:i2, i2:]
+                    inv_diag_block = torch.linalg.pinv(H_inv_block)
+                    update = torch.matmul(err_block, torch.matmul(inv_diag_block, h_cross))
+                    W_pruned[:, i2:] -= update
 
         norm_orig = torch.norm(W, p="fro")
         rel_err = (torch.norm(W - W_pruned, p="fro") / (norm_orig + 1e-8)).item()
@@ -506,5 +518,6 @@ def sparsegpt_factory(
 
 __all__ = [
     "SparseGPTCompressor",
+    "sparsegpt_prune_layer",
     "sparsegpt_factory",
 ]
