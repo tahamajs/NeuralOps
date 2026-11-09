@@ -375,7 +375,7 @@ flowchart TD
 > 💡 *Parallel prefix associative scans: transforming sequential linear recurrences into logarithmic-depth parallel GPU executions.*
 
 **Design Rationale & Architectural Narrative:**
-State Space Models (SSMs) and linear recurrent attention architectures (e.g., Mamba, GLA, RWKV, HGRN2) maintain an evolving hidden state vector across token sequences: $h_t = a_t \odot h_{t-1} + b_t \otimes c_t$. The central engineering challenge is that this formulation appears strictly sequential: $h_t$ depends directly on $h_{t-1}$. On modern parallel processors like GPUs, a sequential loop over long sequence horizons underutilizes compute units and bounds execution to memory latency. 
+State Space Models (SSMs) and linear recurrent attention architectures (e.g., Mamba, GLA, RWKV, HGRN2) maintain an evolving hidden state vector across token sequences: $h_t = a_t \odot h_{t-1} + b_t \otimes c_t$. The central engineering challenge is that this formulation appears strictly sequential: $h_t$ depends directly on $h_{t-1}$. On modern parallel processors like GPUs, a sequential loop over long sequence horizons underutilizes compute units and bounds execution to memory latency.
 
 The Blelloch associative parallel prefix scan addresses this bottleneck. If state transition operators satisfy the associative algebraic property $(A \circ B) \circ C = A \circ (B \circ C)$, the entire sequence can be evaluated in $O(\log S)$ parallel steps rather than $O(S)$ sequential steps. This notebook implements both an optimized chunk-based Triton kernel (performing parallel local intra-chunk matrix products combined with an inter-chunk prefix scan) and an analytical PyTorch reference, benchmarking numerical accuracy and speed across sequence horizons up to $S = 16,384$.
 
@@ -421,7 +421,7 @@ The Blelloch associative parallel prefix scan addresses this bottleneck. If stat
 > 💡 *Kronecker product attention: combining channel filtering and inhibitory routing gates for linear-complexity attention.*
 
 **Design Rationale & Architectural Narrative:**
-Kronecker Delta Attention (KDA) presents an alternative to standard quadratic self-attention: rather than constructing an explicit $S \times S$ attention matrix via $QK^T$, KDA applies structured Kronecker matrix decompositions $A \otimes B$ alongside learned channel-wise inhibitory gating mechanisms. This restructuring captures inter-channel token interactions with linear computational complexity $O(S \cdot D)$. 
+Kronecker Delta Attention (KDA) presents an alternative to standard quadratic self-attention: rather than constructing an explicit $S \times S$ attention matrix via $QK^T$, KDA applies structured Kronecker matrix decompositions $A \otimes B$ alongside learned channel-wise inhibitory gating mechanisms. This restructuring captures inter-channel token interactions with linear computational complexity $O(S \cdot D)$.
 
 This tutorial provides an architectural examination of KDA. It traces the algebraic foundations of Kronecker factorizations, examines channel inhibitory gating dynamics, and validates gradient propagation using `torch.autograd.gradcheck` with double-precision tensors (`eps=1e-5`, `atol=1e-3`). It also evaluates FP16 numerical stability, verifying that intermediate FP32 accumulators prevent underflow during multi-head Kronecker projections.
 
