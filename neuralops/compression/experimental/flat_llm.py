@@ -101,12 +101,6 @@ class PrunedChannelLinear(nn.Module):
         return W
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if x.is_cuda and not self.training:
-            try:
-                from neuralops.ops.triton.sparse_attn import fused_topk_sparse_route_and_combine_triton
-            except Exception:
-                # allowed-swallow: best-effort-telemetry
-                pass
         h = F.linear(x, self.W_kept, self.bias_kept)
         out = torch.zeros(
             *x.shape[:-1],

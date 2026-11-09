@@ -170,16 +170,11 @@ class CRLinear(nn.Module):
         W_float_orig = W.float()
         C_data = W_float_orig[:, col_idx]
 
-        CtC = torch.matmul(C_data.T, C_data)
-        diag_mean = torch.trace(CtC) / max(1, r)
-        eps = max(1e-4 * diag_mean.item(), 1e-4)
-        reg_eye = eps * torch.eye(r, device=C_data.device, dtype=C_data.dtype)
         try:
-            C_pinv = torch.linalg.solve(CtC + reg_eye, C_data.T)
+            P_data = torch.linalg.lstsq(C_data, W_float_orig).solution
         except Exception:
             C_pinv = torch.linalg.pinv(C_data, rcond=1e-4)
-
-        P_data = torch.matmul(C_pinv, W_float_orig)
+            P_data = torch.matmul(C_pinv, W_float_orig)
 
         norm_C = torch.norm(C_data, p="fro").clamp_min(1e-8)
         norm_P = torch.norm(P_data, p="fro").clamp_min(1e-8)
@@ -189,13 +184,6 @@ class CRLinear(nn.Module):
 
         cr_layer.C.data.copy_(C_data.to(dtype=W.dtype))
         cr_layer.P.data.copy_(P_data.to(dtype=W.dtype))
-
-        with torch.no_grad():
-            W_hat = (C_data @ P_data).float()
-            row_norms_orig = torch.linalg.norm(W_float_orig, dim=1, keepdim=True).clamp_min(1e-8)
-            row_norms_hat = torch.linalg.norm(W_hat, dim=1, keepdim=True).clamp_min(1e-8)
-            g = (row_norms_orig / row_norms_hat).clamp(0.2, 5.0)
-            cr_layer.C.data.mul_(g.to(dtype=W.dtype, device=W.device))
 
         if bias is not None and cr_layer.bias is not None:
             cr_layer.bias.data.copy_(bias)

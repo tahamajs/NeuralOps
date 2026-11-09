@@ -351,13 +351,6 @@ class DobiSVDCompressor(BaseCompressor):
             return None, 1.0, 0
 
         W_target = W
-        if self.truncate_activations:
-            try:
-                from neuralops.ops.triton.elementwise import fast_hadamard_transform
-
-                W_target = fast_hadamard_transform(W, block_size=min(128, in_f))
-            except Exception:
-                W_target = W
 
         try:
             U, S, Vt = torch.linalg.svd(W_target, full_matrices=False)
@@ -636,6 +629,8 @@ def dobi_factory(model: Any, comp_config: Any = None, **kwargs: Any) -> Any:
         return compressed_model
     except Exception as e:
         logger.error("dobi_factory failed: %s", e, exc_info=True)
+        if not fallback:
+            raise
         return (model, {}) if return_stats else model
 
 
