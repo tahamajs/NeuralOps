@@ -26,6 +26,8 @@ import time
 from pathlib import Path
 
 os.environ["HF_ENDPOINT"] = "https://huggingface.co"
+os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+os.environ["TQDM_DISABLE"] = "1"
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("upload_bert_compressors")
