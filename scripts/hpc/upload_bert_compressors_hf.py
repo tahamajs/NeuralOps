@@ -31,11 +31,21 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("upload_bert_compressors")
 
 
+def _resolve_repo_id(target_dir: Path, hf_org: str) -> str:
+    key = target_dir.name
+    slug = key.replace("_", "-")
+    parent_name = target_dir.parent.name
+    if "vlm" in parent_name or "llava" in parent_name:
+        return f"{hf_org}/llava-qwen-0.5b-{slug}-scienceqa"
+    if "tinyllama" in parent_name or "llama" in parent_name:
+        return f"{hf_org}/tinyllama-1.1b-{slug}-wikitext2"
+    return f"{hf_org}/bert-comp-{slug}-sst2"
+
+
 def upload_compressed_dir(target_dir: Path, hf_org: str, cleanup_after: bool = True) -> bool:
-    """Upload one compressed BERT showcase checkpoint to Hugging Face Hub."""
+    """Upload one compressed BERT, VLM, or TinyLlama checkpoint directory to Hugging Face Hub."""
     comp_key = target_dir.name
-    slug = comp_key.replace("_", "-")
-    repo_id = f"{hf_org}/bert-comp-{slug}-sst2"
+    repo_id = _resolve_repo_id(target_dir, hf_org)
 
     token = os.environ.get("HF_TOKEN")
     if not token:
@@ -57,7 +67,7 @@ def upload_compressed_dir(target_dir: Path, hf_org: str, cleanup_after: bool = T
             repo_id=repo_id,
             repo_type="model",
             ignore_patterns=["upload_success.json", "upload_error.json", "*.tmp"],
-            commit_message=f"Upload compressed & LoRA-healed BERT-SST2 ({comp_key}) [NeuralOps Compressor Zoo]",
+            commit_message=f"Upload NeuralOps showcase checkpoint ({comp_key}) -> {repo_id}",
         )
         commit_hash = str(getattr(commit_info, "commit_id", getattr(commit_info, "oid", "verified")))
         logger.info("[%s] Uploaded cleanly to %s (commit=%s)", comp_key, repo_id, commit_hash)
@@ -71,10 +81,11 @@ def upload_compressed_dir(target_dir: Path, hf_org: str, cleanup_after: bool = T
         (target_dir / "upload_success.json").write_text(json.dumps(success, indent=2), encoding="utf-8")
 
         if cleanup_after:
-            bin_path = target_dir / "pytorch_model.bin"
-            if bin_path.exists():
-                bin_path.unlink()
-                logger.info("[%s] Purged local pytorch_model.bin post-upload.", comp_key)
+            for fname in ("pytorch_model.bin", "model.safetensors"):
+                bin_path = target_dir / fname
+                if bin_path.exists():
+                    bin_path.unlink()
+                    logger.info("[%s] Purged local %s post-upload.", comp_key, fname)
         return True
     except Exception as exc:
         logger.error("[%s] Upload failed: %s", comp_key, exc)
@@ -86,24 +97,33 @@ def upload_compressed_dir(target_dir: Path, hf_org: str, cleanup_after: bool = T
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Upload 82 Compressed BERT Showcase Models to Hugging Face Hub.")
-    parser.add_argument("--watch_dir", default="/home/tahamajlesi.ut/NeuralOps/results/bert_compressor_zoo_hf")
+    parser = argparse.ArgumentParser(description="Upload BERT-Compressor, LLaVA-VLM & TinyLlama Zoos to HF Hub.")
+    parser.add_argument(
+        "--watch_dir",
+        default="/home/tahamajlesi.ut/NeuralOps/results/bert_compressor_zoo_hf,/home/tahamajlesi.ut/NeuralOps/results/vlm_llava_scienceqa_zoo,/home/tahamajlesi.ut/NeuralOps/results/tinyllama_1.1b_zoo",
+    )
     parser.add_argument("--hf_org", default="tahamajs")
     parser.add_argument("--cleanup", type=int, default=1)
     parser.add_argument("--once", action="store_true", help="Upload all ready directories once and exit.")
     parser.add_argument("--poll_interval", type=int, default=15)
     args = parser.parse_args()
 
-    watch = Path(args.watch_dir)
-    watch.mkdir(parents=True, exist_ok=True)
-    logger.info("Watching %s -> %s/bert-comp-*-sst2", watch, args.hf_org)
+    watch_dirs = [Path(d.strip()) for d in args.watch_dir.split(",") if d.strip()]
+    for w in watch_dirs:
+        w.mkdir(parents=True, exist_ok=True)
+    logger.info("Watching %s -> %s", [str(w) for w in watch_dirs], args.hf_org)
 
     while True:
-        for sub in sorted(watch.iterdir()):
-            if not sub.is_dir() or sub.name.startswith((".", "upload_")):
+        for watch in watch_dirs:
+            if not watch.exists():
                 continue
-            if (sub / "compression_summary.json").exists() and (sub / "pytorch_model.bin").exists() and not (sub / "upload_success.json").exists():
-                upload_compressed_dir(sub, args.hf_org, cleanup_after=bool(args.cleanup))
+            for sub in sorted(watch.iterdir()):
+                if not sub.is_dir() or sub.name.startswith((".", "upload_")):
+                    continue
+                is_ready = (sub / "compression_summary.json").exists() or (sub / "training_metrics.json").exists()
+                has_weights = (sub / "pytorch_model.bin").exists() or (sub / "model.safetensors").exists() or (sub / "attention_weights.safetensors").exists()
+                if is_ready and has_weights and not (sub / "upload_success.json").exists():
+                    upload_compressed_dir(sub, args.hf_org, cleanup_after=bool(args.cleanup))
         if args.once:
             break
         time.sleep(args.poll_interval)
