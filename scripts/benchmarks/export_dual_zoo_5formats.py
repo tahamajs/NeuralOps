@@ -53,13 +53,15 @@ EXIT_OUTPUT_ERROR = 6
 _INDEX_FILENAMES = ("results.jsonl", "results.csv", "results.parquet")
 
 
-def _validate_safe_segment(value: Any, field_name: str) -> str:
+def _validate_safe_segment(value: Any, field_name: str, *, allow_slashes: bool = False) -> str:
     """Validate that a path-building identifier is non-empty and free of traversal."""
     text = str(value).strip() if value is not None else ""
     if not text:
         raise ValueError(f"Missing required field '{field_name}'.")
     if "\x00" in text or ".." in Path(text).parts:
         raise ValueError(f"Unsafe path segment in field '{field_name}': {text!r}")
+    if not allow_slashes and ("/" in text or "\\" in text or Path(text).is_absolute()):
+        raise ValueError(f"Unsafe path separator in field '{field_name}': {text!r}")
     return text
 
 
@@ -175,8 +177,10 @@ def _build_environment_and_hardware(
     )
 
     gpu_model = record.get("gpu_model") or env_dict.get("gpu_model")
-    gpu_count = record.get("gpu_count", env_dict.get("gpu_count", 1 if gpu_model else 0))
-    gpu_vram_gb = record.get("gpu_vram_gb", env_dict.get("gpu_vram_gb", 0.0))
+    raw_gpu_count = record.get("gpu_count") if record.get("gpu_count") is not None else env_dict.get("gpu_count")
+    gpu_count = _extract_int({"gpu_count": raw_gpu_count}, "gpu_count", numeric_errors) if raw_gpu_count is not None else (1 if gpu_model else 0)
+    raw_gpu_vram = record.get("gpu_vram_gb") if record.get("gpu_vram_gb") is not None else env_dict.get("gpu_vram_gb")
+    gpu_vram_gb = _extract_finite_float({"gpu_vram_gb": raw_gpu_vram}, "gpu_vram_gb", numeric_errors) if raw_gpu_vram is not None else 0.0
     cuda_version = record.get("cuda_version") or env_dict.get("cuda_version")
 
     # Never call EnvironmentMetadata.capture() because the exporter host may differ
@@ -190,8 +194,8 @@ def _build_environment_and_hardware(
         "cpu_count": int(env_dict.get("cpu_count", 0) or 0),
         "ram_gb": float(env_dict.get("ram_gb", 0.0) or 0.0),
         "gpu_model": str(gpu_model) if gpu_model is not None else None,
-        "gpu_count": int(gpu_count or 0),
-        "gpu_vram_gb": float(gpu_vram_gb or 0.0),
+        "gpu_count": int(gpu_count) if gpu_count is not None else 0,
+        "gpu_vram_gb": float(gpu_vram_gb) if gpu_vram_gb is not None else 0.0,
         "cuda_compute_capability": env_dict.get("cuda_compute_capability"),
         "cuda_version": str(cuda_version) if cuda_version is not None else None,
         "cudnn_version": env_dict.get("cudnn_version"),
@@ -288,7 +292,7 @@ def map_qwen_attention_record(
 ) -> BenchmarkResult:
     """Map one Qwen Attention Zoo `metrics.jsonl` entry to `BenchmarkResult`."""
     attn_key = _validate_safe_segment(record.get("attn_key"), "attn_key")
-    model_name = _validate_safe_segment(record.get("model") or default_model or "unknown", "model")
+    model_name = _validate_safe_segment(record.get("model") or default_model or "unknown", "model", allow_slashes=True)
     dataset_name = _validate_safe_segment(record.get("dataset") or default_dataset or "unknown", "dataset")
 
     numeric_errors: list[str] = []
@@ -412,14 +416,14 @@ def map_bert_compressor_record(
 ) -> BenchmarkResult:
     """Map one BERT Compressor Zoo `multirank_lora_ledger.jsonl` entry to `BenchmarkResult`."""
     comp_key = _validate_safe_segment(record.get("compressor"), "compressor")
-    model_name = _validate_safe_segment(record.get("model") or default_model, "model")
+    model_name = _validate_safe_segment(record.get("model") or default_model, "model", allow_slashes=True)
     dataset_name = _validate_safe_segment(record.get("dataset") or default_dataset, "dataset")
 
     numeric_errors: list[str] = []
     status, warnings = _normalize_zoo_status(record.get("status"))
 
     rank = _extract_int(record, "rank", numeric_errors)
-    if rank is None:
+    if rank is None or rank < 0:
         raise ValueError(f"Missing or invalid 'rank' in BERT compressor record at line {line_no}.")
 
     ratio = _extract_finite_float(record, "ratio", numeric_errors)
