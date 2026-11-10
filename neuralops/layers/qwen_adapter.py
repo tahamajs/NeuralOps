@@ -75,21 +75,43 @@ class QwenAttentionAdapter(nn.Module):
     def _enforce_single_o_proj_contract(self) -> None:
         """
         Detects duplicate internal output projections inside core_attention and replaces
-        them with nn.Identity() so that self.o_proj remains the single authoritative
-        output projection executing strictly once at the end of forward().
+        them (and any alias attributes pointing to the same module) with nn.Identity()
+        so that self.o_proj remains the single authoritative output projection.
         """
-        for attr_name in ("out_proj", "o_proj", "wo", "proj"):
+        o_attrs = ("out_proj", "o_proj", "out_lin", "dense", "c_proj", "wo", "proj")
+        for attr_name in o_attrs:
             mod = getattr(self.core, attr_name, None)
-            if mod is not None and isinstance(mod, nn.Linear):
-                if mod.in_features == self.embed_dim and mod.out_features == self.embed_dim:
-                    setattr(self.core, attr_name, nn.Identity())
-                    logger.debug("Single-o_proj Contract: Bypassed %s with nn.Identity() in %s", attr_name, type(self.core).__name__)
-                    break
+            if mod is None:
+                continue
+            target_linear = getattr(mod, "base_layer", mod)
+            in_f = getattr(mod, "in_features", getattr(target_linear, "in_features", None))
+            out_f = getattr(mod, "out_features", getattr(target_linear, "out_features", None))
+            if in_f == self.embed_dim and out_f == self.embed_dim and hasattr(target_linear, "weight"):
+                replaced_obj = mod
+                identity = nn.Identity()
+                for alias in o_attrs:
+                    if getattr(self.core, alias, None) is replaced_obj:
+                        prop = getattr(type(self.core), alias, None)
+                        if isinstance(prop, property) and prop.fset is None:
+                            continue
+                        try:
+                            setattr(self.core, alias, identity)
+                        except AttributeError:
+                            continue
+                logger.debug("Single-o_proj Contract: Bypassed %s with nn.Identity() in %s", attr_name, type(self.core).__name__)
+                break
 
     def _inherit_weights(self, source_attn: nn.Module) -> None:
         """
         Transplants weights from Qwen2Attention with automatic GQA (14:2) expansion.
+        Supports both raw nn.Linear and LoRALinear wrappers cleanly.
         """
+        def _unwrap_proj(mod: Any) -> nn.Module | None:
+            if mod is None:
+                return None
+            base = getattr(mod, "base_layer", mod)
+            return base if hasattr(base, "weight") and hasattr(base, "in_features") else None
+
         try:
             q_src = getattr(source_attn, "q_proj", None)
             k_src = getattr(source_attn, "k_proj", None)
@@ -97,15 +119,16 @@ class QwenAttentionAdapter(nn.Module):
             o_src = getattr(source_attn, "o_proj", None)
 
             # 1. Query projection (896, 896)
-            if q_src is not None and hasattr(self.core, "q_proj") and isinstance(self.core.q_proj, nn.Linear):
-                if self.core.q_proj.weight.shape == q_src.weight.shape:
-                    self.core.q_proj.weight.data.copy_(q_src.weight.data)
-                    if self.core.q_proj.bias is not None and q_src.bias is not None:
-                        self.core.q_proj.bias.data.copy_(q_src.bias.data)
+            q_tgt = _unwrap_proj(getattr(self.core, "q_proj", None))
+            if q_src is not None and q_tgt is not None:
+                if q_tgt.weight.shape == q_src.weight.shape:
+                    q_tgt.weight.data.copy_(q_src.weight.data)
+                    if q_tgt.bias is not None and q_src.bias is not None:
+                        q_tgt.bias.data.copy_(q_src.bias.data)
 
             # 2. Key projection (GQA expansion if target is MHA)
-            if k_src is not None and hasattr(self.core, "k_proj") and isinstance(self.core.k_proj, nn.Linear):
-                target_k = self.core.k_proj
+            target_k = _unwrap_proj(getattr(self.core, "k_proj", None))
+            if k_src is not None and target_k is not None:
                 if target_k.weight.shape == k_src.weight.shape:
                     # Target natively supports GQA (e.g. 128, 896)
                     target_k.weight.data.copy_(k_src.weight.data)
@@ -136,8 +159,8 @@ class QwenAttentionAdapter(nn.Module):
                     logger.debug("Transplanted Key projection with GQA (14:2) repeat_interleave factor %d", repeat_factor)
 
             # 3. Value projection (GQA expansion if target is MHA)
-            if v_src is not None and hasattr(self.core, "v_proj") and isinstance(self.core.v_proj, nn.Linear):
-                target_v = self.core.v_proj
+            target_v = _unwrap_proj(getattr(self.core, "v_proj", None))
+            if v_src is not None and target_v is not None:
                 if target_v.weight.shape == v_src.weight.shape:
                     target_v.weight.data.copy_(v_src.weight.data)
                     if target_v.bias is not None and v_src.bias is not None:

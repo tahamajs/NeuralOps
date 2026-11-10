@@ -320,21 +320,10 @@ class GLAttention(BaseAttention):
                         out = None
 
             if out is None:
-                # Level 2: Triton kda_hla_chunk_scan_triton fastpath
-                try:
-                    from neuralops.ops.triton.gla_scan import kda_hla_chunk_scan_triton
+                # Numerically stable chunked GLAttention path (applies elu+1 and scale without raw-QKV blowup)
+                out = self._pytorch_gla_stable(Q, K, V, g).float()
 
-                    q_t = Q.transpose(1, 2).contiguous()
-                    k_t = K.transpose(1, 2).contiguous()
-                    v_t = V.transpose(1, 2).contiguous()
-                    g_t = g.transpose(1, 2).contiguous()
-                    out_t = kda_hla_chunk_scan_triton(q_t, k_t, v_t, g_t, scale=self.scale)
-                    out = out_t.transpose(1, 2).contiguous().float()
-                except Exception:
-                    # Level 3: Numerically stable PyTorch reference fallback
-                    out = self._pytorch_gla_stable(Q, K, V, g).float()
-
-            out = self.o_norm(out.float()).to(hidden_states.dtype)
+            out = self.o_norm(out.to(self.o_norm.weight.dtype)).to(hidden_states.dtype)
 
         out = out.contiguous().view(B, N, self.all_head_size)
         if self.is_nested_encoder:

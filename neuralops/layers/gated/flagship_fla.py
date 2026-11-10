@@ -636,8 +636,8 @@ class DeltaProductAttention(BaseAttention):
             curr = s_in
             c_outs = []
             for t in range(qc.shape[2]):
-                qt = qc[:, :, t : t + 1].float()
-                kt = kc[:, :, t : t + 1].float()
+                qt = F.normalize(qc[:, :, t : t + 1].float(), p=2, dim=-1, eps=1e-6)
+                kt = F.normalize(kc[:, :, t : t + 1].float(), p=2, dim=-1, eps=1e-6)
                 vt = vc[:, :, t : t + 1].float()
                 ut = uc[:, :, t : t + 1].float()
                 bt = bc[:, :, t : t + 1].float()
@@ -646,14 +646,13 @@ class DeltaProductAttention(BaseAttention):
                 u_S = torch.matmul(ut, curr)
                 refl = (2.0 * bt / u_norm_sq) * torch.matmul(ut.transpose(-1, -2), u_S)
                 S_reflected = curr - refl
-                curr = S_reflected + torch.matmul(kt.transpose(-1, -2), vt)
+                curr = S_reflected + bt * torch.matmul(kt.transpose(-1, -2), vt)
                 yt = torch.matmul(qt, curr)
                 c_outs.append(yt.to(qc.dtype))
             return torch.cat(c_outs, dim=2), curr
 
         chunk_size = 64
         if L <= 64 or not torch.is_grad_enabled():
-            _, present_state = _run_delta_product_chunk(S, q, k, v, u, beta)
             y, present_state = _run_delta_product_chunk(S, q, k, v, u, beta)
         else:
             num_chunks = (L + chunk_size - 1) // chunk_size

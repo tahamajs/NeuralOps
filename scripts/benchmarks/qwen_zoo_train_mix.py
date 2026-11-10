@@ -310,14 +310,24 @@ def apply_qwen_attention_surgery(
                     num_heads=num_heads,
                     config=model.config,
                     is_causal=True,
+                    layer_idx=idx,
                 )
             except TypeError:
-                core_attn = create_attention(
-                    attn_key,
-                    dim=hidden_size,
-                    num_heads=num_heads,
-                    config=model.config,
-                )
+                try:
+                    core_attn = create_attention(
+                        attn_key,
+                        dim=hidden_size,
+                        num_heads=num_heads,
+                        config=model.config,
+                        is_causal=True,
+                    )
+                except TypeError:
+                    core_attn = create_attention(
+                        attn_key,
+                        dim=hidden_size,
+                        num_heads=num_heads,
+                        config=model.config,
+                    )
         else:
             raise KeyError(f"Attention key '{attn_key}' not found in ATTENTION_REGISTRY.")
 
@@ -686,6 +696,13 @@ def train_single_qwen_attention(
                 scaler1.update()
                 opt1.zero_grad(set_to_none=True)
 
+    if step_s1 > 0 and step_s1 % grad_accum != 0:
+        scaler1.unscale_(opt1)
+        torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
+        scaler1.step(opt1)
+        scaler1.update()
+        opt1.zero_grad(set_to_none=True)
+
     dur_s1 = time.time() - t0_s1
     logger.info("[%s] Stage 1 Complete: %d steps in %.1fs", attn_key, step_s1, dur_s1)
 
@@ -738,6 +755,13 @@ def train_single_qwen_attention(
                 scaler2.update()
                 opt2.zero_grad(set_to_none=True)
 
+    if step_s2 > 0 and step_s2 % grad_accum != 0:
+        scaler2.unscale_(opt2)
+        torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
+        scaler2.step(opt2)
+        scaler2.update()
+        opt2.zero_grad(set_to_none=True)
+
     dur_s2 = time.time() - t0_s2
     total_time = time.time() - t_train_start
     logger.info("[%s] Stage 2 Complete: %d steps in %.1fs (Total: %.1fs)", attn_key, step_s2, dur_s2, total_time)
@@ -750,7 +774,7 @@ def train_single_qwen_attention(
 
     base_model_id = _normalize_base_model_id(model_name)
     attn_slug = attn_key.replace("_", "-")
-    repo_id = f"{hf_org}/qwen2.5-0.5b-{attn_slug}-wikitext2"
+    repo_id = f"{hf_org}/qwen-2.5-0.5b-{attn_slug}-wikitext2"
     num_layers = int(getattr(student.config, "num_hidden_layers", 24))
     ds_chunks = getattr(getattr(train_loader, "dataset", None), "chunks", None)
     seq_len = int(ds_chunks.size(1)) if isinstance(ds_chunks, torch.Tensor) and ds_chunks.dim() >= 2 else 512

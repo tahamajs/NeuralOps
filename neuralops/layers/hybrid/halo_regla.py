@@ -127,10 +127,11 @@ class HALOReGLAAttention(BaseAttention):
             self.is_decoder = bool(is_decoder)
         else:
             model_type = str(_cfg_get(config, "model_type", "")).lower()
-            is_dec = _cfg_get(
-                config,
-                "is_decoder",
-                _cfg_get(config, "is_causal", kwargs.get("is_causal", kwargs.get("is_decoder", False))),
+            is_dec = bool(
+                _cfg_get(config, "is_decoder", False)
+                or _cfg_get(config, "is_causal", False)
+                or kwargs.get("is_causal", False)
+                or kwargs.get("is_decoder", False)
             )
             _decoder_prefixes = (
                 "gpt",
@@ -508,7 +509,15 @@ class HALOReGLAAttention(BaseAttention):
 
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
 
-        if HAS_TRITON and not FORCE_PYTORCH_FALLBACK and q.is_cuda and linear_state is None and d <= 128:
+        if (
+            HAS_TRITON
+            and not FORCE_PYTORCH_FALLBACK
+            and not torch.is_grad_enabled()
+            and valid_mask is None
+            and q.is_cuda
+            and linear_state is None
+            and d <= 128
+        ):
             try:
                 from neuralops.ops.triton.linear_attn import fused_svd_linear_chunk_scan_triton
 
@@ -524,7 +533,7 @@ class HALOReGLAAttention(BaseAttention):
                 # allowed-swallow: best-effort-telemetry
                 pass
 
-        outs = torch.empty(B, H, N_q, d, device=device, dtype=torch.float32)
+        out_chunks: list[torch.Tensor] = []
         S_cur = S_state
         Z_cur = Z_state
 
@@ -543,11 +552,12 @@ class HALOReGLAAttention(BaseAttention):
             num = torch.einsum("bhcd,bhcde->bhce", q_c, kv_total)
             den = torch.einsum("bhcd,bhcd->bhc", q_c, k_total).clamp(min=1e-5)
 
-            outs[:, :, start:end] = num / den.unsqueeze(-1)
+            out_chunks.append(num / den.unsqueeze(-1))
 
             S_cur = kv_total[:, :, -1]
             Z_cur = k_total[:, :, -1]
 
+        outs = torch.cat(out_chunks, dim=2)
         return outs.to(q.dtype), (S_cur, Z_cur)
 
     def _global_linear_attention(
@@ -656,7 +666,8 @@ class HALOReGLAAttention(BaseAttention):
 
         mask_val = _safe_mask_value(dense_scores.dtype)
 
-        if self.is_causal:
+        eff_causal = self.is_causal or bool(kwargs.get("is_causal", False))
+        if eff_causal:
             q_idx = torch.arange(past_len, past_len + N, device=device).unsqueeze(1)
             k_idx = torch.arange(N_kv, device=device).unsqueeze(0)
             causal = (k_idx <= q_idx).unsqueeze(0).unsqueeze(0)
@@ -679,7 +690,7 @@ class HALOReGLAAttention(BaseAttention):
         dense_out = torch.nan_to_num(dense_out, nan=0.0, posinf=1e4, neginf=-1e4)
 
         next_linear_state = None
-        if self.is_causal:
+        if eff_causal:
             linear_out, next_linear_state = self._causal_linear_attention(
                 q, k_new_lin, v_new_lin, past_len=past_len, valid_mask=valid_kv_for_linear, linear_state=linear_state
             )
@@ -719,7 +730,7 @@ class HALOReGLAAttention(BaseAttention):
         out_final = torch.nan_to_num(out_final, nan=0.0, posinf=1e4, neginf=-1e4)
 
         present_kv: Any = None
-        use_cache = kwargs.get("use_cache", False) or (past_key_value is not None and past_key_value is not False)
+        use_cache = bool(kwargs.get("use_cache", False))
         if use_cache:
             present_kv = self._write_past_kv(K_dense, V_dense, next_linear_state, past_key_value, self.layer_idx)
         else:
