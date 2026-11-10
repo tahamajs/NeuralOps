@@ -124,14 +124,21 @@ class ROASTLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Vectorized forward pass without per-element python loops, with Triton GPU fast path."""
-        if x.is_cuda and not self.training:
+        has_scales = getattr(self, "row_scales", None) is not None
+        if (
+            x.is_cuda
+            and not self.training
+            and self.tile_size == 1
+            and not has_scales
+            and self.tile_hash_idx.shape == (self.out_features, self.in_features)
+        ):
             try:
                 from neuralops.ops.triton.low_rank import fused_roast_hashed_gather_gemm_triton
 
-                flat_h_idx = self.tile_hash_idx.view(-1).to(device=x.device)
-                signs = torch.ones_like(flat_h_idx, dtype=x.dtype, device=x.device)
+                h_idx_2d = self.tile_hash_idx.to(device=x.device)
+                signs = torch.ones_like(h_idx_2d, dtype=x.dtype, device=x.device)
                 out = fused_roast_hashed_gather_gemm_triton(
-                    x, self.weight_table.to(x.dtype), flat_h_idx, signs, bias=self.bias
+                    x, self.weight_table.to(x.dtype), h_idx_2d, signs, bias=self.bias
                 )
                 if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
                     lora_out = F.linear(F.linear(x.float(), self.lora_A), self.lora_B) * self.scaling
