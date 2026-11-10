@@ -64,11 +64,21 @@ def upload_compressed_dir(target_dir: Path, hf_org: str, cleanup_after: bool = T
         api = HfApi(token=token)
         api.create_repo(repo_id=repo_id, repo_type="model", exist_ok=True, private=False)
 
+        ignore_pats = ["upload_success.json", "upload_error.json", "*.tmp"]
+        is_attention_zoo = any(tag in target_dir.parent.name for tag in ("qwen", "vlm", "llava", "tinyllama", "llama"))
+        if is_attention_zoo and (target_dir / "attention_weights.safetensors").exists():
+            ignore_pats.extend(["pytorch_model.bin", "model.safetensors"])
+            for heavy_name in ("pytorch_model.bin", "model.safetensors"):
+                heavy_path = target_dir / heavy_name
+                if heavy_path.exists():
+                    heavy_path.unlink()
+                    logger.info("[%s] Stripped redundant %s pre-upload (attention_weights.safetensors only).", comp_key, heavy_name)
+
         commit_info = api.upload_folder(
             folder_path=str(target_dir),
             repo_id=repo_id,
             repo_type="model",
-            ignore_patterns=["upload_success.json", "upload_error.json", "*.tmp"],
+            ignore_patterns=ignore_pats,
             commit_message=f"Upload NeuralOps showcase checkpoint ({comp_key}) -> {repo_id}",
         )
         commit_hash = str(getattr(commit_info, "commit_id", getattr(commit_info, "oid", "verified")))

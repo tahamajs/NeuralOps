@@ -644,20 +644,25 @@ This repository contains a distilled **`{base_id}`** checkpoint whose decoder at
 
 ---
 
-## Quick Start
+## Quick Start (Attention-Only Weights)
 
 ```python
 import torch
+from huggingface_hub import hf_hub_download
+from safetensors.torch import load_file
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from scripts.benchmarks.qwen_zoo_train_mix import apply_qwen_attention_surgery
 
 base_model_id = "{base_id}"
-tokenizer = AutoTokenizer.from_pretrained(base_model_id)
+repo_id = "{target_repo}"
+tokenizer = AutoTokenizer.from_pretrained(repo_id)
 model = AutoModelForCausalLM.from_pretrained(base_model_id, torch_dtype=torch.float16)
 model = apply_qwen_attention_surgery(model, attn_key="{attn_key}", pattern="{pattern}")
 
-# Load transplanted attention + full weights from this checkpoint directory or Hub repo
-# e.g. model = AutoModelForCausalLM.from_pretrained("{target_repo}", torch_dtype=torch.float16)
+ckpt_path = hf_hub_download(repo_id=repo_id, filename="attention_weights.safetensors")
+model.load_state_dict(load_file(ckpt_path), strict=False)
+model = model.eval()
+
 inputs = tokenizer("NeuralOps subquadratic attention enables", return_tensors="pt")
 with torch.no_grad():
     out = model.generate(**inputs, max_new_tokens=32)
@@ -844,18 +849,14 @@ def train_single_qwen_attention(
         "status": "PASSED",
     }
 
-    # Save checkpoint - full model + attention weights in FP16
+    # Save attention-only + layernorm checkpoint in FP16 (base MLP/embeddings stay on HF Hub)
     out_dir.mkdir(parents=True, exist_ok=True)
     tokenizer.save_pretrained(str(out_dir))
-    try:
-        student.half().save_pretrained(str(out_dir))
-    except Exception:
-        student.half().save_pretrained(str(out_dir), safe_serialization=False)
 
     attn_state: dict[str, torch.Tensor] = {}
     for k, v in student.state_dict().items():
         k_lower = k.lower()
-        if any(term in k_lower for term in ("self_attn", "attention", "adapter", "lora", "qwen_att")):
+        if any(term in k_lower for term in ("self_attn", "attention", "adapter", "lora", "qwen_att", "layernorm")):
             attn_state[k] = v.detach().cpu().half().clone().contiguous()
 
     from safetensors.torch import save_file
@@ -867,7 +868,7 @@ def train_single_qwen_attention(
     qwen_cfg["base_model_name_or_path"] = base_model_id
     qwen_cfg["license"] = "mit"
     qwen_cfg["attention_type"] = attn_key
-    qwen_cfg["weights_format"] = "full_and_adapter_fp16"
+    qwen_cfg["weights_format"] = "attention_only_fp16"
     (out_dir / "config.json").write_text(json.dumps(qwen_cfg, indent=2), encoding="utf-8")
     (out_dir / "training_metrics.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
 

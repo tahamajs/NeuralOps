@@ -84,7 +84,6 @@ def build_llama_readme(
     slug = attn_key.replace("_", "-")
     repo_slug = f"tinyllama-1.1b-{slug}-wikitext2"
     repo_id = f"{result.get('hf_org', 'tahamajs')}/{repo_slug}"
-    bin_size = _file_size_str(out_dir / "model.safetensors") if (out_dir / "model.safetensors").exists() else _file_size_str(out_dir / "pytorch_model.bin")
     adapter_size = _file_size_str(out_dir / "attention_weights.safetensors")
 
     yaml_ppl = ""
@@ -135,7 +134,7 @@ pipeline_tag: text-generation
 [![WikiText2 PPL](https://img.shields.io/badge/WikiText2_PPL-{badge_ppl}-brightgreen)](#-empirical-evaluation)
 [![Teacher Baseline](https://img.shields.io/badge/Teacher_Baseline_PPL-{teacher_ppl:.2f}-blue)](#-empirical-evaluation)
 [![Surgery](https://img.shields.io/badge/Surgery-Hybrid_3:1_(17/22_Layers)-purple)](#-llama-surgical-topology)
-[![Weights](https://img.shields.io/badge/Weights-{bin_size.replace(' ', '_')}-indigo)](#-packaged-artifacts)
+[![Weights](https://img.shields.io/badge/Attention_Weights-{adapter_size.replace(' ', '_')}-indigo)](#-packaged-artifacts)
 [![License](https://img.shields.io/badge/License-MIT-green)](https://github.com/tahamajs/NeuralOps/blob/main/LICENSE)
 
 Surgically transplanted and 2-stage distilled checkpoint of **`TinyLlama/TinyLlama_v1.1`** (`LlamaForCausalLM`, `1.1B` params, `22` layers, `D=2048`, `32Q : 4KV` 8:1 GQA) using **`{attn_key}`** (`{cls_name}`) on **WikiText-2 (`Salesforce/wikitext`)**.
@@ -171,8 +170,29 @@ Surgically transplanted and 2-stage distilled checkpoint of **`TinyLlama/TinyLla
 
 ## Packaged Artifacts
 
-- **`model.safetensors` / `pytorch_model.bin`** (`{bin_size}`): Full FP16 TinyLlama-1.1B checkpoint.
-- **`attention_weights.safetensors`** (`{adapter_size}`): Distilled adapter weights only.
+- **`attention_weights.safetensors`** (`{adapter_size}`): Distilled attention & layernorm weights (FP16; loads onto base `TinyLlama/TinyLlama_v1.1`).
+- **`config.json`, tokenizer assets, and `training_metrics.json`**
+
+---
+
+## Quick Start (Attention-Only Weights)
+
+```python
+import torch
+from huggingface_hub import hf_hub_download
+from safetensors.torch import load_file
+from transformers import AutoModelForCausalLM, AutoTokenizer
+from scripts.benchmarks.qwen_zoo_train_mix import apply_qwen_attention_surgery
+
+repo_id = "{repo_id}"
+tokenizer = AutoTokenizer.from_pretrained(repo_id)
+model = AutoModelForCausalLM.from_pretrained("TinyLlama/TinyLlama_v1.1", torch_dtype=torch.float16)
+model = apply_qwen_attention_surgery(model, attn_key="{attn_key}", pattern="{result.get('pattern', 'hybrid_3_1')}")
+
+ckpt_path = hf_hub_download(repo_id=repo_id, filename="attention_weights.safetensors")
+model.load_state_dict(load_file(ckpt_path), strict=False)
+model.eval()
+```
 
 ---
 
@@ -323,15 +343,11 @@ def train_single_llama_attention(
 
     out_dir.mkdir(parents=True, exist_ok=True)
     tokenizer.save_pretrained(str(out_dir))
-    try:
-        student.half().save_pretrained(str(out_dir))
-    except Exception:
-        student.half().save_pretrained(str(out_dir), safe_serialization=False)
 
     attn_state = {
         k: v.detach().cpu().half().clone().contiguous()
         for k, v in student.state_dict().items()
-        if any(term in k.lower() for term in ("self_attn", "attention", "adapter", "lora"))
+        if any(term in k.lower() for term in ("self_attn", "attention", "adapter", "lora", "layernorm"))
     }
     from safetensors.torch import save_file
 
@@ -342,6 +358,7 @@ def train_single_llama_attention(
     cfg["base_model_name_or_path"] = "TinyLlama/TinyLlama_v1.1"
     cfg["license"] = "mit"
     cfg["attention_type"] = attn_key
+    cfg["weights_format"] = "attention_only_fp16"
     (out_dir / "config.json").write_text(json.dumps(cfg, indent=2), encoding="utf-8")
     (out_dir / "training_metrics.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
 

@@ -259,7 +259,6 @@ def build_vlm_readme(
     slug = attn_key.replace("_", "-")
     repo_slug = f"llava-qwen-0.5b-{slug}-scienceqa"
     repo_id = f"{result.get('hf_org', 'tahamajs')}/{repo_slug}"
-    bin_size = _file_size_str(out_dir / "model.safetensors") if (out_dir / "model.safetensors").exists() else _file_size_str(out_dir / "pytorch_model.bin")
     adapter_size = _file_size_str(out_dir / "attention_weights.safetensors")
 
     yaml_metrics = [
@@ -314,7 +313,7 @@ model-index:
 [![Teacher Baseline](https://img.shields.io/badge/Teacher_VQA_Acc-{teacher_acc:.2f}%25-blue)](#-multimodal-benchmark-results)
 [![Multimodal PPL](https://img.shields.io/badge/Answer_PPL-{post_ppl_str}-purple)](#-multimodal-benchmark-results)
 [![Surgery](https://img.shields.io/badge/Surgery-Hybrid_3:1_Vision_Frozen-teal)](#-multimodal-architecture--frozen-vision-contract)
-[![Weights](https://img.shields.io/badge/Weights-{bin_size.replace(' ', '_')}-indigo)](#-packaged-artifacts)
+[![Weights](https://img.shields.io/badge/Attention_Weights-{adapter_size.replace(' ', '_')}-indigo)](#-packaged-artifacts)
 [![License](https://img.shields.io/badge/License-MIT-green)](https://github.com/tahamajs/NeuralOps/blob/main/LICENSE)
 
 This repository provides a multimodal **Vision-Language Model (VLM)** derived from **`llava-hf/llava-interleave-qwen-0.5b-hf`** (`SigLIP` vision encoder + MLP projector + `24`-layer `Qwen2` decoder, `D=1024, H=16`) where **18 / 24** decoder attention blocks (`hybrid_3_1`) have been replaced with **`{attn_key}`** (`{cls_name}`) and distilled on image-bearing questions from **`derek-thomas/ScienceQA`**.
@@ -357,9 +356,29 @@ In `LlavaForConditionalGeneration`, visual patch tokens extracted by the frozen 
 
 ## Packaged Artifacts
 
-- **`{ 'model.safetensors' if (out_dir / 'model.safetensors').exists() else 'pytorch_model.bin' }`** (`{bin_size}`): Full multimodal VLM weights (FP16)
-- **`attention_weights.safetensors`** (`{adapter_size}`): Transplanted decoder attention parameters only
+- **`attention_weights.safetensors`** (`{adapter_size}`): Transplanted decoder attention & layernorm parameters (FP16; loads directly onto frozen base `llava-hf/llava-interleave-qwen-0.5b-hf`)
 - **`processor` & `tokenizer` configs + `training_metrics.json`**
+
+---
+
+## Quick Start (Attention-Only Weights)
+
+```python
+import torch
+from huggingface_hub import hf_hub_download
+from safetensors.torch import load_file
+from transformers import AutoProcessor, LlavaForConditionalGeneration
+from scripts.benchmarks.qwen_zoo_train_mix import apply_qwen_attention_surgery
+
+repo_id = "{repo_id}"
+processor = AutoProcessor.from_pretrained(repo_id)
+model = LlavaForConditionalGeneration.from_pretrained("llava-hf/llava-interleave-qwen-0.5b-hf", torch_dtype=torch.float16)
+model.language_model = apply_qwen_attention_surgery(model.language_model, attn_key="{attn_key}", pattern="{result.get('pattern', 'hybrid_3_1')}")
+
+ckpt_path = hf_hub_download(repo_id=repo_id, filename="attention_weights.safetensors")
+model.load_state_dict(load_file(ckpt_path), strict=False)
+model.eval()
+```
 
 ---
 
@@ -550,15 +569,11 @@ def train_single_vlm_attention(
 
     out_dir.mkdir(parents=True, exist_ok=True)
     processor.save_pretrained(str(out_dir))
-    try:
-        student.half().save_pretrained(str(out_dir))
-    except Exception:
-        student.half().save_pretrained(str(out_dir), safe_serialization=False)
 
     attn_state = {
         k: v.detach().cpu().half().clone().contiguous()
         for k, v in student.state_dict().items()
-        if any(term in k.lower() for term in ("self_attn", "attention", "adapter", "lora"))
+        if any(term in k.lower() for term in ("self_attn", "attention", "adapter", "lora", "layernorm"))
     }
     from safetensors.torch import save_file
 
@@ -569,6 +584,7 @@ def train_single_vlm_attention(
     cfg["base_model_name_or_path"] = "llava-hf/llava-interleave-qwen-0.5b-hf"
     cfg["license"] = "mit"
     cfg["attention_type"] = attn_key
+    cfg["weights_format"] = "attention_only_fp16"
     (out_dir / "config.json").write_text(json.dumps(cfg, indent=2), encoding="utf-8")
     (out_dir / "training_metrics.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
 
