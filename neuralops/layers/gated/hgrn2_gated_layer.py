@@ -422,7 +422,9 @@ class HGRN2Layer(BaseAttention):
             h: (B, L, D) all hidden states
             h_last: (B, D) final state
         """
-        if HAS_TRITON_HGRN2 and hgrn2_scan_triton is not None and f.is_cuda:
+        # Triton _hgrn2_bwd_kernel requires power-of-2 hidden dims (e.g. D=896 in Qwen2.5-0.5B segfaults)
+        D_dim = iv.shape[-1]
+        if HAS_TRITON_HGRN2 and hgrn2_scan_triton is not None and f.is_cuda and D_dim > 0 and (D_dim & (D_dim - 1)) == 0:
             try:
                 out = hgrn2_scan_triton(
                     f.contiguous(),
