@@ -114,16 +114,25 @@ def main() -> None:
     logger.info("Watching %s -> %s", [str(w) for w in watch_dirs], args.hf_org)
 
     while True:
-        for watch in watch_dirs:
-            if not watch.exists():
-                continue
-            for sub in sorted(watch.iterdir()):
-                if not sub.is_dir() or sub.name.startswith((".", "upload_")):
+        try:
+            for watch in watch_dirs:
+                if not watch.exists():
                     continue
-                is_ready = (sub / "compression_summary.json").exists() or (sub / "training_metrics.json").exists()
-                has_weights = (sub / "pytorch_model.bin").exists() or (sub / "model.safetensors").exists() or (sub / "attention_weights.safetensors").exists()
-                if is_ready and has_weights and not (sub / "upload_success.json").exists():
-                    upload_compressed_dir(sub, args.hf_org, cleanup_after=bool(args.cleanup))
+                for sub in sorted(watch.iterdir()):
+                    if not sub.is_dir() or sub.name.startswith((".", "upload_")):
+                        continue
+                    is_ready = (sub / "README.md").exists() and (
+                        (sub / "compression_summary.json").exists() or (sub / "training_metrics.json").exists()
+                    )
+                    has_weights = (
+                        (sub / "pytorch_model.bin").exists()
+                        or (sub / "model.safetensors").exists()
+                        or (sub / "attention_weights.safetensors").exists()
+                    )
+                    if is_ready and has_weights and not (sub / "upload_success.json").exists():
+                        upload_compressed_dir(sub, args.hf_org, cleanup_after=bool(args.cleanup))
+        except Exception as exc:
+            logger.warning("Watcher loop error (will retry): %s", exc)
         if args.once:
             break
         time.sleep(args.poll_interval)
