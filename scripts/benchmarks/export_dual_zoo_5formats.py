@@ -702,6 +702,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--qwen-jsonl",
         "--qwen_jsonl",
+        "--qwen-ledger",
+        "--qwen_ledger",
         dest="qwen_jsonl",
         type=Path,
         default=None,
@@ -710,6 +712,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--bert-jsonl",
         "--bert_jsonl",
+        "--bert-ledger",
+        "--bert_ledger",
         dest="bert_jsonl",
         type=Path,
         default=None,

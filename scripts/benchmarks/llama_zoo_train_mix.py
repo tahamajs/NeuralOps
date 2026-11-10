@@ -51,7 +51,7 @@ from qwen_zoo_train_mix import (
     CausalTextDataset,
     _build_cache_wikitext,
     _extract_attention_metadata,
-    _format_size,
+    _file_size_str,
     _summarize_attention_doc,
     apply_qwen_attention_surgery,
     evaluate_causal_ppl,
@@ -73,19 +73,19 @@ def build_llama_readme(
     cls_name = meta.get("class_name", attn_key)
     family = meta.get("family", "attention")
     mod_path = meta.get("module_path", "neuralops/layers/")
-    docstring = _summarize_attention_doc(str(meta.get("docstring", "")), attn_key)
+    docstring = meta.get("docstring") or _summarize_attention_doc(attn_key)
 
     pre_ppl = result.get("ppl_before")
     post_ppl = result.get("ppl_after")
-    pre_str = f"{pre_ppl:,.2f}" if isinstance(pre_ppl, (int, float)) and math.isfinite(pre_ppl) else str(pre_ppl)
-    post_str = f"{post_ppl:,.2f}" if isinstance(post_ppl, (int, float)) and math.isfinite(post_ppl) else str(post_ppl)
-    badge_ppl = f"{post_ppl:.2f}" if isinstance(post_ppl, (int, float)) and math.isfinite(post_ppl) else str(post_ppl)
+    pre_str = f"{pre_ppl:,.2f}" if isinstance(pre_ppl, (int, float)) and math.isfinite(pre_ppl) else "inf"
+    post_str = f"{post_ppl:,.2f}" if isinstance(post_ppl, (int, float)) and math.isfinite(post_ppl) else "inf"
+    badge_ppl = f"{post_ppl:.2f}" if isinstance(post_ppl, (int, float)) and math.isfinite(post_ppl) else "inf"
 
     slug = attn_key.replace("_", "-")
     repo_slug = f"tinyllama-1.1b-{slug}-wikitext2"
     repo_id = f"{result.get('hf_org', 'tahamajs')}/{repo_slug}"
-    bin_size = _format_size(out_dir / "model.safetensors") if (out_dir / "model.safetensors").exists() else _format_size(out_dir / "pytorch_model.bin")
-    adapter_size = _format_size(out_dir / "attention_weights.safetensors")
+    bin_size = _file_size_str(out_dir / "model.safetensors") if (out_dir / "model.safetensors").exists() else _file_size_str(out_dir / "pytorch_model.bin")
+    adapter_size = _file_size_str(out_dir / "attention_weights.safetensors")
 
     yaml_ppl = ""
     if isinstance(post_ppl, (int, float)) and math.isfinite(post_ppl):
@@ -308,9 +308,9 @@ def train_single_llama_attention(
         "dataset": "wikitext-2",
         "pattern": pattern,
         "teacher_ppl": round(teacher_ppl, 2),
-        "ppl_before": round(pre_ppl, 2) if math.isfinite(pre_ppl) else float("inf"),
-        "ppl_after": round(post_ppl, 2) if math.isfinite(post_ppl) else float("inf"),
-        "ppl_delta": round(post_ppl - pre_ppl, 2) if (math.isfinite(pre_ppl) and math.isfinite(post_ppl)) else float("nan"),
+        "ppl_before": round(pre_ppl, 2) if math.isfinite(pre_ppl) else None,
+        "ppl_after": round(post_ppl, 2) if math.isfinite(post_ppl) else None,
+        "ppl_delta": round(post_ppl - pre_ppl, 2) if (math.isfinite(pre_ppl) and math.isfinite(post_ppl)) else None,
         "train_secs": round(total_time, 1),
         "steps_s1": step_s1,
         "steps_s2": step_s2,

@@ -340,7 +340,7 @@ def main() -> None:
     for idx, comp_key in enumerate(sorted(by_comp.keys()), 1):
         comp_dir = out_base / comp_key
         summary_file = comp_dir / "compression_summary.json"
-        if summary_file.exists() and (comp_dir / "pytorch_model.bin").exists():
+        if summary_file.exists() and ((comp_dir / "pytorch_model.bin").exists() or (comp_dir / "upload_success.json").exists()):
             logger.info("[%d/%d] Skipping %s (already packaged).", idx, len(by_comp), comp_key)
             continue
 

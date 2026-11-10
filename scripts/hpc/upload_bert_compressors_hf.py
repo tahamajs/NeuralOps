@@ -39,6 +39,8 @@ def _resolve_repo_id(target_dir: Path, hf_org: str) -> str:
         return f"{hf_org}/llava-qwen-0.5b-{slug}-scienceqa"
     if "tinyllama" in parent_name or "llama" in parent_name:
         return f"{hf_org}/tinyllama-1.1b-{slug}-wikitext2"
+    if "qwen" in parent_name:
+        return f"{hf_org}/qwen-2.5-0.5b-{slug}-wikitext2"
     return f"{hf_org}/bert-comp-{slug}-sst2"
 
 
@@ -81,7 +83,7 @@ def upload_compressed_dir(target_dir: Path, hf_org: str, cleanup_after: bool = T
         (target_dir / "upload_success.json").write_text(json.dumps(success, indent=2), encoding="utf-8")
 
         if cleanup_after:
-            for fname in ("pytorch_model.bin", "model.safetensors"):
+            for fname in ("pytorch_model.bin", "model.safetensors", "attention_weights.safetensors"):
                 bin_path = target_dir / fname
                 if bin_path.exists():
                     bin_path.unlink()
@@ -102,7 +104,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Upload BERT-Compressor, LLaVA-VLM & TinyLlama Zoos to HF Hub.")
     parser.add_argument(
         "--watch_dir",
-        default="/home/tahamajlesi.ut/NeuralOps/results/bert_compressor_zoo_hf,/home/tahamajlesi.ut/NeuralOps/results/vlm_llava_scienceqa_zoo,/home/tahamajlesi.ut/NeuralOps/results/tinyllama_1.1b_zoo",
+        default="/home/tahamajlesi.ut/NeuralOps/results/bert_compressor_zoo_hf,/home/tahamajlesi.ut/NeuralOps/results/qwen_attention_zoo,/home/tahamajlesi.ut/NeuralOps/results/vlm_llava_scienceqa_zoo,/home/tahamajlesi.ut/NeuralOps/results/tinyllama_1.1b_zoo",
     )
     parser.add_argument("--hf_org", default="tahamajs")
     parser.add_argument("--cleanup", type=int, default=1)

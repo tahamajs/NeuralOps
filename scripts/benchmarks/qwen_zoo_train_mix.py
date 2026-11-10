@@ -123,14 +123,18 @@ class StratifiedQwenDataset(Dataset):
         }
 
 
+CausalTextDataset = StratifiedQwenDataset
+
+
 def load_tokenized_qwen_corpus(
     tokenizer: Any,
     dataset_name: str = "wikitext-2-raw-v1",
     seq_len: int = 512,
     max_train_samples: int = 4000,
+    cache_path_override: Optional[str] = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Tokenizes corpus into contiguous chunks of length seq_len with RAM caching."""
-    cache_path = Path(f"/dev/shm/wikitext_qwen_seq{seq_len}.pt")
+    cache_path = Path(cache_path_override) if cache_path_override else Path(f"/dev/shm/wikitext_qwen_seq{seq_len}.pt")
     if cache_path.exists():
         try:
             logger.info("Loading pre-tokenized corpus from RAM cache: %s", cache_path)
@@ -177,6 +181,22 @@ def load_tokenized_qwen_corpus(
         seq_len,
     )
     return train_chunks, val_chunks
+
+
+def _build_cache_wikitext(
+    tokenizer: Any,
+    seq_len: int = 512,
+    cache_path: str = "/dev/shm/wikitext_tinyllama_seq512.pt",
+    max_train_samples: int = 4000,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Build or load cached WikiText-2 token chunks for a tokenizer-specific cache path."""
+    return load_tokenized_qwen_corpus(
+        tokenizer=tokenizer,
+        dataset_name="wikitext-2-raw-v1",
+        seq_len=seq_len,
+        max_train_samples=max_train_samples,
+        cache_path_override=cache_path,
+    )
 
 
 def evaluate_causal_ppl(
@@ -400,6 +420,34 @@ def _format_size(num_bytes: int) -> str:
     if num_bytes >= 1024:
         return f"{num_bytes / 1024:.1f} KB"
     return f"{num_bytes} B"
+
+
+def _file_size_str(file_path: Path) -> str:
+    """Return human-readable size string for a path on disk, or 'N/A' if missing."""
+    if file_path.is_file():
+        return _format_size(file_path.stat().st_size)
+    return "N/A"
+
+
+def _extract_attention_metadata() -> dict[str, dict[str, str]]:
+    """Extract class name, family, module path, and docstring for all registered attentions."""
+    repo_root = Path(__file__).resolve().parents[2]
+    meta: dict[str, dict[str, str]] = {}
+    for key, cls in ATTENTION_REGISTRY.items():
+        try:
+            src_path = Path(inspect.getfile(cls)).resolve()
+            rel_path = str(src_path.relative_to(repo_root))
+            family = src_path.parent.name
+        except Exception:
+            rel_path = "neuralops/layers/"
+            family = "attention"
+        meta[key] = {
+            "class_name": getattr(cls, "__name__", key),
+            "family": family,
+            "module_path": rel_path,
+            "docstring": _summarize_attention_doc(key),
+        }
+    return meta
 
 
 def _collect_artifact_sizes(out_dir: Optional[Path]) -> tuple[list[tuple[str, str]], str]:

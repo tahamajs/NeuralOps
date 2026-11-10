@@ -50,7 +50,7 @@ if str(Path(__file__).resolve().parent) not in sys.path:
 
 from qwen_zoo_train_mix import (
     _extract_attention_metadata,
-    _format_size,
+    _file_size_str,
     _summarize_attention_doc,
     apply_qwen_attention_surgery,
 )
@@ -244,20 +244,23 @@ def build_vlm_readme(
     cls_name = meta.get("class_name", attn_key)
     family = meta.get("family", "attention")
     mod_path = meta.get("module_path", "neuralops/layers/")
-    docstring = _summarize_attention_doc(str(meta.get("docstring", "")), attn_key)
+    docstring = meta.get("docstring") or _summarize_attention_doc(attn_key)
 
     pre_acc = float(result.get("acc_before", 0.0))
     post_acc = float(result.get("acc_after", 0.0))
-    pre_ppl = float(result.get("ppl_before", float("inf")))
-    post_ppl = float(result.get("ppl_after", float("inf")))
-    pre_ppl_str = f"{pre_ppl:,.2f}" if math.isfinite(pre_ppl) else str(pre_ppl)
-    post_ppl_str = f"{post_ppl:,.2f}" if math.isfinite(post_ppl) else str(post_ppl)
+    raw_pre_ppl = result.get("ppl_before")
+    raw_post_ppl = result.get("ppl_after")
+    pre_ppl = float(raw_pre_ppl) if raw_pre_ppl is not None else float("inf")
+    post_ppl = float(raw_post_ppl) if raw_post_ppl is not None else float("inf")
+    pre_ppl_str = f"{pre_ppl:,.2f}" if math.isfinite(pre_ppl) else "inf"
+    post_ppl_str = f"{post_ppl:,.2f}" if math.isfinite(post_ppl) else "inf"
+    teacher_ppl_str = f"{teacher_ppl:.2f}" if math.isfinite(teacher_ppl) else "inf"
 
     slug = attn_key.replace("_", "-")
     repo_slug = f"llava-qwen-0.5b-{slug}-scienceqa"
     repo_id = f"{result.get('hf_org', 'tahamajs')}/{repo_slug}"
-    bin_size = _format_size(out_dir / "model.safetensors") if (out_dir / "model.safetensors").exists() else _format_size(out_dir / "pytorch_model.bin")
-    adapter_size = _format_size(out_dir / "attention_weights.safetensors")
+    bin_size = _file_size_str(out_dir / "model.safetensors") if (out_dir / "model.safetensors").exists() else _file_size_str(out_dir / "pytorch_model.bin")
+    adapter_size = _file_size_str(out_dir / "attention_weights.safetensors")
 
     yaml_metrics = [
         f"          - type: accuracy\n            value: {post_acc:.2f}\n            name: ScienceQA Visual Accuracy (%)"
@@ -343,7 +346,7 @@ In `LlavaForConditionalGeneration`, visual patch tokens extracted by the frozen 
 | Metric | Teacher Baseline (`llava-interleave-qwen-0.5b`) | Pre-KD Zero-Shot (`{attn_key}`) | Post-KD Distilled (`{attn_key}`) | Delta ($\\Delta$) |
 |---|---:|---:|---:|---:|
 | **ScienceQA Visual Accuracy (%)** | **`{teacher_acc:.2f}%`** | `{pre_acc:.2f}%` | **`{post_acc:.2f}%`** | **`{post_acc - pre_acc:+.2f}%`** |
-| **Image-Conditioned Answer PPL** | **`{teacher_ppl:.2f}`** | `{pre_ppl_str}` | **`{post_ppl_str}`** | `{result.get('ppl_delta', 0.0)}` |
+| **Image-Conditioned Answer PPL** | **`{teacher_ppl_str}`** | `{pre_ppl_str}` | **`{post_ppl_str}`** | `{result.get('ppl_delta', 'N/A')}` |
 
 ### Telemetry
 - **Optimization Steps:** `{result.get('total_steps', 0)}` (`Stage 1: {result.get('steps_s1', 0)}` | `Stage 2: {result.get('steps_s2', 0)}`)
@@ -532,9 +535,9 @@ def train_single_vlm_attention(
         "acc_before": round(pre_acc, 2),
         "acc_after": round(post_acc, 2),
         "acc_delta": round(post_acc - pre_acc, 2),
-        "ppl_before": round(pre_ppl, 2) if math.isfinite(pre_ppl) else float("inf"),
-        "ppl_after": round(post_ppl, 2) if math.isfinite(post_ppl) else float("inf"),
-        "ppl_delta": round(post_ppl - pre_ppl, 2) if (math.isfinite(pre_ppl) and math.isfinite(post_ppl)) else float("nan"),
+        "ppl_before": round(pre_ppl, 2) if math.isfinite(pre_ppl) else None,
+        "ppl_after": round(post_ppl, 2) if math.isfinite(post_ppl) else None,
+        "ppl_delta": round(post_ppl - pre_ppl, 2) if (math.isfinite(pre_ppl) and math.isfinite(post_ppl)) else None,
         "train_secs": round(total_time, 1),
         "steps_s1": step_s1,
         "steps_s2": step_s2,
@@ -659,8 +662,35 @@ def main() -> None:
                 hf_org=args.hf_org,
             )
         except Exception as e:
-            logger.error("[%s] VLM training exception: %s", key, e, exc_info=True)
-            res = {"attn_key": key, "status": "FAIL_TRAINING", "error": str(e), "timestamp": datetime.datetime.utcnow().isoformat() + "Z"}
+            if "out of memory" in str(e).lower() and args.batch_size > 1:
+                logger.warning("[%s] OOM at bs=%d. Retrying at bs=%d...", key, args.batch_size, max(1, args.batch_size // 2))
+                if device.type == "cuda":
+                    torch.cuda.empty_cache()
+                gc.collect()
+                try:
+                    res = train_single_vlm_attention(
+                        attn_key=key,
+                        teacher_vlm=teacher,
+                        train_examples=train_ex,
+                        val_examples=val_ex,
+                        processor=processor,
+                        device=device,
+                        out_dir=out_base / key,
+                        model_id=args.model,
+                        teacher_acc=teacher_acc,
+                        teacher_ppl=teacher_ppl,
+                        pattern=args.surgery_pattern,
+                        train_secs=args.train_secs,
+                        batch_size=max(1, args.batch_size // 2),
+                        grad_accum=args.grad_accum * 2,
+                        hf_org=args.hf_org,
+                    )
+                except Exception as e2:
+                    logger.error("[%s] VLM OOM retry exception: %s", key, e2)
+                    res = {"attn_key": key, "status": "SKIPPED_OOM", "error": str(e2), "timestamp": datetime.datetime.utcnow().isoformat() + "Z"}
+            else:
+                logger.error("[%s] VLM training exception: %s", key, e, exc_info=True)
+                res = {"attn_key": key, "status": "FAIL_TRAINING", "error": str(e), "timestamp": datetime.datetime.utcnow().isoformat() + "Z"}
             if device.type == "cuda":
                 torch.cuda.empty_cache()
             gc.collect()
