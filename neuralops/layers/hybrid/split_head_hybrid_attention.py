@@ -857,6 +857,14 @@ class SplitHeadHybridAttention(BaseAttention):
             elif eff_mask is not None and eff_mask.dim() == 2:
                 attn_bias_sdp = ((eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0).to(q_sdp.dtype)
             is_causal_sdp = self.is_decoder and not is_cross and N > 1
+            if attn_bias_sdp is not None:
+                if is_causal_sdp and eff_mask.dim() != 4:
+                    causal_t = torch.triu(
+                        torch.full((N, N_kv), -1e4, device=device, dtype=q_sdp.dtype),
+                        diagonal=N_kv - N + 1,
+                    )
+                    attn_bias_sdp = attn_bias_sdp + causal_t.unsqueeze(0).unsqueeze(0)
+                is_causal_sdp = False
 
             out = F.scaled_dot_product_attention(
                 q_sdp,

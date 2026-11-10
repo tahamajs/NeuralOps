@@ -46,11 +46,10 @@ class DecayDecayLinearAttention(SVDLinearAttention):
     is_custom_attention: bool = True
     supports_causal: bool = True
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, config: Any | None = None, rank: int | None = None, **kwargs: Any):
         kwargs["use_decay_gating"] = True
-        if "mode" not in kwargs:
-            kwargs["mode"] = "decay_linear"
-        super().__init__(*args, **kwargs)
+        kwargs.setdefault("mode", "decay_linear")
+        super().__init__(config=config, rank=rank, **kwargs)
 
     def _forward_decay_gated_linear_kernel(
         self,

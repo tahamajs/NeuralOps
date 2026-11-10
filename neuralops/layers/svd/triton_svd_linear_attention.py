@@ -800,6 +800,8 @@ class TritonSVDLinearAttention(BaseAttention):
             num_kv_heads or kwargs.get("num_kv_heads") or getattr(config, "num_key_value_heads", self.num_heads)
         )
         self.head_dim = kwargs.get("head_dim") or (self.embed_dim // self.num_heads)
+        self.hidden_size = self.embed_dim
+        self.all_head_size = self.num_heads * self.head_dim
         self.rank = rank or 64
         max_rank = self.embed_dim // 2
         self.rank = min(self.rank, max_rank)

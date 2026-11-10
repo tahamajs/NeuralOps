@@ -694,6 +694,14 @@ class REAPMoEAttention(BaseAttention):
                         attn_bias_sdp = ((token_valid[:, None, None, :].float() - 1.0) * 1e4).to(q_sdp.dtype)
 
             is_causal_sdp = self.is_decoder and L > 1 and past_len == 0
+            if attn_bias_sdp is not None:
+                if is_causal_sdp and attention_mask.dim() != 4:
+                    causal_t = torch.triu(
+                        torch.full((L, N_kv), -1e4, device=device, dtype=q_sdp.dtype),
+                        diagonal=N_kv - L + 1,
+                    )
+                    attn_bias_sdp = attn_bias_sdp + causal_t.unsqueeze(0).unsqueeze(0)
+                is_causal_sdp = False
 
             attn_out_sdp = F.scaled_dot_product_attention(
                 q_sdp,

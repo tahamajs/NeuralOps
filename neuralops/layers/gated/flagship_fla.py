@@ -873,8 +873,8 @@ class PreconditionedGDNAttention(BaseAttention):
             try:
                 from fla.ops import chunk_gdn
 
-                q_fl = q.transpose(1, 2).contiguous()
-                k_fl = k_preconditioned.transpose(1, 2).contiguous()
+                q_fl = F.normalize(q, p=2, dim=-1, eps=1e-6).transpose(1, 2).contiguous()
+                k_fl = F.normalize(k_preconditioned, p=2, dim=-1, eps=1e-6).transpose(1, 2).contiguous()
                 v_fl = v.transpose(1, 2).contiguous()
                 log_g = torch.log(beta.clamp(min=1e-4, max=1.0)).transpose(1, 2).to(q.dtype).contiguous()
                 step_beta = alpha.transpose(1, 2).to(q.dtype).contiguous()
@@ -891,8 +891,8 @@ class PreconditionedGDNAttention(BaseAttention):
             curr = s_in
             c_outs = []
             for t in range(qc.shape[2]):
-                qt = qc[:, :, t : t + 1].float()
-                kt = kc[:, :, t : t + 1].float()
+                qt = F.normalize(qc[:, :, t : t + 1].float(), p=2, dim=-1, eps=1e-6)
+                kt = F.normalize(kc[:, :, t : t + 1].float(), p=2, dim=-1, eps=1e-6)
                 vt = vc[:, :, t : t + 1].float()
                 at = ac[:, :, t : t + 1, None].float()
                 bt = bc[:, :, t : t + 1, None].float()
