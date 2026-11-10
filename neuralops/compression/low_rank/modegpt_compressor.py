@@ -79,12 +79,12 @@ class MoDeGPTLowRankLinear(nn.Module):
         self.U = nn.Parameter(U.to(device=target_device, dtype=target_dtype), requires_grad=False)
 
         if shared_V is not None:
-            self._shared_V = shared_V.to(device=target_device, dtype=target_dtype)
+            self.register_buffer("_shared_V", shared_V.to(device=target_device, dtype=target_dtype), persistent=True)
             self.register_parameter("V", None)
             self._uses_shared_V = True
         elif V is not None:
             self.V = nn.Parameter(V.to(device=target_device, dtype=target_dtype), requires_grad=False)
-            self._shared_V = None
+            self.register_buffer("_shared_V", None, persistent=False)
             self._uses_shared_V = False
         else:
             raise ValueError("MoDeGPTLowRankLinear requires either `V` or `shared_V`.")
@@ -129,10 +129,14 @@ class MoDeGPTLowRankLinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         V = self._V()
-        if V.dtype != x.dtype:
-            V = V.to(x.dtype)
-        U = self.U.to(x.dtype) if self.U.dtype != x.dtype else self.U
-        b = self.bias.to(x.dtype) if (self.bias is not None and self.bias.dtype != x.dtype) else self.bias
+        if V.device != x.device or V.dtype != x.dtype:
+            V = V.to(device=x.device, dtype=x.dtype)
+        U = self.U.to(device=x.device, dtype=x.dtype) if (self.U.device != x.device or self.U.dtype != x.dtype) else self.U
+        b = (
+            self.bias.to(device=x.device, dtype=x.dtype)
+            if (self.bias is not None and (self.bias.device != x.device or self.bias.dtype != x.dtype))
+            else self.bias
+        )
 
         if x.is_cuda:
             base_b = b if (self.lora_r == 0 or self.lora_A is None) else None

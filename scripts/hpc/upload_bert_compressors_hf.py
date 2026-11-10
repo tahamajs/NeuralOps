@@ -97,6 +97,8 @@ def upload_compressed_dir(target_dir: Path, hf_org: str, cleanup_after: bool = T
 
 
 def main() -> None:
+    import concurrent.futures
+
     parser = argparse.ArgumentParser(description="Upload BERT-Compressor, LLaVA-VLM & TinyLlama Zoos to HF Hub.")
     parser.add_argument(
         "--watch_dir",
@@ -105,21 +107,33 @@ def main() -> None:
     parser.add_argument("--hf_org", default="tahamajs")
     parser.add_argument("--cleanup", type=int, default=1)
     parser.add_argument("--once", action="store_true", help="Upload all ready directories once and exit.")
-    parser.add_argument("--poll_interval", type=int, default=15)
+    parser.add_argument("--poll_interval", type=int, default=10)
+    parser.add_argument("--max_workers", type=int, default=4, help="Parallel HF Hub upload workers.")
     args = parser.parse_args()
 
     watch_dirs = [Path(d.strip()) for d in args.watch_dir.split(",") if d.strip()]
     for w in watch_dirs:
         w.mkdir(parents=True, exist_ok=True)
-    logger.info("Watching %s -> %s", [str(w) for w in watch_dirs], args.hf_org)
+    logger.info("Watching %s -> %s (parallel workers=%d, cleanup=%s)", [str(w) for w in watch_dirs], args.hf_org, args.max_workers, bool(args.cleanup))
+
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=max(1, args.max_workers))
+    in_flight: dict[str, concurrent.futures.Future[bool]] = {}
 
     while True:
         try:
+            # Reap finished futures
+            done_keys = [k for k, fut in in_flight.items() if fut.done()]
+            for k in done_keys:
+                in_flight.pop(k, None)
+
             for watch in watch_dirs:
                 if not watch.exists():
                     continue
                 for sub in sorted(watch.iterdir()):
                     if not sub.is_dir() or sub.name.startswith((".", "upload_")):
+                        continue
+                    key = str(sub.resolve())
+                    if key in in_flight:
                         continue
                     is_ready = (sub / "README.md").exists() and (
                         (sub / "compression_summary.json").exists() or (sub / "training_metrics.json").exists()
@@ -130,10 +144,15 @@ def main() -> None:
                         or (sub / "attention_weights.safetensors").exists()
                     )
                     if is_ready and has_weights and not (sub / "upload_success.json").exists():
-                        upload_compressed_dir(sub, args.hf_org, cleanup_after=bool(args.cleanup))
+                        logger.info("[%s] Dispatching parallel upload to HF Hub...", sub.name)
+                        in_flight[key] = executor.submit(
+                            upload_compressed_dir, sub, args.hf_org, cleanup_after=bool(args.cleanup)
+                        )
         except Exception as exc:
             logger.warning("Watcher loop error (will retry): %s", exc)
         if args.once:
+            for fut in list(in_flight.values()):
+                fut.result()
             break
         time.sleep(args.poll_interval)
 
