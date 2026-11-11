@@ -219,28 +219,43 @@ def _local_window_attention_v2(
             # allowed-swallow: best-effort-telemetry
             pass
 
-    abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)
-    abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
-    dist = (abs_q - abs_k).abs()
-    band = (dist <= radius).unsqueeze(0).unsqueeze(0)
-
-    if is_decoder:
-        causal = (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)
-        band = band & causal
-
-    scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+    chunk_size = 64
     mask_val = -1e4
-    scores = scores.masked_fill(~band, mask_val)
-    if token_valid is not None:
-        kv_valid = token_valid[:, None, None, :].to(torch.bool)
-        scores = scores.masked_fill(~kv_valid, mask_val)
-    scores = torch.nan_to_num(scores, nan=mask_val, posinf=1e4, neginf=mask_val)
+    outputs = []
+    for start in range(0, N, chunk_size):
+        end = min(start + chunk_size, N)
+        q_abs_start = past_len + start
+        q_abs_end = past_len + end
+        k_start = max(0, q_abs_start - radius)
+        k_end = min(N_k, q_abs_end if is_decoder else q_abs_end + radius)
+        if k_end <= k_start:
+            outputs.append(Q.new_zeros(B, H, end - start, D))
+            continue
 
-    combined_valid = band & token_valid[:, None, None, :] if token_valid is not None else band
-    any_valid = combined_valid.any(dim=-1, keepdim=True).to(scores.dtype)
+        Qc = Q[:, :, start:end]
+        Kc = K[:, :, k_start:k_end]
+        Vc = V[:, :, k_start:k_end]
 
-    attn = F.softmax(scores, dim=-1).to(Q.dtype) * any_valid
-    return torch.matmul(attn, V.to(attn.dtype))
+        abs_q = torch.arange(q_abs_start, q_abs_end, device=Q.device).unsqueeze(1)
+        abs_k = torch.arange(k_start, k_end, device=Q.device).unsqueeze(0)
+        band = ((abs_q - abs_k).abs() <= radius).unsqueeze(0).unsqueeze(0)
+        if is_decoder:
+            band = band & (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)
+
+        scores = torch.matmul(Qc.float(), Kc.float().transpose(-2, -1)) * scale
+        scores = scores.masked_fill(~band, mask_val)
+        if token_valid is not None:
+            kv_valid = token_valid[:, None, None, k_start:k_end].to(torch.bool)
+            scores = scores.masked_fill(~kv_valid, mask_val)
+            combined_valid = band & kv_valid
+        else:
+            combined_valid = band
+        scores = torch.nan_to_num(scores, nan=mask_val, posinf=1e4, neginf=mask_val)
+        any_valid = combined_valid.any(dim=-1, keepdim=True).to(scores.dtype)
+        attn = F.softmax(scores, dim=-1).to(Q.dtype) * any_valid
+        outputs.append(torch.matmul(attn, Vc.to(attn.dtype)))
+
+    return torch.cat(outputs, dim=2) if len(outputs) > 1 else outputs[0]
 
 
 def _phi_elu(x: torch.Tensor) -> torch.Tensor:
@@ -304,20 +319,21 @@ def _global_linear_attention_v2(
             Kc = phi_K[:, :, start:end]
             Vc = V_f[:, :, start:end]
 
-            KV_local = (Kc.unsqueeze(-1) * Vc.unsqueeze(-2)).cumsum(dim=2)
-            K_local = Kc.cumsum(dim=2)
-
-            KV_total = KV_local + state_kv.unsqueeze(2)
-            K_total = K_local + state_k.unsqueeze(2)
-
-            num = torch.einsum("bhcf,bhcfd->bhcd", Qc, KV_total)
-            den = torch.einsum("bhcf,bhcf->bhc", Qc, K_total).clamp(min=1e-6)
+            intra_scores = torch.matmul(Qc, Kc.transpose(-2, -1)).tril()
+            if start == 0:
+                num = torch.matmul(intra_scores, Vc)
+                den = intra_scores.sum(dim=-1).clamp(min=1e-6)
+            else:
+                num = torch.matmul(Qc, state_kv) + torch.matmul(intra_scores, Vc)
+                den = (torch.matmul(Qc, state_k.unsqueeze(-1)).squeeze(-1) + intra_scores.sum(dim=-1)).clamp(min=1e-6)
             outs.append(num / den.unsqueeze(-1))
 
-            state_kv = KV_total[:, :, -1]
-            state_k = K_total[:, :, -1]
+            if end < N:
+                state_kv = state_kv + torch.matmul(Kc.transpose(-2, -1), Vc)
+                state_k = state_k + Kc.sum(dim=2)
 
-        return torch.nan_to_num(torch.cat(outs, dim=2), nan=0.0).to(Q.dtype)
+        out = torch.cat(outs, dim=2) if len(outs) > 1 else outs[0]
+        return torch.nan_to_num(out, nan=0.0).to(Q.dtype)
 
     KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V_f)
     Z = phi_K.sum(dim=-2, keepdim=True)

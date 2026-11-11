@@ -438,42 +438,63 @@ class HGRN2Layer(BaseAttention):
                     return h, h_last
                 return out, out[:, -1]
             except Exception as e:
-                logger.debug("HGRN2 Triton scan failed, falling back: %s", e)
+                logger.warning("HGRN2Layer: Triton scan failed (%s); falling back to chunked PyTorch.", e)
 
         B, L, D = iv.shape
         f_fp32 = f.float()
         iv_fp32 = iv.float()
         log_f = torch.log(f_fp32.clamp(min=1e-6))
 
-        h_chunks = []
-        if initial_state is not None:
-            h_prev = initial_state.float()
-        else:
-            h_prev = torch.zeros(B, D, device=iv.device, dtype=torch.float32)
+        use_cp = torch.is_grad_enabled()
+        eff_chunk = min(chunk_size, 16) if (use_cp and L > 64) else chunk_size
+        if use_cp:
+            import torch.utils.checkpoint as cp
 
-        for start in range(0, L, chunk_size):
-            end = min(start + chunk_size, L)
-            C = end - start
-            f_c = log_f[:, start:end]
-            iv_c = iv_fp32[:, start:end]
-
+        def _hgrn2_chunk_step(
+            h_in: torch.Tensor,
+            f_c: torch.Tensor,
+            iv_c: torch.Tensor,
+        ) -> tuple[torch.Tensor, torch.Tensor]:
+            B_c, C_len, D_c = iv_c.shape
             A = torch.cumsum(f_c, dim=1)
-            A_diff = A.unsqueeze(2) - A.unsqueeze(1)
-
-            mask = torch.tril(torch.ones(C, C, device=iv.device, dtype=torch.bool))
+            mask = torch.tril(torch.ones(C_len, C_len, device=iv_c.device, dtype=torch.bool))
             mask_4d = mask.unsqueeze(0).unsqueeze(-1)
-            A_diff = torch.where(mask_4d, A_diff, torch.full_like(A_diff, -1e4))
+            A_diff = (A.unsqueeze(2) - A.unsqueeze(1)).masked_fill(~mask_4d, -1e4)
+            decay_weights = torch.exp(A_diff) * mask_4d.to(A_diff.dtype)
 
-            decay_weights = torch.exp(A_diff) * mask_4d.float()
-            intra = torch.sum(decay_weights * iv_c.unsqueeze(1), dim=2)
-            inter = h_prev.unsqueeze(1) * torch.exp(A)
+            dw_bd = decay_weights.permute(0, 3, 1, 2).reshape(B_c * D_c, C_len, C_len)
+            iv_bd = iv_c.transpose(1, 2).reshape(B_c * D_c, C_len, 1)
+            intra = torch.bmm(dw_bd, iv_bd).view(B_c, D_c, C_len).transpose(1, 2)
+            inter = h_in.unsqueeze(1) * torch.exp(A)
 
             h_c = inter + intra
             if self.res_clip is not None and self.res_clip > 0:
                 h_c = torch.clamp(h_c, -self.res_clip, self.res_clip)
+            return h_c, h_c[:, -1]
 
+        h_chunks = []
+        if initial_state is not None:
+            h_prev = initial_state.to(device=iv.device, dtype=torch.float32)
+        else:
+            h_prev = torch.zeros(B, D, device=iv.device, dtype=torch.float32)
+
+        for start in range(0, L, eff_chunk):
+            end = min(start + eff_chunk, L)
+            if use_cp:
+                h_c, h_prev = cp.checkpoint(
+                    _hgrn2_chunk_step,
+                    h_prev,
+                    log_f[:, start:end],
+                    iv_fp32[:, start:end],
+                    use_reentrant=False,
+                )
+            else:
+                h_c, h_prev = _hgrn2_chunk_step(
+                    h_prev,
+                    log_f[:, start:end],
+                    iv_fp32[:, start:end],
+                )
             h_chunks.append(h_c)
-            h_prev = h_c[:, -1]
 
         h = torch.cat(h_chunks, dim=1).to(iv.dtype)
         return h, h_prev.to(iv.dtype)
@@ -508,28 +529,22 @@ class HGRN2Layer(BaseAttention):
             h_fwd, h_last = self._scan_direction(f, iv, initial_state=initial_state)
             return h_fwd, None, h_last
 
-        # Non-causal bidirectional fast path: check Level 1 CUDA / Level 2 Triton fused scan
-        if initial_state is None and f.is_cuda:
+        # Non-causal bidirectional fast path: check Level 1 CUDA (inference only; autograd backward uses inplace PyTorch loop)
+        if initial_state is None and f.is_cuda and not torch.is_grad_enabled():
             if HAS_CUDA_HGRN2 and hgrn2_scan_cuda is not None:
                 try:
-                    # Fused bidirectional scan combines forward and backward passes directly
-                    f_4d = f.unsqueeze(1)
-                    iv_4d = iv.unsqueeze(1)
-                    fused_out = hgrn2_scan_cuda(iv_4d, f_4d).squeeze(1)
-                    return fused_out, None, fused_out[:, -1]
-                except Exception as exc:
-                    logger.debug("HGRN2 fused bidirectional scan fallback: %s", exc)
-            else:
-                try:
-                    from neuralops.ops.cuda.hgrn2_scan.hgrn2_autograd import hgrn2_scan as _cuda_hgrn2_scan
+                    from neuralops.ops.cuda.hgrn2_scan.hgrn2_autograd import _get_module as _get_hgrn2_cuda_mod
 
-                    # Fused bidirectional scan combines forward and backward passes directly
-                    f_4d = f.unsqueeze(1)
-                    iv_4d = iv.unsqueeze(1)
-                    fused_out = _cuda_hgrn2_scan(iv_4d, f_4d).squeeze(1)
-                    return fused_out, None, fused_out[:, -1]
+                    if _get_hgrn2_cuda_mod() is not None:
+                        f_4d = f.unsqueeze(1).contiguous()
+                        iv_4d = iv.unsqueeze(1).contiguous()
+                        fused_out = hgrn2_scan_cuda(iv_4d, f_4d).squeeze(1)
+                        return fused_out, None, fused_out[:, -1]
+                    logger.warning(
+                        "HGRN2Layer: CUDA hgrn2_scan module unavailable; falling back to chunked scan."
+                    )
                 except Exception as exc:
-                    logger.debug("HGRN2 fused bidirectional scan fallback: %s", exc)
+                    logger.warning("HGRN2Layer: CUDA fused bidirectional scan failed (%s); falling back.", exc)
 
         h_fwd, h_last = self._scan_direction(f, iv, initial_state=initial_state)
         f_rev = torch.flip(f, dims=[1])
@@ -572,41 +587,64 @@ class HGRN2Layer(BaseAttention):
         if past_len == 0:
             if self.window_size >= L:
                 try:
+                    drop_p = getattr(self.dropout, "p", 0.0) if (self.training and hasattr(self, "dropout")) else 0.0
                     out = F.scaled_dot_product_attention(
-                        q, k, v, is_causal=self.is_decoder, dropout_p=self.dropout.p if self.training else 0.0
+                        q, k, v, is_causal=self.is_decoder, dropout_p=drop_p
                     )
                     out = out.transpose(1, 2).contiguous().view(B, L, D)
-                except Exception:
+                except Exception as exc:
+                    logger.warning("HGRN2Layer: SDPA failed (%s); falling back to chunked local attention.", exc)
                     out = None
-            elif q.is_cuda:
+            elif q.is_cuda and d > 0 and (d & (d - 1)) == 0:
                 try:
                     from neuralops.ops.triton.sliding_window import sliding_window_attention_kernel
 
                     out_win = sliding_window_attention_kernel(
-                        q, k, v, window_size=self.window_size, is_causal=self.is_decoder
+                        q.contiguous(), k.contiguous(), v.contiguous(), window_size=self.window_size, is_causal=self.is_decoder
                     )
                     out = out_win.transpose(1, 2).contiguous().view(B, L, D)
-                except Exception:
+                except Exception as exc:
+                    logger.warning(
+                        "HGRN2Layer: Triton sliding_window_attention_kernel failed (%s); falling back to PyTorch.",
+                        exc,
+                    )
                     out = None
 
         if out is None:
-            q_pos = (past_len + torch.arange(L, device=hidden_states.device)).unsqueeze(1)
-            k_pos = torch.arange(N_kv, device=hidden_states.device).unsqueeze(0)
-
             scale = 1.0 / math.sqrt(d)
-            scores = torch.matmul(q, k.transpose(-1, -2)) * scale
-            dist = (q_pos - k_pos).abs()
-            window_mask = dist <= self.window_size
-            if self.is_decoder:
-                causal = k_pos <= q_pos
-                window_mask = window_mask & causal
+            chunk_q = max(64, self.window_size)
+            if L <= chunk_q:
+                q_pos = (past_len + torch.arange(L, device=hidden_states.device)).unsqueeze(1)
+                k_pos = torch.arange(N_kv, device=hidden_states.device).unsqueeze(0)
+                scores = torch.matmul(q, k.transpose(-1, -2)) * scale
+                dist = (q_pos - k_pos).abs()
+                window_mask = dist <= self.window_size
+                if self.is_decoder:
+                    window_mask = window_mask & (k_pos <= q_pos)
+                scores = scores.masked_fill(~window_mask.unsqueeze(0).unsqueeze(0), -1e4)
+                attn = F.softmax(scores.float(), dim=-1).to(v.dtype)
+                out = torch.matmul(attn, v).transpose(1, 2).contiguous().view(B, L, D)
+            else:
+                out_chunks = []
+                k_pos_all = torch.arange(N_kv, device=hidden_states.device)
+                for qs in range(0, L, chunk_q):
+                    qe = min(qs + chunk_q, L)
+                    q_c = q[:, :, qs:qe, :]
+                    q_pos_c = (past_len + torch.arange(qs, qe, device=hidden_states.device)).unsqueeze(1)
+                    k_start = max(0, past_len + qs - self.window_size)
+                    k_end = N_kv if self.is_decoder and past_len + qe - 1 >= N_kv else min(N_kv, past_len + qe + self.window_size)
+                    k_c = k[:, :, k_start:k_end, :]
+                    v_c = v[:, :, k_start:k_end, :]
+                    k_pos_c = k_pos_all[k_start:k_end].unsqueeze(0)
 
-            window_mask = window_mask.unsqueeze(0).unsqueeze(0)
-            scores = scores.masked_fill(~window_mask, -1e4)
-
-            attn = F.softmax(scores.float(), dim=-1).to(q.dtype)
-            out = torch.matmul(attn, v)
-            out = out.transpose(1, 2).contiguous().view(B, L, D)
+                    scores_c = torch.matmul(q_c, k_c.transpose(-1, -2)) * scale
+                    w_mask = (q_pos_c - k_pos_c).abs() <= self.window_size
+                    if self.is_decoder:
+                        w_mask = w_mask & (k_pos_c <= q_pos_c)
+                    scores_c = scores_c.masked_fill(~w_mask.unsqueeze(0).unsqueeze(0), -1e4)
+                    attn_c = F.softmax(scores_c.float(), dim=-1).to(v_c.dtype)
+                    out_chunks.append(torch.matmul(attn_c, v_c))
+                out = torch.cat(out_chunks, dim=2).transpose(1, 2).contiguous().view(B, L, D)
 
         return out, k_new, v_new
 

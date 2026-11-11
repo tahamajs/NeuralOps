@@ -480,11 +480,12 @@ class ViGAttention(BaseAttention):
         k_lin: torch.Tensor,
         v_f: torch.Tensor,
         past_len: int,
-        chunk_size: int = 128,
+        chunk_size: int = 64,
     ) -> torch.Tensor:
-        """Fused causal scan accelerated with Triton GPU kernel when applicable."""
-        L = q_lin.shape[2]
+        """Fused causal scan accelerated with Triton GPU kernel or chunked dual-form PyTorch."""
+        B, H, L, F_dim = q_lin.shape
         N_kv = k_lin.shape[2]
+        D = v_f.shape[-1]
 
         if q_lin.is_cuda and past_len == 0 and L == N_kv and q_lin.shape[-1] <= 128:
             try:
@@ -495,17 +496,43 @@ class ViGAttention(BaseAttention):
                 # allowed-swallow: best-effort-telemetry
                 pass
 
-        kv_outer = k_lin.unsqueeze(-1) * v_f.unsqueeze(-2)
-        kv_cumsum = kv_outer.cumsum(dim=2)
-        k_cumsum = k_lin.cumsum(dim=2)
+        chunk = min(64, max(1, int(chunk_size)))
+        state_kv = torch.zeros(B, H, F_dim, D, device=q_lin.device, dtype=q_lin.dtype)
+        state_k = torch.zeros(B, H, F_dim, device=q_lin.device, dtype=q_lin.dtype)
 
-        kv_at_q = kv_cumsum[:, :, past_len : past_len + L, :, :]
-        k_at_q = k_cumsum[:, :, past_len : past_len + L, :]
+        if past_len > 0:
+            for p_start in range(0, past_len, chunk):
+                p_end = min(p_start + chunk, past_len)
+                kp = k_lin[:, :, p_start:p_end]
+                vp = v_f[:, :, p_start:p_end]
+                state_kv = state_kv + torch.matmul(kp.transpose(-2, -1), vp)
+                state_k = state_k + kp.sum(dim=2)
 
-        num = torch.einsum("bhnf,bhnfd->bhnd", q_lin, kv_at_q)
-        denom = torch.einsum("bhnf,bhnf->bhn", q_lin, k_at_q).unsqueeze(-1).clamp(min=1e-4)
+        outputs = []
+        for start in range(0, L, chunk):
+            end = min(start + chunk, L)
+            qc = q_lin[:, :, start:end]
+            kc = k_lin[:, :, past_len + start : past_len + end]
+            vc = v_f[:, :, past_len + start : past_len + end]
 
-        return num / denom
+            intra_scores = torch.matmul(qc, kc.transpose(-2, -1)).tril()
+            if start == 0 and past_len == 0:
+                num = torch.matmul(intra_scores, vc)
+                denom = intra_scores.sum(dim=-1).unsqueeze(-1).clamp(min=1e-4)
+            else:
+                num = torch.matmul(qc, state_kv) + torch.matmul(intra_scores, vc)
+                denom = (
+                    (torch.matmul(qc, state_k.unsqueeze(-1)).squeeze(-1) + intra_scores.sum(dim=-1))
+                    .unsqueeze(-1)
+                    .clamp(min=1e-4)
+                )
+            outputs.append(num / denom)
+
+            if end < L:
+                state_kv = state_kv + torch.matmul(kc.transpose(-2, -1), vc)
+                state_k = state_k + kc.sum(dim=2)
+
+        return torch.cat(outputs, dim=2) if len(outputs) > 1 else outputs[0]
 
     @staticmethod
     def _linear_attention_encoder(
@@ -607,15 +634,34 @@ class ViGAttention(BaseAttention):
         mask_val = _safe_mask_value(dtype)
 
         scale = 1.0 / math.sqrt(Dh)
-        scores_graph = torch.matmul(q.float(), K_full.float().transpose(-2, -1)) * scale
+        if N > 64:
+            chunk_size = 64
+            graph_chunks = []
+            for start in range(0, N, chunk_size):
+                end = min(start + chunk_size, N)
+                qc = q[:, :, start:end]
+                k_end = min(N_kv, past_len + end) if self.is_decoder else N_kv
+                kc = K_full[:, :, :k_end]
+                vc = V_full[:, :, :k_end]
 
-        combined_mask = graph_adj.unsqueeze(0).unsqueeze(1)
-        if token_valid is not None:
-            combined_mask = combined_mask & token_valid[:, None, None, :]
+                sc = torch.matmul(qc.float(), kc.float().transpose(-2, -1)) * scale
+                cm = graph_adj[start:end, :k_end].unsqueeze(0).unsqueeze(1)
+                if token_valid is not None:
+                    cm = cm & token_valid[:, None, None, :k_end]
+                sc = sc.masked_fill(~cm, -1e4)
+                ac = F.softmax(sc, dim=-1).to(dtype)
+                graph_chunks.append(torch.matmul(ac, vc))
+            attn_graph_out = torch.cat(graph_chunks, dim=2)
+        else:
+            scores_graph = torch.matmul(q.float(), K_full.float().transpose(-2, -1)) * scale
 
-        scores_graph = scores_graph.masked_fill(~combined_mask, -1e4)
-        attn_graph = F.softmax(scores_graph, dim=-1).to(dtype)
-        attn_graph_out = torch.matmul(attn_graph, V_full)
+            combined_mask = graph_adj.unsqueeze(0).unsqueeze(1)
+            if token_valid is not None:
+                combined_mask = combined_mask & token_valid[:, None, None, :]
+
+            scores_graph = scores_graph.masked_fill(~combined_mask, -1e4)
+            attn_graph = F.softmax(scores_graph, dim=-1).to(dtype)
+            attn_graph_out = torch.matmul(attn_graph, V_full)
 
         q_norm = F.normalize(q.float(), p=2, dim=-1)
         k_norm = F.normalize(K_full.float(), p=2, dim=-1)

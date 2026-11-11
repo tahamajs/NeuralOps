@@ -61,23 +61,24 @@ class XAttentionScorer:
         B, H, N, D = Q.shape
         n_blocks = (N + block_size - 1) // block_size
 
-        Q_sample = Q[:, :, ::stride, :]
-        K_sample = K[:, :, ::stride, :]
-        N_s = Q_sample.size(2)
+        with torch.amp.autocast(device_type=Q.device.type, enabled=False):
+            Q_sample = Q[:, :, ::stride, :].float()
+            K_sample = K[:, :, ::stride, :].float()
+            N_s = Q_sample.size(2)
 
-        scale = 1.0 / math.sqrt(int(D))
-        attn_sample = torch.matmul(Q_sample, K_sample.transpose(-2, -1).contiguous()) * scale
+            scale = 1.0 / math.sqrt(int(D))
+            attn_sample = torch.matmul(Q_sample, K_sample.transpose(-2, -1).contiguous()) * scale
 
-        b_s = max(1, block_size // stride)
-        target = n_blocks * b_s
-        if N_s < target:
-            pad = target - N_s
-            attn_sample = F.pad(attn_sample, (0, pad, 0, pad), value=0.0)
-        attn_sample = attn_sample[:, :, :target, :target]
+            b_s = max(1, block_size // stride)
+            target = n_blocks * b_s
+            if N_s < target:
+                pad = target - N_s
+                attn_sample = F.pad(attn_sample, (0, pad, 0, pad), value=0.0)
+            attn_sample = attn_sample[:, :, :target, :target]
 
-        attn_blocks = attn_sample.view(B, H, n_blocks, b_s, n_blocks, b_s)
-        scores = attn_blocks.mean(dim=(3, 5))
-        return scores
+            attn_blocks = attn_sample.view(B, H, n_blocks, b_s, n_blocks, b_s)
+            scores = attn_blocks.mean(dim=(3, 5))
+            return scores
 
 
 class SeerGating(nn.Module):
@@ -114,33 +115,40 @@ class SeerGating(nn.Module):
         Q_pooled = Q.mean(dim=2)
         K_pooled = K.mean(dim=2)
 
-        p_dtype = self.q_pool[0].weight.dtype
-        q_gate = self.q_pool(Q_pooled.to(p_dtype)).view(B, H, 1, gr)
-        k_gate = self.k_pool(K_pooled.to(p_dtype)).view(B, H, gr, 1)
+        p_weight = self.q_pool[0].weight
+        p_dtype = p_weight.dtype
+        p_device = p_weight.device
+        q_in = Q_pooled.to(device=p_device, dtype=p_dtype)
+        k_in = K_pooled.to(device=p_device, dtype=p_dtype)
+        q_gate = self.q_pool(q_in).float().view(B, H, 1, gr)
+        k_gate = self.k_pool(k_in).float().view(B, H, gr, 1)
 
-        gate_score = torch.sigmoid(torch.matmul(q_gate, k_gate).squeeze(-1).squeeze(-1) / self.temperature)
+        with torch.amp.autocast(device_type=Q.device.type, enabled=False):
+            q_gate = q_gate.to(Q.device).float()
+            k_gate = k_gate.to(Q.device).float()
+            gate_score = torch.sigmoid(torch.matmul(q_gate, k_gate).squeeze(-1).squeeze(-1) / self.temperature)
 
-        k_float = gate_score * n_blocks
+            k_float = gate_score * n_blocks
 
-        idx = torch.arange(n_blocks, device=Q.device).view(1, 1, 1, n_blocks)
-        k_float_exp = k_float.unsqueeze(-1).unsqueeze(-1)
+            idx = torch.arange(n_blocks, device=Q.device).view(1, 1, 1, n_blocks)
+            k_float_exp = k_float.unsqueeze(-1).unsqueeze(-1)
 
-        temperature = 0.1
-        soft_mask = torch.sigmoid((k_float_exp - idx) / temperature)
+            temperature = 0.1
+            soft_mask = torch.sigmoid((k_float_exp - idx) / temperature)
 
-        k_int = torch.clamp(k_float.round(), min=1, max=n_blocks).long().unsqueeze(-1).unsqueeze(-1)
-        hard_mask = (idx < k_int).float()
+            k_int = torch.clamp(k_float.round(), min=1, max=n_blocks).long().unsqueeze(-1).unsqueeze(-1)
+            hard_mask = (idx < k_int).float()
 
-        ste_mask = hard_mask + soft_mask - soft_mask.detach()
+            ste_mask = hard_mask + soft_mask - soft_mask.detach()
 
-        mask = torch.zeros(B, H, n_blocks, n_blocks, device=Q.device, dtype=ste_mask.dtype)
-        mask = mask + ste_mask
+            mask = torch.zeros(B, H, n_blocks, n_blocks, device=Q.device, dtype=torch.float32)
+            mask = mask + ste_mask
 
-        diag_idx = torch.arange(n_blocks, device=Q.device)
-        mask[:, :, diag_idx, diag_idx] = 1.0
-        mask[:, :, :, 0] = 1.0
+            diag_idx = torch.arange(n_blocks, device=Q.device)
+            mask[:, :, diag_idx, diag_idx] = 1.0
+            mask[:, :, :, 0] = 1.0
 
-        return mask
+            return mask
 
 
 class DualStageStripeAttention(nn.Module):
@@ -183,52 +191,58 @@ class DualStageStripeAttention(nn.Module):
         token_valid: torch.Tensor | None = None,
         seer_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
+        orig_dtype = Q.dtype
         B, H, N, D = Q.shape
         bs = self.cfg.block_size
         nb = (N + bs - 1) // bs
         top_k = self.cfg.top_k_blocks
         scale = 1.0 / math.sqrt(int(D))
 
-        if self.cfg.xattn_enabled:
-            block_scores = self.xattn_scorer.score_blocks(Q, K, bs, self.cfg.xattn_stride)
-            inter_mask = self._inter_block_topk(block_scores, top_k)
-        else:
-            inter_mask = torch.ones(B, H, nb, nb, device=Q.device, dtype=torch.bool)
+        with torch.amp.autocast(device_type=Q.device.type, enabled=False):
+            Q_f = Q.float()
+            K_f = K.float()
+            V_f = V.float()
 
-        inter_mask[:, :, :, 0] = True
-        diag_idx = torch.arange(nb, device=Q.device)
-        inter_mask[:, :, diag_idx, diag_idx] = True
+            if self.cfg.xattn_enabled:
+                block_scores = self.xattn_scorer.score_blocks(Q_f, K_f, bs, self.cfg.xattn_stride)
+                inter_mask = self._inter_block_topk(block_scores, top_k)
+            else:
+                inter_mask = torch.ones(B, H, nb, nb, device=Q.device, dtype=torch.bool)
 
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+            inter_mask[:, :, :, 0] = True
+            diag_idx = torch.arange(nb, device=Q.device)
+            inter_mask[:, :, diag_idx, diag_idx] = True
 
-        expanded_inter_mask = inter_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[:, :, :N, :N]
-        scores = scores.masked_fill(~expanded_inter_mask, -10000.0)
+            scores = torch.matmul(Q_f, K_f.transpose(-2, -1).contiguous()) * scale
 
-        if seer_mask is not None:
-            expanded_seer = seer_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[:, :, :N, :N]
-            beta_factor = torch.tanh(self.seer_beta).to(scores.dtype) if self.seer_beta is not None else 1.0
-            scores = scores + beta_factor * (expanded_seer - 1.0) * 10000.0
+            expanded_inter_mask = inter_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[:, :, :N, :N]
+            scores = scores.masked_fill(~expanded_inter_mask, -10000.0)
 
-        if self.cfg.stripe_enabled and N > 256:
-            sw = self.cfg.stripe_width
-            idx = torch.arange(N, device=Q.device)
-            stripe_group = idx // sw
-            q_stripe = stripe_group.unsqueeze(1)
-            k_stripe = stripe_group.unsqueeze(0)
-            stripe_mask = (q_stripe - k_stripe).abs() <= 1
-            scores = scores.masked_fill(~stripe_mask.unsqueeze(0).unsqueeze(0), -10000.0)
+            if seer_mask is not None:
+                expanded_seer = seer_mask.float().repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[:, :, :N, :N]
+                beta_factor = torch.tanh(self.seer_beta.float()).to(scores.dtype) if self.seer_beta is not None else 1.0
+                scores = scores + beta_factor * (expanded_seer - 1.0) * 10000.0
 
-        if token_valid is not None:
-            scores = scores.masked_fill((~token_valid.bool()).unsqueeze(1).unsqueeze(2), -10000.0)
+            if self.cfg.stripe_enabled and N > 256:
+                sw = self.cfg.stripe_width
+                idx = torch.arange(N, device=Q.device)
+                stripe_group = idx // sw
+                q_stripe = stripe_group.unsqueeze(1)
+                k_stripe = stripe_group.unsqueeze(0)
+                stripe_mask = (q_stripe - k_stripe).abs() <= 1
+                scores = scores.masked_fill(~stripe_mask.unsqueeze(0).unsqueeze(0), -10000.0)
 
-        if self.cfg.softpick_enabled:
-            attn = softpick(scores, dim=-1, temperature=self.cfg.softpick_temperature).to(Q.dtype)
-        else:
-            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-            attn = F.softmax(scores, dim=-1).to(Q.dtype)
+            if token_valid is not None:
+                scores = scores.masked_fill((~token_valid.bool()).unsqueeze(1).unsqueeze(2), -10000.0)
 
-        context = torch.matmul(attn, V)
-        return context
+            if self.cfg.softpick_enabled:
+                attn = softpick(scores, dim=-1, temperature=self.cfg.softpick_temperature)
+            else:
+                scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+                attn = F.softmax(scores, dim=-1)
+
+            context = torch.matmul(attn, V_f)
+            return context.to(orig_dtype)
 
 
 class SpectraformerRectify(nn.Module):
@@ -249,20 +263,21 @@ class SpectraformerRectify(nn.Module):
         F_dim = self.rff_features
 
         orig_dtype = Q.dtype
-        Q, K, V = Q.float(), K.float(), V.float()
-        proj = self.proj.to(Q.device).float()
+        with torch.amp.autocast(device_type=Q.device.type, enabled=False):
+            Q_f, K_f, V_f = Q.float(), K.float(), V.float()
+            proj = self.proj.to(Q.device).float()
 
-        Q_proj = torch.matmul(F.normalize(Q, p=2, dim=-1), proj).clamp(max=11.0)
-        K_proj = torch.matmul(F.normalize(K, p=2, dim=-1), proj).clamp(max=11.0)
+            Q_proj = torch.matmul(F.normalize(Q_f, p=2, dim=-1), proj).clamp(max=11.0)
+            K_proj = torch.matmul(F.normalize(K_f, p=2, dim=-1), proj).clamp(max=11.0)
 
-        Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
-        K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
+            Q_feat = torch.exp(Q_proj) / math.sqrt(F_dim)
+            K_feat = torch.exp(K_proj) / math.sqrt(F_dim)
 
-        KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V)
-        Z = K_feat.sum(dim=2)
-        ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV)
-        norm = torch.einsum("bhnf,bhf->bhn", Q_feat, Z).unsqueeze(-1)
-        return (ctx / norm.clamp(min=1e-5)).to(orig_dtype)
+            KV = torch.einsum("bhnf,bhnd->bhfd", K_feat, V_f)
+            Z = K_feat.sum(dim=2)
+            ctx = torch.einsum("bhnf,bhfd->bhnd", Q_feat, KV)
+            norm = torch.einsum("bhnf,bhf->bhn", Q_feat, Z).unsqueeze(-1)
+            return (ctx / norm.clamp(min=1e-5)).to(orig_dtype)
 
 
 @ATTENTION_REGISTRY.register("nexus", supports_causal=True, supports_gqa=True)
@@ -560,133 +575,134 @@ class NEXUSAttention(BaseAttention):
         B, H, N, D = Q.shape
         device = Q.device
 
-        Q = Q.float()
-        K = K.float()
-        V = V.float()
+        with torch.amp.autocast(device_type=device.type, enabled=False):
+            Q = Q.float()
+            K = K.float()
+            V = V.float()
 
-        scale = 1.0 / math.sqrt(D)
-        m = min(num_landmarks, N)
+            scale = 1.0 / math.sqrt(D)
+            m = min(num_landmarks, N)
 
-        if N <= chunk_size:
-            scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
-            causal = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
-            scores = scores.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
-            if self.seer_gate is not None and getattr(self.cfg, "seer_enabled", False):
-                bs = max(1, self.cfg.block_size)
-                nb = (N + bs - 1) // bs
-                if nb > 1:
-                    seer_mask = self.seer_gate(Q, K, nb, training=self.training)
-                    expanded_seer = seer_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[:, :, :N, :N]
-                    scores = scores + torch.tanh(self.seer_beta).to(scores.dtype) * (expanded_seer - 1.0) * 10000.0
-            if token_valid is not None:
-                scores = scores.masked_fill((~token_valid.bool()).unsqueeze(1).unsqueeze(2), -1e4)
-            if self.cfg.softpick_enabled:
-                attn = softpick(scores, dim=-1, temperature=self.cfg.softpick_temperature)
-            else:
-                scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-                attn = F.softmax(scores, dim=-1)
-            context = torch.matmul(attn, V).to(original_dtype)
-            return self.dropout(context)
+            if N <= chunk_size:
+                scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
+                causal = torch.tril(torch.ones(N, N, device=device, dtype=torch.bool))
+                scores = scores.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
+                if self.seer_gate is not None and getattr(self.cfg, "seer_enabled", False):
+                    bs = max(1, self.cfg.block_size)
+                    nb = (N + bs - 1) // bs
+                    if nb > 1:
+                        seer_mask = self.seer_gate(Q, K, nb, training=self.training).float()
+                        expanded_seer = seer_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[:, :, :N, :N]
+                        scores = scores + torch.tanh(self.seer_beta.float()).to(scores.dtype) * (expanded_seer - 1.0) * 10000.0
+                if token_valid is not None:
+                    scores = scores.masked_fill((~token_valid.bool()).unsqueeze(1).unsqueeze(2), -1e4)
+                if self.cfg.softpick_enabled:
+                    attn = softpick(scores, dim=-1, temperature=self.cfg.softpick_temperature)
+                else:
+                    scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+                    attn = F.softmax(scores, dim=-1)
+                context = torch.matmul(attn, V).to(original_dtype)
+                return self.dropout(context)
 
-        num_chunks = (N + chunk_size - 1) // chunk_size
-        outputs: list[torch.Tensor] = []
+            num_chunks = (N + chunk_size - 1) // chunk_size
+            outputs: list[torch.Tensor] = []
 
-        for c_idx in range(num_chunks):
-            start = c_idx * chunk_size
-            end = min(start + chunk_size, N)
-            C_len = end - start
+            for c_idx in range(num_chunks):
+                start = c_idx * chunk_size
+                end = min(start + chunk_size, N)
+                C_len = end - start
 
-            Q_c = Q[:, :, start:end, :]
-            K_c = K[:, :, start:end, :]
-            V_c = V[:, :, start:end, :]
-            mask_c = token_valid[:, start:end] if token_valid is not None else None
+                Q_c = Q[:, :, start:end, :]
+                K_c = K[:, :, start:end, :]
+                V_c = V[:, :, start:end, :]
+                mask_c = token_valid[:, start:end] if token_valid is not None else None
 
-            scores_intra = torch.matmul(Q_c, K_c.transpose(-2, -1).contiguous()) * scale
-            causal_intra = torch.tril(torch.ones(C_len, C_len, device=device, dtype=torch.bool))
-            scores_intra = scores_intra.masked_fill(~causal_intra.unsqueeze(0).unsqueeze(0), -1e4)
-            if self.seer_gate is not None and getattr(self.cfg, "seer_enabled", False):
-                bs = max(1, self.cfg.block_size)
-                nb_intra = (C_len + bs - 1) // bs
-                if nb_intra > 1:
-                    seer_mask = self.seer_gate(Q_c, K_c, nb_intra, training=self.training)
-                    expanded_seer = seer_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[
-                        :, :, :C_len, :C_len
-                    ]
-                    scores_intra = (
-                        scores_intra
-                        + torch.tanh(self.seer_beta).to(scores_intra.dtype) * (expanded_seer - 1.0) * 10000.0
-                    )
-            if mask_c is not None:
-                scores_intra = scores_intra.masked_fill((~mask_c.bool()).unsqueeze(1).unsqueeze(2), -1e4)
+                scores_intra = torch.matmul(Q_c, K_c.transpose(-2, -1).contiguous()) * scale
+                causal_intra = torch.tril(torch.ones(C_len, C_len, device=device, dtype=torch.bool))
+                scores_intra = scores_intra.masked_fill(~causal_intra.unsqueeze(0).unsqueeze(0), -1e4)
+                if self.seer_gate is not None and getattr(self.cfg, "seer_enabled", False):
+                    bs = max(1, self.cfg.block_size)
+                    nb_intra = (C_len + bs - 1) // bs
+                    if nb_intra > 1:
+                        seer_mask = self.seer_gate(Q_c, K_c, nb_intra, training=self.training).float()
+                        expanded_seer = seer_mask.repeat_interleave(bs, dim=2).repeat_interleave(bs, dim=3)[
+                            :, :, :C_len, :C_len
+                        ]
+                        scores_intra = (
+                            scores_intra
+                            + torch.tanh(self.seer_beta.float()).to(scores_intra.dtype) * (expanded_seer - 1.0) * 10000.0
+                        )
+                if mask_c is not None:
+                    scores_intra = scores_intra.masked_fill((~mask_c.bool()).unsqueeze(1).unsqueeze(2), -1e4)
 
-            if self.cfg.softpick_enabled:
-                attn_intra = softpick(scores_intra, dim=-1, temperature=self.cfg.softpick_temperature)
-            else:
-                scores_intra = torch.nan_to_num(scores_intra, nan=-1e4, posinf=1e4, neginf=-1e4)
-                attn_intra = F.softmax(scores_intra, dim=-1)
+                if self.cfg.softpick_enabled:
+                    attn_intra = softpick(scores_intra, dim=-1, temperature=self.cfg.softpick_temperature)
+                else:
+                    scores_intra = torch.nan_to_num(scores_intra, nan=-1e4, posinf=1e4, neginf=-1e4)
+                    attn_intra = F.softmax(scores_intra, dim=-1)
 
-            out_intra = torch.matmul(attn_intra, V_c)
+                out_intra = torch.matmul(attn_intra, V_c)
 
-            if c_idx == 0:
-                outputs.append(out_intra)
-                continue
+                if c_idx == 0:
+                    outputs.append(out_intra)
+                    continue
 
-            K_prev = K[:, :, :start, :]
-            V_prev = V[:, :, :start, :]
-            mask_prev = token_valid[:, :start] if token_valid is not None else None
-            prev_len = start
+                K_prev = K[:, :, :start, :]
+                V_prev = V[:, :, :start, :]
+                mask_prev = token_valid[:, :start] if token_valid is not None else None
+                prev_len = start
 
-            m_prev = min(m, prev_len)
+                m_prev = min(m, prev_len)
 
-            def _pool(X, n_landmarks):
-                Bx, Hx, Nx, Dx = X.shape
-                if n_landmarks >= Nx:
-                    return X
-                X_flat = X.reshape(Bx * Hx, Nx, Dx).transpose(1, 2).contiguous()
-                pooled = F.adaptive_avg_pool1d(X_flat, n_landmarks)
-                return pooled.transpose(1, 2).contiguous().reshape(Bx, Hx, n_landmarks, Dx)
+                def _pool(X, n_landmarks):
+                    Bx, Hx, Nx, Dx = X.shape
+                    if n_landmarks >= Nx:
+                        return X
+                    X_flat = X.reshape(Bx * Hx, Nx, Dx).transpose(1, 2).contiguous()
+                    pooled = F.adaptive_avg_pool1d(X_flat, n_landmarks)
+                    return pooled.transpose(1, 2).contiguous().reshape(Bx, Hx, n_landmarks, Dx)
 
-            K_landmarks = _pool(K_prev, m_prev)
+                K_landmarks = _pool(K_prev, m_prev)
 
-            scores1 = torch.matmul(Q_c, K_landmarks.transpose(-2, -1).contiguous()) * scale
-            F1 = F.softmax(scores1, dim=-1)
+                scores1 = torch.matmul(Q_c, K_landmarks.transpose(-2, -1).contiguous()) * scale
+                F1 = F.softmax(scores1, dim=-1)
 
-            scores2 = torch.matmul(K_landmarks, K_landmarks.transpose(-2, -1).contiguous()) * scale
-            F2 = F.softmax(scores2, dim=-1)
+                scores2 = torch.matmul(K_landmarks, K_landmarks.transpose(-2, -1).contiguous()) * scale
+                F2 = F.softmax(scores2, dim=-1)
 
-            scores3 = torch.matmul(K_landmarks, K_prev.transpose(-2, -1).contiguous()) * scale
-            if mask_prev is not None:
-                scores3 = scores3.masked_fill((~mask_prev.bool()).unsqueeze(1).unsqueeze(2), -1e4)
-            F3 = F.softmax(scores3, dim=-1)
+                scores3 = torch.matmul(K_landmarks, K_prev.transpose(-2, -1).contiguous()) * scale
+                if mask_prev is not None:
+                    scores3 = scores3.masked_fill((~mask_prev.bool()).unsqueeze(1).unsqueeze(2), -1e4)
+                F3 = F.softmax(scores3, dim=-1)
 
-            try:
-                F2_pinv = torch.linalg.pinv(F2, rcond=1e-3)
-            except Exception:
-                mx = F2.shape[-1]
-                F2_reg = F2 + 1e-2 * torch.eye(mx, device=device, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
-                F2_pinv = torch.linalg.inv(F2_reg)
-
-            if F1.is_cuda and V_prev.is_cuda:
                 try:
-                    from neuralops.ops.triton.low_rank import fused_nystrom_landmark_pinv_step_pytorch
-
-                    out_cross = fused_nystrom_landmark_pinv_step_pytorch(F1, F2_pinv, F3, V_prev)
+                    F2_pinv = torch.linalg.pinv(F2, rcond=1e-3)
                 except Exception:
+                    mx = F2.shape[-1]
+                    F2_reg = F2 + 1e-2 * torch.eye(mx, device=device, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+                    F2_pinv = torch.linalg.inv(F2_reg)
+
+                if F1.is_cuda and V_prev.is_cuda:
+                    try:
+                        from neuralops.ops.triton.low_rank import fused_nystrom_landmark_pinv_step_pytorch
+
+                        out_cross = fused_nystrom_landmark_pinv_step_pytorch(F1, F2_pinv, F3, V_prev)
+                    except Exception:
+                        step1 = torch.matmul(F3, V_prev)
+                        step2 = torch.matmul(F2_pinv, step1)
+                        out_cross = torch.matmul(F1, step2)
+                else:
                     step1 = torch.matmul(F3, V_prev)
                     step2 = torch.matmul(F2_pinv, step1)
                     out_cross = torch.matmul(F1, step2)
-            else:
-                step1 = torch.matmul(F3, V_prev)
-                step2 = torch.matmul(F2_pinv, step1)
-                out_cross = torch.matmul(F1, step2)
-            out_cross = torch.nan_to_num(out_cross, nan=0.0, posinf=50.0, neginf=-50.0)
+                out_cross = torch.nan_to_num(out_cross, nan=0.0, posinf=50.0, neginf=-50.0)
 
-            out_c = out_intra + 0.1 * out_cross
-            outputs.append(out_c)
+                out_c = out_intra + 0.1 * out_cross
+                outputs.append(out_c)
 
-        context = torch.cat(outputs, dim=2)
-        context = self.dropout(context)
-        return context.to(original_dtype)
+            context = torch.cat(outputs, dim=2)
+            context = self.dropout(context)
+            return context.to(original_dtype)
 
     def copy_weights(self, src: Any) -> None:
         from neuralops.core.adapters import UniversalAdapter
@@ -880,15 +896,23 @@ class NEXUSAttention(BaseAttention):
         B, N, _ = hidden_states.shape
         H, D = self.num_heads, self.head_dim
         device = hidden_states.device
-        dtype = hidden_states.dtype
 
         is_cross = encoder_hidden_states is not None
         kv_input = encoder_hidden_states if is_cross else hidden_states
         N_kv = kv_input.shape[1]
 
-        Q = self._reshape(self.query(hidden_states), self.num_heads)
-        K = self._reshape(self.key(kv_input), self.num_kv_heads)
-        V = self._reshape(self.value(kv_input), self.num_kv_heads)
+        q_in = hidden_states
+        kv_in = kv_input
+        if not torch.is_autocast_enabled() and hasattr(self.query, "weight"):
+            w_dtype = self.query.weight.dtype
+            if q_in.dtype != w_dtype:
+                q_in = q_in.to(w_dtype)
+            if kv_in.dtype != w_dtype:
+                kv_in = kv_in.to(w_dtype)
+
+        Q = self._reshape(self.query(q_in), self.num_heads)
+        K = self._reshape(self.key(kv_in), self.num_kv_heads)
+        V = self._reshape(self.value(kv_in), self.num_kv_heads)
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -905,8 +929,8 @@ class NEXUSAttention(BaseAttention):
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
 
         if self.num_kv_heads < self.num_heads:
-            K = repeat_kv(K, self.kv_repeat)
-            V = repeat_kv(V, self.kv_repeat)
+            K = repeat_kv(K, self.kv_repeat).contiguous()
+            V = repeat_kv(V, self.kv_repeat).contiguous()
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is None:
@@ -914,6 +938,7 @@ class NEXUSAttention(BaseAttention):
         token_valid = self._get_token_valid_mask(eff_mask, B, N_kv, device)
 
         is_causal = bool(self.is_decoder and not is_cross)
+        compute_dtype = Q.dtype
 
         if is_causal and not is_cross:
             context = self._chunked_causal_nexus(
@@ -929,30 +954,32 @@ class NEXUSAttention(BaseAttention):
 
         elif is_cross or (self.cfg.sparse_min_seq_len >= N) or (self.dss_attn is None):
             scale = 1.0 / math.sqrt(D)
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+            with torch.amp.autocast(device_type=device.type, enabled=False):
+                scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
-            if eff_mask is not None:
-                if eff_mask.dim() == 2:
-                    scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
-                elif eff_mask.dim() == 3:
-                    scores = scores + eff_mask.unsqueeze(1).float()
-                elif eff_mask.dim() == 4:
-                    scores = scores + eff_mask.float()
+                if eff_mask is not None:
+                    if eff_mask.dim() == 2:
+                        scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+                    elif eff_mask.dim() == 3:
+                        scores = scores + eff_mask.unsqueeze(1).float().clamp(min=-1e4)
+                    elif eff_mask.dim() == 4:
+                        scores = scores + eff_mask.float().clamp(min=-1e4)
 
-            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-            attn_weights = F.softmax(scores, dim=-1).to(dtype)
-            attn_weights = self.dropout(attn_weights)
+                scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+                attn_weights = F.softmax(scores, dim=-1)
+                attn_weights = self.dropout(attn_weights)
 
-            if head_mask is not None:
-                if head_mask.dim() == 1:
-                    head_mask = head_mask.view(1, -1, 1, 1)
-                elif head_mask.dim() == 2:
-                    head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)
-                elif head_mask.dim() == 3:
-                    head_mask = head_mask[:, :, :1].unsqueeze(-1)
-                attn_weights = attn_weights * head_mask
+                if head_mask is not None:
+                    hm = head_mask.float()
+                    if hm.dim() == 1:
+                        hm = hm.view(1, -1, 1, 1)
+                    elif hm.dim() == 2:
+                        hm = hm.unsqueeze(-1).unsqueeze(-1)
+                    elif hm.dim() == 3:
+                        hm = hm[:, :, :1].unsqueeze(-1)
+                    attn_weights = attn_weights * hm
 
-            context = torch.matmul(attn_weights, V)
+                context = torch.matmul(attn_weights, V.float()).to(compute_dtype)
 
         else:
             if self.is_rectify and self.spec_rectify is not None:
@@ -981,8 +1008,10 @@ class NEXUSAttention(BaseAttention):
         if self.is_nested_encoder:
             output = context
         else:
-            proj_dtype = self.out_proj.weight.dtype if hasattr(self.out_proj, "weight") else context.dtype
-            output = self.out_proj(self.dropout(context.to(proj_dtype)))
+            ctx_in = self.dropout(context)
+            if not torch.is_autocast_enabled() and hasattr(self.out_proj, "weight") and ctx_in.dtype != self.out_proj.weight.dtype:
+                ctx_in = ctx_in.to(self.out_proj.weight.dtype)
+            output = self.out_proj(ctx_in)
 
         return (output, None)
 
@@ -1000,15 +1029,18 @@ class NEXUSAttention(BaseAttention):
         B, N, _ = x.shape
         H, D = self.num_heads, self.head_dim
         device = x.device
-        dtype = x.dtype
 
         if state is None:
             state = {}
         step_idx = state.get("step_idx", 0)
 
-        Q = self.q_proj(x).view(B, 1, H, D).transpose(1, 2)
-        K = self.k_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
-        V = self.v_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
+        x_in = x
+        if not torch.is_autocast_enabled() and hasattr(self.q_proj, "weight") and x_in.dtype != self.q_proj.weight.dtype:
+            x_in = x_in.to(self.q_proj.weight.dtype)
+
+        Q = self.q_proj(x_in).view(B, 1, H, D).transpose(1, 2)
+        K = self.k_proj(x_in).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
+        V = self.v_proj(x_in).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
 
         if self.num_kv_heads != self.num_heads:
             K = repeat_kv(K, self.kv_repeat)
@@ -1018,19 +1050,21 @@ class NEXUSAttention(BaseAttention):
             state["k_cache"] = K
             state["v_cache"] = V
         else:
-            state["k_cache"] = torch.cat([state["k_cache"], K], dim=2)
-            state["v_cache"] = torch.cat([state["v_cache"], V], dim=2)
+            state["k_cache"] = torch.cat([state["k_cache"].to(K.dtype), K], dim=2)
+            state["v_cache"] = torch.cat([state["v_cache"].to(V.dtype), V], dim=2)
 
         k_all = state["k_cache"]
         v_all = state["v_cache"]
+        step_dtype = Q.dtype
 
-        scores = torch.matmul(Q.float(), k_all.float().transpose(-1, -2)) / math.sqrt(D)
-        if getattr(self.cfg, "softpick_enabled", False):
-            attn_w = softpick(scores, dim=-1, temperature=self.cfg.softpick_temperature).to(dtype)
-        else:
-            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-            attn_w = F.softmax(scores, dim=-1).to(dtype)
-        context = torch.matmul(attn_w, v_all)
+        with torch.amp.autocast(device_type=device.type, enabled=False):
+            scores = torch.matmul(Q.float(), k_all.float().transpose(-1, -2)) / math.sqrt(D)
+            if getattr(self.cfg, "softpick_enabled", False):
+                attn_w = softpick(scores, dim=-1, temperature=self.cfg.softpick_temperature)
+            else:
+                scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+                attn_w = F.softmax(scores, dim=-1)
+            context = torch.matmul(attn_w, v_all.float()).to(step_dtype)
 
         state["step_idx"] = step_idx + 1
 
@@ -1038,11 +1072,13 @@ class NEXUSAttention(BaseAttention):
         v_flat = V.transpose(1, 2).contiguous().view(B, 1, H * D)
         v_rms = v_flat.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
         c_rms = context.float().pow(2).mean(dim=-1, keepdim=True).add(1e-6).sqrt()
-        context = context * (v_rms / c_rms).clamp(min=0.25, max=4.0).to(dtype)
+        context = context * (v_rms / c_rms).clamp(min=0.25, max=4.0).to(step_dtype)
 
         if self.is_nested_encoder:
             out = context
         else:
+            if not torch.is_autocast_enabled() and hasattr(self.out_proj, "weight") and context.dtype != self.out_proj.weight.dtype:
+                context = context.to(self.out_proj.weight.dtype)
             out = self.out_proj(context)
 
         if is_2d:

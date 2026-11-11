@@ -459,8 +459,6 @@ class HGRN2GatedOuterBlock(BaseAttention):
             y_1 = torch.matmul(q_1, S_next).squeeze(-2)
             return y_1.unsqueeze(2).to(q.dtype), S_next
 
-        num_chunks = (L + chunk_size - 1) // chunk_size
-
         q_f = q.float()
         k_f = k.float()
         v_f = v.float()
@@ -468,7 +466,11 @@ class HGRN2GatedOuterBlock(BaseAttention):
 
         log_f = torch.log(f_f)
 
-        if q.is_cuda and initial_state is None and d <= 64:
+        is_pow2_d = d > 0 and (d & (d - 1)) == 0 and d <= 64
+        ws_bytes = B * H * L * d * d * 4
+        allow_full_ws = (not torch.is_grad_enabled()) or (ws_bytes <= 32 * 1024 * 1024 and B * H * L <= 2048)
+
+        if q.is_cuda and initial_state is None and is_pow2_d and allow_full_ws:
             try:
                 from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK
 
@@ -486,40 +488,91 @@ class HGRN2GatedOuterBlock(BaseAttention):
                             out, last_state = chunk_gla(q_fl, k_fl, v_fl, g, scale=1.0, output_final_state=True)
                             y_out = out.transpose(1, 2).to(q.dtype)
                             s_final = (
-                                last_state
+                                last_state.float()
                                 if last_state is not None
                                 else torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
                             )
                             return y_out, s_final
-                        except Exception:
-                            # allowed-swallow: best-effort-telemetry
-                            pass
+                        except Exception as exc_fla:
+                            logger.warning(
+                                "HGRN2GatedOuterBlock: FLA chunk_gla failed (%s); trying Triton gla_scan.",
+                                exc_fla,
+                            )
                     from neuralops.ops.triton.gla_scan import gla_scan_triton
 
                     y_triton, s_final = gla_scan_triton(
-                        q.float(),
-                        k.float(),
-                        v.float(),
-                        f.float(),
+                        q_f.contiguous(),
+                        k_f.contiguous(),
+                        v_f.contiguous(),
+                        f_f.contiguous(),
                         initial_state=initial_state,
                         return_final_state=True,
                         use_normalizer=False,
                     )
-                    return y_triton.to(q.dtype), s_final
+                    return y_triton.to(q.dtype), s_final.float()
             except Exception as e:
-                logger.debug("HGRN2 outer Triton scan failed, falling back to chunked PyTorch: %s", e)
+                logger.warning(
+                    "HGRN2GatedOuterBlock: Triton scan failed (%s); falling back to chunked PyTorch.",
+                    e,
+                )
 
         S = (
             torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
             if initial_state is None
-            else initial_state.float().clone()
+            else initial_state.to(device=device, dtype=torch.float32).clone()
         )
+        eff_chunk = min(max(16, int(chunk_size)), 32)
+        use_cp = torch.is_grad_enabled()
+        if use_cp:
+            import torch.utils.checkpoint as cp
+
+        def _outer_chunk_step(
+            q_c: torch.Tensor,
+            k_c: torch.Tensor,
+            v_c: torch.Tensor,
+            log_f_c: torch.Tensor,
+            s_prev: torch.Tensor,
+        ) -> tuple[torch.Tensor, torch.Tensor]:
+            c_len = q_c.shape[2]
+            A = torch.cumsum(log_f_c, dim=-1)
+            tril = torch.tril(torch.ones(c_len, c_len, device=q_c.device, dtype=torch.bool))
+            tril_4d = tril.unsqueeze(0).unsqueeze(0)
+            A_diff = (A.unsqueeze(-1) - A.unsqueeze(-2)).masked_fill(~tril_4d, -1e4)
+            decay_mat = torch.exp(A_diff) * tril_4d.to(q_c.dtype)
+
+            scores = torch.matmul(q_c, k_c.transpose(-1, -2).contiguous()) * decay_mat
+            y_intra = torch.matmul(scores, v_c)
+            pos_decay = torch.exp(A).unsqueeze(-1)
+            y_inter = torch.matmul(q_c, s_prev) * pos_decay
+            y_c = y_intra + y_inter
+
+            block_decay = torch.exp(A[:, :, -1]).unsqueeze(-1).unsqueeze(-1)
+            update_w = torch.exp((A[:, :, -1:] - A).clamp(max=0.0)).unsqueeze(-1)
+            s_next = block_decay * s_prev + torch.matmul((k_c * update_w).transpose(-1, -2).contiguous(), v_c)
+            return y_c, s_next
+
         outputs = []
-        for t in range(L):
-            ft = f_f[:, :, t].unsqueeze(-1).unsqueeze(-1)
-            S = S * ft + torch.matmul(k_f[:, :, t].unsqueeze(-1), v_f[:, :, t].unsqueeze(-2))
-            yt = torch.matmul(q_f[:, :, t].unsqueeze(-2), S).squeeze(-2)
-            outputs.append(yt.unsqueeze(2))
+        for start in range(0, L, eff_chunk):
+            end = min(start + eff_chunk, L)
+            if use_cp:
+                y_c, S = cp.checkpoint(
+                    _outer_chunk_step,
+                    q_f[:, :, start:end],
+                    k_f[:, :, start:end],
+                    v_f[:, :, start:end],
+                    log_f[:, :, start:end],
+                    S,
+                    use_reentrant=False,
+                )
+            else:
+                y_c, S = _outer_chunk_step(
+                    q_f[:, :, start:end],
+                    k_f[:, :, start:end],
+                    v_f[:, :, start:end],
+                    log_f[:, :, start:end],
+                    S,
+                )
+            outputs.append(y_c)
 
         y_out = torch.cat(outputs, dim=2)
         return y_out.to(q.dtype), S
@@ -557,8 +610,9 @@ class HGRN2GatedOuterBlock(BaseAttention):
 
         q = q / math.sqrt(d)
 
-        f_logits = -F.softplus(self.lora_W_f(hidden_states))
-        f = torch.exp(f_logits.clamp(min=-3.0, max=-1e-4)).transpose(1, 2)
+        wf_dtype = self.lora_W_f.weight.dtype
+        f_logits = -F.softplus(self.lora_W_f(hidden_states.to(wf_dtype)))
+        f = torch.exp(f_logits.float().clamp(min=-3.0, max=-1e-4)).transpose(1, 2)
 
         mask_bool = None
         if attention_mask is not None:
@@ -651,9 +705,14 @@ class HGRN2GatedOuterBlock(BaseAttention):
         if self.is_nested_encoder:
             out = y
         else:
-            out = self.out_proj(y)
+            out_dtype = (
+                self.out_proj.weight.dtype
+                if hasattr(self.out_proj, "weight") and self.out_proj.weight is not None
+                else y.dtype
+            )
+            out = self.out_proj(y.to(out_dtype))
 
-        out = out * self.lora_output_scale
+        out = out.to(hidden_states.dtype) * self.lora_output_scale.to(hidden_states.dtype)
 
         if mask_bool is not None:
             out = out * mask_bool.unsqueeze(-1).to(out.dtype)

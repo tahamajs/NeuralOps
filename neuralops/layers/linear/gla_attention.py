@@ -283,12 +283,12 @@ class GLAttention(BaseAttention):
             out = torch.matmul(attn, v_all).permute(0, 2, 1, 3).contiguous().to(hidden_states.dtype)
         else:
             out = None
-            if self._fla_kernel is not None:
+            if self._fla_kernel is not None and Q.is_cuda and Q.dtype == torch.bfloat16 and attention_mask is None:
                 try:
-                    Q_f = Q.to(torch.bfloat16)
-                    K_f = K.to(torch.bfloat16)
-                    V_f = V.to(torch.bfloat16)
-                    g_f = g.unsqueeze(-1).expand(B, N, H, d).to(torch.bfloat16)
+                    Q_f = Q.contiguous()
+                    K_f = K.contiguous()
+                    V_f = V.contiguous()
+                    g_f = g.unsqueeze(-1).expand(B, N, H, d).to(torch.bfloat16).contiguous()
 
                     out_raw, _ = self._fla_kernel(
                         Q_f,
@@ -299,14 +299,14 @@ class GLAttention(BaseAttention):
                         output_final_state=False,
                     )
                     out = out_raw.float()
-                except (RuntimeError, NotImplementedError, ValueError) as e:
+                except Exception as e:
                     from neuralops.utils.logging_config import warn_once
 
                     warn_once("gla_fla_fallback", "FLA failed with %s; switching to Triton/PyTorch fallback", e)
 
             if out is None:
                 # Level 1: CUDA gla_scan fastpath
-                if Q.is_cuda and Q.dtype in (torch.float16, torch.bfloat16) and d <= 128:
+                if Q.is_cuda and Q.dtype in (torch.float16, torch.bfloat16) and d <= 128 and attention_mask is None:
                     try:
                         from neuralops.ops.cuda.gla_scan import gla_scan
 
@@ -320,10 +320,14 @@ class GLAttention(BaseAttention):
                         out = None
 
             if out is None:
-                # Numerically stable chunked GLAttention path (applies elu+1 and scale without raw-QKV blowup)
-                out = self._pytorch_gla_stable(Q, K, V, g).float()
+                # Numerically stable vectorized chunked GLAttention path in FP32
+                out = self._pytorch_gla_stable(Q, K, V, g, attention_mask=attention_mask).float()
 
-            out = self.o_norm(out.to(self.o_norm.weight.dtype)).to(hidden_states.dtype)
+            out = self.o_norm(out.to(self.o_norm.weight.dtype))
+            if hidden_states.dtype == torch.float16:
+                fmax = torch.finfo(torch.float16).max * 0.5
+                out = out.clamp(min=-fmax, max=fmax)
+            out = out.to(hidden_states.dtype)
 
         out = out.contiguous().view(B, N, self.all_head_size)
         if self.is_nested_encoder:
@@ -454,60 +458,83 @@ class GLAttention(BaseAttention):
         K: torch.Tensor,
         V: torch.Tensor,
         g: torch.Tensor,
+        attention_mask: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         """
-        Mathematically aligned chunked GLA fallback with stable cumsum log-decay.
+        Vectorized chunked GLA fallback strictly in FP32 with consistent inter/intra normalization.
         Q, K, V: (B, N, H, d)
         g:       (B, N, H) <= 0
         """
         B, N, H, d = Q.shape
+        device = Q.device
         chunk_size = 64
-        num_chunks = (N + chunk_size - 1) // chunk_size
+        pad_len = (chunk_size - (N % chunk_size)) % chunk_size
 
-        out = torch.zeros_like(Q, dtype=torch.float32)
-        S = torch.zeros(B, H, d, d, device=Q.device, dtype=torch.float32)
+        q_f = (F.elu(Q.float()) + 1.0) * self.scale
+        k_f = F.elu(K.float()) + 1.0
+        v_f = V.float()
+        g_f = g.float().clamp(max=0.0)
 
-        causal_full = torch.tril(torch.ones(chunk_size, chunk_size, device=Q.device, dtype=torch.bool))
+        if attention_mask is not None:
+            from neuralops.core.attention_mask import get_token_valid_mask
+
+            valid = get_token_valid_mask(attention_mask, B, N, device)
+            if valid is not None:
+                kv_mask = valid.view(B, N, 1, 1).float()
+                k_f = k_f * kv_mask
+                v_f = v_f * kv_mask
+                g_f = g_f.masked_fill(~valid.view(B, N, 1), 0.0)
+
+        q_h = q_f.transpose(1, 2)  # (B, H, N, d)
+        k_h = k_f.transpose(1, 2)
+        v_h = v_f.transpose(1, 2)
+        g_h = g_f.transpose(1, 2)  # (B, H, N)
+
+        if pad_len > 0:
+            q_h = F.pad(q_h, (0, 0, 0, pad_len))
+            k_h = F.pad(k_h, (0, 0, 0, pad_len))
+            v_h = F.pad(v_h, (0, 0, 0, pad_len))
+            g_h = F.pad(g_h, (0, pad_len), value=0.0)
+
+        num_chunks = q_h.shape[2] // chunk_size
+        q_blk = q_h.view(B, H, num_chunks, chunk_size, d)
+        k_blk = k_h.view(B, H, num_chunks, chunk_size, d)
+        v_blk = v_h.view(B, H, num_chunks, chunk_size, d)
+        g_blk = g_h.view(B, H, num_chunks, chunk_size)
+
+        b_log = torch.cumsum(g_blk, dim=-1)  # <= 0
+        diff_log = (b_log.unsqueeze(-1) - b_log.unsqueeze(-2)).clamp(max=0.0)
+        causal = torch.tril(torch.ones((chunk_size, chunk_size), device=device, dtype=torch.bool))
+        decay = torch.exp(diff_log) * causal.float()
+
+        scores_intra = torch.matmul(q_blk, k_blk.transpose(-1, -2)) * decay
+        num_intra = torch.matmul(scores_intra, v_blk)
+        den_intra = scores_intra.sum(dim=-1, keepdim=True)
+
+        q_b = q_blk * torch.exp(b_log).unsqueeze(-1)
+        g_end = b_log[..., -1:]
+        decay_total = torch.exp(g_end).unsqueeze(-1)  # (B, H, num_chunks, 1, 1)
+        weights = torch.exp((g_end - b_log).clamp(max=0.0)).unsqueeze(-1)
+        k_w = k_blk * weights
+        kv_chunks = torch.matmul(k_w.transpose(-1, -2), v_blk)  # (B, H, num_chunks, d, d)
+        z_chunks = k_w.sum(dim=-2)  # (B, H, num_chunks, d)
+
+        S = torch.zeros((B, H, d, d), device=device, dtype=torch.float32)
+        Z = torch.zeros((B, H, d), device=device, dtype=torch.float32)
+
         out_chunks = []
-
         for i in range(num_chunks):
-            start = i * chunk_size
-            end = min(start + chunk_size, N)
-            L = end - start
+            num_inter = torch.matmul(q_b[:, :, i], S)
+            den_inter = (q_b[:, :, i] * Z.unsqueeze(-2)).sum(dim=-1, keepdim=True)
+            den = (den_inter + den_intra[:, :, i]).clamp(min=1e-4)
+            out_chunks.append((num_inter + num_intra[:, :, i]) / den)
 
-            q = (F.elu(Q[:, start:end].float()) + 1.0) * self.scale
-            k = F.elu(K[:, start:end].float()) + 1.0
-            v = V[:, start:end].float()
-            g_c = g[:, start:end].float()
+            dec_i = decay_total[:, :, i]
+            S = S * dec_i + kv_chunks[:, :, i]
+            Z = Z * dec_i.squeeze(-1) + z_chunks[:, :, i]
 
-            b_log = torch.cumsum(g_c, dim=1)
-            causal = causal_full[:L, :L]
-
-            q_b = q * b_log.exp().unsqueeze(-1)
-            inter = torch.einsum("blhd,bhde->blhe", q_b, S)
-
-            diff_log = b_log.unsqueeze(2) - b_log.unsqueeze(1)
-            decay = torch.exp(diff_log.clamp(max=0.0))
-
-            qk = torch.einsum("bihd,bjhd->bijh", q, k)
-            scores = (qk * decay).permute(0, 3, 1, 2)
-            scores = scores.masked_fill(~causal, 0.0)
-            den = scores.sum(dim=-1, keepdim=True).clamp(min=1e-5)
-            intra = torch.einsum("bhij,bjhd->bihd", scores / den, v)
-
-            out_chunks.append(inter + intra)
-
-            g_end = b_log[:, -1, :]
-            decay_total = g_end.exp()
-            weights = torch.exp((g_end.unsqueeze(1) - b_log).clamp(max=0.0))
-
-            k_w = k * weights.unsqueeze(-1)
-            kv = torch.einsum("blhd,blhe->bhde", k_w, v)
-
-            S = S * decay_total.unsqueeze(-1).unsqueeze(-1) + kv
-
-        out = torch.cat(out_chunks, dim=1)
-        return out
+        out = torch.cat(out_chunks, dim=2)[:, :, :N, :]
+        return out.transpose(1, 2).contiguous()
 
 
 def _chunked_gla_forward(

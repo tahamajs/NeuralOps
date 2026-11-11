@@ -405,22 +405,38 @@ class NASCAttention(BaseAttention):
     def _local_window_attention(self, Q, K, V, valid_mask, is_causal):
         B, H, L, d = Q.shape
         scale = 1.0 / math.sqrt(d)
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+        chunk_size = 64
+        outputs = []
 
-        idx = torch.arange(L, device=Q.device)
-        dist = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs()
-        mask = dist > self.window_size
-        if is_causal:
-            mask = mask | (idx.unsqueeze(0) > idx.unsqueeze(1))
-        scores = scores.masked_fill(mask.unsqueeze(0).unsqueeze(0), -10000.0)
+        for start in range(0, L, chunk_size):
+            end = min(start + chunk_size, L)
+            k_start = max(0, start - self.window_size)
+            k_end = min(L, end if is_causal else end + self.window_size)
+            if k_end <= k_start:
+                outputs.append(Q.new_zeros(B, H, end - start, d))
+                continue
 
-        pad_k = (~valid_mask).unsqueeze(1).unsqueeze(2)
-        scores = scores.masked_fill(pad_k, -10000.0)
-        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+            Qc = Q[:, :, start:end]
+            Kc = K[:, :, k_start:k_end]
+            Vc = V[:, :, k_start:k_end]
 
-        attn = F.softmax(scores, dim=-1).to(Q.dtype)
-        attn = self.dropout(attn)
-        return torch.matmul(attn, V)
+            scores_c = torch.matmul(Qc.float(), Kc.float().transpose(-2, -1)) * scale
+            q_idx = torch.arange(start, end, device=Q.device).unsqueeze(1)
+            k_idx = torch.arange(k_start, k_end, device=Q.device).unsqueeze(0)
+            mask = (q_idx - k_idx).abs() > self.window_size
+            if is_causal:
+                mask = mask | (k_idx > q_idx)
+            scores_c = scores_c.masked_fill(mask.unsqueeze(0).unsqueeze(0), -10000.0)
+
+            pad_k = (~valid_mask[:, k_start:k_end]).unsqueeze(1).unsqueeze(2)
+            scores_c = scores_c.masked_fill(pad_k, -10000.0)
+            scores_c = torch.nan_to_num(scores_c, nan=-1e4, posinf=1e4, neginf=-1e4)
+
+            attn_c = F.softmax(scores_c, dim=-1).to(Q.dtype)
+            attn_c = self.dropout(attn_c)
+            outputs.append(torch.matmul(attn_c, Vc))
+
+        return torch.cat(outputs, dim=2) if len(outputs) > 1 else outputs[0]
 
     def _sparse_block_attention(self, Q, K, V, valid_mask, is_causal):
         B, H, L, d = Q.shape
@@ -461,7 +477,7 @@ class NASCAttention(BaseAttention):
         else:
             top_idx[:, :, :, 0] = 0
 
-        out_blocks = torch.zeros_like(Qb)
+        out_block_list = []
         for i in range(nb):
             idx = top_idx[:, :, i, :]
             idx_exp = idx.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, self.block_size, d)
@@ -488,9 +504,9 @@ class NASCAttention(BaseAttention):
             scores_i = torch.nan_to_num(scores_i, nan=-1e4, posinf=1e4, neginf=-1e4)
 
             attn_i = softpick(scores_i, dim=-1).to(Q.dtype)
-            out_blocks[:, :, i] = torch.matmul(attn_i, V_sel)
+            out_block_list.append(torch.matmul(attn_i, V_sel))
 
-        out = out_blocks.view(B, H, Lp, d)[:, :, :L, :]
+        out = torch.stack(out_block_list, dim=2).view(B, H, Lp, d)[:, :, :L, :]
         return out
 
     def _global_spectral_rff_attention(self, Q, K, V, valid_mask, is_causal):
@@ -563,44 +579,76 @@ class NASCAttention(BaseAttention):
             self._logged_once = True
 
         if use_dense:
-            scale = 1.0 / math.sqrt(d)
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-            if is_causal:
-                causal_mask = (
-                    torch.triu(
-                        torch.full(
-                            (L, L_kv),
-                            float("-inf"),
-                            device=hidden_states.device,
-                            dtype=torch.float32,
-                        ),
-                        diagonal=1,
+            can_sdpa = (
+                hasattr(F, "scaled_dot_product_attention")
+                and head_mask is None
+                and (eff_mask is None or (eff_mask.dim() == 2 and bool(valid_mask.all())))
+            )
+            if can_sdpa:
+                try:
+                    O = F.scaled_dot_product_attention(
+                        Q,
+                        K,
+                        V,
+                        is_causal=is_causal,
+                        dropout_p=self.dropout.p if self.training else 0.0,
                     )
-                    .unsqueeze(0)
-                    .unsqueeze(0)
-                )
-                scores = scores + causal_mask
+                except Exception:
+                    can_sdpa = False
 
-            if eff_mask is not None:
-                if eff_mask.dim() == 2:
-                    scores = scores + (eff_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
-                elif eff_mask.dim() == 3:
-                    scores = scores + eff_mask.unsqueeze(1).float()
-                elif eff_mask.dim() == 4:
-                    scores = scores + eff_mask.float()
+            if not can_sdpa:
+                scale = 1.0 / math.sqrt(d)
+                hm = None
+                if head_mask is not None:
+                    if head_mask.dim() == 1:
+                        hm = head_mask.view(1, -1, 1, 1)
+                    elif head_mask.dim() == 2:
+                        hm = head_mask.unsqueeze(1).unsqueeze(-1)
+                    elif head_mask.dim() == 3:
+                        hm = head_mask.unsqueeze(-1)
+                    else:
+                        hm = head_mask
 
-            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-            attn = F.softmax(scores, dim=-1).to(Q.dtype)
-            attn = self.dropout(attn)
-            if head_mask is not None:
-                if head_mask.dim() == 1:
-                    head_mask = head_mask.view(1, -1, 1, 1)
-                elif head_mask.dim() == 2:
-                    head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
-                elif head_mask.dim() == 3:
-                    head_mask = head_mask.unsqueeze(-1)
-                attn = attn * head_mask
-            O = torch.matmul(attn, V)
+                chunk_size = 64
+                o_chunks = []
+                for start in range(0, L, chunk_size):
+                    end = min(start + chunk_size, L)
+                    q_c = Q[:, :, start:end]
+                    k_end = end if is_causal else L_kv
+                    k_c = K[:, :, :k_end]
+                    v_c = V[:, :, :k_end]
+
+                    scores_c = torch.matmul(q_c.float(), k_c.float().transpose(-2, -1)) * scale
+                    if is_causal:
+                        q_idx = torch.arange(start, end, device=hidden_states.device).unsqueeze(1)
+                        k_idx = torch.arange(k_end, device=hidden_states.device).unsqueeze(0)
+                        scores_c = scores_c.masked_fill((k_idx > q_idx).unsqueeze(0).unsqueeze(0), float("-inf"))
+
+                    if eff_mask is not None:
+                        if eff_mask.dim() == 2:
+                            scores_c = scores_c + (eff_mask[:, :k_end].unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+                        elif eff_mask.dim() == 3:
+                            m3 = (
+                                eff_mask[:, :, :k_end]
+                                if eff_mask.shape[1] == 1
+                                else eff_mask[:, start:end, :k_end]
+                            )
+                            scores_c = scores_c + m3.unsqueeze(1).float()
+                        elif eff_mask.dim() == 4:
+                            m4 = (
+                                eff_mask[:, :, :, :k_end]
+                                if eff_mask.shape[2] == 1
+                                else eff_mask[:, :, start:end, :k_end]
+                            )
+                            scores_c = scores_c + m4.float()
+
+                    scores_c = torch.nan_to_num(scores_c, nan=-1e4, posinf=1e4, neginf=-1e4)
+                    attn_c = F.softmax(scores_c, dim=-1).to(Q.dtype)
+                    attn_c = self.dropout(attn_c)
+                    if hm is not None:
+                        attn_c = attn_c * hm
+                    o_chunks.append(torch.matmul(attn_c, v_c))
+                O = torch.cat(o_chunks, dim=2) if len(o_chunks) > 1 else o_chunks[0]
         else:
             if is_causal:
                 gates = F.softmax(self.gate_proj(hidden_states), dim=-1)

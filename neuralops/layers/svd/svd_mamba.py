@@ -464,8 +464,7 @@ class SVDMamba(BaseAttention):
                     else attention_mask.squeeze(1).bool()
                 )
 
-        if mask_bool is None:
-            mask_bool = torch.ones(batch, seqlen, device=hidden_states.device, dtype=torch.bool)
+        has_padding = mask_bool is not None and not bool(mask_bool.all())
 
         Q = self.q_proj(hidden_states).view(batch, seqlen, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
         K = (
@@ -492,7 +491,8 @@ class SVDMamba(BaseAttention):
 
         scale = 1.0 / math.sqrt(max(1, self.head_dim))
         attn_out = None
-        if mask_bool is None and not output_attentions:
+        probs = None
+        if not has_padding and not output_attentions and hasattr(F, "scaled_dot_product_attention"):
             try:
                 _qs = maybe_half(Q)
                 _ks = maybe_half(K)
@@ -517,19 +517,51 @@ class SVDMamba(BaseAttention):
                 attn_out = None
 
         if attn_out is None:
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+            if not output_attentions and seqlen > 64:
+                chunk_size = 64
+                ctx_chunks = []
+                for start in range(0, seqlen, chunk_size):
+                    end = min(start + chunk_size, seqlen)
+                    q_c = Q[:, :, start:end]
+                    k_end = end if self.is_decoder else seqlen
+                    k_c = K[:, :, :k_end]
+                    v_c = V_attn[:, :, :k_end]
 
-            if self.is_decoder:
-                causal_mask = torch.tril(torch.ones(seqlen, seqlen, device=hidden_states.device, dtype=torch.bool))
-                scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
+                    scores_c = torch.matmul(q_c.float(), k_c.float().transpose(-2, -1)) * scale
+                    if self.is_decoder:
+                        q_idx = torch.arange(start, end, device=hidden_states.device).unsqueeze(1)
+                        k_idx = torch.arange(k_end, device=hidden_states.device).unsqueeze(0)
+                        causal_mask = (k_idx <= q_idx).unsqueeze(0).unsqueeze(0)
+                        scores_c = scores_c.masked_fill(~causal_mask, -1e4)
+                    if has_padding:
+                        scores_c = scores_c.masked_fill(~mask_bool[:, None, None, :k_end], -1e4)
 
-            if mask_bool is not None:
-                scores = scores.masked_fill(~mask_bool.unsqueeze(1).unsqueeze(2), -1e4)
+                    probs_c = F.softmax(scores_c, dim=-1).to(V_attn.dtype)
+                    probs_c = torch.nan_to_num(probs_c, nan=0.0)
+                    ctx_chunks.append(torch.matmul(probs_c, v_c))
+                attn_out = (
+                    torch.cat(ctx_chunks, dim=2)
+                    .transpose(1, 2)
+                    .contiguous()
+                    .view(batch, seqlen, self.all_head_size)
+                )
+                attn_out = self.attn_out_proj(attn_out)
+            else:
+                scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
-            probs = F.softmax(scores, dim=-1).to(V_attn.dtype)
-            probs = torch.nan_to_num(probs, nan=0.0)
-            attn_out = torch.matmul(probs, V_attn).transpose(1, 2).contiguous().view(batch, seqlen, self.all_head_size)
-            attn_out = self.attn_out_proj(attn_out)
+                if self.is_decoder:
+                    causal_mask = torch.tril(torch.ones(seqlen, seqlen, device=hidden_states.device, dtype=torch.bool))
+                    scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
+
+                if has_padding:
+                    scores = scores.masked_fill(~mask_bool.unsqueeze(1).unsqueeze(2), -1e4)
+
+                probs = F.softmax(scores, dim=-1).to(V_attn.dtype)
+                probs = torch.nan_to_num(probs, nan=0.0)
+                attn_out = (
+                    torch.matmul(probs, V_attn).transpose(1, 2).contiguous().view(batch, seqlen, self.all_head_size)
+                )
+                attn_out = self.attn_out_proj(attn_out)
 
         xz = self.in_proj(hidden_states)
         x, z = xz.chunk(2, dim=-1)

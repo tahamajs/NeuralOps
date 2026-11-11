@@ -592,9 +592,27 @@ class AdaptiveSparseAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        Q = self.q_proj(hidden_states).reshape(B, N_q, H, d).transpose(1, 2).contiguous()
-        K = self.k_proj(kv_input).reshape(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        V = self.v_proj(kv_input).reshape(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        if N_q == 0 or N_k == 0:
+            out_dim = self.all_head_size if self.is_nested_encoder else self.hidden_size
+            return torch.zeros((B, N_q, out_dim), device=device, dtype=dtype), None
+
+        if not hidden_states.is_contiguous():
+            hidden_states = hidden_states.contiguous()
+        if is_cross_attention and not kv_input.is_contiguous():
+            kv_input = kv_input.contiguous()
+
+        q_in = hidden_states
+        kv_in = kv_input
+        if not torch.is_autocast_enabled() and hasattr(self.q_proj, "weight"):
+            proj_dtype = self.q_proj.weight.dtype
+            if q_in.dtype != proj_dtype:
+                q_in = q_in.to(proj_dtype)
+            if kv_in.dtype != proj_dtype:
+                kv_in = kv_in.to(proj_dtype)
+
+        Q = self.q_proj(q_in).reshape(B, N_q, H, d).transpose(1, 2).contiguous()
+        K = self.k_proj(kv_in).reshape(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V = self.v_proj(kv_in).reshape(B, N_k, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
@@ -638,8 +656,8 @@ class AdaptiveSparseAttention(BaseAttention):
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids=pos_ids)
 
         if self.kv_repeat > 1:
-            K = repeat_kv(K, self.kv_repeat)
-            V = repeat_kv(V, self.kv_repeat)
+            K = repeat_kv(K, self.kv_repeat).contiguous()
+            V = repeat_kv(V, self.kv_repeat).contiguous()
 
         chunk_size = 64
         scale = 1.0 / math.sqrt(int(d))
@@ -662,8 +680,8 @@ class AdaptiveSparseAttention(BaseAttention):
         k_ceil = torch.clamp(k_floor + 1, min=1, max=min(N_k, 32))
         alpha_k = (k_float - k_floor.float()).view(1, H, 1, 1)
 
-        k_indices_floor = (k_floor - 1).view(1, H, 1, 1)
-        k_indices_ceil = (k_ceil - 1).view(1, H, 1, 1)
+        k_indices_floor = (k_floor - 1).clamp(min=0, max=max(0, N_k - 1)).view(1, H, 1, 1)
+        k_indices_ceil = (k_ceil - 1).clamp(min=0, max=max(0, N_k - 1)).view(1, H, 1, 1)
         valid_m = None
         if mask is not None and mask.dim() != 4:
             valid_m = get_token_valid_mask(mask, B, N_k, device)
@@ -672,6 +690,8 @@ class AdaptiveSparseAttention(BaseAttention):
 
         if (
             Q.is_cuda
+            and Q.dtype in (torch.float16, torch.bfloat16)
+            and not is_cross_attention
             and not output_attentions
             and mask is None
             and head_mask is None
@@ -679,6 +699,7 @@ class AdaptiveSparseAttention(BaseAttention):
             and N_q >= 64
             and N_q % 64 == 0
             and N_k % 64 == 0
+            and d in (32, 64, 128)
         ):
             try:
                 from neuralops.ops.triton import triton_dispatch
@@ -689,84 +710,116 @@ class AdaptiveSparseAttention(BaseAttention):
                 if is_decoder:
                     block_mask = torch.tril(block_mask)
                 context_triton = triton_dispatch(
-                    "sparse_attn", Q, K, V, block_mask=block_mask, block_size=64, is_causal=bool(is_decoder)
+                    "sparse_attn", Q.contiguous(), K.contiguous(), V.contiguous(), block_mask=block_mask, block_size=64, is_causal=bool(is_decoder)
                 )
+                ctx_triton = context_triton.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
                 if not self.is_nested_encoder:
-                    out = self.out_proj(context_triton.transpose(1, 2).contiguous().view(B, N_q, -1))
+                    if not torch.is_autocast_enabled() and hasattr(self.out_proj, "weight") and ctx_triton.dtype != self.out_proj.weight.dtype:
+                        ctx_triton = ctx_triton.to(self.out_proj.weight.dtype)
+                    out = self.out_proj(ctx_triton)
                 else:
-                    out = context_triton.transpose(1, 2).contiguous().view(B, N_q, -1)
+                    out = ctx_triton
+                out = out * self.output_scale.to(out.dtype)
                 return (out, past_key_value) if is_decoder else (out, None)
             except Exception as e:
                 logger.debug("Triton sparse_attn failed in AdaptiveSparseAttention, falling back: %s", e)
 
+        def _slice_q_dim(t: torch.Tensor, q_s: int, q_e: int) -> torch.Tensor:
+            if t.size(2) == 1:
+                return t
+            if q_s < t.size(2):
+                return t[:, :, q_s:min(q_e, t.size(2)), :]
+            return t[:, :, :1, :]
+
         context_chunks = []
         attn_chunks = [] if output_attentions else None
+        compute_dtype = Q.dtype
 
-        for q_start in range(0, N_q, chunk_size):
-            q_end = min(q_start + chunk_size, N_q)
-            q_chunk = Q[:, :, q_start:q_end, :]
-            C_q = q_end - q_start
+        with torch.amp.autocast(device_type=device.type, enabled=False):
+            Q_f = Q.float()
+            K_f = K.float()
+            V_f = V.float()
+            K_f_t = K_f.transpose(-2, -1).contiguous()
+            sp_f = sparsity_per_head.float()
+            alpha_k_f = alpha_k.float()
 
-            scores_chunk = torch.matmul(q_chunk, K.transpose(-2, -1).contiguous()) * scale
+            for q_start in range(0, N_q, chunk_size):
+                q_end = min(q_start + chunk_size, N_q)
+                q_chunk = Q_f[:, :, q_start:q_end, :]
+                C_q = q_end - q_start
 
-            if position_bias is not None:
-                pb_chunk = position_bias[:, :, q_start:q_end, :]
-                if mask is not None and mask.dim() == 4:
-                    pb_chunk = pb_chunk + mask[:, :, q_start:q_end, :].to(scores_chunk.dtype)
-                scores_chunk = scores_chunk + pb_chunk.to(scores_chunk.dtype)
-            elif mask is not None:
-                if mask.dim() == 4:
-                    scores_chunk = scores_chunk + mask[:, :, q_start:q_end, :].to(scores_chunk.dtype)
-                elif valid_m is not None:
-                    scores_chunk = scores_chunk.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
+                scores_chunk = torch.matmul(q_chunk, K_f_t) * scale
 
-            if is_decoder:
-                q_idx = torch.arange(q_start, q_end, device=device).view(1, 1, C_q, 1)
-                k_idx = torch.arange(N_k, device=device).view(1, 1, 1, N_k)
-                causal_chunk = k_idx <= q_idx
-                scores_chunk = scores_chunk.masked_fill(~causal_chunk, -10000.0)
+                if position_bias is not None:
+                    pb_chunk = _slice_q_dim(position_bias, q_start, q_end).float()
+                    if mask is not None and mask.dim() == 4:
+                        m_chunk = _slice_q_dim(mask, q_start, q_end)
+                        if m_chunk.size(-1) > N_k:
+                            m_chunk = m_chunk[..., :N_k]
+                        if m_chunk.dtype == torch.bool:
+                            pb_chunk = pb_chunk.masked_fill(~m_chunk, -10000.0)
+                        else:
+                            pb_chunk = pb_chunk + m_chunk.float().clamp(min=-10000.0)
+                    scores_chunk = scores_chunk + pb_chunk
+                elif mask is not None:
+                    if mask.dim() == 4:
+                        m_chunk = _slice_q_dim(mask, q_start, q_end)
+                        if m_chunk.size(-1) > N_k:
+                            m_chunk = m_chunk[..., :N_k]
+                        if m_chunk.dtype == torch.bool:
+                            scores_chunk = scores_chunk.masked_fill(~m_chunk, -10000.0)
+                        else:
+                            scores_chunk = scores_chunk + m_chunk.float().clamp(min=-10000.0)
+                    elif valid_m is not None:
+                        scores_chunk = scores_chunk.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
 
-            if not is_cross_attention:
                 if is_decoder:
-                    valid_counts = (q_idx + 1).clamp(min=1, max=N_k).float()
-                    eff_k = torch.clamp((1.0 - sparsity_per_head.view(1, H, 1, 1)) * valid_counts, min=1.0, max=16.0)
-                    eff_k_floor = (eff_k.floor().long() - 1).clamp(min=0, max=N_k - 1)
-                    eff_k_ceil = (eff_k_floor + 1).clamp(min=0, max=N_k - 1)
-                    eff_alpha = eff_k - eff_k.floor()
-                    sorted_scores, _ = torch.sort(scores_chunk, dim=-1, descending=True)
-                    thresh_f = torch.gather(sorted_scores, dim=-1, index=eff_k_floor.expand(B, H, C_q, 1))
-                    thresh_c = torch.gather(sorted_scores, dim=-1, index=eff_k_ceil.expand(B, H, C_q, 1))
-                    topk_thresh = thresh_f * (1.0 - eff_alpha) + thresh_c * eff_alpha
-                else:
-                    sorted_scores, _ = torch.sort(scores_chunk, dim=-1, descending=True)
-                    k_idx_f = k_indices_floor.expand(B, H, C_q, 1)
-                    k_idx_c = k_indices_ceil.expand(B, H, C_q, 1)
-                    thresh_f = torch.gather(sorted_scores, dim=-1, index=k_idx_f)
-                    thresh_c = torch.gather(sorted_scores, dim=-1, index=k_idx_c)
-                    topk_thresh = thresh_f * (1.0 - alpha_k) + thresh_c * alpha_k
+                    q_idx = torch.arange(q_start, q_end, device=device).view(1, 1, C_q, 1)
+                    k_idx = torch.arange(N_k, device=device).view(1, 1, 1, N_k)
+                    causal_chunk = k_idx <= q_idx
+                    scores_chunk = scores_chunk.masked_fill(~causal_chunk, -10000.0)
 
-                scores_chunk = scores_chunk.masked_fill(scores_chunk < topk_thresh, -10000.0)
+                if not is_cross_attention:
+                    if is_decoder:
+                        valid_counts = (q_idx + 1).clamp(min=1, max=N_k).float()
+                        eff_k = torch.clamp((1.0 - sp_f.view(1, H, 1, 1)) * valid_counts, min=1.0, max=min(16.0, float(N_k)))
+                        eff_k_floor = (eff_k.floor().long() - 1).clamp(min=0, max=N_k - 1)
+                        eff_k_ceil = (eff_k_floor + 1).clamp(min=0, max=N_k - 1)
+                        eff_alpha = eff_k - eff_k.floor()
+                        sorted_scores, _ = torch.sort(scores_chunk, dim=-1, descending=True)
+                        thresh_f = torch.gather(sorted_scores, dim=-1, index=eff_k_floor.expand(B, H, C_q, 1))
+                        thresh_c = torch.gather(sorted_scores, dim=-1, index=eff_k_ceil.expand(B, H, C_q, 1))
+                        topk_thresh = thresh_f * (1.0 - eff_alpha) + thresh_c * eff_alpha
+                    else:
+                        sorted_scores, _ = torch.sort(scores_chunk, dim=-1, descending=True)
+                        k_idx_f = k_indices_floor.expand(B, H, C_q, 1)
+                        k_idx_c = k_indices_ceil.expand(B, H, C_q, 1)
+                        thresh_f = torch.gather(sorted_scores, dim=-1, index=k_idx_f)
+                        thresh_c = torch.gather(sorted_scores, dim=-1, index=k_idx_c)
+                        topk_thresh = thresh_f * (1.0 - alpha_k_f) + thresh_c * alpha_k_f
 
-            attn_chunk = torch.nan_to_num(F.softmax(scores_chunk.float(), dim=-1), nan=0.0).to(dtype)
-            attn_chunk = self.dropout(attn_chunk)
+                    scores_chunk = scores_chunk.masked_fill(scores_chunk < topk_thresh, -10000.0)
 
-            if head_mask is not None:
-                if head_mask.dim() == 1:
-                    hm = head_mask.view(1, -1, 1, 1)
-                elif head_mask.dim() == 2:
-                    hm = head_mask.unsqueeze(-1).unsqueeze(-1)
-                elif head_mask.dim() == 3:
-                    hm = head_mask.unsqueeze(1)
-                elif head_mask.dim() == 4:
-                    hm = head_mask[:, :, q_start:q_end, :]
-                else:
-                    hm = head_mask
-                attn_chunk = attn_chunk * hm
+                attn_chunk = torch.nan_to_num(F.softmax(scores_chunk, dim=-1), nan=0.0)
+                attn_chunk = self.dropout(attn_chunk)
 
-            ctx_chunk = torch.matmul(attn_chunk, V)
-            context_chunks.append(ctx_chunk)
-            if output_attentions:
-                attn_chunks.append(attn_chunk)
+                if head_mask is not None:
+                    if head_mask.dim() == 1:
+                        hm = head_mask.view(1, -1, 1, 1)
+                    elif head_mask.dim() == 2:
+                        hm = head_mask.unsqueeze(-1).unsqueeze(-1)
+                    elif head_mask.dim() == 3:
+                        hm = head_mask.unsqueeze(1)
+                    elif head_mask.dim() == 4:
+                        hm = _slice_q_dim(head_mask, q_start, q_end)
+                    else:
+                        hm = head_mask
+                    attn_chunk = attn_chunk * hm.float()
+
+                ctx_chunk = torch.matmul(attn_chunk, V_f).to(compute_dtype)
+                context_chunks.append(ctx_chunk)
+                if output_attentions:
+                    attn_chunks.append(attn_chunk.to(compute_dtype))
 
         context = torch.cat(context_chunks, dim=2)
         context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
@@ -775,11 +828,14 @@ class AdaptiveSparseAttention(BaseAttention):
         if self.is_nested_encoder:
             output = context
         else:
+            if not torch.is_autocast_enabled() and hasattr(self.out_proj, "weight") and context.dtype != self.out_proj.weight.dtype:
+                context = context.to(self.out_proj.weight.dtype)
             output = self.out_proj(context)
 
+        output = output * self.output_scale.to(output.dtype)
         if position_bias is not None:
-            return output * self.output_scale, position_bias
-        return output * self.output_scale, (attn if output_attentions else None)
+            return output, position_bias
+        return output, (attn if output_attentions else None)
 
 
 def inject_adaptive_sparse(

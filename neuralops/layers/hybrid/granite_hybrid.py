@@ -148,47 +148,69 @@ class Mamba2(nn.Module):
         x_ssm = self.conv1d(x_ssm.transpose(1, 2).contiguous())[..., :L].transpose(1, 2).contiguous()
 
         dt = F.softplus(self.dt_proj(x_ssm))
-        A = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0)).to(dtype=x.dtype)
-
-        dA_log = torch.einsum("bli,in->blin", dt, A)
-        dA_log = torch.clamp(dA_log, min=-20.0, max=0.0)
-        dA = torch.exp(dA_log)
-
-        dBx = torch.einsum("bli,blin->blin", x_ssm, dt.unsqueeze(-1))
+        A_f = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0))
 
         chunk_len = min(L, 64) if L > 0 else 1
-        num_chunks = (L + chunk_len - 1) // chunk_len
+        num_chunks = (L + chunk_len - 1) // chunk_len if L > 0 else 0
         running_h = (
-            past_state
+            past_state.float()
             if past_state is not None
-            else torch.zeros(B, inner_dim, self.d_state, device=x.device, dtype=x.dtype)
+            else torch.zeros(B, inner_dim, self.d_state, device=x.device, dtype=torch.float32)
         )
-        D_weight = self.D.view(1, 1, inner_dim, 1)
+        D_weight = self.D.float().view(1, 1, inner_dim, 1)
+
+        def _scan_chunk(
+            x_c: torch.Tensor,
+            dt_c: torch.Tensor,
+            h_prev: torch.Tensor,
+            A_param: torch.Tensor,
+            d_w: torch.Tensor,
+        ) -> tuple[torch.Tensor, torch.Tensor]:
+            x_cf = x_c.float()
+            dt_cf = dt_c.float()
+            dA_log_c = torch.einsum("bli,in->blin", dt_cf, A_param).clamp(min=-20.0, max=0.0)
+            cum_log_dA = torch.cumsum(dA_log_c, dim=1)
+
+            dBx_c = x_cf.unsqueeze(-1) * dt_cf.unsqueeze(-1)
+            dBx_scaled = dBx_c * torch.exp((-cum_log_dA).clamp(max=40.0))
+            cum_dBx = torch.cumsum(dBx_scaled, dim=1)
+
+            h_c = torch.exp(cum_log_dA) * (cum_dBx + h_prev.unsqueeze(1))
+            y_c = (h_c * d_w).sum(dim=-1).to(x_c.dtype)
+            return y_c, h_c[:, -1]
+
+        use_ckpt = (
+            self.training
+            and torch.is_grad_enabled()
+            and L > chunk_len
+            and (x_ssm.requires_grad or dt.requires_grad or running_h.requires_grad)
+        )
 
         y_chunks = []
         for chunk_idx in range(num_chunks):
             start = chunk_idx * chunk_len
             end = min(start + chunk_len, L)
+            x_c = x_ssm[:, start:end]
+            dt_c = dt[:, start:end]
 
-            dA_c = dA[:, start:end]
-            dBx_c = dBx[:, start:end]
+            if use_ckpt:
+                from torch.utils.checkpoint import checkpoint
 
-            log_dA = torch.log(dA_c.clamp(min=1e-20))
-            cum_log_dA = torch.cumsum(log_dA, dim=1)
+                y_c, next_h = checkpoint(_scan_chunk, x_c, dt_c, running_h, A_f, D_weight, use_reentrant=False)
+            else:
+                y_c, next_h = _scan_chunk(x_c, dt_c, running_h, A_f, D_weight)
 
-            dBx_scaled = dBx_c * torch.exp(-cum_log_dA)
-            cum_dBx = torch.cumsum(dBx_scaled, dim=1)
-
-            h_c = torch.exp(cum_log_dA) * (cum_dBx + running_h.unsqueeze(1))
-            running_h = h_c[:, -1].detach() if not self.training else h_c[:, -1]
-
-            y_c = (h_c * D_weight).sum(dim=-1)
+            running_h = next_h.detach() if not self.training else next_h
             y_chunks.append(y_c)
 
-        y = torch.cat(y_chunks, dim=1) if len(y_chunks) > 1 else y_chunks[0]
+        y = (
+            torch.cat(y_chunks, dim=1)
+            if len(y_chunks) > 1
+            else (y_chunks[0] if y_chunks else x_ssm.new_zeros(B, 0, inner_dim))
+        )
 
         y = y * F.silu(z)
-        return self.out_proj(y), running_h
+        return self.out_proj(y), running_h.to(x.dtype)
 
 
 class MixtureOfExperts(nn.Module):
@@ -257,8 +279,16 @@ class MixtureOfExperts(nn.Module):
                 continue
 
             weight_e = (topk_weights * (topk_indices == e).float()).sum(dim=-1, keepdim=True)
-            expert_out = self.lora_experts[e](x)
-            out = out + (mask.unsqueeze(-1) * weight_e * expert_out).float()
+            if bool(mask.all()):
+                expert_out = self.lora_experts[e](x)
+                out = out + (weight_e * expert_out).float()
+            else:
+                x_sel = x[mask]
+                w_sel = weight_e[mask]
+                expert_sel = self.lora_experts[e](x_sel)
+                contrib = torch.zeros_like(out)
+                contrib[mask] = (w_sel * expert_sel).float()
+                out = out + contrib
 
         out = out * self.lora_output_scale.float()
 
@@ -639,30 +669,92 @@ class GraniteHybridBlock(BaseAttention):
         else:
             K_full, V_full = K, V
 
-        scale = 1.0 / math.sqrt(Dh)
-        scores = torch.matmul(q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale
-        mask_val = _safe_mask_value(scores.dtype)
+        attn_weights = None
+        can_sdpa = (
+            hasattr(F, "scaled_dot_product_attention")
+            and not output_attentions
+            and (attention_mask is None or (attention_mask.dim() == 2 and bool((attention_mask != 0).all())))
+            and (not self.is_decoder or past_len == 0 or L == 1)
+        )
+        if can_sdpa:
+            try:
+                is_causal_sdp = self.is_decoder and past_len == 0 and L > 1
+                context = F.scaled_dot_product_attention(
+                    q,
+                    K_full,
+                    V_full,
+                    is_causal=is_causal_sdp,
+                    dropout_p=0.0,
+                )
+            except Exception:
+                can_sdpa = False
 
-        if self.is_decoder:
-            q_idx = torch.arange(past_len, past_len + L, device=device).unsqueeze(1)
-            k_idx = torch.arange(N_kv, device=device).unsqueeze(0)
-            causal = (k_idx <= q_idx).unsqueeze(0).unsqueeze(0)
-            scores = scores.masked_fill(~causal, mask_val)
+        if not can_sdpa:
+            scale = 1.0 / math.sqrt(Dh)
+            mask_val = _safe_mask_value(q.dtype)
+            if not output_attentions and L > 64:
+                chunk_size = 64
+                ctx_chunks = []
+                for start in range(0, L, chunk_size):
+                    end = min(start + chunk_size, L)
+                    q_c = q[:, :, start:end]
+                    k_end = min(N_kv, past_len + end) if self.is_decoder else N_kv
+                    K_c = K_full[:, :, :k_end]
+                    V_c = V_full[:, :, :k_end]
 
-        if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                pad_mask = (attention_mask == 0).view(B, 1, 1, N_kv)
-                scores = scores.masked_fill(pad_mask, mask_val)
-            elif attention_mask.dim() == 3:
-                scores = scores + attention_mask.unsqueeze(1).to(scores.dtype)
-            elif attention_mask.dim() == 4:
-                scores = scores + attention_mask.to(scores.dtype)
+                    scores_c = torch.matmul(q_c.float(), K_c.float().transpose(-2, -1)) * scale
+                    if self.is_decoder:
+                        q_idx = torch.arange(past_len + start, past_len + end, device=device).unsqueeze(1)
+                        k_idx = torch.arange(k_end, device=device).unsqueeze(0)
+                        causal = (k_idx <= q_idx).unsqueeze(0).unsqueeze(0)
+                        scores_c = scores_c.masked_fill(~causal, mask_val)
 
-        scores = torch.nan_to_num(scores, nan=mask_val, posinf=1e9, neginf=mask_val)
-        attn_weights = F.softmax(scores.float(), dim=-1).to(hidden_states.dtype)
-        attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
+                    if attention_mask is not None:
+                        if attention_mask.dim() == 2:
+                            pad_mask = (attention_mask[:, :k_end] == 0).view(B, 1, 1, k_end)
+                            scores_c = scores_c.masked_fill(pad_mask, mask_val)
+                        elif attention_mask.dim() == 3:
+                            m3 = (
+                                attention_mask[:, :, :k_end]
+                                if attention_mask.shape[1] == 1
+                                else attention_mask[:, start:end, :k_end]
+                            )
+                            scores_c = scores_c + m3.unsqueeze(1).to(scores_c.dtype)
+                        elif attention_mask.dim() == 4:
+                            m4 = (
+                                attention_mask[:, :, :, :k_end]
+                                if attention_mask.shape[2] == 1
+                                else attention_mask[:, :, start:end, :k_end]
+                            )
+                            scores_c = scores_c + m4.to(scores_c.dtype)
 
-        context = torch.matmul(attn_weights, V_full)
+                    scores_c = torch.nan_to_num(scores_c, nan=mask_val, posinf=1e9, neginf=mask_val)
+                    aw_c = F.softmax(scores_c.float(), dim=-1).to(hidden_states.dtype)
+                    aw_c = torch.nan_to_num(aw_c, nan=0.0)
+                    ctx_chunks.append(torch.matmul(aw_c, V_c))
+                context = torch.cat(ctx_chunks, dim=2)
+            else:
+                scores = torch.matmul(q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale
+                if self.is_decoder:
+                    q_idx = torch.arange(past_len, past_len + L, device=device).unsqueeze(1)
+                    k_idx = torch.arange(N_kv, device=device).unsqueeze(0)
+                    causal = (k_idx <= q_idx).unsqueeze(0).unsqueeze(0)
+                    scores = scores.masked_fill(~causal, mask_val)
+
+                if attention_mask is not None:
+                    if attention_mask.dim() == 2:
+                        pad_mask = (attention_mask == 0).view(B, 1, 1, N_kv)
+                        scores = scores.masked_fill(pad_mask, mask_val)
+                    elif attention_mask.dim() == 3:
+                        scores = scores + attention_mask.unsqueeze(1).to(scores.dtype)
+                    elif attention_mask.dim() == 4:
+                        scores = scores + attention_mask.to(scores.dtype)
+
+                scores = torch.nan_to_num(scores, nan=mask_val, posinf=1e9, neginf=mask_val)
+                attn_weights = F.softmax(scores.float(), dim=-1).to(hidden_states.dtype)
+                attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
+                context = torch.matmul(attn_weights, V_full)
+
         context = context.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
         if self.is_nested_encoder:

@@ -157,7 +157,8 @@ def _local_window_attention(
     past_len: int,
     dropout_p: float,
     training: bool,
-) -> tuple[torch.Tensor, torch.Tensor]:
+    return_attn: bool = False,
+) -> tuple[torch.Tensor, torch.Tensor | None]:
     B, h, N, d = Q.shape
     N_k = K.shape[2]
     radius = window // 2
@@ -178,17 +179,9 @@ def _local_window_attention(
         except Exception as exc:
             logger.warning("CUDA hybrid_local_attn failed (%s); falling back to PyTorch implementation", exc)
 
-    abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)
-    abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
-
-    band = (abs_q - abs_k).abs() <= radius
-    band = band.unsqueeze(0).unsqueeze(0)
-
-    if is_decoder:
-        causal = abs_k <= abs_q
-        band = band & causal.unsqueeze(0).unsqueeze(0)
-
     if os.environ.get("AEGIS_DISABLE_LOCAL", "0") == "1":
+        abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)
+        abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
         if is_decoder:
             causal = abs_k <= abs_q
@@ -199,7 +192,12 @@ def _local_window_attention(
         attn = F.dropout(attn, p=dropout_p, training=training)
         return torch.matmul(attn, V.to(attn.dtype)), attn
 
-    if token_valid is None or bool(token_valid.all()):
+    if hasattr(F, "scaled_dot_product_attention") and not return_attn and (token_valid is None or bool(token_valid.all())):
+        abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)
+        abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
+        band = ((abs_q - abs_k).abs() <= radius).unsqueeze(0).unsqueeze(0)
+        if is_decoder:
+            band = band & (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)
         mask_val = -1e4
         attn_bias = torch.zeros(1, 1, N, N_k, device=Q.device, dtype=Q.dtype)
         attn_bias = attn_bias.masked_fill(~band, mask_val)
@@ -212,6 +210,53 @@ def _local_window_attention(
             is_causal=False,
         )
         return out, None
+
+    if not return_attn:
+        chunk_size = 64
+        mask_val = -1e4
+        outputs = []
+        for start in range(0, N, chunk_size):
+            end = min(start + chunk_size, N)
+            q_abs_start = past_len + start
+            q_abs_end = past_len + end
+            k_start = max(0, q_abs_start - radius)
+            k_end = min(N_k, q_abs_end if is_decoder else q_abs_end + radius)
+            if k_end <= k_start:
+                outputs.append(Q.new_zeros(B, h, end - start, d))
+                continue
+
+            Qc = Q[:, :, start:end]
+            Kc = K[:, :, k_start:k_end]
+            Vc = V[:, :, k_start:k_end]
+
+            abs_q = torch.arange(q_abs_start, q_abs_end, device=Q.device).unsqueeze(1)
+            abs_k = torch.arange(k_start, k_end, device=Q.device).unsqueeze(0)
+            band = ((abs_q - abs_k).abs() <= radius).unsqueeze(0).unsqueeze(0)
+            if is_decoder:
+                band = band & (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)
+
+            scores = torch.matmul(Qc.float(), Kc.float().transpose(-2, -1)) * scale
+            scores = scores.masked_fill(~band, mask_val)
+            if token_valid is not None:
+                kv_valid = token_valid[:, None, None, k_start:k_end].to(torch.bool)
+                scores = scores.masked_fill(~kv_valid, mask_val)
+                combined = band & kv_valid
+            else:
+                combined = band
+            scores = torch.nan_to_num(scores, nan=mask_val, posinf=1e4, neginf=mask_val)
+            any_valid = combined.any(dim=-1, keepdim=True).to(scores.dtype)
+            attn_c = F.softmax(scores.float(), dim=-1).to(Q.dtype) * any_valid
+            attn_c = F.dropout(attn_c, p=dropout_p, training=training)
+            outputs.append(torch.matmul(attn_c, Vc.to(attn_c.dtype)))
+
+        out = torch.cat(outputs, dim=2) if len(outputs) > 1 else outputs[0]
+        return out, None
+
+    abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)
+    abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
+    band = ((abs_q - abs_k).abs() <= radius).unsqueeze(0).unsqueeze(0)
+    if is_decoder:
+        band = band & (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)
 
     scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
     mask_val = -1e4
@@ -237,7 +282,7 @@ def _causal_global_linear_attention(
     V_flat: torch.Tensor,
     chunk_size: int,
 ) -> torch.Tensor:
-    """Chunked causal cumsum, memory O(B * chunk * rank * h*d)."""
+    """Chunked dual-form causal linear attention, memory O(B * chunk^2 + B * rank * h*d)."""
     B, N, rank = Q_feat.shape
     D = V_flat.shape[-1]
     dtype = Q_feat.dtype
@@ -253,20 +298,22 @@ def _causal_global_linear_attention(
         Kc = K_feat[:, start:end]
         Vc = V_flat[:, start:end]
 
-        KV_local = torch.einsum("bcr,bcd->bcrd", Kc, Vc).cumsum(dim=1)
-        K_local = Kc.cumsum(dim=1)
-
-        KV_total = KV_local + state_kv.unsqueeze(1)
-        K_total = K_local + state_k.unsqueeze(1)
-
-        num = torch.einsum("bcr,bcrd->bcd", Qc, KV_total)
-        den = torch.einsum("bcr,bcr->bc", Qc, K_total).unsqueeze(-1).clamp(min=1e-6)
+        intra_scores = torch.matmul(Qc, Kc.transpose(-2, -1)).tril()
+        if start == 0:
+            num = torch.matmul(intra_scores, Vc)
+            den = intra_scores.sum(dim=-1).unsqueeze(-1).clamp(min=1e-6)
+        else:
+            num = torch.matmul(Qc, state_kv) + torch.matmul(intra_scores, Vc)
+            den = (torch.matmul(Qc, state_k.unsqueeze(-1)).squeeze(-1) + intra_scores.sum(dim=-1)).unsqueeze(-1).clamp(
+                min=1e-6
+            )
         outs.append(num / den)
 
-        state_kv = KV_total[:, -1]
-        state_k = K_total[:, -1]
+        if end < N:
+            state_kv = state_kv + torch.matmul(Kc.transpose(-2, -1), Vc)
+            state_k = state_k + Kc.sum(dim=1)
 
-    return torch.cat(outs, dim=1)
+    return torch.cat(outs, dim=1) if len(outs) > 1 else outs[0]
 
 
 def _noncausal_global_linear_attention(
@@ -776,7 +823,8 @@ class SpectronFP8Attention(BaseAttention):
         V: torch.Tensor,
         token_valid: torch.Tensor | None,
         past_len: int,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+        return_attn: bool = False,
+    ) -> tuple[torch.Tensor, torch.Tensor | None]:
         return _local_window_attention(
             Q,
             K,
@@ -787,6 +835,7 @@ class SpectronFP8Attention(BaseAttention):
             past_len=past_len,
             dropout_p=self.config.dropout,
             training=self.training,
+            return_attn=return_attn,
         )
 
     def _global_branch(
@@ -966,7 +1015,9 @@ class SpectronFP8Attention(BaseAttention):
         K_full = repeat_kv(K_cat, self.kv_repeat) if self.kv_repeat > 1 else K_cat
         V_full = repeat_kv(V_cat, self.kv_repeat) if self.kv_repeat > 1 else V_cat
 
-        out_loc, attn_loc = self._local_branch(Q, K_full, V_full, token_valid, past_len)
+        out_loc, attn_loc = self._local_branch(
+            Q, K_full, V_full, token_valid, past_len, return_attn=bool(output_attentions)
+        )
         out_glob = self._global_branch(Q, K_full, V_full, token_valid)
         out_lin = self._linear_branch(hidden_states, token_valid_new)
         target_dt = hidden_states.dtype

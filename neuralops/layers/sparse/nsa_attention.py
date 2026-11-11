@@ -554,11 +554,25 @@ class NativeSparseAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
+        if L == 0:
+            out_dim = self.all_head_size if self.is_nested_encoder else self.dim
+            zero_out = torch.zeros((B, 0, out_dim), device=device, dtype=dtype)
+            if return_mask or kwargs.get("return_mask", False):
+                return zero_out, torch.zeros((B, 0), device=device, dtype=torch.bool)
+            return zero_out, None
+
+        if not hidden_states.is_contiguous():
+            hidden_states = hidden_states.contiguous()
+
         return_mask = return_mask or kwargs.get("return_mask", False)
 
-        q_raw = self.q_proj(hidden_states).contiguous()
-        k_raw = self.k_proj(hidden_states).contiguous()
-        v_raw = self.v_proj(hidden_states).contiguous()
+        x_in = hidden_states
+        if not torch.is_autocast_enabled() and hasattr(self.q_proj, "weight") and x_in.dtype != self.q_proj.weight.dtype:
+            x_in = x_in.to(self.q_proj.weight.dtype)
+
+        q_raw = self.q_proj(x_in).contiguous()
+        k_raw = self.k_proj(x_in).contiguous()
+        v_raw = self.v_proj(x_in).contiguous()
 
         num_blocks = max(1, (L + self.block_size - 1) // self.block_size)
         k_val = max(1, min(self.top_k, num_blocks))
@@ -572,19 +586,19 @@ class NativeSparseAttention(BaseAttention):
                 d=self.all_head_size,
                 num_blocks=max(num_blocks, 16),
                 router_hidden=self.router_hidden,
-            ).to(device=device, dtype=q_raw.dtype)
+            ).to(device=device)
         else:
             router_param = next(self._learned_router.parameters(), None)
-            if router_param is not None and (router_param.device != device or router_param.dtype != q_raw.dtype):
-                self._learned_router = self._learned_router.to(device=device, dtype=q_raw.dtype)
+            if router_param is not None and router_param.device != device:
+                self._learned_router = self._learned_router.to(device=device)
 
         try:
             _, selected_blocks = self._learned_router(q_raw, top_k=k_val, num_blocks=num_blocks)
         except Exception as router_exc:
             logger.warning("NSA router forward failed: %s. Using default block routing.", router_exc)
-            selected_blocks = torch.arange(k_val, device=device).unsqueeze(0).expand(B, -1)
+            selected_blocks = torch.arange(k_val, device=device, dtype=torch.long).unsqueeze(0).expand(B, -1)
 
-        selected_blocks = selected_blocks.clamp(0, num_blocks - 1)
+        selected_blocks = selected_blocks.long().clamp(0, num_blocks - 1)
         block_mask = torch.zeros(B, num_blocks, device=device, dtype=torch.bool).scatter_(-1, selected_blocks, True)
 
         Q = q_raw.reshape(B, L, H, d).permute(0, 2, 1, 3).contiguous()
@@ -592,14 +606,18 @@ class NativeSparseAttention(BaseAttention):
         V = v_raw.reshape(B, L, self.num_kv_heads, d).permute(0, 2, 1, 3).contiguous()
         is_cross = bool(kwargs.get("is_cross_attention", False))
 
-        if position_embeddings is not None:
-            cos, sin = position_embeddings
+        pos_emb = position_embeddings if position_embeddings is not None else kwargs.get("position_embeddings")
+        if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
+            cos, sin = pos_emb[0], pos_emb[1]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
+            Q = Q.contiguous()
+            K = K.contiguous()
 
         if self.kv_repeat > 1:
-            K = repeat_kv(K, self.kv_repeat)
-            V = repeat_kv(V, self.kv_repeat)
+            K = repeat_kv(K, self.kv_repeat).contiguous()
+            V = repeat_kv(V, self.kv_repeat).contiguous()
 
+        compute_dtype = Q.dtype
         scale = 1.0 / math.sqrt(d)
         if (
             (2 * self.window_size + 1) >= L
@@ -609,9 +627,9 @@ class NativeSparseAttention(BaseAttention):
             and head_mask is None
         ):
             try:
-                _qs = maybe_half(Q)
-                _ks = maybe_half(K)
-                _vs = maybe_half(V)
+                _qs = maybe_half(Q.contiguous())
+                _ks = maybe_half(K.contiguous())
+                _vs = maybe_half(V.contiguous())
                 _is_causal = getattr(self, "is_decoder", False) and not is_cross and L > 1
                 _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
                     _qs,
@@ -621,17 +639,24 @@ class NativeSparseAttention(BaseAttention):
                     dropout_p=self.dropout.p if self.training else 0.0,
                 )
                 _sdpa_out = (
-                    _sdpa_out.to(hidden_states.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+                    _sdpa_out.to(compute_dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
                 )
                 _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
-                return (self.out_proj(_sdpa_out) if not getattr(self, "is_nested_encoder", False) else _sdpa_out), None
-            except Exception:
-                # allowed-swallow: best-effort-telemetry
-                pass
-
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+                if getattr(self, "is_nested_encoder", False):
+                    return _sdpa_out, None
+                if not torch.is_autocast_enabled() and hasattr(self.out_proj, "weight") and _sdpa_out.dtype != self.out_proj.weight.dtype:
+                    _sdpa_out = _sdpa_out.to(self.out_proj.weight.dtype)
+                return self.out_proj(_sdpa_out), None
+            except Exception as exc:
+                logger.debug("NSA SDPA fastpath failed, falling back: %s", exc)
 
         valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)
+        if valid_mask_2d.shape != (B, L):
+            if valid_mask_2d.shape[-1] > L:
+                valid_mask_2d = valid_mask_2d[..., :L]
+            else:
+                valid_mask_2d = F.pad(valid_mask_2d, (0, L - valid_mask_2d.shape[-1]), value=False)
+        valid_mask_2d = valid_mask_2d.to(device=device, dtype=torch.bool)
         key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)
 
         token_block_mask = block_mask.repeat_interleave(self.block_size, dim=-1)[..., :L].unsqueeze(1).unsqueeze(2)
@@ -661,16 +686,36 @@ class NativeSparseAttention(BaseAttention):
 
         accel_context = None
         if not output_attentions and not return_mask and head_mask is None:
-            if Q.is_cuda and (self.head_dim in (32, 64, 128)) and (self.block_size in (16, 32, 64)):
-                # Fastpath Level 2A: Triton Block Streaming Fastpath
-                if not is_dec and attention_mask is None and selected_blocks is not None:
+            triton_dtype_ok = Q.dtype in (torch.float16, torch.bfloat16) and K.dtype == Q.dtype and V.dtype == Q.dtype
+            triton_contig_ok = Q.is_contiguous() and K.is_contiguous() and V.is_contiguous()
+            needs_grad = torch.is_grad_enabled() and (Q.requires_grad or K.requires_grad or V.requires_grad)
+
+            if (
+                Q.is_cuda
+                and triton_dtype_ok
+                and triton_contig_ok
+                and (self.head_dim in (32, 64, 128))
+                and (self.block_size in (16, 32, 64))
+            ):
+                # Fastpath Level 2A: Triton Block Streaming Fastpath (inference only, no backward op)
+                if (
+                    not needs_grad
+                    and not is_dec
+                    and attention_mask is None
+                    and (2 * self.window_size + 1) >= L
+                    and selected_blocks is not None
+                ):
                     try:
                         from neuralops.ops.triton.block_sparse import triton_block_sparse_streaming_attn
 
                         num_blocks_q = (L + self.block_size - 1) // self.block_size
-                        # Expand selected blocks to shape [B, H, num_blocks_q, top_k]
                         active_ids = (
-                            selected_blocks.unsqueeze(1).unsqueeze(2).expand(B, H, num_blocks_q, -1).contiguous()
+                            selected_blocks.long()
+                            .clamp(0, num_blocks - 1)
+                            .unsqueeze(1)
+                            .unsqueeze(2)
+                            .expand(B, H, num_blocks_q, -1)
+                            .contiguous()
                         )
                         accel_context = triton_block_sparse_streaming_attn(
                             Q,
@@ -684,18 +729,26 @@ class NativeSparseAttention(BaseAttention):
                         logger.debug("NSA Triton block sparse streaming fallback: %s", exc)
                         accel_context = None
 
-                # Fastpath Level 2B: Triton Block-Sparse Attention Fastpath
-                if accel_context is None:
+                # Fastpath Level 2B: Triton Block-Sparse Attention Fastpath (4D mask [B, H, n_q, n_k])
+                if accel_context is None and valid_mask_2d.all() and self.window_size >= self.block_size:
                     try:
                         from neuralops.ops.triton.sparse_attn import fwd as triton_sparse_fwd
 
                         num_blocks_q = (L + self.block_size - 1) // self.block_size
-                        b_mask_2d = block_mask.unsqueeze(1).expand(-1, num_blocks_q, -1).contiguous()
+                        q_blk_idx = torch.arange(num_blocks_q, device=device).unsqueeze(1)
+                        k_blk_idx = torch.arange(num_blocks, device=device).unsqueeze(0)
+                        win_blocks = max(1, (self.window_size + self.block_size - 1) // self.block_size)
+                        if is_dec:
+                            local_blk = (q_blk_idx - k_blk_idx <= win_blocks) & (q_blk_idx >= k_blk_idx)
+                        else:
+                            local_blk = (q_blk_idx - k_blk_idx).abs() <= win_blocks
+                        b_mask_3d = block_mask.unsqueeze(1).expand(B, num_blocks_q, num_blocks) | local_blk.unsqueeze(0)
+                        b_mask_4d = b_mask_3d.unsqueeze(1).expand(B, H, num_blocks_q, num_blocks).contiguous()
                         accel_context = triton_sparse_fwd(
                             Q,
                             K,
                             V,
-                            block_mask=b_mask_2d,
+                            block_mask=b_mask_4d,
                             block_size=self.block_size,
                             is_causal=is_dec,
                         )
@@ -713,34 +766,43 @@ class NativeSparseAttention(BaseAttention):
                         dropout_p=self.dropout.p if self.training else 0.0,
                         scale=scale,
                     )
-                except Exception:
+                except Exception as exc:
+                    logger.debug("NSA SDPA masked fallback: %s", exc)
                     accel_context = None
 
         if accel_context is not None:
-            context = accel_context
+            context = torch.nan_to_num(accel_context, nan=0.0, posinf=1e4, neginf=-1e4)
             attn = None
         else:
-            scores = scores.masked_fill(~total_mask, -1e4)
-            attn = F.softmax(scores, dim=-1).to(dtype)
-            attn = torch.nan_to_num(attn, nan=0.0)
-            attn = self.dropout(attn)
+            with torch.amp.autocast(device_type=device.type, enabled=False):
+                scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+                score_mask_val = torch.finfo(scores.dtype).min
+                scores = scores.masked_fill(~total_mask, score_mask_val)
+                attn = F.softmax(scores, dim=-1)
+                attn = torch.nan_to_num(attn, nan=0.0)
+                attn = self.dropout(attn)
 
-            if head_mask is not None:
-                if head_mask.dim() == 1:
-                    hm = head_mask.view(1, -1, 1, 1)
-                elif head_mask.dim() == 2:
-                    hm = head_mask.view(head_mask.size(0), -1, 1, 1)
-                else:
-                    hm = head_mask
-                attn = attn * hm
+                if head_mask is not None:
+                    hm = head_mask.float()
+                    if hm.dim() == 1:
+                        hm = hm.view(1, -1, 1, 1)
+                    elif hm.dim() == 2:
+                        hm = hm.view(hm.size(0), -1, 1, 1)
+                    attn = attn * hm
 
-            context = torch.matmul(attn, V)
-        context = context * valid_mask_2d.unsqueeze(1).unsqueeze(-1).to(dtype)
+                context = torch.matmul(attn, V.float()).to(compute_dtype)
+                if output_attentions:
+                    attn = attn.to(dtype)
+
+        context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
+        context = context * valid_mask_2d.unsqueeze(1).unsqueeze(-1).to(context.dtype)
         context = context.permute(0, 2, 1, 3).contiguous().reshape(B, L, self.all_head_size)
 
         if self.is_nested_encoder:
             output = context
         else:
+            if not torch.is_autocast_enabled() and hasattr(self.out_proj, "weight") and context.dtype != self.out_proj.weight.dtype:
+                context = context.to(self.out_proj.weight.dtype)
             output = self.out_proj(context)
 
         if return_mask:

@@ -23,19 +23,25 @@ from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import _cfg_get
 from neuralops.core.registry import ATTENTION_REGISTRY
-from neuralops.core.selective_scan import selective_scan
 
 try:
-    from neuralops.ops.cuda.selective_scan.selective_scan_autograd import selective_scan as cuda_selective_scan
-except Exception:
+    from neuralops.ops.cuda.selective_scan.selective_scan_autograd import (
+        _get_module as _get_cuda_ss_module,
+        selective_scan as cuda_selective_scan,
+    )
+except Exception as _e:
+    logging.getLogger(__name__).warning("CUDA selective_scan unavailable: %s", _e)
     cuda_selective_scan = None
+    _get_cuda_ss_module = None
 
 try:
     from neuralops.ops.triton.selective_scan import selective_scan_fn as triton_selective_scan
-except Exception:
+except Exception as _e:
+    logging.getLogger(__name__).warning("Triton selective_scan unavailable: %s", _e)
     triton_selective_scan = None
 
 logger = logging.getLogger(__name__)
+_WARNED_CUDA_SS_UNAVAILABLE = False
 
 
 def stable_zoh_b(dA: torch.Tensor, eps: float = 1e-4) -> torch.Tensor:
@@ -214,6 +220,77 @@ class SelectiveSSM(BaseAttention):
         y = torch.matmul(h_next, C_t.unsqueeze(-1)).squeeze(-1) + D_param.unsqueeze(0) * u_t
         return y, h_next
 
+    def _chunked_pytorch_scan(
+        self,
+        u_t: torch.Tensor,
+        delta_t: torch.Tensor,
+        A: torch.Tensor,
+        B_t: torch.Tensor,
+        C_t: torch.Tensor,
+        D_param: torch.Tensor,
+        past_h: torch.Tensor | None = None,
+        chunk_size: int = 32,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Memory-bounded chunked ZOH selective scan with activation checkpointing.
+
+        Computes discretized dA and dBu inside each chunk so full-sequence
+        (B, d_inner, L, d_state) tensors are never retained in VRAM.
+        """
+        B_sz, d_inner, L = u_t.shape
+        d_state = A.shape[1]
+        target_dtype = u_t.dtype
+
+        h = (
+            past_h.to(device=u_t.device, dtype=torch.float32)
+            if past_h is not None
+            else torch.zeros(B_sz, d_inner, d_state, device=u_t.device, dtype=torch.float32)
+        )
+        A_f = A.float().view(1, d_inner, 1, d_state)
+
+        def _scan_chunk(
+            h_in: torch.Tensor,
+            u_c: torch.Tensor,
+            dt_c: torch.Tensor,
+            b_c: torch.Tensor,
+            c_c: torch.Tensor,
+        ) -> tuple[torch.Tensor, torch.Tensor]:
+            dt_f = dt_c.float()
+            dA_c = (dt_f.unsqueeze(-1) * A_f).clamp(min=-20.0, max=0.0)
+            delta_a_c = torch.exp(dA_c)
+            phi_dA_c = stable_zoh_b(dA_c)
+            dbu_c = phi_dA_c * dt_f.unsqueeze(-1) * u_c.float().unsqueeze(-1) * b_c.float().transpose(1, 2).unsqueeze(1)
+            c_f = c_c.float()
+            c_len = u_c.shape[2]
+            curr_h = h_in
+            ys_c = []
+            for t in range(c_len):
+                curr_h = delta_a_c[:, :, t, :] * curr_h + dbu_c[:, :, t, :]
+                c_step = c_f[:, :, t].contiguous().unsqueeze(-1)
+                y_step = torch.bmm(curr_h, c_step).squeeze(-1)
+                ys_c.append(y_step)
+            return torch.stack(ys_c, dim=-1), curr_h
+
+        use_cp = torch.is_grad_enabled()
+        if use_cp:
+            import torch.utils.checkpoint as cp
+
+        ys_all = []
+        for s in range(0, L, chunk_size):
+            e = min(s + chunk_size, L)
+            u_s = u_t[:, :, s:e]
+            dt_s = delta_t[:, :, s:e]
+            b_s = B_t[:, :, s:e]
+            c_s = C_t[:, :, s:e]
+            if use_cp:
+                y_c, h = cp.checkpoint(_scan_chunk, h, u_s, dt_s, b_s, c_s, use_reentrant=False)
+            else:
+                y_c, h = _scan_chunk(h, u_s, dt_s, b_s, c_s)
+            ys_all.append(y_c)
+
+        y = torch.cat(ys_all, dim=-1) + u_t.float() * D_param.float().view(1, d_inner, 1)
+        return y.to(target_dtype), h.to(target_dtype)
+
     def _forward_core(
         self,
         x_ssm: torch.Tensor,
@@ -273,50 +350,85 @@ class SelectiveSSM(BaseAttention):
             )
             y = y_step.unsqueeze(1)
         else:
+            global _WARNED_CUDA_SS_UNAVAILABLE
             u_t = x_conv.transpose(1, 2).contiguous()
             delta_t = dt.transpose(1, 2).contiguous()
             B_t = B_ssm.transpose(1, 2).contiguous()
             C_t = C_ssm.transpose(1, 2).contiguous()
 
+            N_state = A.shape[1]
+            is_pow2_n = N_state > 0 and (N_state & (N_state - 1)) == 0
+            ws_bytes = B * self.d_inner * L * N_state * 4
+            allow_full_ws = (not torch.is_grad_enabled()) or (ws_bytes <= 32 * 1024 * 1024)
+
             # Level 1 Native CUDA C++ (128-bit register cached)
             y = None
-            if cuda_selective_scan is not None and u_t.is_cuda and A.shape[1] <= 128:
-                try:
-                    res = cuda_selective_scan(u_t, delta_t, A, B_t, C_t, D_param)
-                    y = res[0] if isinstance(res, tuple) else res
-                except Exception as exc:
-                    logger.debug("SelectiveSSM Level 1 CUDA scan failed (%s); trying Level 2 Triton.", exc)
+            h_next = None
+            if cuda_selective_scan is not None and u_t.is_cuda and N_state <= 128 and past_h is None and allow_full_ws:
+                cuda_mod = _get_cuda_ss_module() if _get_cuda_ss_module is not None else None
+                if cuda_mod is not None:
+                    try:
+                        res = cuda_selective_scan(u_t, delta_t, A, B_t, C_t, D_param)
+                        if isinstance(res, tuple):
+                            y = res[0]
+                            h_next = res[1] if len(res) > 1 else None
+                        else:
+                            y = res
+                    except Exception as exc:
+                        logger.warning("SelectiveSSM: Level 1 CUDA scan failed (%s); trying Level 2 Triton.", exc)
+                elif not _WARNED_CUDA_SS_UNAVAILABLE:
+                    _WARNED_CUDA_SS_UNAVAILABLE = True
+                    logger.warning(
+                        "SelectiveSSM: CUDA selective_scan extension unavailable (compilation failed); "
+                        "falling back to Level 2 Triton / chunked PyTorch."
+                    )
 
             # Level 2 Triton JIT (In-SRAM zero-alloc)
-            if y is None and triton_selective_scan is not None and u_t.is_cuda:
+            if (
+                y is None
+                and triton_selective_scan is not None
+                and u_t.is_cuda
+                and is_pow2_n
+                and past_h is None
+                and allow_full_ws
+            ):
                 try:
-                    y = triton_selective_scan(u_t, delta_t, A, B_t, C_t, D_param, delta_softplus=False)
+                    y = triton_selective_scan(
+                        u_t, delta_t, A.contiguous(), B_t, C_t, D_param.contiguous(), delta_softplus=False
+                    )
                 except Exception as exc:
-                    logger.debug("SelectiveSSM Level 2 Triton scan failed (%s); trying core dispatcher.", exc)
+                    logger.warning(
+                        "SelectiveSSM: Level 2 Triton scan failed (%s); falling back to chunked PyTorch.",
+                        exc,
+                    )
 
-            # Level 3 PyTorch Reference / Core Dispatcher Fallback
+            # Level 3 Memory-Bounded Chunked PyTorch Fallback
             if y is None:
-                y = selective_scan(
-                    u=u_t,
-                    delta=delta_t,
-                    A=A,
-                    B=B_t,
-                    C=C_t,
-                    D=D_param,
+                y, h_next = self._chunked_pytorch_scan(
+                    u_t,
+                    delta_t,
+                    A,
+                    B_t,
+                    C_t,
+                    D_param,
+                    past_h=past_h,
+                    chunk_size=32,
                 )
+
             y = y.transpose(1, 2).contiguous()
 
-            dt_last = dt[:, -1, :].unsqueeze(-1)
-            dA_last = dt_last * A.unsqueeze(0)
-            delta_a_last = torch.exp(dA_last)
-            u_last = x_conv[:, -1, :].unsqueeze(-1)
-            b_last = B_ssm[:, -1, :].unsqueeze(1)
-            phi_dA_last = stable_zoh_b(dA_last)
-            delta_b_u_last = phi_dA_last * dt_last * (u_last * b_last)
-            if past_h is not None:
-                h_next = delta_a_last * past_h.to(target_dtype) + delta_b_u_last
-            else:
-                h_next = delta_b_u_last
+            if h_next is None:
+                dt_last = dt[:, -1, :].unsqueeze(-1)
+                dA_last = dt_last * A.unsqueeze(0)
+                delta_a_last = torch.exp(dA_last)
+                u_last = x_conv[:, -1, :].unsqueeze(-1)
+                b_last = B_ssm[:, -1, :].unsqueeze(1)
+                phi_dA_last = stable_zoh_b(dA_last)
+                delta_b_u_last = phi_dA_last * dt_last * (u_last * b_last)
+                if past_h is not None:
+                    h_next = delta_a_last * past_h.to(target_dtype) + delta_b_u_last
+                else:
+                    h_next = delta_b_u_last
 
         y_gated = y.float() * F.silu(z.float())
         y = (
@@ -427,7 +539,7 @@ class SelectiveSSM(BaseAttention):
 
         h_prev, conv_prev = self._read_state(past_state)
 
-        x_proj = self.in_proj(hidden_states).to(target_dtype)
+        x_proj = self.in_proj(hidden_states.to(self.in_proj.weight.dtype)).to(target_dtype)
         x_ssm, z = x_proj.chunk(2, dim=-1)
 
         if attention_mask is not None:
@@ -448,7 +560,7 @@ class SelectiveSSM(BaseAttention):
             past_h=h_prev,
             conv_prev=conv_prev,
         )
-        out = self.out_proj(y_fwd.to(target_dtype))
+        out = self.out_proj(y_fwd.to(self.out_proj.weight.dtype)).to(target_dtype)
 
         is_causal = bool(self.is_decoder or kwargs.get("is_causal", False) or kwargs.get("causal", False))
 
@@ -467,7 +579,7 @@ class SelectiveSSM(BaseAttention):
             )
 
             y_bwd = torch.flip(y_bwd, [1]).contiguous()
-            out = out + self.out_proj_bwd(y_bwd.to(target_dtype))
+            out = out + self.out_proj_bwd(y_bwd.to(self.out_proj_bwd.weight.dtype)).to(target_dtype)
 
         out = (
             torch.nan_to_num(out.float(), nan=0.0, posinf=65000.0, neginf=-65000.0)

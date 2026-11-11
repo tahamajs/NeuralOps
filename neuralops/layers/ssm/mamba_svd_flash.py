@@ -87,8 +87,8 @@ class SVDS6StateSpace(nn.Module):
         B_seq = self.up_b(z)
         C_seq = self.up_c(z)
 
-        U = F.normalize(U, p=2, dim=-2, eps=1e-8)
-        V = F.normalize(V, p=2, dim=-2, eps=1e-8)
+        U = F.normalize(U.float(), p=2, dim=-2, eps=1e-6).to(x.dtype)
+        V = F.normalize(V.float(), p=2, dim=-2, eps=1e-6).to(x.dtype)
 
         return U, sigma, V, B_seq, C_seq
 
@@ -252,7 +252,7 @@ class MambaSVDFlash(BaseAttention):
         self.ssm_fwd = SVDS6StateSpace(self.d_model, rank=min(16, self.rank), bottleneck_dim=bd)
 
         if not self.is_decoder:
-            self.ssm_bwd = SVDS6StateSpace(self.d_model, rank=self.rank, bottleneck_dim=bd)
+            self.ssm_bwd = SVDS6StateSpace(self.d_model, rank=min(16, self.rank), bottleneck_dim=bd)
             self.bidirectional_mix = nn.Parameter(torch.zeros(self.num_heads))
         else:
             self.ssm_bwd = None
@@ -674,6 +674,82 @@ class MambaSVDFlash(BaseAttention):
 
         return torch.ones(B, L, device=device, dtype=torch.bool)
 
+    def _ssm_scan_from_module(
+        self,
+        ssm_mod: SVDS6StateSpace,
+        x: torch.Tensor,
+        mask: torch.Tensor | None = None,
+        h0: torch.Tensor | None = None,
+        chunk_size: int = 32,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Memory-bounded chunked SVD-S6 scan that projects U/V/Sigma/B/C per chunk
+        inside activation checkpointing so (B, L, D, r) tensors are never
+        retained across the full sequence or across layers.
+        """
+        B, L, D = x.shape
+        r = ssm_mod.rank
+        device = x.device
+        z_all = ssm_mod.down(x.to(ssm_mod.down.weight.dtype))
+
+        h = (
+            torch.zeros(B, D, device=device, dtype=torch.float32)
+            if h0 is None
+            else h0.to(device=device, dtype=torch.float32)
+        )
+
+        use_cp = torch.is_grad_enabled()
+        if use_cp:
+            import torch.utils.checkpoint as cp
+
+        def _chunk_fwd(
+            h_in: torch.Tensor,
+            z_c: torch.Tensor,
+            x_c: torch.Tensor,
+            m_c: torch.Tensor | None,
+        ) -> tuple[torch.Tensor, torch.Tensor]:
+            c_len = z_c.shape[1]
+            U_c = F.normalize(ssm_mod.up_u(z_c).view(B, c_len, D, r).float(), p=2, dim=-2, eps=1e-6)
+            V_c = F.normalize(ssm_mod.up_v(z_c).view(B, c_len, r, D).float(), p=2, dim=-2, eps=1e-6)
+            Sig_c = torch.sigmoid(ssm_mod.up_sigma(z_c).float())
+            B_c = ssm_mod.up_b(z_c).float()
+            C_c = ssm_mod.up_c(z_c).float()
+
+            US_c = U_c * Sig_c.unsqueeze(-2)
+            bx_c = B_c * x_c.float()
+
+            curr_h = h_in
+            curr_col = curr_h.unsqueeze(-1)
+            sub_h = []
+            for t in range(c_len):
+                v_t = torch.bmm(V_c[:, t], curr_col)
+                h_trans = torch.bmm(US_c[:, t], v_t).squeeze(-1)
+                h_next = h_trans + bx_c[:, t]
+                if m_c is not None:
+                    curr_h = torch.where(m_c[:, t : t + 1].bool(), h_next, curr_h)
+                else:
+                    curr_h = h_next
+                curr_h = torch.nan_to_num(curr_h, nan=0.0, posinf=1e4, neginf=-1e4)
+                curr_col = curr_h.unsqueeze(-1)
+                sub_h.append(curr_h)
+            H_c = torch.stack(sub_h, dim=1)
+            return C_c * H_c, curr_h
+
+        out_chunks = []
+        for s in range(0, L, chunk_size):
+            e = min(s + chunk_size, L)
+            z_slice = z_all[:, s:e]
+            x_slice = x[:, s:e]
+            m_slice = mask[:, s:e] if mask is not None else None
+            if use_cp:
+                out_c, h = cp.checkpoint(_chunk_fwd, h, z_slice, x_slice, m_slice, use_reentrant=False)
+            else:
+                out_c, h = _chunk_fwd(h, z_slice, x_slice, m_slice)
+            out_chunks.append(out_c)
+
+        out = torch.cat(out_chunks, dim=1)
+        return out.to(x.dtype), h.to(x.dtype)
+
     def _ssm_scan(
         self,
         U: torch.Tensor,
@@ -695,8 +771,11 @@ class MambaSVDFlash(BaseAttention):
         B, L, D = x.shape
         r = Sigma.shape[-1]
         device = x.device
+        is_pow2_r = r > 0 and (r & (r - 1)) == 0
+        ws_bytes = B * D * L * r * 4
+        allow_triton = (not torch.is_grad_enabled()) or (ws_bytes <= 32 * 1024 * 1024)
 
-        if x.is_cuda and mask is None and h0 is None and not reverse and r <= 64:
+        if x.is_cuda and mask is None and h0 is None and not reverse and r <= 64 and is_pow2_r and allow_triton:
             try:
                 from neuralops.ops.triton._types import check_triton_suitability
                 from neuralops.ops.triton.selective_scan import selective_scan_fn
@@ -709,10 +788,10 @@ class MambaSVDFlash(BaseAttention):
                     A = -torch.ones(D, r, device=device, dtype=torch.float32)
                     B_mat = V.mean(dim=-1).transpose(1, 2).contiguous()
                     C_mat = U.mean(dim=-2).transpose(1, 2).contiguous()
-                    y_triton = selective_scan_fn(x, delta, A, B_mat, C_mat, D=None, delta_softplus=False)
+                    y_triton = selective_scan_fn(x.contiguous(), delta, A, B_mat, C_mat, D=None, delta_softplus=False)
                     return y_triton.to(x.dtype), y_triton[:, -1].to(x.dtype)
             except Exception as e:
-                logger.debug("Triton selective scan failed in MambaSVDFlash: %s", e)
+                logger.warning("Triton selective scan failed in MambaSVDFlash (%s); falling back to chunked PyTorch.", e)
 
         h = torch.zeros(B, D, device=device, dtype=torch.float32) if h0 is None else h0.float()
         US = (U.float() * Sigma.float().unsqueeze(-2)).contiguous()
@@ -720,7 +799,7 @@ class MambaSVDFlash(BaseAttention):
         bx = (B_seq.float() * x.float()).contiguous()
 
         steps = list(range(L - 1, -1, -1) if reverse else range(L))
-        chunk_size = 16
+        chunk_size = 32
         use_cp = torch.is_grad_enabled()
         if use_cp:
             import torch.utils.checkpoint as cp
@@ -812,49 +891,31 @@ class MambaSVDFlash(BaseAttention):
 
         mask_bool = self._normalize_valid_mask(attention_mask, B, L, device)
 
-        U_f, Sig_f, V_f, B_f, C_f = self.ssm_fwd(hidden_states)
-
         if self.is_decoder:
-            ssm_out, ssm_h_next = self._ssm_scan(
-                U_f,
-                Sig_f,
-                V_f,
-                B_f,
-                C_f,
+            ssm_out, ssm_h_next = self._ssm_scan_from_module(
+                self.ssm_fwd,
                 hidden_states,
                 mask=mask_bool,
                 h0=past_h,
-                reverse=False,
             )
         else:
-            ssm_fwd, _ = self._ssm_scan(
-                U_f,
-                Sig_f,
-                V_f,
-                B_f,
-                C_f,
+            ssm_fwd, _ = self._ssm_scan_from_module(
+                self.ssm_fwd,
                 hidden_states,
                 mask=mask_bool,
                 h0=None,
-                reverse=False,
             )
             if self.ssm_bwd is not None:
-                U_b, Sig_b, V_b, B_b, C_b = self.ssm_bwd(hidden_states)
                 x_rev = torch.flip(hidden_states, dims=[1])
                 mask_rev = torch.flip(mask_bool, dims=[1]) if mask_bool is not None else None
-                ssm_bwd_rev, _ = self._ssm_scan(
-                    U_b,
-                    Sig_b,
-                    V_b,
-                    B_b,
-                    C_b,
+                ssm_bwd_rev, _ = self._ssm_scan_from_module(
+                    self.ssm_bwd,
                     x_rev,
                     mask=mask_rev,
                     h0=None,
-                    reverse=False,
                 )
                 ssm_bwd = torch.flip(ssm_bwd_rev, dims=[1])
-                w = torch.sigmoid(self.bidirectional_mix).view(1, self.num_heads, 1, 1)
+                w = torch.sigmoid(self.bidirectional_mix).view(1, self.num_heads, 1, 1).to(dtype_in)
                 ssm_fwd_h = ssm_fwd.view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
                 ssm_bwd_h = ssm_bwd.view(B, L, self.num_heads, self.head_dim).transpose(1, 2)
                 ssm_out = (w * ssm_fwd_h + (1 - w) * ssm_bwd_h).transpose(1, 2).contiguous().view(B, L, D)
@@ -944,7 +1005,7 @@ class MambaSVDFlash(BaseAttention):
                 scores = scores.masked_fill(~mask_bool[:, None, None, :], -1e4)
 
             scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-            probs = F.softmax(scores, dim=-1).to(dtype_in)
+            probs = F.softmax(scores, dim=-1).to(V_a.dtype)
             probs = torch.nan_to_num(probs, nan=0.0)
             probs = self.dropout(probs)
 
@@ -952,16 +1013,29 @@ class MambaSVDFlash(BaseAttention):
                 probs = self._apply_head_mask(head_mask, probs)
 
             attn_out = torch.matmul(probs, V_a).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-            attn_out = torch.nan_to_num(attn_out, nan=0.0)
+            attn_out = torch.nan_to_num(attn_out, nan=0.0).to(dtype_in)
 
-        gamma = torch.sigmoid(self.gating(hidden_states))
-        ssm_h = ssm_out.view(B, L, self.num_heads, self.head_dim)
-        attn_h = attn_out.view(B, L, self.num_heads, self.head_dim)
+        gate_dtype = (
+            self.gating.weight.dtype
+            if hasattr(self.gating, "weight") and self.gating.weight is not None
+            else dtype_in
+        )
+        gamma = torch.sigmoid(self.gating(hidden_states.to(gate_dtype))).to(dtype_in)
+        ssm_h = ssm_out.to(dtype_in).view(B, L, self.num_heads, self.head_dim)
+        attn_h = attn_out.to(dtype_in).view(B, L, self.num_heads, self.head_dim)
         g = gamma.unsqueeze(-1)
         Y = (g * ssm_h + (1 - g) * attn_h).contiguous().view(B, L, self.all_head_size)
         Y = torch.nan_to_num(Y, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        out = Y if self.is_nested_encoder else self.out_proj(Y)
+        if self.is_nested_encoder:
+            out = Y.to(dtype_in)
+        else:
+            out_dtype = (
+                self.out_proj.weight.dtype
+                if hasattr(self.out_proj, "weight") and self.out_proj.weight is not None
+                else dtype_in
+            )
+            out = self.out_proj(Y.to(out_dtype)).to(dtype_in)
 
         present_key_value = {
             "ssm_h": (ssm_h_next if ssm_h_next is not None else torch.zeros(B, D, device=device, dtype=dtype_in)),
@@ -1146,6 +1220,11 @@ def inject_mamba_svd_flash(
     except Exception as e:
         logger.error("Failed to instantiate MambaSVDFlash: %s", e)
         return None
+
+    if src_attn is not None:
+        p = next(src_attn.parameters(), None)
+        if p is not None:
+            new_block.to(device=p.device, dtype=p.dtype)
 
     if target is not None:
         spliced = False

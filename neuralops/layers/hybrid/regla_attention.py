@@ -520,7 +520,7 @@ class ReGLAAttention(BaseAttention):
                 out = None
 
             if out is None:
-                chunk = self.chunk_size
+                chunk = min(64, self.chunk_size)
                 S = torch.zeros(
                     B,
                     self.num_heads,
@@ -538,19 +538,24 @@ class ReGLAAttention(BaseAttention):
                     k_c = k_gated[:, :, start:end]
                     v_c = v_gated[:, :, start:end]
 
-                    intra_kv = torch.cumsum(k_c.unsqueeze(-1) * v_c.unsqueeze(-2), dim=2)
-                    num_intra = (q_c.unsqueeze(-2) @ intra_kv).squeeze(-2)
-                    num_inter = (q_c.unsqueeze(-2) @ S.unsqueeze(2)).squeeze(-2)
-                    num = num_intra + num_inter
-
-                    z_intra = torch.cumsum(k_c, dim=2)
-                    den = (q_c * (z_intra + Z.unsqueeze(2))).sum(-1, keepdim=True).clamp(min=1e-4)
+                    intra_scores = torch.matmul(q_c, k_c.transpose(-2, -1)).tril()
+                    if start == 0:
+                        num = torch.matmul(intra_scores, v_c)
+                        den = intra_scores.sum(dim=-1, keepdim=True).clamp(min=1e-4)
+                    else:
+                        num = torch.matmul(q_c, S) + torch.matmul(intra_scores, v_c)
+                        den = (
+                            (torch.matmul(q_c, Z.unsqueeze(-1)).squeeze(-1) + intra_scores.sum(dim=-1))
+                            .unsqueeze(-1)
+                            .clamp(min=1e-4)
+                        )
                     out_list.append(num / den)
 
-                    S = S + (k_c.unsqueeze(-1) * v_c.unsqueeze(-2)).sum(dim=2)
-                    Z = Z + k_c.sum(dim=2)
+                    if end < L:
+                        S = S + torch.matmul(k_c.transpose(-2, -1), v_c)
+                        Z = Z + k_c.sum(dim=2)
 
-                out = torch.cat(out_list, dim=2)
+                out = torch.cat(out_list, dim=2) if len(out_list) > 1 else out_list[0]
         else:
             kv = torch.matmul(k_gated.transpose(-2, -1).contiguous(), v_gated)
             z = k_gated.sum(dim=2, keepdim=True)

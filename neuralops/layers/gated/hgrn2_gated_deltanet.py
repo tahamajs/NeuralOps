@@ -177,7 +177,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
             is_decoder=self.is_decoder,
             lora_rank=self.lora_rank,
             lora_alpha=self.lora_alpha,
-            **sub_kwargs,
+            **({"freeze_base": self.freeze_base, **sub_kwargs}),
         )
 
         _gate_bias = _env_float("HGD_GATE_BIAS", 4.0)
@@ -334,35 +334,64 @@ class HGRN2GatedDeltaNet(BaseAttention):
         delta_out: torch.Tensor | None = None
         delta_state: Any = None
 
+        use_cache = bool(
+            kwargs.get("use_cache", False)
+            or (past_key_value is not None and past_key_value is not False)
+        )
+        can_ckpt = (
+            torch.is_grad_enabled()
+            and not use_cache
+            and hgrn_past is None
+            and delta_past is None
+            and head_mask is None
+            and hidden_states.shape[1] > 64
+        )
+        if can_ckpt:
+            import torch.utils.checkpoint as cp
+
         if not disable_hgrn:
-            hgrn_res = self.hgrn(
-                hidden_states,
-                attention_mask=attention_mask,
-                head_mask=head_mask,
-                past_key_value=hgrn_past,
-                **kwargs,
-            )
-            if isinstance(hgrn_res, tuple):
-                hgrn_out = hgrn_res[0]
-                if len(hgrn_res) > 1:
-                    hgrn_state = hgrn_res[1]
+            if can_ckpt:
+                def _run_hgrn_ckpt(hs: torch.Tensor, am: torch.Tensor | None) -> torch.Tensor:
+                    res = self.hgrn(hs, attention_mask=am, head_mask=None, past_key_value=None, **kwargs)
+                    return res[0] if isinstance(res, tuple) else res
+
+                hgrn_out = cp.checkpoint(_run_hgrn_ckpt, hidden_states, attention_mask, use_reentrant=False)
             else:
-                hgrn_out = hgrn_res
+                hgrn_res = self.hgrn(
+                    hidden_states,
+                    attention_mask=attention_mask,
+                    head_mask=head_mask,
+                    past_key_value=hgrn_past,
+                    **kwargs,
+                )
+                if isinstance(hgrn_res, tuple):
+                    hgrn_out = hgrn_res[0]
+                    if len(hgrn_res) > 1:
+                        hgrn_state = hgrn_res[1]
+                else:
+                    hgrn_out = hgrn_res
 
         if not disable_delta:
-            delta_res = self.deltanet(
-                hidden_states,
-                attention_mask=attention_mask,
-                head_mask=head_mask,
-                past_key_value=delta_past,
-                **kwargs,
-            )
-            if isinstance(delta_res, tuple):
-                delta_out = delta_res[0]
-                if len(delta_res) > 1:
-                    delta_state = delta_res[1]
+            if can_ckpt:
+                def _run_delta_ckpt(hs: torch.Tensor, am: torch.Tensor | None) -> torch.Tensor:
+                    res = self.deltanet(hs, attention_mask=am, head_mask=None, past_key_value=None, **kwargs)
+                    return res[0] if isinstance(res, tuple) else res
+
+                delta_out = cp.checkpoint(_run_delta_ckpt, hidden_states, attention_mask, use_reentrant=False)
             else:
-                delta_out = delta_res
+                delta_res = self.deltanet(
+                    hidden_states,
+                    attention_mask=attention_mask,
+                    head_mask=head_mask,
+                    past_key_value=delta_past,
+                    **kwargs,
+                )
+                if isinstance(delta_res, tuple):
+                    delta_out = delta_res[0]
+                    if len(delta_res) > 1:
+                        delta_state = delta_res[1]
+                else:
+                    delta_out = delta_res
 
         if hgrn_out is None:
             if delta_out is None:
@@ -383,11 +412,15 @@ class HGRN2GatedDeltaNet(BaseAttention):
                     from neuralops.ops.triton.selective_scan import fused_jamba_hybrid_ssm_attn_gate_triton
 
                     out = fused_jamba_hybrid_ssm_attn_gate_triton(
-                        delta_out.to(hidden_states.dtype),
-                        hgrn_out.to(hidden_states.dtype),
-                        raw_gamma,
+                        delta_out.to(hidden_states.dtype).contiguous(),
+                        hgrn_out.to(hidden_states.dtype).contiguous(),
+                        raw_gamma.contiguous(),
                     )
-                except Exception:
+                except Exception as exc:
+                    logger.warning(
+                        "HGRN2GatedDeltaNet: Triton fused gate failed (%s); falling back to PyTorch.",
+                        exc,
+                    )
                     gamma = torch.sigmoid(raw_gamma).to(hidden_states.dtype)
                     out = gamma * hgrn_out.to(hidden_states.dtype) + (1.0 - gamma) * delta_out.to(hidden_states.dtype)
             else:

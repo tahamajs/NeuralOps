@@ -466,10 +466,40 @@ class SelectiveMamba(BaseAttention):
             dt = dt * m
 
         chunk_size = 64
-        num_chunks = (seqlen + chunk_size - 1) // chunk_size
+        num_chunks = (seqlen + chunk_size - 1) // chunk_size if seqlen > 0 else 0
         h_running = x.new_zeros(batch, self.inner_dim, self.d_state, dtype=torch.float32)
         y_chunks = []
         A_view = A.view(1, 1, self.inner_dim, self.d_state)
+        out_dtype = x.dtype
+
+        def _scan_chunk(
+            x_c: torch.Tensor,
+            dt_c: torch.Tensor,
+            B_c: torch.Tensor,
+            C_c: torch.Tensor,
+            h_prev: torch.Tensor,
+        ) -> tuple[torch.Tensor, torch.Tensor]:
+            log_a_c = -(dt_c.unsqueeze(-1) * A_view).float()
+            u_c = (dt_c.unsqueeze(-1) * B_c.unsqueeze(2) * x_c.unsqueeze(-1)).float()
+
+            lambda_c = torch.clamp(torch.cumsum(log_a_c, dim=1), min=-25.0, max=0.0)
+
+            decay_c = torch.exp(lambda_c)
+            decay_inv_c = torch.exp(-lambda_c).clamp(max=1e10)
+
+            h_intra = decay_c * torch.cumsum(decay_inv_c * u_c, dim=1)
+            h_inter = decay_c * h_prev.unsqueeze(1)
+
+            h_chunk = torch.clamp(h_intra + h_inter, min=-1e4, max=1e4)
+            y_c = (C_c.unsqueeze(2).float() * h_chunk).sum(dim=-1).to(out_dtype)
+            return y_c, h_chunk[:, -1]
+
+        use_ckpt = (
+            self.training
+            and torch.is_grad_enabled()
+            and seqlen > chunk_size
+            and (x.requires_grad or dt.requires_grad or B_t.requires_grad or C_t.requires_grad)
+        )
 
         for c in range(num_chunks):
             s_idx = c * chunk_size
@@ -480,23 +510,15 @@ class SelectiveMamba(BaseAttention):
             B_c = B_t[:, s_idx:e_idx]
             C_c = C_t[:, s_idx:e_idx]
 
-            log_a_c = -(dt_c.unsqueeze(-1) * A_view).float()
-            u_c = (dt_c.unsqueeze(-1) * B_c.unsqueeze(2) * x_c.unsqueeze(-1)).float()
+            if use_ckpt:
+                from torch.utils.checkpoint import checkpoint
 
-            lambda_c = torch.clamp(torch.cumsum(log_a_c, dim=1), min=-25.0, max=0.0)
-
-            decay_c = torch.exp(lambda_c)
-            decay_inv_c = torch.exp(-lambda_c).clamp(max=1e10)
-
-            h_intra = decay_c * torch.cumsum(decay_inv_c * u_c, dim=1)
-            h_inter = decay_c * h_running.unsqueeze(1)
-
-            h_chunk = torch.clamp(h_intra + h_inter, min=-1e4, max=1e4)
-            y_c = (C_c.unsqueeze(2).float() * h_chunk).sum(dim=-1).to(x.dtype)
+                y_c, h_running = checkpoint(_scan_chunk, x_c, dt_c, B_c, C_c, h_running, use_reentrant=False)
+            else:
+                y_c, h_running = _scan_chunk(x_c, dt_c, B_c, C_c, h_running)
             y_chunks.append(y_c)
-            h_running = h_chunk[:, -1]
 
-        y = torch.cat(y_chunks, dim=1)
+        y = torch.cat(y_chunks, dim=1) if len(y_chunks) > 1 else (y_chunks[0] if y_chunks else x.new_zeros(batch, 0, self.inner_dim))
         y = (y + self.D.to(x.dtype) * x).to(x.dtype)
 
         if reverse:
@@ -561,6 +583,9 @@ class SelectiveMamba(BaseAttention):
                 except Exception as e:
                     logger.debug("get_token_valid_mask failed: %s", e)
                     mask_bool = None
+
+        if mask_bool is not None and bool(mask_bool.all()):
+            mask_bool = None
 
         target_dtype = hidden_states.dtype
         xz = self.in_proj(hidden_states)

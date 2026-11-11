@@ -634,48 +634,98 @@ class HymbaTransXBlock(BaseAttention):
             v_cat = repeat_kv(v_cat, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(self.head_dim)
-        scores1 = torch.matmul(q1.float(), k1_cat.float().transpose(-2, -1).contiguous()) * scale
-        scores2 = torch.matmul(q2.float(), k2_cat.float().transpose(-2, -1).contiguous()) * scale
-
-        if self.is_decoder:
-            if past_len > 0:
-                abs_q = (past_len + torch.arange(L, device=device)).unsqueeze(1)
-                abs_k = torch.arange(N_kv, device=device).unsqueeze(0)
-                causal = abs_k <= abs_q
-            else:
-                causal = torch.tril(torch.ones(L, N_kv, device=device, dtype=torch.bool))
-            scores1 = scores1.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
-            scores2 = scores2.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
-
         eff_mask = encoder_attention_mask if encoder_hidden_states is not None else attention_mask
         valid_mask = self._prepare_valid_mask(eff_mask, B, N_kv, device)
-        if valid_mask is not None:
-            scores1 = scores1.masked_fill(~valid_mask[:, None, None, :].bool(), -1e4)
-            scores2 = scores2.masked_fill(~valid_mask[:, None, None, :].bool(), -1e4)
-
-        scores1 = torch.nan_to_num(scores1, nan=-1e4, posinf=1e4, neginf=-1e4)
-        scores2 = torch.nan_to_num(scores2, nan=-1e4, posinf=1e4, neginf=-1e4)
-
-        attn1 = F.softmax(scores1, dim=-1)
-        attn2 = F.softmax(scores2, dim=-1)
-
         lam = torch.sigmoid(self.diff_lambda)
-        diff_attn = F.relu(attn1 - lam * attn2)
-        denom = diff_attn.sum(dim=-1, keepdim=True)
-        zero_mask = denom <= 1e-7
-        diff_attn = torch.where(zero_mask, attn1, diff_attn / (denom + 1e-7))
-        diff_attn = self.dropout(diff_attn).to(v_cat.dtype)
 
+        hm = None
         if head_mask is not None:
             if head_mask.dim() == 1:
-                head_mask = head_mask.view(1, -1, 1, 1)
+                hm = head_mask.view(1, -1, 1, 1)
             elif head_mask.dim() == 2:
-                head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)
+                hm = head_mask.unsqueeze(-1).unsqueeze(-1)
             elif head_mask.dim() == 3:
-                head_mask = head_mask[:, :, :1].unsqueeze(-1)
-            diff_attn = diff_attn * head_mask.to(diff_attn.dtype)
+                hm = head_mask[:, :, :1].unsqueeze(-1)
+            else:
+                hm = head_mask
 
-        A_out = torch.matmul(diff_attn, v_cat).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+        diff_attn = None
+        if not output_attentions and L > 64:
+            chunk_size = 64
+            a_chunks = []
+            for start in range(0, L, chunk_size):
+                end = min(start + chunk_size, L)
+                q1_c = q1[:, :, start:end]
+                q2_c = q2[:, :, start:end]
+                k_end = min(N_kv, past_len + end) if self.is_decoder else N_kv
+                k1_c = k1_cat[:, :, :k_end]
+                k2_c = k2_cat[:, :, :k_end]
+                v_c = v_cat[:, :, :k_end]
+
+                s1_c = torch.matmul(q1_c.float(), k1_c.float().transpose(-2, -1)) * scale
+                s2_c = torch.matmul(q2_c.float(), k2_c.float().transpose(-2, -1)) * scale
+
+                if self.is_decoder:
+                    abs_q = (past_len + torch.arange(start, end, device=device)).unsqueeze(1)
+                    abs_k = torch.arange(k_end, device=device).unsqueeze(0)
+                    causal = (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)
+                    s1_c = s1_c.masked_fill(~causal, -1e4)
+                    s2_c = s2_c.masked_fill(~causal, -1e4)
+
+                if valid_mask is not None:
+                    vm_c = ~valid_mask[:, None, None, :k_end].bool()
+                    s1_c = s1_c.masked_fill(vm_c, -1e4)
+                    s2_c = s2_c.masked_fill(vm_c, -1e4)
+
+                s1_c = torch.nan_to_num(s1_c, nan=-1e4, posinf=1e4, neginf=-1e4)
+                s2_c = torch.nan_to_num(s2_c, nan=-1e4, posinf=1e4, neginf=-1e4)
+
+                a1_c = F.softmax(s1_c, dim=-1)
+                a2_c = F.softmax(s2_c, dim=-1)
+
+                da_c = F.relu(a1_c - lam * a2_c)
+                den_c = da_c.sum(dim=-1, keepdim=True)
+                da_c = torch.where(den_c <= 1e-7, a1_c, da_c / (den_c + 1e-7))
+                da_c = self.dropout(da_c).to(v_c.dtype)
+                if hm is not None:
+                    da_c = da_c * hm.to(da_c.dtype)
+                a_chunks.append(torch.matmul(da_c, v_c))
+
+            A_out = torch.cat(a_chunks, dim=2).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+        else:
+            scores1 = torch.matmul(q1.float(), k1_cat.float().transpose(-2, -1).contiguous()) * scale
+            scores2 = torch.matmul(q2.float(), k2_cat.float().transpose(-2, -1).contiguous()) * scale
+
+            if self.is_decoder:
+                if past_len > 0:
+                    abs_q = (past_len + torch.arange(L, device=device)).unsqueeze(1)
+                    abs_k = torch.arange(N_kv, device=device).unsqueeze(0)
+                    causal = abs_k <= abs_q
+                else:
+                    causal = torch.tril(torch.ones(L, N_kv, device=device, dtype=torch.bool))
+                scores1 = scores1.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
+                scores2 = scores2.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
+
+            if valid_mask is not None:
+                scores1 = scores1.masked_fill(~valid_mask[:, None, None, :].bool(), -1e4)
+                scores2 = scores2.masked_fill(~valid_mask[:, None, None, :].bool(), -1e4)
+
+            scores1 = torch.nan_to_num(scores1, nan=-1e4, posinf=1e4, neginf=-1e4)
+            scores2 = torch.nan_to_num(scores2, nan=-1e4, posinf=1e4, neginf=-1e4)
+
+            attn1 = F.softmax(scores1, dim=-1)
+            attn2 = F.softmax(scores2, dim=-1)
+
+            diff_attn = F.relu(attn1 - lam * attn2)
+            denom = diff_attn.sum(dim=-1, keepdim=True)
+            zero_mask = denom <= 1e-7
+            diff_attn = torch.where(zero_mask, attn1, diff_attn / (denom + 1e-7))
+            diff_attn = self.dropout(diff_attn).to(v_cat.dtype)
+
+            if hm is not None:
+                diff_attn = diff_attn * hm.to(diff_attn.dtype)
+
+            A_out = torch.matmul(diff_attn, v_cat).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
         M_out = None
         if self.mamba is not None:

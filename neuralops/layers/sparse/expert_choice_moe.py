@@ -84,7 +84,7 @@ class ExpertChoiceMoE(nn.Module):
             logits = self.router(self.router_ln(x_flat))
         else:
             normed = F.layer_norm(x_flat, (D,))
-            if not hasattr(self, "_dynamic_router") or self._dynamic_router.in_features != D:
+            if self._dynamic_router is None or self._dynamic_router.in_features != D:
                 self._dynamic_router = nn.Linear(D, self.n_experts, bias=False).to(device=x.device, dtype=x.dtype)
                 nn.init.uniform_(self._dynamic_router.weight, -0.01, 0.01)
             logits = self._dynamic_router(normed)
@@ -108,12 +108,20 @@ class ExpertChoiceMoE(nn.Module):
         out_flat = torch.zeros_like(x_flat)
         for e in range(self.n_experts):
             expert_mask = topk_indices == e
-            token_indices = expert_mask.any(dim=-1).nonzero(as_tuple=True)[0]
-
-            if token_indices.numel() == 0:
-                continue
-
-            matched_vals = topk_vals[expert_mask]
+            if expert_mask.dim() == 1:
+                token_indices = expert_mask.nonzero(as_tuple=True)[0]
+                if token_indices.numel() == 0:
+                    continue
+                matched_vals = topk_vals[token_indices]
+            else:
+                token_indices = expert_mask.any(dim=-1).nonzero(as_tuple=True)[0]
+                if token_indices.numel() == 0:
+                    continue
+                # Sum slot weights per unique token so duplicate top-k slot assignments
+                # cannot cause token_indices vs matched_vals length mismatches.
+                matched_vals = torch.where(
+                    expert_mask, topk_vals, torch.zeros_like(topk_vals)
+                ).sum(dim=-1)[token_indices]
 
             selected_x = x_flat[token_indices]
 
@@ -189,17 +197,31 @@ class ExpertChoiceMoEAttention(BaseAttention):
                     hidden_size = mod.shape[1]
                     break
         if hidden_size is None:
-            hidden_size = kwargs.get("hidden_size", 768)
+            hidden_size = kwargs.get(
+                "hidden_size",
+                kwargs.get("dim", kwargs.get("embed_dim", kwargs.get("d_model", 768))),
+            )
         if num_heads is None:
-            num_heads = kwargs.get("num_attention_heads", 12)
+            num_heads = kwargs.get(
+                "num_attention_heads",
+                kwargs.get("num_heads", kwargs.get("n_heads", 12)),
+            )
 
         super().__init__(config, rank)
         self.dim = int(hidden_size)
         self.num_heads = int(num_heads)
-        self.num_kv_heads = (
-            getattr(config, "num_key_value_heads", self.num_heads) if config is not None else self.num_heads
-        )
-        self.head_dim = getattr(config, "head_dim", None) or (self.dim // max(1, self.num_heads))
+        kv_h = kwargs.get("num_key_value_heads", kwargs.get("num_kv_heads"))
+        if kv_h is None and cfg_obj is not None:
+            kv_h = getattr(cfg_obj, "num_key_value_heads", getattr(cfg_obj, "num_kv_heads", None))
+        if kv_h is None and config is not None:
+            kv_h = getattr(config, "num_key_value_heads", getattr(config, "num_kv_heads", None))
+        self.num_kv_heads = int(kv_h) if kv_h is not None else self.num_heads
+        cfg_hd = kwargs.get("head_dim")
+        if cfg_hd is None and cfg_obj is not None:
+            cfg_hd = getattr(cfg_obj, "head_dim", None)
+        if cfg_hd is None and config is not None:
+            cfg_hd = getattr(config, "head_dim", None)
+        self.head_dim = int(cfg_hd) if cfg_hd is not None else (self.dim // max(1, self.num_heads))
         self.all_head_size = self.num_heads * self.head_dim
         self.kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
@@ -593,7 +615,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
 
         scale = 1.0 / math.sqrt(self.head_dim)
 
-        if not output_attentions:
+        if not output_attentions and attention_mask is None and encoder_attention_mask is None and head_mask is None:
             try:
                 _qs = maybe_half(q)
                 _ks = maybe_half(k)

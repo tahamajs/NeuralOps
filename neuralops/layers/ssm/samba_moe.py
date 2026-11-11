@@ -60,42 +60,56 @@ class MinimalMoEFallback(nn.Module):
             x_in = x
         logits = self.router(x_in)
         weights = F.softmax(logits, dim=-1)
-        if x_in.is_cuda and len(self.experts) >= 2:
-            try:
-                from neuralops.ops.cuda.samba_moe import samba_moe
 
-                e1 = self.experts[0](x_in)
-                e2 = self.experts[1](x_in)
-                rw = weights[..., :2]
-                out = samba_moe(e1, e2, rw)
-                for i in range(2, len(self.experts)):
-                    out = out + weights[..., i : i + 1] * self.experts[i](x_in)
-            except Exception:
+        def _combine_chunk(x_c: torch.Tensor, l_c: torch.Tensor, w_c: torch.Tensor) -> torch.Tensor:
+            if x_c.is_cuda and len(self.experts) >= 2:
+                try:
+                    from neuralops.ops.cuda.samba_moe import samba_moe
+
+                    e1 = self.experts[0](x_c)
+                    e2 = self.experts[1](x_c)
+                    rw = w_c[..., :2]
+                    out_c = samba_moe(e1, e2, rw)
+                    for i in range(2, len(self.experts)):
+                        out_c = out_c + w_c[..., i : i + 1] * self.experts[i](x_c)
+                    return out_c
+                except Exception:
+                    pass
+            if x_c.is_cuda and len(self.experts) > 0:
                 try:
                     from neuralops.ops.triton.sparse_attn import fused_topk_sparse_route_and_combine_triton
 
-                    exp_outputs = [exp(x_in) for exp in self.experts]
+                    exp_outputs = [exp(x_c) for exp in self.experts]
                     stacked = torch.stack(exp_outputs, dim=-2)
-                    out = fused_topk_sparse_route_and_combine_triton(stacked, logits, top_k=min(2, self.n_experts))
+                    return fused_topk_sparse_route_and_combine_triton(
+                        stacked, l_c, top_k=min(2, self.n_experts)
+                    )
                 except Exception:
-                    out = torch.zeros_like(x_in)
-                    for i, exp in enumerate(self.experts):
-                        out = out + weights[..., i : i + 1] * exp(x_in)
-        elif x_in.is_cuda and len(self.experts) > 0:
-            try:
-                from neuralops.ops.triton.sparse_attn import fused_topk_sparse_route_and_combine_triton
-
-                exp_outputs = [exp(x_in) for exp in self.experts]
-                stacked = torch.stack(exp_outputs, dim=-2)
-                out = fused_topk_sparse_route_and_combine_triton(stacked, logits, top_k=min(2, self.n_experts))
-            except Exception:
-                out = torch.zeros_like(x_in)
-                for i, exp in enumerate(self.experts):
-                    out = out + weights[..., i : i + 1] * exp(x_in)
-        else:
-            out = torch.zeros_like(x_in)
+                    pass
+            out_c = torch.zeros_like(x_c)
             for i, exp in enumerate(self.experts):
-                out = out + weights[..., i : i + 1] * exp(x_in)
+                out_c = out_c + w_c[..., i : i + 1] * exp(x_c)
+            return out_c
+
+        seq_len = x_in.shape[1] if x_in.dim() == 3 else 0
+        if seq_len > 64:
+            chunk_size = 64
+            use_ckpt = self.training and torch.is_grad_enabled() and x_in.requires_grad
+            out_chunks = []
+            for start in range(0, seq_len, chunk_size):
+                end = min(start + chunk_size, seq_len)
+                x_c = x_in[:, start:end]
+                l_c = logits[:, start:end]
+                w_c = weights[:, start:end]
+                if use_ckpt:
+                    from torch.utils.checkpoint import checkpoint
+
+                    out_chunks.append(checkpoint(_combine_chunk, x_c, l_c, w_c, use_reentrant=False))
+                else:
+                    out_chunks.append(_combine_chunk(x_c, l_c, w_c))
+            out = torch.cat(out_chunks, dim=1)
+        else:
+            out = _combine_chunk(x_in, logits, weights)
         if out.shape[-1] != x.shape[-1]:
             out = (
                 F.pad(out, (0, x.shape[-1] - out.shape[-1])) if out.shape[-1] < x.shape[-1] else out[..., : x.shape[-1]]

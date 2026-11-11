@@ -413,29 +413,29 @@ class OptimizedHybridAttention(BaseAttention):
     def _prepare_valid_mask(attention_mask, B, N, device):
         if attention_mask is None:
             return torch.ones(B, N, device=device, dtype=torch.bool)
-        if attention_mask.dim() == 2:
-            if attention_mask.dtype == torch.bool:
-                return attention_mask
-            if attention_mask.dtype.is_floating_point:
-                return attention_mask > -1e4
-            return attention_mask > 0
-        if attention_mask.dim() == 3:
-            m = attention_mask
-            if m.dtype == torch.bool:
-                return m.squeeze(1)
-            if m.dtype.is_floating_point:
-                return (m > -1e4).squeeze(1)
-            return (m > 0).squeeze(1)
-        if attention_mask.dim() == 4:
-            m = attention_mask
-            if m.dtype == torch.bool:
-                v = m
-            elif m.dtype.is_floating_point:
-                v = m > -1e4
-            else:
-                v = m > 0
-            return v.any(dim=-2).squeeze(1)
-        raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
+        m = attention_mask.to(device=device)
+        if m.dtype == torch.bool:
+            b = m
+        elif m.dtype.is_floating_point:
+            b = (m >= -1.0) if (m < 0).any() else (m > 0.5)
+        else:
+            b = m > 0
+
+        if b.dim() == 2:
+            out = b
+        elif b.dim() == 3:
+            out = b[:, 0, :] if b.size(1) == 1 else b.any(dim=1)
+        elif b.dim() == 4:
+            out = b.any(dim=-2)
+            out = out[:, 0, :] if out.size(1) == 1 else out.any(dim=1)
+        else:
+            raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
+
+        if out.shape[-1] > N:
+            out = out[..., :N]
+        elif out.shape[-1] < N:
+            out = F.pad(out, (0, N - out.shape[-1]), value=False)
+        return out.bool()
 
     def forward(
         self,
@@ -454,9 +454,20 @@ class OptimizedHybridAttention(BaseAttention):
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        Q = self.query(hidden_states).view(B, N, H, d).permute(0, 2, 1, 3)
-        K = self.key(hidden_states).view(B, N, self.num_kv_heads, d).permute(0, 2, 1, 3)
-        V = self.value(hidden_states).view(B, N, self.num_kv_heads, d).permute(0, 2, 1, 3)
+        if N == 0:
+            out_dim = self.all_head_size if self.is_nested_encoder else self.dim
+            return torch.zeros((B, 0, out_dim), device=device, dtype=dtype), None
+
+        if not hidden_states.is_contiguous():
+            hidden_states = hidden_states.contiguous()
+
+        x_in = hidden_states
+        if not torch.is_autocast_enabled() and hasattr(self.query, "weight") and x_in.dtype != self.query.weight.dtype:
+            x_in = x_in.to(self.query.weight.dtype)
+
+        Q = self.query(x_in).view(B, N, H, d).permute(0, 2, 1, 3).contiguous()
+        K = self.key(x_in).view(B, N, self.num_kv_heads, d).permute(0, 2, 1, 3).contiguous()
+        V = self.value(x_in).view(B, N, self.num_kv_heads, d).permute(0, 2, 1, 3).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")
@@ -472,11 +483,14 @@ class OptimizedHybridAttention(BaseAttention):
                 cos = cos[..., past_len : past_len + N, :]
                 sin = sin[..., past_len : past_len + N, :]
             Q, K = apply_rotary_pos_emb(Q, K, cos, sin)
+            Q = Q.contiguous()
+            K = K.contiguous()
 
         if self.kv_repeat > 1:
-            K = repeat_kv(K, self.kv_repeat)
-            V = repeat_kv(V, self.kv_repeat)
+            K = repeat_kv(K, self.kv_repeat).contiguous()
+            V = repeat_kv(V, self.kv_repeat).contiguous()
 
+        compute_dtype = Q.dtype
         valid_mask_2d = self._prepare_valid_mask(attention_mask, B, N, device)
         key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)
 
@@ -486,10 +500,16 @@ class OptimizedHybridAttention(BaseAttention):
 
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
 
+        needs_grad = torch.is_grad_enabled() and (Q.requires_grad or K.requires_grad or V.requires_grad)
         if (
             HAS_TRITON
             and not FORCE_PYTORCH_FALLBACK
+            and not needs_grad
             and Q.is_cuda
+            and Q.dtype in (torch.float16, torch.bfloat16)
+            and Q.is_contiguous()
+            and K.is_contiguous()
+            and V.is_contiguous()
             and self.is_causal
             and valid_mask_2d.all()
             and not output_attentions
@@ -500,79 +520,103 @@ class OptimizedHybridAttention(BaseAttention):
 
                 local_ctx = sliding_window_triton(Q, K, V, window_size=self.window_radius + 1)
                 local_probs = None
-            except Exception:
+            except Exception as exc:
+                logger.debug("OHA sliding_window_triton fallback: %s", exc)
                 local_ctx = None
         else:
             local_ctx = None
 
-        if local_ctx is None:
-            if self.is_causal:
-                band_mask = (diff >= 0) & (diff <= self.window_radius)
+        comp_k_in = x_in
+        if not torch.is_autocast_enabled() and comp_k_in.dtype != self.compress_k.weight.dtype:
+            comp_k_in = comp_k_in.to(self.compress_k.weight.dtype)
+        comp_k_raw = self.compress_k(comp_k_in)
+        comp_v_raw = self.compress_v(comp_k_in)
+        gate_raw = self.gate(comp_k_in) if (self.use_gate and self.gate is not None) else None
+
+        with torch.amp.autocast(device_type=device.type, enabled=False):
+            Q_f = Q.float()
+            K_f = K.float()
+            V_f = V.float()
+
+            if local_ctx is None:
+                if self.is_causal:
+                    band_mask = (diff >= 0) & (diff <= self.window_radius)
+                else:
+                    band_mask = diff.abs() <= self.window_radius
+                local_mask = band_mask.unsqueeze(0).unsqueeze(0) & key_valid_4d
+
+                local_scores = torch.matmul(Q_f, K_f.transpose(-2, -1).contiguous()) * scale
+                score_mask_val = torch.finfo(local_scores.dtype).min
+                local_scores = local_scores.masked_fill(~local_mask, score_mask_val)
+                local_scores = torch.nan_to_num(local_scores, nan=score_mask_val, posinf=1e4, neginf=score_mask_val)
+                local_probs = F.softmax(local_scores, dim=-1)
+                local_probs = torch.nan_to_num(local_probs, nan=0.0)
+                local_probs = self.dropout(local_probs)
+                local_ctx_f = torch.matmul(local_probs, V_f)
+                if output_attentions:
+                    local_probs = local_probs.to(dtype)
             else:
-                band_mask = diff.abs() <= self.window_radius
-            local_mask = band_mask.unsqueeze(0).unsqueeze(0) & key_valid_4d
+                local_ctx_f = local_ctx.float()
 
-            local_scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-            local_scores = local_scores.masked_fill(~local_mask, -1e4)
-            local_scores = torch.nan_to_num(local_scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-            local_probs = F.softmax(local_scores, dim=-1).to(dtype)
-            local_probs = torch.nan_to_num(local_probs, nan=0.0)
-            local_probs = self.dropout(local_probs)
-            local_ctx = torch.matmul(local_probs, V)
+            R = self.compression_rank
+            chunk_size = max(1, (N + R - 1) // R)
 
-        R = self.compression_rank
-        chunk_size = max(1, (N + R - 1) // R)
+            slot_idx = torch.arange(R, device=device)
+            chunk_starts = slot_idx * chunk_size
+            chunk_ends = torch.minimum((slot_idx + 1) * chunk_size - 1, torch.tensor(N - 1, device=device))
+            slot_valid = chunk_starts < N
 
-        slot_idx = torch.arange(R, device=device)
-        chunk_starts = slot_idx * chunk_size
-        chunk_ends = torch.minimum((slot_idx + 1) * chunk_size - 1, torch.tensor(N - 1, device=device))
-        slot_valid = chunk_starts < N
+            pad_mask_3d = (~valid_mask_2d).unsqueeze(-1)
+            comp_k_f = comp_k_raw.float().masked_fill(pad_mask_3d, -1e4)
+            comp_v_f = comp_v_raw.float().masked_fill(pad_mask_3d, -1e4)
 
-        comp_k_raw = self.compress_k(hidden_states)
-        comp_v_raw = self.compress_v(hidden_states)
+            pos_idx = torch.arange(N, device=device)
+            comp_chunk_mask = (pos_idx.unsqueeze(1) >= chunk_starts.unsqueeze(0)) & (
+                pos_idx.unsqueeze(1) <= chunk_ends.unsqueeze(0)
+            )
+            comp_chunk_mask = comp_chunk_mask.unsqueeze(0)
+            comp_k_f = comp_k_f.masked_fill(~comp_chunk_mask, -1e4)
+            comp_v_f = comp_v_f.masked_fill(~comp_chunk_mask, -1e4)
 
-        pad_mask_3d = (~valid_mask_2d).unsqueeze(-1)
-        comp_k_raw = comp_k_raw.masked_fill(pad_mask_3d, -1e4)
-        comp_v_raw = comp_v_raw.masked_fill(pad_mask_3d, -1e4)
+            comp_k_weights = F.softmax(comp_k_f, dim=1)
+            comp_v_weights = F.softmax(comp_v_f, dim=1)
 
-        pos_idx = torch.arange(N, device=device)
-        comp_chunk_mask = (pos_idx.unsqueeze(1) >= chunk_starts.unsqueeze(0)) & (
-            pos_idx.unsqueeze(1) <= chunk_ends.unsqueeze(0)
-        )
-        comp_chunk_mask = comp_chunk_mask.unsqueeze(0)
-        comp_k_raw = comp_k_raw.masked_fill(~comp_chunk_mask, -1e4)
-        comp_v_raw = comp_v_raw.masked_fill(~comp_chunk_mask, -1e4)
+            slot_has_valid = (comp_chunk_mask & valid_mask_2d.unsqueeze(-1)).any(dim=1, keepdim=True) & slot_valid.view(1, 1, R)
+            slot_mask_f = slot_has_valid.float()
+            comp_k_weights = comp_k_weights * slot_mask_f
+            comp_v_weights = comp_v_weights * slot_mask_f
 
-        comp_k_weights = F.softmax(comp_k_raw.float(), dim=1).to(dtype)
-        comp_v_weights = F.softmax(comp_v_raw.float(), dim=1).to(dtype)
+            ck = torch.einsum("bhnd,bnr->bhrd", K_f, comp_k_weights)
+            cv = torch.einsum("bhnd,bnr->bhrd", V_f, comp_v_weights)
 
-        slot_valid_b = slot_valid.view(1, 1, R)
-        comp_k_weights = comp_k_weights * slot_valid_b.to(comp_k_weights.dtype)
-        comp_v_weights = comp_v_weights * slot_valid_b.to(comp_v_weights.dtype)
+            global_scores = torch.matmul(Q_f, ck.transpose(-2, -1).contiguous()) * scale
+            global_mask_val = torch.finfo(global_scores.dtype).min
+            global_scores = global_scores.masked_fill(~slot_has_valid.unsqueeze(1), global_mask_val)
+            global_scores = torch.nan_to_num(global_scores, nan=global_mask_val, posinf=1e4, neginf=global_mask_val)
 
-        ck = torch.einsum("bhnd,bnr->bhrd", K, comp_k_weights)
-        cv = torch.einsum("bhnd,bnr->bhrd", V, comp_v_weights)
+            has_valid_global = None
+            if self.is_causal:
+                query_pos = torch.arange(N, device=device).unsqueeze(1)
+                chunk_ends_b = chunk_ends.unsqueeze(0)
+                global_causal = (query_pos >= chunk_ends_b) & slot_valid.unsqueeze(0)
+                global_scores = global_scores.masked_fill(~global_causal.unsqueeze(0).unsqueeze(0), global_mask_val)
+                has_valid_global = global_causal.any(dim=-1, keepdim=True).unsqueeze(0).unsqueeze(0)
 
-        global_scores = torch.matmul(Q.float(), ck.float().transpose(-2, -1).contiguous()) * scale
-        global_scores = torch.nan_to_num(global_scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+            global_probs = F.softmax(global_scores, dim=-1)
+            global_probs = torch.nan_to_num(global_probs, nan=0.0)
+            if has_valid_global is not None:
+                global_probs = global_probs * has_valid_global.float()
+            global_probs = self.dropout(global_probs)
+            global_ctx_f = torch.matmul(global_probs, cv)
 
-        if self.is_causal:
-            query_pos = torch.arange(N, device=device).unsqueeze(1)
-            chunk_ends_b = chunk_ends.unsqueeze(0)
-            global_causal = (query_pos >= chunk_ends_b) & slot_valid.unsqueeze(0)
-            global_scores = global_scores.masked_fill(~global_causal.unsqueeze(0).unsqueeze(0), -1e4)
+            if gate_raw is not None:
+                gate = torch.sigmoid(gate_raw.float())
+                gate = gate.permute(0, 2, 1).unsqueeze(-1)
+                context_f = gate * local_ctx_f + (1.0 - gate) * global_ctx_f
+            else:
+                context_f = 0.5 * local_ctx_f + 0.5 * global_ctx_f
 
-        global_probs = F.softmax(global_scores, dim=-1).to(dtype)
-        global_probs = torch.nan_to_num(global_probs, nan=0.0)
-        global_probs = self.dropout(global_probs)
-        global_ctx = torch.matmul(global_probs, cv)
-
-        if self.use_gate and self.gate is not None:
-            gate = torch.sigmoid(self.gate(hidden_states))
-            gate = gate.permute(0, 2, 1).unsqueeze(-1)
-            context = gate * local_ctx + (1.0 - gate) * global_ctx
-        else:
-            context = 0.5 * local_ctx + 0.5 * global_ctx
+            context = torch.nan_to_num(context_f, nan=0.0, posinf=1e4, neginf=-1e4).to(compute_dtype)
 
         if head_mask is not None:
             if head_mask.dim() == 1:
@@ -592,6 +636,8 @@ class OptimizedHybridAttention(BaseAttention):
         if self.is_nested_encoder:
             out = context
         else:
+            if not torch.is_autocast_enabled() and hasattr(self.out_proj, "weight") and context.dtype != self.out_proj.weight.dtype:
+                context = context.to(self.out_proj.weight.dtype)
             out = self.out_proj(context)
 
         return out, (local_probs if output_attentions else None)

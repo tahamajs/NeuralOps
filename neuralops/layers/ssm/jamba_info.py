@@ -666,64 +666,137 @@ class JambaInfoBlock(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(self.head_dim)
-        scores1 = torch.matmul(q1.float(), k1.float().transpose(-2, -1).contiguous()) * scale
-        scores2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1).contiguous()) * scale
-
-        if is_dec and L > 1:
-            kv_len = k1.shape[-2]
-            causal = torch.tril(
-                torch.ones(L, kv_len, device=device, dtype=torch.bool),
-                diagonal=past_len,
-            )
-            scores1 = scores1.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
-            scores2 = scores2.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
-
-        if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                valid = get_token_valid_mask(attention_mask, B, k1.shape[-2], device)
-                if valid is not None:
-                    scores1 = scores1.masked_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
-                    scores2 = scores2.masked_fill(~valid.unsqueeze(1).unsqueeze(2), -1e4)
-            elif attention_mask.dim() == 3:
-                m3 = attention_mask.unsqueeze(1).float()
-                if attention_mask.dtype == torch.bool:
-                    m3 = (~attention_mask).unsqueeze(1).float() * -1e4
-                scores1 = scores1 + m3
-                scores2 = scores2 + m3
-            elif attention_mask.dim() == 4:
-                if attention_mask.dtype == torch.bool:
-                    m4 = (~attention_mask).float() * -1e4
-                else:
-                    m4 = attention_mask.float()
-                scores1 = scores1 + m4
-                scores2 = scores2 + m4
-
-        scores1 = torch.nan_to_num(scores1, nan=-1e4, posinf=1e4, neginf=-1e4)
-        scores2 = torch.nan_to_num(scores2, nan=-1e4, posinf=1e4, neginf=-1e4)
-
-        attn1 = F.softmax(scores1, dim=-1).to(q1.dtype)
-        attn2 = F.softmax(scores2, dim=-1).to(q2.dtype)
-
+        kv_len = k1.shape[-2]
         lambda_full = (
             torch.exp(self.lambda_q1 * self.lambda_k1) - torch.exp(self.lambda_q2 * self.lambda_k2) + self.lambda_init
-        ).to(attn1.dtype)
-        lambda_full = lambda_full.view(1, self.num_heads, 1, 1)
+        ).view(1, self.num_heads, 1, 1)
+        scale_factor = (1.0 - self.lambda_init).view(1, self.num_heads, 1, 1)
 
-        scale_factor = (1.0 - self.lambda_init).to(attn1.dtype).view(1, self.num_heads, 1, 1)
+        valid_2d = (
+            get_token_valid_mask(attention_mask, B, kv_len, device)
+            if (attention_mask is not None and attention_mask.dim() == 2)
+            else None
+        )
 
-        diff_attn = (attn1 - lambda_full * attn2) * scale_factor
-        diff_attn = self.dropout(diff_attn).to(v.dtype)
+        diff_attn = None
+        if not output_attentions and L > 64:
+            chunk_size = 64
+            attn_chunks = []
+            for start in range(0, L, chunk_size):
+                end = min(start + chunk_size, L)
+                q1_c = q1[:, :, start:end]
+                q2_c = q2[:, :, start:end]
+                k_end = min(kv_len, past_len + end) if is_dec else kv_len
+                k1_c = k1[:, :, :k_end]
+                k2_c = k2[:, :, :k_end]
+                v_c = v[:, :, :k_end]
 
-        if head_mask is not None:
-            diff_attn = self._normalize_head_mask(head_mask, diff_attn)
+                s1_c = torch.matmul(q1_c.float(), k1_c.float().transpose(-2, -1)) * scale
+                s2_c = torch.matmul(q2_c.float(), k2_c.float().transpose(-2, -1)) * scale
 
-        attn_out = torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+                if is_dec:
+                    q_idx = (past_len + torch.arange(start, end, device=device)).unsqueeze(1)
+                    k_idx = torch.arange(k_end, device=device).unsqueeze(0)
+                    causal = (k_idx <= q_idx).unsqueeze(0).unsqueeze(0)
+                    s1_c = s1_c.masked_fill(~causal, -1e4)
+                    s2_c = s2_c.masked_fill(~causal, -1e4)
+
+                if attention_mask is not None:
+                    if attention_mask.dim() == 2 and valid_2d is not None:
+                        vm_c = ~valid_2d[:, :k_end].unsqueeze(1).unsqueeze(2)
+                        s1_c = s1_c.masked_fill(vm_c, -1e4)
+                        s2_c = s2_c.masked_fill(vm_c, -1e4)
+                    elif attention_mask.dim() == 3:
+                        am3 = (
+                            attention_mask[:, :, :k_end]
+                            if attention_mask.shape[1] == 1
+                            else attention_mask[:, start:end, :k_end]
+                        )
+                        m3 = (~am3).unsqueeze(1).float() * -1e4 if attention_mask.dtype == torch.bool else am3.unsqueeze(1).float()
+                        s1_c = s1_c + m3
+                        s2_c = s2_c + m3
+                    elif attention_mask.dim() == 4:
+                        am4 = (
+                            attention_mask[:, :, :, :k_end]
+                            if attention_mask.shape[2] == 1
+                            else attention_mask[:, :, start:end, :k_end]
+                        )
+                        m4 = (~am4).float() * -1e4 if attention_mask.dtype == torch.bool else am4.float()
+                        s1_c = s1_c + m4
+                        s2_c = s2_c + m4
+
+                s1_c = torch.nan_to_num(s1_c, nan=-1e4, posinf=1e4, neginf=-1e4)
+                s2_c = torch.nan_to_num(s2_c, nan=-1e4, posinf=1e4, neginf=-1e4)
+
+                a1_c = F.softmax(s1_c, dim=-1).to(q1.dtype)
+                a2_c = F.softmax(s2_c, dim=-1).to(q2.dtype)
+                da_c = (a1_c - lambda_full.to(a1_c.dtype) * a2_c) * scale_factor.to(a1_c.dtype)
+                da_c = self.dropout(da_c).to(v_c.dtype)
+                if head_mask is not None:
+                    da_c = self._normalize_head_mask(head_mask, da_c)
+                attn_chunks.append(torch.matmul(da_c, v_c))
+
+            attn_out = torch.cat(attn_chunks, dim=2).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+        else:
+            scores1 = torch.matmul(q1.float(), k1.float().transpose(-2, -1).contiguous()) * scale
+            scores2 = torch.matmul(q2.float(), k2.float().transpose(-2, -1).contiguous()) * scale
+
+            if is_dec and L > 1:
+                causal = torch.tril(
+                    torch.ones(L, kv_len, device=device, dtype=torch.bool),
+                    diagonal=past_len,
+                )
+                scores1 = scores1.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
+                scores2 = scores2.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
+
+            if attention_mask is not None:
+                if attention_mask.dim() == 2:
+                    if valid_2d is not None:
+                        scores1 = scores1.masked_fill(~valid_2d.unsqueeze(1).unsqueeze(2), -1e4)
+                        scores2 = scores2.masked_fill(~valid_2d.unsqueeze(1).unsqueeze(2), -1e4)
+                elif attention_mask.dim() == 3:
+                    m3 = attention_mask.unsqueeze(1).float()
+                    if attention_mask.dtype == torch.bool:
+                        m3 = (~attention_mask).unsqueeze(1).float() * -1e4
+                    scores1 = scores1 + m3
+                    scores2 = scores2 + m3
+                elif attention_mask.dim() == 4:
+                    if attention_mask.dtype == torch.bool:
+                        m4 = (~attention_mask).float() * -1e4
+                    else:
+                        m4 = attention_mask.float()
+                    scores1 = scores1 + m4
+                    scores2 = scores2 + m4
+
+            scores1 = torch.nan_to_num(scores1, nan=-1e4, posinf=1e4, neginf=-1e4)
+            scores2 = torch.nan_to_num(scores2, nan=-1e4, posinf=1e4, neginf=-1e4)
+
+            attn1 = F.softmax(scores1, dim=-1).to(q1.dtype)
+            attn2 = F.softmax(scores2, dim=-1).to(q2.dtype)
+
+            diff_attn = (attn1 - lambda_full.to(attn1.dtype) * attn2) * scale_factor.to(attn1.dtype)
+            diff_attn = self.dropout(diff_attn).to(v.dtype)
+
+            if head_mask is not None:
+                diff_attn = self._normalize_head_mask(head_mask, diff_attn)
+
+            attn_out = torch.matmul(diff_attn, v).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
         attn_out = self.diff_norm(attn_out)
 
         z = self.bottleneck.down(x)
 
+        def _exec_ssm(ssm_mod: nn.Module | None, inp: torch.Tensor, m: torch.Tensor | None, dec: bool) -> torch.Tensor:
+            if self.training and torch.is_grad_enabled() and inp.requires_grad and L > 64 and ssm_mod is not None:
+                from torch.utils.checkpoint import checkpoint
+
+                def _fn(h: torch.Tensor) -> torch.Tensor:
+                    return self._run_ssm(ssm_mod, h, m, is_decoder=dec)
+
+                return checkpoint(_fn, inp, use_reentrant=False)
+            return self._run_ssm(ssm_mod, inp, m, is_decoder=dec)
+
         if is_dec:
-            z_ssm = self._run_ssm(self.ssm_fwd, z, attention_mask, is_decoder=True)
+            z_ssm = _exec_ssm(self.ssm_fwd, z, attention_mask, True)
         else:
             if self.ssm_bwd is not None:
                 z_rev = torch.flip(z, dims=[1]).contiguous()
@@ -742,11 +815,11 @@ class JambaInfoBlock(BaseAttention):
                 else:
                     rev_mask = None
 
-                ssm_fwd = self._run_ssm(self.ssm_fwd, z, attention_mask)
-                ssm_bwd = self._run_ssm(self.ssm_bwd, z_rev, rev_mask)
+                ssm_fwd = _exec_ssm(self.ssm_fwd, z, attention_mask, False)
+                ssm_bwd = _exec_ssm(self.ssm_bwd, z_rev, rev_mask, False)
                 z_ssm = 0.5 * (ssm_fwd + torch.flip(ssm_bwd, dims=[1]).contiguous())
             else:
-                z_ssm = self._run_ssm(self.ssm_fwd, z, attention_mask)
+                z_ssm = _exec_ssm(self.ssm_fwd, z, attention_mask, False)
 
         ssm_branch = self.bottleneck.up(z_ssm)
 

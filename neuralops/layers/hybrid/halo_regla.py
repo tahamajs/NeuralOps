@@ -471,12 +471,7 @@ class HALOReGLAAttention(BaseAttention):
         linear_state: tuple[torch.Tensor, torch.Tensor] | None = None,
         chunk_size: int = 64,
     ) -> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
-        """Chunked causal linear attention — O(N·d²) memory instead of O(N²·d²).
-
-        Key optimization: never materialize the full (B, H, N, d, d) tensor.
-        Process in chunks of `chunk_size` tokens, keeping running state
-        of shape (B, H, d, d) between chunks.
-        """
+        """Vectorized chunked causal linear attention — O(N·d + num_chunks·d²) memory, zero 5D tensors."""
         B, H, N_q, d = q.shape
         N_k = k_new.shape[2]
         device = q.device
@@ -503,81 +498,70 @@ class HALOReGLAAttention(BaseAttention):
             S_next = S_state + torch.einsum("bhd,bhe->bhde", k_lin[:, :, 0], v_f[:, :, 0])
             Z_next = Z_state + k_lin[:, :, 0]
             num = torch.einsum("bhd,bhde->bhe", q_lin[:, :, 0], S_next)
-            den = torch.einsum("bhd,bhd->bh", q_lin[:, :, 0], Z_next).clamp(min=1e-5)
-            out = (num / den.unsqueeze(-1)).unsqueeze(2).to(q.dtype)
+            den = torch.einsum("bhd,bhd->bh", q_lin[:, :, 0], Z_next).clamp(min=1e-4)
+            out = (num / den.unsqueeze(-1)).unsqueeze(2)
             return out, (S_next, Z_next)
 
-        from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+        pad_len = (chunk_size - (N_q % chunk_size)) % chunk_size
+        if pad_len > 0:
+            q_p = F.pad(q_lin, (0, 0, 0, pad_len))
+            k_p = F.pad(k_lin, (0, 0, 0, pad_len))
+            v_p = F.pad(v_f, (0, 0, 0, pad_len))
+        else:
+            q_p, k_p, v_p = q_lin, k_lin, v_f
 
-        if (
-            HAS_TRITON
-            and not FORCE_PYTORCH_FALLBACK
-            and not torch.is_grad_enabled()
-            and valid_mask is None
-            and q.is_cuda
-            and linear_state is None
-            and d <= 128
-        ):
-            try:
-                from neuralops.ops.triton.linear_attn import fused_svd_linear_chunk_scan_triton
+        num_chunks = q_p.shape[2] // chunk_size
+        q_blk = q_p.view(B, H, num_chunks, chunk_size, d)
+        k_blk = k_p.view(B, H, num_chunks, chunk_size, d)
+        v_blk = v_p.view(B, H, num_chunks, chunk_size, d)
 
-                y_triton = fused_svd_linear_chunk_scan_triton(
-                    (q * lin_scale).contiguous(),
-                    (k_new * lin_scale).contiguous(),
-                    v_new.contiguous(),
-                    chunk_size=chunk_size,
-                    eps=1e-5,
-                )
-                return y_triton.to(q.dtype), (None, None)
-            except Exception:
-                # allowed-swallow: best-effort-telemetry
-                pass
+        kv_chunks = torch.matmul(k_blk.transpose(-1, -2), v_blk)  # (B, H, num_chunks, d, d)
+        z_chunks = k_blk.sum(dim=-2)  # (B, H, num_chunks, d)
 
-        out_chunks: list[torch.Tensor] = []
-        S_cur = S_state
-        Z_cur = Z_state
+        S_cumsum = torch.cumsum(kv_chunks, dim=2)
+        Z_cumsum = torch.cumsum(z_chunks, dim=2)
+        S_prefix = S_cumsum - kv_chunks + S_state.unsqueeze(2)
+        Z_prefix = Z_cumsum - z_chunks + Z_state.unsqueeze(2)
 
-        for start in range(0, N_q, chunk_size):
-            end = min(start + chunk_size, N_q)
-            q_c = q_lin[:, :, start:end]
-            k_c = k_lin[:, :, start:end]
-            v_c = v_f[:, :, start:end]
+        num_inter = torch.matmul(q_blk, S_prefix)
+        den_inter = (q_blk * Z_prefix.unsqueeze(-2)).sum(dim=-1, keepdim=True)
 
-            kv_local = torch.einsum("bhcd,bhce->bhcde", k_c, v_c).cumsum(dim=2)
-            k_local = k_c.cumsum(dim=2)
+        causal_c = torch.tril(torch.ones((chunk_size, chunk_size), device=device, dtype=torch.bool))
+        scores_intra = torch.matmul(q_blk, k_blk.transpose(-1, -2)).masked_fill(~causal_c, 0.0)
+        num_intra = torch.matmul(scores_intra, v_blk)
+        den_intra = scores_intra.sum(dim=-1, keepdim=True)
 
-            kv_total = kv_local + S_cur.unsqueeze(2)
-            k_total = k_local + Z_cur.unsqueeze(2)
+        denom = (den_inter + den_intra).clamp(min=1e-4)
+        outs = ((num_inter + num_intra) / denom).reshape(B, H, num_chunks * chunk_size, d)[:, :, :N_q, :]
 
-            num = torch.einsum("bhcd,bhcde->bhce", q_c, kv_total)
-            den = torch.einsum("bhcd,bhcd->bhc", q_c, k_total).clamp(min=1e-5)
-
-            out_chunks.append(num / den.unsqueeze(-1))
-
-            S_cur = kv_total[:, :, -1]
-            Z_cur = k_total[:, :, -1]
-
-        outs = torch.cat(out_chunks, dim=2)
-        return outs.to(q.dtype), (S_cur, Z_cur)
+        S_final = S_state + kv_chunks.sum(dim=2)
+        Z_final = Z_state + z_chunks.sum(dim=2)
+        return outs, (S_final, Z_final)
 
     def _global_linear_attention(
         self,
         q: torch.Tensor,
         k: torch.Tensor,
         v: torch.Tensor,
+        valid_mask: torch.Tensor | None = None,
     ) -> torch.Tensor:
-        """Bidirectional linear attention: Q · (K^T V)."""
+        """Bidirectional linear attention: Q · (K^T V) strictly in FP32."""
         B, H, N, d = q.shape
         lin_scale = d**-0.25
         q_lin = F.elu(q.float() * lin_scale) + 1.0
         k_lin = F.elu(k.float() * lin_scale) + 1.0
         v_f = v.float()
 
+        if valid_mask is not None:
+            kv_mask = valid_mask.to(dtype=k_lin.dtype)
+            k_lin = k_lin * kv_mask
+            v_f = v_f * kv_mask
+
         kv = torch.matmul(k_lin.transpose(-2, -1).contiguous(), v_f)
         z = k_lin.sum(dim=2, keepdim=True)
         num = torch.matmul(q_lin, kv)
-        den = torch.matmul(q_lin, z.transpose(-2, -1).contiguous()).clamp(min=1e-5)
-        return (num / den).to(q.dtype)
+        den = torch.matmul(q_lin, z.transpose(-2, -1).contiguous()).clamp(min=1e-4)
+        return num / den
 
     def forward(
         self,
@@ -648,13 +632,20 @@ class HALOReGLAAttention(BaseAttention):
             k_new_lin, v_new_lin = k_new, v_new
 
         eff_mask = encoder_attention_mask if encoder_hidden_states is not None else attention_mask
-        mask_val = _safe_mask_value(dtype)
 
         valid_kv_for_linear: torch.Tensor | None = None
+        valid_kv_bool: torch.Tensor | None = None
         if eff_mask is not None:
             valid_kv_new = get_token_valid_mask(eff_mask, B, N, device)
             if valid_kv_new is not None:
                 valid_kv_for_linear = valid_kv_new[:, None, :, None].to(dtype=torch.float32)
+                if N_kv > N:
+                    valid_kv_bool = torch.cat(
+                        [torch.ones((B, N_kv - N), device=device, dtype=torch.bool), valid_kv_new],
+                        dim=1,
+                    )
+                else:
+                    valid_kv_bool = valid_kv_new[:, :N_kv]
 
         scale = 1.0 / math.sqrt(self.head_dim)
 
@@ -664,30 +655,41 @@ class HALOReGLAAttention(BaseAttention):
 
         dense_scores = torch.matmul(q_f, K_dense_f.transpose(-2, -1).contiguous()) * scale
 
-        mask_val = _safe_mask_value(dense_scores.dtype)
+        mask_val = torch.finfo(torch.float32).min
+        invalid_mask = torch.zeros((B, 1, N, N_kv), device=device, dtype=torch.bool)
 
         eff_causal = self.is_causal or bool(kwargs.get("is_causal", False))
         if eff_causal:
             q_idx = torch.arange(past_len, past_len + N, device=device).unsqueeze(1)
             k_idx = torch.arange(N_kv, device=device).unsqueeze(0)
             causal = (k_idx <= q_idx).unsqueeze(0).unsqueeze(0)
-            dense_scores = dense_scores.masked_fill(~causal, mask_val)
+            invalid_mask = invalid_mask | (~causal)
 
         if eff_mask is not None:
-            if eff_mask.dim() == 2:
-                pad_mask = (eff_mask == 0).view(B, 1, 1, N_kv)
-                dense_scores = dense_scores.masked_fill(pad_mask, mask_val)
+            if eff_mask.dim() == 2 and valid_kv_bool is not None:
+                invalid_mask = invalid_mask | (~valid_kv_bool).view(B, 1, 1, N_kv)
             elif eff_mask.dim() == 4:
-                dense_scores = dense_scores + eff_mask.to(dense_scores.dtype)
+                if eff_mask.dtype == torch.bool:
+                    invalid_mask = invalid_mask | (~eff_mask)
+                elif eff_mask.dtype.is_floating_point:
+                    dense_scores = dense_scores + eff_mask.float().clamp(min=mask_val, max=0.0)
+                    invalid_mask = invalid_mask | (eff_mask < -1e3)
+                else:
+                    invalid_mask = invalid_mask | (eff_mask <= 0)
 
-        dense_scores = torch.nan_to_num(dense_scores, nan=mask_val, posinf=1e4, neginf=mask_val)
+        all_masked = invalid_mask.all(dim=-1, keepdim=True)
+        safe_mask = invalid_mask.clone()
+        if all_masked.any():
+            safe_mask[..., 0:1] = safe_mask[..., 0:1] & (~all_masked)
 
-        dense_attn = F.softmax(dense_scores, dim=-1).to(dtype)
-        dense_attn = torch.nan_to_num(dense_attn, nan=0.0)
-        dense_attn = self.dropout(dense_attn)
+        dense_scores = dense_scores.masked_fill(safe_mask, mask_val)
+        scores_max = dense_scores.amax(dim=-1, keepdim=True).detach()
+        exp_scores = torch.exp((dense_scores - scores_max).clamp(max=0.0)).masked_fill(safe_mask, 0.0)
+        dense_den = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-4)
+        dense_attn = (exp_scores / dense_den).masked_fill(all_masked, 0.0)
+        dense_attn_drop = self.dropout(dense_attn)
 
-        dense_out = torch.matmul(dense_attn.float(), V_dense_f).to(dtype)
-        dense_out = torch.nan_to_num(dense_out, nan=0.0, posinf=1e4, neginf=-1e4)
+        dense_out = torch.matmul(dense_attn_drop, V_dense_f)
 
         next_linear_state = None
         if eff_causal:
@@ -695,23 +697,25 @@ class HALOReGLAAttention(BaseAttention):
                 q, k_new_lin, v_new_lin, past_len=past_len, valid_mask=valid_kv_for_linear, linear_state=linear_state
             )
         else:
-            linear_out = self._global_linear_attention(q, K_full_dense, V_full_dense)
+            valid_global = valid_kv_bool[:, None, :, None].float() if valid_kv_bool is not None else None
+            linear_out = self._global_linear_attention(q, K_full_dense, V_full_dense, valid_mask=valid_global)
 
-        linear_out = torch.nan_to_num(linear_out, nan=0.0, posinf=1e4, neginf=-1e4)
-
-        gate_out = self.lora_gate(hidden_states.to(self.lora_gate.weight.dtype))
-        g = torch.sigmoid(gate_out).permute(0, 2, 1).unsqueeze(-1).to(dtype)
-        fused = (g * dense_out + (1.0 - g) * linear_out).to(dtype)
+        gate_out = self.lora_gate(hidden_states.to(self.lora_gate.weight.dtype)).float()
+        g = torch.sigmoid(gate_out).permute(0, 2, 1).unsqueeze(-1)
+        fused = g * dense_out + (1.0 - g) * linear_out
 
         if head_mask is not None:
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
-                fused = fused * head_mask.view(1, self.num_heads, 1, 1).to(fused.dtype)
+                fused = fused * head_mask.view(1, self.num_heads, 1, 1).float()
             elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                fused = fused * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).to(fused.dtype)
+                fused = fused * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).float()
             elif head_mask.dim() == 4:
-                fused = fused * head_mask.to(fused.dtype)
+                fused = fused * head_mask.float()
 
-        out = fused.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+        if dtype == torch.float16:
+            fmax = torch.finfo(dtype).max * 0.5
+            fused = fused.clamp(min=-fmax, max=fmax)
+        out = fused.to(dtype).permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
             out_final = out
@@ -727,7 +731,9 @@ class HALOReGLAAttention(BaseAttention):
             else:
                 out_final = out_final[..., : hidden_states.shape[-1]]
 
-        out_final = torch.nan_to_num(out_final, nan=0.0, posinf=1e4, neginf=-1e4)
+        if dtype == torch.float16:
+            fmax = torch.finfo(dtype).max * 0.5
+            out_final = out_final.clamp(min=-fmax, max=fmax)
 
         present_kv: Any = None
         use_cache = bool(kwargs.get("use_cache", False))

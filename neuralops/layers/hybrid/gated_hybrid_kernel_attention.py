@@ -624,43 +624,68 @@ class GatedHybridKernelAttention(BaseAttention):
         past_len,
         return_attn=False,
     ):
-        """Sliding-window + causal attention with SDPA fast path."""
+        """Sliding-window + causal attention with chunked query execution."""
         B, h, N, d = Q.shape
         N_k = K.shape[2]
         W = self.window
         scale = 1.0 / math.sqrt(int(d))
+        is_causal_win = self.is_decoder and not is_cross
+        valid_b = valid.to(device=Q.device, dtype=torch.bool)
+
+        if not return_attn:
+            chunk_size = 64
+            mask_val = _safe_mask_value(Q.dtype)
+            outputs = []
+            for start in range(0, N, chunk_size):
+                end = min(start + chunk_size, N)
+                q_abs_start = past_len + start
+                q_abs_end = past_len + end
+                k_start = max(0, q_abs_start - W)
+                k_end = min(N_k, q_abs_end if is_causal_win else q_abs_end + W)
+                if k_end <= k_start:
+                    outputs.append(Q.new_zeros(B, h, end - start, d))
+                    continue
+
+                Qc = Q[:, :, start:end]
+                Kc = K[:, :, k_start:k_end]
+                Vc = V[:, :, k_start:k_end]
+
+                abs_q = torch.arange(q_abs_start, q_abs_end, device=Q.device).unsqueeze(1)
+                abs_k = torch.arange(k_start, k_end, device=Q.device).unsqueeze(0)
+                band_c = ((abs_q - abs_k).abs() <= W).unsqueeze(0).unsqueeze(0)
+                if is_causal_win:
+                    band_c = band_c & (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)
+
+                v_slice = (
+                    valid_b[:, :, :, k_start:k_end]
+                    if valid_b.shape[-2] == 1
+                    else valid_b[:, :, start:end, k_start:k_end]
+                )
+                combined_c = band_c & v_slice
+
+                scores_c = torch.matmul(Qc, Kc.transpose(-2, -1)) * scale
+                scores_c = scores_c.masked_fill(~combined_c, mask_val)
+                scores_c = torch.nan_to_num(scores_c, nan=mask_val, posinf=1e4, neginf=mask_val)
+
+                any_valid_c = combined_c.any(dim=-1, keepdim=True).to(scores_c.dtype)
+                attn_c = F.softmax(scores_c.float(), dim=-1).to(Q.dtype) * any_valid_c
+                attn_c = self.dropout(attn_c)
+                outputs.append(torch.matmul(attn_c, Vc))
+
+            out = torch.cat(outputs, dim=2) if len(outputs) > 1 else outputs[0]
+            return out, None
 
         abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)
         abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
         dist = (abs_q - abs_k).abs()
         band = (dist <= W).unsqueeze(0).unsqueeze(0)
 
-        if self.is_decoder and not is_cross:
+        if is_causal_win:
             causal = (abs_k <= abs_q).unsqueeze(0).unsqueeze(0)
             band = band & causal
 
         band = band.to(device=Q.device, dtype=torch.bool)
-        valid_b = valid.to(device=Q.device, dtype=torch.bool)
         combined = band & valid_b
-
-        use_sdpa = not return_attn and bool(valid_b.all())
-
-        if use_sdpa:
-            attn_bias = torch.zeros((1, 1, N, N_k), device=Q.device, dtype=Q.dtype).masked_fill(
-                ~band, _safe_mask_value(Q.dtype)
-            )
-            q_sdp = maybe_half(Q)
-            k_sdp = maybe_half(K)
-            v_sdp = maybe_half(V)
-            out = F.scaled_dot_product_attention(
-                q_sdp,
-                k_sdp,
-                v_sdp,
-                attn_mask=attn_bias.to(q_sdp.dtype),
-                dropout_p=self.cfg.dropout if self.training else 0.0,
-                is_causal=False,
-            )
-            return out.to(Q.dtype), None
 
         scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
         mask_val = _safe_mask_value(scores.dtype)
@@ -672,7 +697,7 @@ class GatedHybridKernelAttention(BaseAttention):
         attn = self.dropout(attn)
 
         out = torch.matmul(attn, V)
-        return out, (attn if return_attn else None)
+        return out, attn
 
     def _causal_linear_attention(
         self,
@@ -685,7 +710,7 @@ class GatedHybridKernelAttention(BaseAttention):
         past_len=0,
     ):
         B, H, N, F_dim = Q_feat.shape
-        N_kv = K_feat.shape[2]
+        D = V.shape[-1]
         dtype = Q_feat.dtype
 
         scale_feat = 1.0 / math.sqrt(F_dim)
@@ -724,17 +749,43 @@ class GatedHybridKernelAttention(BaseAttention):
                 # allowed-swallow: best-effort-telemetry
                 pass
 
-        KV_outer = K_feat.unsqueeze(-1) * V_f.unsqueeze(-2)
-        KV_cumsum = KV_outer.cumsum(dim=2)
-        K_cumsum = K_feat.cumsum(dim=2)
+        chunk_size = 64
+        state_kv = torch.zeros(B, H, F_dim, D, device=Q_feat.device, dtype=Q_feat.dtype)
+        state_k = torch.zeros(B, H, F_dim, device=Q_feat.device, dtype=Q_feat.dtype)
 
-        KV_at_q = KV_cumsum[:, :, past_len : past_len + N, :, :]
-        K_at_q = K_cumsum[:, :, past_len : past_len + N, :]
+        if past_len > 0:
+            for p_start in range(0, past_len, chunk_size):
+                p_end = min(p_start + chunk_size, past_len)
+                Kp = K_feat[:, :, p_start:p_end]
+                Vp = V_f[:, :, p_start:p_end]
+                state_kv = state_kv + torch.matmul(Kp.transpose(-2, -1), Vp)
+                state_k = state_k + Kp.sum(dim=2)
 
-        num = torch.einsum("bhnf,bhnfd->bhnd", Q_feat, KV_at_q)
-        den = torch.einsum("bhnf,bhnf->bhn", Q_feat, K_at_q).unsqueeze(-1).clamp(min=1e-4)
+        outs = []
+        for start in range(0, N, chunk_size):
+            end = min(start + chunk_size, N)
+            Qc = Q_feat[:, :, start:end]
+            Kc = K_feat[:, :, past_len + start : past_len + end]
+            Vc = V_f[:, :, past_len + start : past_len + end]
 
-        out = num / den
+            intra_scores = torch.matmul(Qc, Kc.transpose(-2, -1)).tril()
+            if start == 0 and past_len == 0:
+                num = torch.matmul(intra_scores, Vc)
+                den = intra_scores.sum(dim=-1).unsqueeze(-1).clamp(min=1e-4)
+            else:
+                num = torch.matmul(Qc, state_kv) + torch.matmul(intra_scores, Vc)
+                den = (
+                    (torch.matmul(Qc, state_k.unsqueeze(-1)).squeeze(-1) + intra_scores.sum(dim=-1))
+                    .unsqueeze(-1)
+                    .clamp(min=1e-4)
+                )
+            outs.append(num / den)
+
+            if end < N:
+                state_kv = state_kv + torch.matmul(Kc.transpose(-2, -1), Vc)
+                state_k = state_k + Kc.sum(dim=2)
+
+        out = torch.cat(outs, dim=2) if len(outs) > 1 else outs[0]
         return torch.nan_to_num(out, nan=0.0).to(dtype)
 
     def _noncausal_linear_attention(self, Q, K, V, valid, q_gate, in_gate):
@@ -832,10 +883,9 @@ class GatedHybridKernelAttention(BaseAttention):
             return_attn=bool(output_attentions),
         )
 
-        Q_feat = self.kernel_map(Q)
-        K_feat = self.kernel_map(K_full)
-
         if self.is_decoder and not is_cross:
+            Q_feat = self.kernel_map(Q)
+            K_feat = self.kernel_map(K_full)
             global_out = self._causal_linear_attention(
                 Q_feat,
                 K_feat,

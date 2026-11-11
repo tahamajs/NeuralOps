@@ -352,24 +352,23 @@ class ChelaSlayCausalLinearFunction(torch.autograd.Function):
         B, H, L, feat_2f = q_feat.shape
         D_v = v_masked.shape[-1]
 
-        # Wide head acceleration (feat_2f > 128 or D_v > 128) via 3-level fallback hierarchy
-        if q_feat.is_cuda and (feat_2f > 128 or D_v > 128):
+        # Wide head CUDA kernel requires q_feat.shape == v_masked.shape (feat_2f == D_v).
+        # Avoid invoking chela_slay_wide_triton fallback on Triton 2.x where loopResult.hasOneUse()
+        # triggers SIGABRT in TritonGPUOptimizeThreadLocalityPass.
+        if q_feat.is_cuda and feat_2f == D_v and (feat_2f > 128 or D_v > 128):
             try:
-                from neuralops.ops.cuda.chela_slay_wide import chela_slay_wide_attention_forward
+                from neuralops.ops.cuda.chela_slay_wide import chela_slay_wide_autograd
+                from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK
 
-                out = chela_slay_wide_attention_forward(q_feat, k_feat, v_masked, chunk_size=chunk_size)
-                ctx.save_for_backward(q_feat, k_feat, v_masked)
-                ctx.chunk_size = chunk_size
-                return out
+                if not FORCE_PYTORCH_FALLBACK and getattr(chela_slay_wide_autograd, "_MODULE", None) is not None:
+                    out = chela_slay_wide_autograd.chela_slay_wide_attention_forward(
+                        q_feat, k_feat, v_masked, chunk_size=chunk_size
+                    )
+                    ctx.save_for_backward(q_feat, k_feat, v_masked)
+                    ctx.chunk_size = chunk_size
+                    return out
             except Exception as e:
                 logger.debug("chela_slay_wide forward fallback to vectorized PyTorch: %s", e)
-
-        sm_supported = True
-        if q_feat.is_cuda:
-            try:
-                sm_supported = torch.cuda.get_device_capability(q_feat.device)[0] >= 7
-            except Exception:
-                sm_supported = False
 
         # Note: Fused causal Triton kernel triggers MLIR OptimizeThreadLocalityPass assertion
         # failure on Ampere/Triton 2.x for multi-layout dot in loop. Fallback to vectorized PyTorch on GPU.
@@ -539,6 +538,7 @@ class ChelaSlayAttention(BaseAttention):
         self.dim = _safe_int(
             kwargs.get("dim")
             or kwargs.get("hidden_size")
+            or kwargs.get("embed_dim")
             or kwargs.get("d_model")
             or _resolve_attr(config, "hidden_size", "d_model", "dim"),
             768,
@@ -1077,7 +1077,13 @@ class ChelaSlayAttention(BaseAttention):
             hw = head_mask_b.squeeze(-1).squeeze(-1)
             linear_out = linear_out * hw.unsqueeze(-1).to(linear_out.dtype)
 
-        g = torch.sigmoid(self.lora_gate(x)).transpose(1, 2).contiguous().unsqueeze(-1)
+        gate_w = self.lora_gate.weight.to(x.dtype) if self.lora_gate.weight.dtype != x.dtype else self.lora_gate.weight
+        gate_b = (
+            self.lora_gate.bias.to(x.dtype)
+            if (self.lora_gate.bias is not None and self.lora_gate.bias.dtype != x.dtype)
+            else self.lora_gate.bias
+        )
+        g = torch.sigmoid(F.linear(x, gate_w, gate_b)).transpose(1, 2).contiguous().unsqueeze(-1)
         fused = g * dense_out + (1.0 - g) * linear_out
         out = fused.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 

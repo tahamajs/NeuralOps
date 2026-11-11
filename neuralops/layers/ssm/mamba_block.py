@@ -33,9 +33,16 @@ except Exception as e:
     HAS_MAMBA_CUDA = False
 
 try:
-    from neuralops.ops.cuda.selective_scan.selective_scan_autograd import selective_scan as cuda_selective_scan
-except Exception:
+    from neuralops.ops.cuda.selective_scan.selective_scan_autograd import (
+        _get_module as _get_cuda_ss_module,
+        selective_scan as cuda_selective_scan,
+    )
+except Exception as _e:
+    logging.getLogger(__name__).warning("CUDA selective_scan unavailable: %s", _e)
     cuda_selective_scan = None
+    _get_cuda_ss_module = None
+
+_WARNED_CUDA_SS_UNAVAILABLE = False
 
 try:
     from neuralops.ops.triton.selective_scan import selective_scan_fn as triton_selective_scan
@@ -393,41 +400,38 @@ class MambaBlock(BaseAttention):
         """
         Recurrent selective scan with chunked activation checkpointing and bmm.
 
-        Fix 1: Split L into chunks of size chunk_size and checkpoint each chunk
-               during training to bound autograd memory to O(chunk_size).
-        Fix 2: Use torch.bmm instead of torch.einsum inside the loop for cuBLAS
-               acceleration and shared autograd backward kernels.
+        Computes discretized parameters inside each chunk so full-sequence
+        (B, d_inner, L, d_state) tensors are never retained in VRAM.
         """
         B, d_inner, L = u.shape
         d_state = A.shape[1]
 
         target_dtype = u.dtype
         h = (
-            state.to(target_dtype)
+            state.to(device=u.device, dtype=torch.float32)
             if state is not None
-            else torch.zeros(B, d_inner, d_state, device=u.device, dtype=target_dtype)
+            else torch.zeros(B, d_inner, d_state, device=u.device, dtype=torch.float32)
         )
 
-        delta = F.softplus(delta).to(target_dtype)
-        delta_a = delta.unsqueeze(-1) * A.view(1, d_inner, 1, d_state).to(target_dtype)
-        delta_a = torch.exp(delta_a).to(target_dtype)
-        delta_b_u = (delta.unsqueeze(-1) * B_ssm.permute(0, 2, 1).unsqueeze(1).to(target_dtype) * u.unsqueeze(-1)).to(
-            target_dtype
-        )
-        C_in = C_ssm.to(target_dtype)
+        A_f = A.float().view(1, d_inner, 1, d_state)
 
         def _scan_chunk(
             h_init: torch.Tensor,
-            da_c: torch.Tensor,
-            dbu_c: torch.Tensor,
+            u_c: torch.Tensor,
+            delta_c: torch.Tensor,
+            b_c: torch.Tensor,
             c_c: torch.Tensor,
         ) -> tuple[torch.Tensor, torch.Tensor]:
-            L_c = da_c.shape[2]
+            dt_c = F.softplus(delta_c.float())
+            da_c = torch.exp((dt_c.unsqueeze(-1) * A_f).clamp(-20.0, 0.0))
+            dbu_c = dt_c.unsqueeze(-1) * b_c.float().permute(0, 2, 1).unsqueeze(1) * u_c.float().unsqueeze(-1)
+            c_f = c_c.float()
+            L_c = u_c.shape[2]
             ys_c = []
             curr_h = h_init
             for i in range(L_c):
                 curr_h = da_c[:, :, i, :] * curr_h + dbu_c[:, :, i, :]
-                c_t = c_c[:, :, i].contiguous().unsqueeze(-1)
+                c_t = c_f[:, :, i].contiguous().unsqueeze(-1)
                 y_t = torch.bmm(curr_h, c_t).squeeze(-1)
                 ys_c.append(y_t)
             return torch.stack(ys_c, dim=-1), curr_h
@@ -435,35 +439,38 @@ class MambaBlock(BaseAttention):
         ys_all = []
         import torch.utils.checkpoint as cp
 
-        use_cp = self.training and torch.is_grad_enabled()
+        use_cp = torch.is_grad_enabled()
 
         for s in range(0, L, chunk_size):
             e = min(s + chunk_size, L)
-            da_slice = delta_a[:, :, s:e, :]
-            dbu_slice = delta_b_u[:, :, s:e, :]
-            c_slice = C_in[:, :, s:e]
+            u_slice = u[:, :, s:e]
+            dt_slice = delta[:, :, s:e]
+            b_slice = B_ssm[:, :, s:e]
+            c_slice = C_ssm[:, :, s:e]
 
             if use_cp:
                 y_chunk, h = cp.checkpoint(
                     _scan_chunk,
                     h,
-                    da_slice,
-                    dbu_slice,
+                    u_slice,
+                    dt_slice,
+                    b_slice,
                     c_slice,
                     use_reentrant=False,
                 )
             else:
                 y_chunk, h = _scan_chunk(
                     h,
-                    da_slice,
-                    dbu_slice,
+                    u_slice,
+                    dt_slice,
+                    b_slice,
                     c_slice,
                 )
             ys_all.append(y_chunk)
 
-        y = torch.cat(ys_all, dim=-1)
+        y = torch.cat(ys_all, dim=-1).to(target_dtype)
         y = y + u * D.view(1, d_inner, 1).to(target_dtype)
-        return y, h
+        return y, h.to(target_dtype)
 
     def _parallel_scan(
         self,
@@ -481,34 +488,48 @@ class MambaBlock(BaseAttention):
           Path 3: Fast chunked parallel scan (framework.core.selective_scan, O(1) ops per chunk)
           Path 4: Chunked recurrent scan with activation checkpointing (failsafe fallback)
         """
+        global _WARNED_CUDA_SS_UNAVAILABLE
+        B_sz, D_dim, L_sz = u.shape
+        N_state = A.shape[1]
+        is_pow2_n = N_state > 0 and (N_state & (N_state - 1)) == 0
+        ws_bytes = B_sz * D_dim * L_sz * N_state * 4
+        allow_full_ws = (not torch.is_grad_enabled()) or (ws_bytes <= 32 * 1024 * 1024)
+
         # Level 1 Native CUDA C++ (128-bit register cached)
-        if cuda_selective_scan is not None and u.is_cuda and A.shape[1] <= 128:
-            try:
-                # cuda_selective_scan expects raw delta (or delta if softplus handled inside/outside)
-                delta_sp = F.softplus(delta)
-                res = cuda_selective_scan(u, delta_sp, A, B_ssm, C_ssm, D)
-                return res[0] if isinstance(res, tuple) else res
-            except Exception as e:
-                logger.debug("Level 1 CUDA selective_scan failed (%s); trying Level 2 Triton.", e)
+        if cuda_selective_scan is not None and u.is_cuda and N_state <= 128 and allow_full_ws:
+            cuda_mod = _get_cuda_ss_module() if _get_cuda_ss_module is not None else None
+            if cuda_mod is not None:
+                try:
+                    delta_sp = F.softplus(delta)
+                    res = cuda_selective_scan(u, delta_sp, A, B_ssm, C_ssm, D)
+                    return res[0] if isinstance(res, tuple) else res
+                except Exception as e:
+                    logger.warning("Level 1 CUDA selective_scan failed (%s); trying Level 2 Triton.", e)
+            elif not _WARNED_CUDA_SS_UNAVAILABLE:
+                _WARNED_CUDA_SS_UNAVAILABLE = True
+                logger.warning(
+                    "MambaBlock: CUDA selective_scan extension unavailable (compilation failed); "
+                    "falling back to Level 2 Triton / chunked PyTorch."
+                )
 
         # Level 2 Triton JIT (In-SRAM zero-alloc)
-        if HAS_TRITON_MAMBA and triton_selective_scan is not None and u.is_cuda:
+        if HAS_TRITON_MAMBA and triton_selective_scan is not None and u.is_cuda and is_pow2_n and allow_full_ws:
             try:
                 y = triton_selective_scan(
                     u.transpose(1, 2).contiguous(),
                     delta.transpose(1, 2).contiguous(),
-                    A,
+                    A.contiguous(),
                     B_ssm.transpose(1, 2).contiguous(),
                     C_ssm.transpose(1, 2).contiguous(),
-                    D,
+                    D.contiguous() if D is not None else None,
                     delta_softplus=True,
                 )
                 return y.transpose(1, 2).contiguous()
             except Exception as e:
                 logger.warning("Level 2 Triton selective_scan failed: %s; trying Level 3 fallback.", e)
 
-        # Level 3 PyTorch Reference / Core Dispatcher Fallback
-        if selective_scan is not None:
+        # Level 3 PyTorch Reference / Core Dispatcher Fallback (when workspace fits budget or non-CUDA)
+        if selective_scan is not None and ((not u.is_cuda) or allow_full_ws):
             try:
                 return selective_scan(
                     u=u,
@@ -520,9 +541,9 @@ class MambaBlock(BaseAttention):
                     delta_softplus=True,
                 )
             except Exception as e:
-                logger.debug("Core selective_scan dispatch failed (%s); trying recurrent scan.", e)
+                logger.warning("Core selective_scan dispatch failed (%s); using chunked recurrent scan.", e)
 
-        y, _ = self._recurrent_scan(u, delta, A, B_ssm, C_ssm, D, None)
+        y, _ = self._recurrent_scan(u, delta, A, B_ssm, C_ssm, D, None, chunk_size=32)
         return y
 
     def forward(

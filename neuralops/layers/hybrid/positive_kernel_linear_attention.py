@@ -528,30 +528,55 @@ class PositiveKernelLinearAttention(BaseAttention):
         K_feat: torch.Tensor,
         V: torch.Tensor,
         past_len: int,
+        chunk_size: int = 64,
     ) -> torch.Tensor:
-        """Fully vectorized causal linear attention.
+        """Chunked dual-form causal linear attention.
 
-        Uses cumsum over the full KV history, then slices at query positions
-        to get the causal state. Handles both training (N == N_kv) and decode
-        (N == 1) uniformly.
-
-        Complexity: O(N_kv · F · d) memory, O(N · F · d) time.
+        Processes queries in chunks of `chunk_size` using intra-chunk masked
+        QK^T products and recurrently updated (F, d) KV states, avoiding
+        O(N_kv * F * d) 5D tensor allocations.
         """
         B, H, N, F_dim = Q_feat.shape
-        N_kv = K_feat.shape[2]
+        D = V.shape[-1]
+        device = Q_feat.device
+        dtype = Q_feat.dtype
 
-        KV_outer = K_feat.unsqueeze(-1) * V.unsqueeze(-2)
-        KV_cumsum = KV_outer.cumsum(dim=2)
-        K_cumsum = K_feat.cumsum(dim=2)
+        state_kv = torch.zeros(B, H, F_dim, D, device=device, dtype=dtype)
+        state_k = torch.zeros(B, H, F_dim, device=device, dtype=dtype)
 
-        KV_at_q = KV_cumsum[:, :, past_len : past_len + N, :, :]
-        K_at_q = K_cumsum[:, :, past_len : past_len + N, :]
+        if past_len > 0:
+            for p_start in range(0, past_len, chunk_size):
+                p_end = min(p_start + chunk_size, past_len)
+                Kp = K_feat[:, :, p_start:p_end]
+                Vp = V[:, :, p_start:p_end]
+                state_kv = state_kv + torch.matmul(Kp.transpose(-2, -1), Vp)
+                state_k = state_k + Kp.sum(dim=2)
 
-        num = torch.matmul(Q_feat.unsqueeze(-2), KV_at_q).squeeze(-2)
+        outputs = []
+        for start in range(0, N, chunk_size):
+            end = min(start + chunk_size, N)
+            Qc = Q_feat[:, :, start:end]
+            Kc = K_feat[:, :, past_len + start : past_len + end]
+            Vc = V[:, :, past_len + start : past_len + end]
 
-        den = torch.einsum("bhnf,bhnf->bhn", Q_feat, K_at_q).unsqueeze(-1).clamp(min=1e-5)
+            intra_scores = torch.matmul(Qc, Kc.transpose(-2, -1)).tril()
+            if start == 0 and past_len == 0:
+                num = torch.matmul(intra_scores, Vc)
+                den = intra_scores.sum(dim=-1).unsqueeze(-1).clamp(min=1e-5)
+            else:
+                num = torch.matmul(Qc, state_kv) + torch.matmul(intra_scores, Vc)
+                den = (
+                    (torch.matmul(Qc, state_k.unsqueeze(-1)).squeeze(-1) + intra_scores.sum(dim=-1))
+                    .unsqueeze(-1)
+                    .clamp(min=1e-5)
+                )
+            outputs.append(num / den)
 
-        return num / den
+            if end < N:
+                state_kv = state_kv + torch.matmul(Kc.transpose(-2, -1), Vc)
+                state_k = state_k + Kc.sum(dim=2)
+
+        return torch.cat(outputs, dim=2) if len(outputs) > 1 else outputs[0]
 
     _read_past_kv = staticmethod(_read_past_kv)
 

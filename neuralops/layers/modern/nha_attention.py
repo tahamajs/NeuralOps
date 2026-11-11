@@ -30,7 +30,7 @@ from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
-_DENOM_EPS = 1e-5
+_DENOM_EPS = 1e-4
 
 
 @ATTENTION_REGISTRY.register("nha_attention", supports_causal=True, supports_gqa=True)
@@ -415,8 +415,7 @@ class NativeHybridAttention(BaseAttention):
         else:
             band_mask = (q_idx - k_idx).abs() > self.window_size
 
-        attn_mask = torch.zeros((B, 1, N_q, N_k), device=device, dtype=dtype)
-        attn_mask.masked_fill_(band_mask.unsqueeze(0).unsqueeze(0), -1e4)
+        combined_mask = band_mask.unsqueeze(0).unsqueeze(0).expand(B, 1, N_q, N_k)
 
         if valid_mask is not None:
             if valid_mask.shape[-1] != N_k:
@@ -426,26 +425,34 @@ class NativeHybridAttention(BaseAttention):
                         [valid_mask, torch.ones(B, pad, device=device, dtype=torch.bool)],
                         dim=1,
                     )
+                else:
+                    valid_mask = valid_mask[:, :N_k]
             pad_mask = ~valid_mask.unsqueeze(1).unsqueeze(2)
-            attn_mask.masked_fill_(pad_mask, -1e4)
+            combined_mask = combined_mask | pad_mask
 
+        # Guard rows where every key is masked so softmax/exp never produces NaNs
+        all_masked = combined_mask.all(dim=-1, keepdim=True)
+        safe_mask = combined_mask.clone()
+        if all_masked.any():
+            safe_mask[..., 0:1] = safe_mask[..., 0:1] & (~all_masked)
+
+        Q_f = Q.float()
+        K_f = K.float()
+        V_f = V.float()
+        scale = 1.0 / math.sqrt(d)
+        mask_val = torch.finfo(torch.float32).min
+
+        scores = torch.matmul(Q_f, K_f.transpose(-2, -1)) * scale
+        scores = scores.masked_fill(safe_mask, mask_val)
+        scores_max = scores.amax(dim=-1, keepdim=True).detach()
+        exp_scores = torch.exp((scores - scores_max).clamp(max=0.0)).masked_fill(safe_mask, 0.0)
+        denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=_DENOM_EPS)
+        attn = (exp_scores / denom).masked_fill(all_masked, 0.0)
+
+        attn_drop = self.dropout(attn)
+        out = torch.matmul(attn_drop, V_f)
         if output_attentions:
-            scale = 1.0 / math.sqrt(d)
-            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1)) * scale
-            scores = scores + attn_mask
-            attn = torch.nan_to_num(F.softmax(scores, dim=-1), nan=0.0).to(dtype)
-            attn = self.dropout(attn)
-            out = torch.matmul(attn, V)
-            return out, attn
-
-        out = F.scaled_dot_product_attention(
-            Q,
-            K,
-            V,
-            attn_mask=attn_mask,
-            dropout_p=self.dropout.p if self.training else 0.0,
-            is_causal=False,
-        )
+            return out, attn.to(dtype)
         return out, None
 
     def _global_rff_attention_chunked(self, Q, K, V, valid_mask, is_causal=False, past_len=0):
@@ -453,7 +460,6 @@ class NativeHybridAttention(BaseAttention):
         N_k = K.shape[-2]
         m = self.rff_features
         device = Q.device
-        dtype = Q.dtype
 
         scale = d**-0.25
         Q_fp32 = Q.float()
@@ -469,6 +475,15 @@ class NativeHybridAttention(BaseAttention):
         phi_K = (F.elu(Kf) + 1.0) * norm
 
         if valid_mask is not None:
+            if valid_mask.shape[-1] != N_k:
+                pad = N_k - valid_mask.shape[-1]
+                if pad > 0:
+                    valid_mask = torch.cat(
+                        [valid_mask, torch.ones(B, pad, device=device, dtype=torch.bool)],
+                        dim=1,
+                    )
+                else:
+                    valid_mask = valid_mask[:, :N_k]
             kv_mask = valid_mask.unsqueeze(1).unsqueeze(-1).float()
             phi_K = phi_K * kv_mask
             V_masked = V_fp32 * kv_mask
@@ -480,40 +495,55 @@ class NativeHybridAttention(BaseAttention):
             Z = phi_K.sum(dim=-2, keepdim=True)
             num = torch.matmul(phi_Q, KV)
             den = torch.matmul(phi_Q, Z.transpose(-2, -1)).clamp(min=_DENOM_EPS)
-            return (num / den).to(dtype)
+            return num / den
 
-        from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+        # Chunked vectorized causal linear attention strictly in FP32
+        prefix_len = max(0, N_k - N_q)
+        if prefix_len > 0:
+            phi_K_past = phi_K[:, :, :prefix_len, :]
+            V_past = V_masked[:, :, :prefix_len, :]
+            S_init = torch.matmul(phi_K_past.transpose(-2, -1), V_past)
+            Z_init = phi_K_past.sum(dim=-2)
+            phi_K_cur = phi_K[:, :, prefix_len : prefix_len + N_q, :]
+            V_cur = V_masked[:, :, prefix_len : prefix_len + N_q, :]
+        else:
+            S_init = torch.zeros((B, H, m, d), device=device, dtype=torch.float32)
+            Z_init = torch.zeros((B, H, m), device=device, dtype=torch.float32)
+            phi_K_cur = phi_K[:, :, :N_q, :]
+            V_cur = V_masked[:, :, :N_q, :]
 
-        if (
-            HAS_TRITON
-            and not FORCE_PYTORCH_FALLBACK
-            and Q.is_cuda
-            and past_len == 0
-            and valid_mask is None
-            and phi_Q.shape[-1] <= 128
-        ):
-            try:
-                from neuralops.ops.triton.linear_attn import fused_svd_linear_chunk_scan_triton
+        chunk_size = 64
+        pad_len = (chunk_size - (N_q % chunk_size)) % chunk_size
+        if pad_len > 0:
+            q_p = F.pad(phi_Q, (0, 0, 0, pad_len))
+            k_p = F.pad(phi_K_cur, (0, 0, 0, pad_len))
+            v_p = F.pad(V_cur, (0, 0, 0, pad_len))
+        else:
+            q_p, k_p, v_p = phi_Q, phi_K_cur, V_cur
 
-                return fused_svd_linear_chunk_scan_triton(
-                    phi_Q.to(dtype), phi_K.to(dtype), V_masked.to(dtype), chunk_size=64, eps=_DENOM_EPS
-                ).to(dtype)
-            except Exception:
-                # allowed-swallow: best-effort-telemetry
-                pass
+        num_chunks = q_p.shape[2] // chunk_size
+        q_blk = q_p.view(B, H, num_chunks, chunk_size, m)
+        k_blk = k_p.view(B, H, num_chunks, chunk_size, m)
+        v_blk = v_p.view(B, H, num_chunks, chunk_size, d)
 
-        scores_lin = torch.matmul(phi_Q, phi_K.transpose(-2, -1))
+        kv_chunks = torch.matmul(k_blk.transpose(-1, -2), v_blk)
+        z_chunks = k_blk.sum(dim=-2)
 
-        q_idx = torch.arange(N_q, device=device).unsqueeze(1)
-        k_idx = torch.arange(N_k, device=device).unsqueeze(0)
-        causal_mask = k_idx <= (q_idx + past_len)
+        S_prefix = torch.cumsum(kv_chunks, dim=2) - kv_chunks + S_init.unsqueeze(2)
+        Z_prefix = torch.cumsum(z_chunks, dim=2) - z_chunks + Z_init.unsqueeze(2)
 
-        scores_lin = scores_lin.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), 0.0)
+        num_inter = torch.matmul(q_blk, S_prefix)
+        den_inter = (q_blk * Z_prefix.unsqueeze(-2)).sum(dim=-1, keepdim=True)
 
-        denom = scores_lin.sum(dim=-1, keepdim=True).clamp(min=_DENOM_EPS)
-        out = torch.matmul(scores_lin, V_masked) / denom
+        causal_C = torch.tril(torch.ones((chunk_size, chunk_size), device=device, dtype=torch.bool))
+        scores_intra = torch.matmul(q_blk, k_blk.transpose(-1, -2)).masked_fill(~causal_C, 0.0)
+        num_intra = torch.matmul(scores_intra, v_blk)
+        den_intra = scores_intra.sum(dim=-1, keepdim=True)
 
-        return out.to(dtype)
+        denom = (den_inter + den_intra).clamp(min=_DENOM_EPS)
+        out = (num_inter + num_intra) / denom
+        out = out.reshape(B, H, num_chunks * chunk_size, d)[:, :, :N_q, :]
+        return out
 
     _read_past_kv = staticmethod(_read_past_kv)
 
@@ -605,11 +635,11 @@ class NativeHybridAttention(BaseAttention):
             Q, K_full, V_full, all_valid, is_causal=is_causal, past_len=past_len
         )
 
-        gate = torch.sigmoid(self.gate(hidden_states)).unsqueeze(-1).permute(0, 2, 1, 3)
+        gate = torch.sigmoid(self.gate(hidden_states).float()).unsqueeze(-1).permute(0, 2, 1, 3)
         out = gate * local_out + (1.0 - gate) * global_out
 
         if head_mask is not None:
-            hm = head_mask.to(out.dtype)
+            hm = head_mask.float()
             if hm.dim() == 1:
                 hm = hm.view(1, -1, 1, 1)
             elif hm.dim() == 2:
@@ -619,7 +649,13 @@ class NativeHybridAttention(BaseAttention):
             out = out * hm
 
         out = out.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
-        out = out * self.output_scale
+        out = out * self.output_scale.float()
+
+        orig_dtype = hidden_states.dtype
+        if orig_dtype == torch.float16:
+            fmax = torch.finfo(orig_dtype).max * 0.5
+            out = out.clamp(min=-fmax, max=fmax)
+        out = out.to(orig_dtype)
 
         if not self.is_nested_encoder:
             out = self.out_proj(out)

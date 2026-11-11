@@ -255,18 +255,25 @@ class HybridAttention(BaseAttention):
         B, H, N, Dh = Q.shape
         N_k = K.shape[2]
 
-        can_sdpa = (not self.training or self.dropout.p == 0.0) and True
+        can_sdpa = hasattr(F, "scaled_dot_product_attention")
         if can_sdpa:
             try:
                 q_sdp = maybe_half(Q)
                 k_sdp = maybe_half(K)
                 v_sdp = maybe_half(V)
 
-                attn_bias_sdp = None
-                if valid_mask is not None:
-                    attn_bias_sdp = ((valid_mask[:, None, None, :].float() - 1.0) * 1e4).to(q_sdp.dtype)
-
+                has_padding = valid_mask is not None and not bool(valid_mask.all())
                 is_causal_sdp = self.is_decoder and past_len == 0 and N > 1
+                attn_bias_sdp = None
+                if has_padding:
+                    attn_bias_sdp = ((valid_mask[:, None, None, :].float() - 1.0) * 1e4).to(q_sdp.dtype)
+                    if is_causal_sdp:
+                        causal_t = torch.triu(
+                            torch.full((N, N_k), -1e4, device=Q.device, dtype=q_sdp.dtype),
+                            diagonal=N_k - N + 1,
+                        )
+                        attn_bias_sdp = attn_bias_sdp + causal_t.unsqueeze(0).unsqueeze(0)
+                        is_causal_sdp = False
 
                 out_sdp = F.scaled_dot_product_attention(
                     q_sdp,
@@ -282,32 +289,50 @@ class HybridAttention(BaseAttention):
                 logger.debug("SDPA fast path failed: %s; falling back to manual.", e)
 
         scale = 1.0 / math.sqrt(Dh)
-        scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
+        chunk_size = 64
+        outputs = []
+        for start in range(0, N, chunk_size):
+            end = min(start + chunk_size, N)
+            q_c = Q[:, :, start:end]
+            k_end = min(N_k, past_len + end) if (self.is_decoder and N > 1) else N_k
+            k_c = K[:, :, :k_end]
+            v_c = V[:, :, :k_end]
 
-        if self.is_decoder and N > 1:
-            if past_len > 0:
-                abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)
-                abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
+            scores_c = torch.matmul(q_c.float(), k_c.float().transpose(-2, -1)) * scale
+
+            if self.is_decoder and N > 1:
+                abs_q = (past_len + torch.arange(start, end, device=Q.device)).unsqueeze(1)
+                abs_k = torch.arange(k_end, device=Q.device).unsqueeze(0)
                 causal_mask = abs_k <= abs_q
-            else:
-                causal_mask = torch.tril(torch.ones(N, N_k, device=Q.device, dtype=torch.bool))
-            scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
+                scores_c = scores_c.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
 
-        if valid_mask is not None:
-            scores = scores.masked_fill(~valid_mask[:, None, None, :].bool(), -1e4)
-        elif attention_mask is not None:
-            if attention_mask.dim() == 2:
-                ext_mask = (1.0 - attention_mask.unsqueeze(1).unsqueeze(2).float()) * -1e4
-                scores = scores + ext_mask.to(scores.dtype)
-            elif attention_mask.dim() == 3:
-                scores = scores + attention_mask.unsqueeze(1).to(scores.dtype)
-            elif attention_mask.dim() == 4:
-                scores = scores + attention_mask.to(scores.dtype)
+            if valid_mask is not None:
+                scores_c = scores_c.masked_fill(~valid_mask[:, None, None, :k_end].bool(), -1e4)
+            elif attention_mask is not None:
+                if attention_mask.dim() == 2:
+                    ext_mask = (1.0 - attention_mask[:, :k_end].unsqueeze(1).unsqueeze(2).float()) * -1e4
+                    scores_c = scores_c + ext_mask.to(scores_c.dtype)
+                elif attention_mask.dim() == 3:
+                    m3 = (
+                        attention_mask[:, :, :k_end]
+                        if attention_mask.shape[1] == 1
+                        else attention_mask[:, start:end, :k_end]
+                    )
+                    scores_c = scores_c + m3.unsqueeze(1).to(scores_c.dtype)
+                elif attention_mask.dim() == 4:
+                    m4 = (
+                        attention_mask[:, :, :, :k_end]
+                        if attention_mask.shape[2] == 1
+                        else attention_mask[:, :, start:end, :k_end]
+                    )
+                    scores_c = scores_c + m4.to(scores_c.dtype)
 
-        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-        attn = F.softmax(scores, dim=-1).to(Q.dtype)
-        attn = self.dropout(attn)
-        return torch.matmul(attn, V)
+            scores_c = torch.nan_to_num(scores_c, nan=-1e4, posinf=1e4, neginf=-1e4)
+            attn_c = F.softmax(scores_c, dim=-1).to(Q.dtype)
+            attn_c = self.dropout(attn_c)
+            outputs.append(torch.matmul(attn_c, v_c))
+
+        return torch.cat(outputs, dim=2) if len(outputs) > 1 else outputs[0]
 
     def _linear_branch(
         self,
@@ -352,7 +377,7 @@ class HybridAttention(BaseAttention):
                         # allowed-swallow: best-effort-telemetry
                         pass
 
-                chunk_size = 128
+                chunk_size = 64
                 num_chunks = (N_h + chunk_size - 1) // chunk_size
 
                 state_KV = torch.zeros(B_h, H_h, D_h, D_h, device=phi_Q.device, dtype=phi_Q.dtype)
@@ -369,24 +394,25 @@ class HybridAttention(BaseAttention):
                     phi_K_c = phi_K[:, :, s:e]
                     V_c = V_f[:, :, s:e]
 
-                    KV_c = torch.einsum("bhnd,bhne->bhnde", phi_K_c, V_c)
-                    KV_c_cumsum = torch.cumsum(KV_c, dim=2)
-                    num_intra = torch.einsum("bhnd,bhnde->bhne", phi_Q_c, KV_c_cumsum)
+                    intra_scores = torch.matmul(phi_Q_c, phi_K_c.transpose(-2, -1)).tril()
+                    num_intra = torch.matmul(intra_scores, V_c)
+                    den_intra = intra_scores.sum(dim=-1)
 
-                    K_c_cumsum = torch.cumsum(phi_K_c, dim=2)
-                    den_intra = torch.einsum("bhnd,bhnd->bhn", phi_Q_c, K_c_cumsum)
+                    if c == 0:
+                        num_list.append(num_intra)
+                        den_list.append(den_intra)
+                    else:
+                        num_inter = torch.matmul(phi_Q_c, state_KV)
+                        den_inter = torch.matmul(phi_Q_c, state_K.unsqueeze(-1)).squeeze(-1)
+                        num_list.append(num_intra + num_inter)
+                        den_list.append(den_intra + den_inter)
 
-                    num_inter = torch.einsum("bhnd,bhde->bhne", phi_Q_c, state_KV)
-                    den_inter = torch.einsum("bhnd,bhd->bhn", phi_Q_c, state_K)
+                    if c + 1 < num_chunks:
+                        state_KV = state_KV + torch.matmul(phi_K_c.transpose(-2, -1), V_c)
+                        state_K = state_K + phi_K_c.sum(dim=2)
 
-                    num_list.append(num_intra + num_inter)
-                    den_list.append(den_intra + den_inter)
-
-                    state_KV = state_KV + KV_c_cumsum[:, :, -1]
-                    state_K = state_K + K_c_cumsum[:, :, -1]
-
-                num = torch.cat(num_list, dim=2)
-                den = torch.cat(den_list, dim=2).unsqueeze(-1)
+                num = torch.cat(num_list, dim=2) if len(num_list) > 1 else num_list[0]
+                den = (torch.cat(den_list, dim=2) if len(den_list) > 1 else den_list[0]).unsqueeze(-1)
             else:
                 KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V_f)
                 Z = phi_K.sum(dim=-2, keepdim=True)

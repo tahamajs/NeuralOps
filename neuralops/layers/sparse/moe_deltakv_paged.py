@@ -92,10 +92,12 @@ def simulate_paged_delta_kv(
     max_delta_error: float = 0.35,
 ) -> tuple[torch.Tensor, torch.Tensor, float, float]:
     """
-    Delta-KV temporal compression with reconstruction-error guard.
+    Delta-KV temporal compression with reconstruction-error guard and STE gradient pass-through.
 
     MDP-FIX-02: if the reconstruction error exceeds `max_delta_error`, the
     raw K/V is returned instead of the compressed version.
+    Runs SVD/quantization under no_grad and uses STE (K + (K_hat - K).detach())
+    so singular-value degeneracies in torch.linalg.svd backward never produce NaNs.
 
     Returns (K_hat, V_hat, err_K, err_V).
     """
@@ -103,22 +105,25 @@ def simulate_paged_delta_kv(
     if N <= 1:
         return K, V, 0.0, 0.0
 
-    delta_K = K[:, :, 1:, :] - K[:, :, :-1, :]
-    delta_V = V[:, :, 1:, :] - V[:, :, :-1, :]
+    with torch.no_grad():
+        delta_K = K[:, :, 1:, :] - K[:, :, :-1, :]
+        delta_V = V[:, :, 1:, :] - V[:, :, :-1, :]
 
-    delta_K_hat, err_K = low_rank_delta_compress(delta_K, rank, bits)
-    delta_V_hat, err_V = low_rank_delta_compress(delta_V, rank, bits)
+        delta_K_hat, err_K = low_rank_delta_compress(delta_K, rank, bits)
+        delta_V_hat, err_V = low_rank_delta_compress(delta_V, rank, bits)
 
-    if err_K > max_delta_error or err_V > max_delta_error:
-        return K, V, err_K, err_V
+        if err_K > max_delta_error or err_V > max_delta_error:
+            return K, V, err_K, err_V
 
-    K_hat = torch.empty_like(K)
-    V_hat = torch.empty_like(V)
-    K_hat[:, :, 0, :] = K[:, :, 0, :]
-    V_hat[:, :, 0, :] = V[:, :, 0, :]
-    K_hat[:, :, 1:, :] = K[:, :, 0:1, :] + torch.cumsum(delta_K_hat, dim=2)
-    V_hat[:, :, 1:, :] = V[:, :, 0:1, :] + torch.cumsum(delta_V_hat, dim=2)
+        K_hat_val = torch.empty_like(K)
+        V_hat_val = torch.empty_like(V)
+        K_hat_val[:, :, 0, :] = K[:, :, 0, :]
+        V_hat_val[:, :, 0, :] = V[:, :, 0, :]
+        K_hat_val[:, :, 1:, :] = K[:, :, 0:1, :] + torch.cumsum(delta_K_hat, dim=2)
+        V_hat_val[:, :, 1:, :] = V[:, :, 0:1, :] + torch.cumsum(delta_V_hat, dim=2)
 
+    K_hat = K + (K_hat_val - K).detach()
+    V_hat = V + (V_hat_val - V).detach()
     return K_hat, V_hat, err_K, err_V
 
 
@@ -615,17 +620,22 @@ class MoEDeltaKVPagedAttention(BaseAttention):
         valid_mask: torch.Tensor,
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, H, N, d = q.shape
+        device = q.device
         page_size = self.page_size
         num_pages = (N + page_size - 1) // page_size
         pad_len = num_pages * page_size - N
 
+        q_f = q.float()
+        k_f = k_hat.float()
+        v_f = v_hat.float()
+
         if pad_len > 0:
-            q_pad = F.pad(q, (0, 0, 0, pad_len))
-            k_pad = F.pad(k_hat, (0, 0, 0, pad_len))
-            v_pad = F.pad(v_hat, (0, 0, 0, pad_len))
+            q_pad = F.pad(q_f, (0, 0, 0, pad_len))
+            k_pad = F.pad(k_f, (0, 0, 0, pad_len))
+            v_pad = F.pad(v_f, (0, 0, 0, pad_len))
             valid_pad = F.pad(valid_mask, (0, pad_len), value=False)
         else:
-            q_pad, k_pad, v_pad, valid_pad = q, k_hat, v_hat, valid_mask
+            q_pad, k_pad, v_pad, valid_pad = q_f, k_f, v_f, valid_mask
 
         padded_N = num_pages * page_size
 
@@ -639,25 +649,27 @@ class MoEDeltaKVPagedAttention(BaseAttention):
         q_bar = (q_blocks * valid_blocks.unsqueeze(-1)).sum(dim=3) / valid_sum
         k_bar = (k_blocks * valid_blocks.unsqueeze(-1)).sum(dim=3) / valid_sum
 
-        rg_dtype = self.W_rg.weight.dtype if hasattr(self.W_rg, "weight") else q_bar.dtype
         router_logits = torch.matmul(
-            self.W_rg(q_bar.to(rg_dtype)), k_bar.to(rg_dtype).transpose(-1, -2).contiguous()
+            self.W_rg(q_bar.to(self.W_rg.weight.dtype)).float(),
+            k_bar.transpose(-1, -2).contiguous(),
         ) / math.sqrt(d)
 
         page_valid = valid_pad.view(B, 1, num_pages, page_size).any(dim=-1)
-        router_logits = router_logits.masked_fill(~page_valid.unsqueeze(2), float("-inf"))
-
+        router_invalid = ~page_valid.unsqueeze(2).expand(B, 1, num_pages, num_pages)
         if self.is_causal:
-            causal_pages = torch.tril(torch.ones(num_pages, num_pages, device=q.device, dtype=torch.bool))
-            router_logits = router_logits.masked_fill(~causal_pages, float("-inf"))
+            causal_pages = torch.tril(torch.ones(num_pages, num_pages, device=device, dtype=torch.bool))
+            router_invalid = router_invalid | (~causal_pages.unsqueeze(0).unsqueeze(0))
 
-        router_logits = torch.nan_to_num(router_logits, nan=-1e4, posinf=1e4, neginf=-1e4)
+        router_all_masked = router_invalid.all(dim=-1, keepdim=True)
+        router_safe_mask = router_invalid.clone()
+        if router_all_masked.any():
+            router_safe_mask[..., 0:1] = router_safe_mask[..., 0:1] & (~router_all_masked)
+
+        f32_min = torch.finfo(torch.float32).min
+        router_logits = router_logits.masked_fill(router_safe_mask, f32_min)
 
         router_logits_for_topk = router_logits.clone()
-        if self.is_causal:
-            router_logits_for_topk[:, :, :, 0] = router_logits_for_topk[:, :, :, 0] + 1e4
-        else:
-            router_logits_for_topk[:, :, :, 0] = router_logits_for_topk[:, :, :, 0] + 1e4
+        router_logits_for_topk[:, :, :, 0] = router_logits_for_topk[:, :, :, 0] + 1e4
 
         k_experts = min(self.k_experts, num_pages)
         _, topk_indices = torch.topk(router_logits_for_topk, k_experts, dim=-1)
@@ -681,33 +693,37 @@ class MoEDeltaKVPagedAttention(BaseAttention):
         exp_valid_idx = topk_indices.unsqueeze(-1).expand(-1, -1, -1, -1, page_size)
         valid_blocks_exp_h = valid_blocks_exp.expand(-1, H, -1, -1, -1)
         k_valid = torch.gather(valid_blocks_exp_h, dim=3, index=exp_valid_idx)
+        attn_invalid = ~k_valid.bool().unsqueeze(-2).expand(-1, -1, -1, -1, page_size, -1)
+
+        if self.is_causal:
+            q_pos = (
+                torch.arange(num_pages, device=device).view(1, 1, num_pages, 1, 1, 1) * page_size
+                + torch.arange(page_size, device=device).view(1, 1, 1, 1, page_size, 1)
+            )
+            k_pos = (
+                topk_indices.unsqueeze(-1).unsqueeze(-1) * page_size
+                + torch.arange(page_size, device=device).view(1, 1, 1, 1, 1, page_size)
+            )
+            attn_invalid = attn_invalid | (k_pos > q_pos)
+
+        attn_all_masked = attn_invalid.all(dim=-1, keepdim=True)
+        attn_safe_mask = attn_invalid.clone()
+        if attn_all_masked.any():
+            attn_safe_mask[..., 0:1] = attn_safe_mask[..., 0:1] & (~attn_all_masked)
 
         q_exp = q_blocks.unsqueeze(3)
         attn_scores = torch.matmul(q_exp, k_gathered.transpose(-1, -2).contiguous()) / math.sqrt(d)
-        attn_scores = attn_scores.masked_fill(~k_valid.bool().unsqueeze(-2), -1e4)
-        attn_scores = torch.nan_to_num(attn_scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+        attn_scores = attn_scores.masked_fill(attn_safe_mask, f32_min)
 
-        attn_probs = F.softmax(attn_scores, dim=-1)
-        attn_probs = self.dropout(attn_probs)
+        scores_max = attn_scores.amax(dim=-1, keepdim=True).detach()
+        exp_scores = torch.exp((attn_scores - scores_max).clamp(max=0.0)).masked_fill(attn_safe_mask, 0.0)
+        attn_den = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-4)
+        attn_probs = (exp_scores / attn_den).masked_fill(attn_all_masked, 0.0)
+        attn_probs_drop = self.dropout(attn_probs)
 
-        context_per_expert = torch.matmul(attn_probs, v_gathered)
-
-        if context_per_expert.is_cuda and g_j.is_cuda:
-            try:
-                from neuralops.ops.triton.sparse_attn import fused_topk_sparse_route_and_combine_triton
-
-                B_e, H_e, P_e, K_e, S_e, D_e = context_per_expert.shape
-                ctx_flat = context_per_expert.view(B_e * H_e * P_e, K_e, S_e * D_e)
-                g_flat = g_j.view(B_e * H_e * P_e, K_e)
-                combined = fused_topk_sparse_route_and_combine_triton(ctx_flat, g_flat, top_k=K_e)
-                context = combined.view(B_e, H_e, P_e, S_e, D_e)
-            except Exception:
-                g_j_exp = g_j.unsqueeze(-1).unsqueeze(-1)
-                context = (context_per_expert * g_j_exp).sum(dim=3)
-        else:
-            g_j_exp = g_j.unsqueeze(-1).unsqueeze(-1)
-            context = (context_per_expert * g_j_exp).sum(dim=3)
-
+        context_per_expert = torch.matmul(attn_probs_drop, v_gathered)
+        g_j_exp = g_j.unsqueeze(-1).unsqueeze(-1)
+        context = (context_per_expert * g_j_exp).sum(dim=3)
         context = context.reshape(B, H, padded_N, d)
 
         return context, attn_probs
@@ -750,12 +766,8 @@ class MoEDeltaKVPagedAttention(BaseAttention):
             cos, sin = position_embeddings
             q, k = apply_rotary_pos_emb(q, k, cos, sin)
 
-        if H_kv != H:
-            k = repeat_kv(k, self.kv_repeat)
-            v = repeat_kv(v, self.kv_repeat)
-
         if self.enable_deltakv and kv_len > 1:
-            k_hat, v_hat, err_k, err_v = simulate_paged_delta_kv(
+            k_hat_kv, v_hat_kv, err_k, err_v = simulate_paged_delta_kv(
                 k,
                 v,
                 rank=self.svd_rank,
@@ -766,7 +778,13 @@ class MoEDeltaKVPagedAttention(BaseAttention):
                 self.delta_kv_error_k.copy_(torch.tensor(err_k, device=device))
                 self.delta_kv_error_v.copy_(torch.tensor(err_v, device=device))
         else:
-            k_hat, v_hat = k, v
+            k_hat_kv, v_hat_kv = k, v
+
+        if H_kv != H:
+            k_hat = repeat_kv(k_hat_kv, self.kv_repeat)
+            v_hat = repeat_kv(v_hat_kv, self.kv_repeat)
+        else:
+            k_hat, v_hat = k_hat_kv, v_hat_kv
 
         valid_mask: torch.Tensor | None = None
         if attention_mask is not None:
@@ -799,35 +817,33 @@ class MoEDeltaKVPagedAttention(BaseAttention):
             scale = 1.0 / math.sqrt(d)
             scores = torch.matmul(q.float(), k_hat.float().transpose(-2, -1).contiguous()) * scale
 
+            invalid_mask = ~valid_mask[:, None, None, :].bool().expand(B, 1, N, kv_len)
             if self.is_causal and not is_cross and N > 1:
-                diag = 1 + max(0, kv_len - N)
-                causal = (
-                    torch.triu(
-                        torch.full(
-                            (N, kv_len),
-                            float("-inf"),
-                            device=device,
-                            dtype=torch.float32,
-                        ),
-                        diagonal=diag,
-                    )
-                    .unsqueeze(0)
-                    .unsqueeze(0)
-                )
-                scores = scores + causal
+                q_idx = torch.arange(N, device=device).unsqueeze(1)
+                k_idx = torch.arange(kv_len, device=device).unsqueeze(0)
+                offset = max(0, kv_len - N)
+                causal_invalid = k_idx > (q_idx + offset)
+                invalid_mask = invalid_mask | causal_invalid.unsqueeze(0).unsqueeze(0)
 
-            scores = scores.masked_fill(~valid_mask[:, None, None, :].bool(), -1e4)
-            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+            all_masked = invalid_mask.all(dim=-1, keepdim=True)
+            safe_mask = invalid_mask.clone()
+            if all_masked.any():
+                safe_mask[..., 0:1] = safe_mask[..., 0:1] & (~all_masked)
 
-            attn_probs = F.softmax(scores, dim=-1).to(dtype)
-            attn_probs = self.dropout(attn_probs)
-            context = torch.matmul(attn_probs, v_hat)
+            f32_min = torch.finfo(torch.float32).min
+            scores = scores.masked_fill(safe_mask, f32_min)
+            scores_max = scores.amax(dim=-1, keepdim=True).detach()
+            exp_scores = torch.exp((scores - scores_max).clamp(max=0.0)).masked_fill(safe_mask, 0.0)
+            den = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-4)
+            attn_probs = (exp_scores / den).masked_fill(all_masked, 0.0)
+            attn_probs_drop = self.dropout(attn_probs)
+            context = torch.matmul(attn_probs_drop, v_hat.float())
 
             with torch.no_grad():
                 self.aux_loss.zero_()
 
         if head_mask is not None:
-            hm = head_mask.to(context.dtype)
+            hm = head_mask.float()
             if hm.dim() == 1:
                 hm = hm.view(1, -1, 1, 1)
             elif hm.dim() == 2:
@@ -838,7 +854,10 @@ class MoEDeltaKVPagedAttention(BaseAttention):
 
         context = context[:, :, :N, :] if context.shape[2] != N else context
         context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-        context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
+        if dtype == torch.float16:
+            fmax = torch.finfo(dtype).max * 0.5
+            context = context.clamp(min=-fmax, max=fmax)
+        context = context.to(dtype)
 
         if self.is_nested_encoder:
             out = context

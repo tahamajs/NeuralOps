@@ -24,7 +24,6 @@ import torch.nn.functional as F
 from neuralops.core.amp_utils import maybe_half
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb
-from neuralops.core.attention_utils import safe_mask_value as _safe_mask_value
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import _read_past_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
@@ -535,7 +534,7 @@ class MixAttentionMoSKA(BaseAttention):
 
         if self.protect_first_token:
             anchor_boost = torch.zeros_like(importance)
-            anchor_boost[:, 0] = 1e9
+            anchor_boost[:, 0] = 1e4
             importance = importance + anchor_boost
 
         if eff_m is not None:
@@ -637,11 +636,22 @@ class MixAttentionMoSKA(BaseAttention):
 
         is_cross = encoder_hidden_states is not None
         kv_input = encoder_hidden_states if is_cross else x
+        if not kv_input.is_contiguous():
+            kv_input = kv_input.contiguous()
         L_kv_new = kv_input.shape[1]
 
-        q = self.W_q(x).view(B, L, H, self.head_dim).permute(0, 2, 1, 3).contiguous()
-        k_new = self.W_k(kv_input).view(B, L_kv_new, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3).contiguous()
-        v_new = self.W_v(kv_input).view(B, L_kv_new, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3).contiguous()
+        x_in = x
+        kv_in = kv_input
+        if not torch.is_autocast_enabled() and hasattr(self.W_q, "weight"):
+            w_dtype = self.W_q.weight.dtype
+            if x_in.dtype != w_dtype:
+                x_in = x_in.to(w_dtype)
+            if kv_in.dtype != w_dtype:
+                kv_in = kv_in.to(w_dtype)
+
+        q = self.W_q(x_in).view(B, L, H, self.head_dim).permute(0, 2, 1, 3).contiguous()
+        k_new = self.W_k(kv_in).view(B, L_kv_new, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3).contiguous()
+        v_new = self.W_v(kv_in).view(B, L_kv_new, self.num_kv_heads, self.head_dim).permute(0, 2, 1, 3).contiguous()
 
         past_k, past_v, past_len = self._read_past_kv(past_key_value, self.layer_idx)
 
@@ -684,15 +694,15 @@ class MixAttentionMoSKA(BaseAttention):
         L_kv = K.shape[-2]
 
         if self.num_kv_heads < self.num_heads:
-            K_full = repeat_kv(K, self.kv_repeat)
-            V_full = repeat_kv(V, self.kv_repeat)
+            K_full = repeat_kv(K, self.kv_repeat).contiguous()
+            V_full = repeat_kv(V, self.kv_repeat).contiguous()
         else:
-            K_full, V_full = K, V
+            K_full, V_full = K.contiguous(), V.contiguous()
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         scale = 1.0 / math.sqrt(self.head_dim)
         is_causal = bool(self.is_decoder and not is_cross and L > 1)
-        mask_val = _safe_mask_value(dtype)
+        compute_dtype = q.dtype
 
         use_pruning = (
             not is_causal and not is_cross and (past_key_value is None or past_key_value is False) and L_kv == L
@@ -711,11 +721,13 @@ class MixAttentionMoSKA(BaseAttention):
                         is_causal=is_causal,
                         dropout_p=self.dropout_p if self.training else 0.0,
                     )
-                    _sdpa_out = _sdpa_out.to(dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+                    _sdpa_out = _sdpa_out.to(compute_dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
                     _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
                     if self.is_nested_encoder:
                         output = _sdpa_out
                     else:
+                        if not torch.is_autocast_enabled() and hasattr(self.out_proj, "weight") and _sdpa_out.dtype != self.out_proj.weight.dtype:
+                            _sdpa_out = _sdpa_out.to(self.out_proj.weight.dtype)
                         output = self.out_proj(_sdpa_out)
                     output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
 
@@ -725,81 +737,90 @@ class MixAttentionMoSKA(BaseAttention):
                 except Exception as e:
                     logger.debug("FASA SDPA failed, using manual: %s", e)
 
-            scores = torch.matmul(q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale
+            with torch.amp.autocast(device_type=device.type, enabled=False):
+                scores = torch.matmul(q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale
+                score_mask_val = torch.finfo(scores.dtype).min
 
-            if is_causal:
-                causal = (
-                    torch.triu(
-                        torch.full((L, L_kv), float("-inf"), device=device, dtype=torch.float32),
-                        diagonal=1,
+                if is_causal:
+                    causal = (
+                        torch.triu(
+                            torch.full((L, L_kv), score_mask_val, device=device, dtype=scores.dtype),
+                            diagonal=1,
+                        )
+                        .unsqueeze(0)
+                        .unsqueeze(0)
                     )
-                    .unsqueeze(0)
-                    .unsqueeze(0)
-                )
-                scores = scores + causal
+                    scores = scores + causal
 
-            valid = self._normalize_valid_mask(eff_mask, B, L_kv, device)
-            if valid is not None:
-                scores = scores.masked_fill(~valid[:, None, None, :], mask_val)
+                valid = self._normalize_valid_mask(eff_mask, B, L_kv, device)
+                if valid is not None:
+                    scores = scores.masked_fill(~valid[:, None, None, :], score_mask_val)
 
-            scores = torch.nan_to_num(scores, nan=mask_val, posinf=1e4, neginf=mask_val)
-            attn_weights = F.softmax(scores, dim=-1).to(dtype)
-            attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
-            attn_weights = self.dropout(attn_weights)
+                scores = torch.nan_to_num(scores, nan=score_mask_val, posinf=1e4, neginf=score_mask_val)
+                attn_weights = F.softmax(scores, dim=-1)
+                attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
+                attn_weights = self.dropout(attn_weights)
 
-            if head_mask is not None:
-                hm = head_mask.to(attn_weights.dtype)
-                if hm.dim() == 1:
-                    hm = hm.view(1, -1, 1, 1)
-                elif hm.dim() == 2:
-                    hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
-                elif hm.dim() == 3:
-                    hm = hm.unsqueeze(1)
-                attn_weights = attn_weights * hm
+                if head_mask is not None:
+                    hm = head_mask.float()
+                    if hm.dim() == 1:
+                        hm = hm.view(1, -1, 1, 1)
+                    elif hm.dim() == 2:
+                        hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
+                    elif hm.dim() == 3:
+                        hm = hm.unsqueeze(1)
+                    attn_weights = attn_weights * hm
 
-            out = torch.matmul(attn_weights, V_full).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-            final_attn_weights = attn_weights if output_attentions else None
+                out = torch.matmul(attn_weights, V_full.float()).to(compute_dtype)
+                out = out.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+                final_attn_weights = attn_weights.to(dtype) if output_attentions else None
 
         else:
             valid = self._normalize_valid_mask(eff_mask, B, L_kv, device)
             k_p, v_p, p_mask, kept_idx = self._fasa_prune(K_full, V_full, valid)
 
-            attn_scores = torch.matmul(q.float(), k_p.float().transpose(-2, -1).contiguous()) * scale
+            with torch.amp.autocast(device_type=device.type, enabled=False):
+                attn_scores = torch.matmul(q.float(), k_p.float().transpose(-2, -1).contiguous()) * scale
+                score_mask_val = torch.finfo(attn_scores.dtype).min
 
-            if p_mask is not None:
-                attn_scores = attn_scores.masked_fill(~p_mask[:, None, None, :], mask_val)
+                if p_mask is not None:
+                    attn_scores = attn_scores.masked_fill(~p_mask[:, None, None, :], score_mask_val)
 
-            attn_scores = torch.nan_to_num(attn_scores, nan=mask_val, posinf=1e4, neginf=mask_val)
-            attn_weights = F.softmax(attn_scores, dim=-1).to(dtype)
-            attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
-            attn_weights = self.dropout(attn_weights)
+                attn_scores = torch.nan_to_num(attn_scores, nan=score_mask_val, posinf=1e4, neginf=score_mask_val)
+                attn_weights = F.softmax(attn_scores, dim=-1)
+                attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
+                attn_weights = self.dropout(attn_weights)
 
-            if head_mask is not None:
-                hm = head_mask.to(attn_weights.dtype)
-                if hm.dim() == 1:
-                    hm = hm.view(1, -1, 1, 1)
-                elif hm.dim() == 2:
-                    hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
-                elif hm.dim() == 3:
-                    hm = hm.unsqueeze(1)
-                attn_weights = attn_weights * hm
+                if head_mask is not None:
+                    hm = head_mask.float()
+                    if hm.dim() == 1:
+                        hm = hm.view(1, -1, 1, 1)
+                    elif hm.dim() == 2:
+                        hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
+                    elif hm.dim() == 3:
+                        hm = hm.unsqueeze(1)
+                    attn_weights = attn_weights * hm
 
-            out = torch.matmul(attn_weights, v_p).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+                out = torch.matmul(attn_weights, v_p.float()).to(compute_dtype)
+                out = out.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
-            if output_attentions and kept_idx is not None:
-                full_weights = torch.zeros(B, self.num_heads, L, L_kv, device=device, dtype=dtype)
-                kept_exp = kept_idx.unsqueeze(1).unsqueeze(2).expand(-1, self.num_heads, L, -1)
-                final_attn_weights = full_weights.scatter(3, kept_exp, attn_weights)
-            elif output_attentions:
-                final_attn_weights = attn_weights
-            else:
-                final_attn_weights = None
+                if output_attentions and kept_idx is not None:
+                    attn_w_cast = attn_weights.to(dtype)
+                    full_weights = torch.zeros(B, self.num_heads, L, L_kv, device=device, dtype=attn_w_cast.dtype)
+                    kept_exp = kept_idx.unsqueeze(1).unsqueeze(2).expand(-1, self.num_heads, L, -1)
+                    final_attn_weights = full_weights.scatter(3, kept_exp, attn_w_cast)
+                elif output_attentions:
+                    final_attn_weights = attn_weights.to(dtype)
+                else:
+                    final_attn_weights = None
 
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
         if self.is_nested_encoder:
             output = out
         else:
+            if not torch.is_autocast_enabled() and hasattr(self.out_proj, "weight") and out.dtype != self.out_proj.weight.dtype:
+                out = out.to(self.out_proj.weight.dtype)
             output = self.out_proj(out)
 
         output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)

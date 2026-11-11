@@ -232,40 +232,48 @@ class DynamicLowRankProjector(nn.Module):
             if hasattr(sub, "lora_scaling"):
                 self.scaling = sub.lora_scaling
 
-    def forward(self, x: torch.Tensor, gate: torch.Tensor) -> torch.Tensor:
-        if x.is_cuda:
-            try:
-                from neuralops.ops.cuda.low_rank_svd import fused_lowrank_gated_gemm
+    def _pytorch_forward(self, x: torch.Tensor, gate: torch.Tensor | None) -> torch.Tensor:
+        v = self.V.to(x.dtype)
+        s = self.S.to(x.dtype)
+        u = self.U.to(x.dtype)
+        z = torch.matmul(x, v)
+        scale = s.view(*([1] * (z.dim() - 1)), -1)
+        if gate is not None:
+            g = gate.to(x.dtype)
+            while g.dim() < z.dim():
+                g = g.unsqueeze(-2)
+            scale = scale * g
+        z = z * scale
+        out = torch.matmul(z, u.t().contiguous())
+        if self.bias is not None:
+            out = out + self.bias.to(x.dtype)
+        return out
 
-                u_eff = self.U * self.S.unsqueeze(0)
-                out = fused_lowrank_gated_gemm(
-                    x, self.V.t().contiguous(), u_eff.t().contiguous(), alpha=gate, bias=self.bias
-                )
-            except Exception:
+    def forward(self, x: torch.Tensor, gate: torch.Tensor | None) -> torch.Tensor:
+        out: torch.Tensor | None = None
+        if x.is_cuda:
+            if gate is None:
+                try:
+                    from neuralops.ops.cuda.low_rank_svd import fused_lowrank_gated_gemm
+
+                    # U already has shape (out_dim, rank) matching fused_lowrank_gated_gemm's U: [N, R].
+                    u_eff = (self.U * self.S.unsqueeze(0)).to(x.dtype).contiguous()
+                    v_eff = self.V.t().to(x.dtype).contiguous()
+                    b_eff = self.bias.to(x.dtype) if self.bias is not None else None
+                    out = fused_lowrank_gated_gemm(x, v_eff, u_eff, alpha=None, bias=b_eff)
+                except Exception:
+                    out = None
+
+            if out is None and x.dim() == 3 and (gate is None or gate.dim() == 2):
                 try:
                     from neuralops.ops.triton.low_rank import low_rank_forward
 
                     out = low_rank_forward(x, self.V, self.S, self.U, gate, self.bias)
                 except Exception:
-                    v = self.V.to(x.dtype)
-                    s = self.S.to(x.dtype)
-                    u = self.U.to(x.dtype)
-                    g = gate.to(x.dtype)
-                    z = torch.matmul(x, v)
-                    z = z * s.unsqueeze(0).unsqueeze(0) * g.unsqueeze(1)
-                    out = torch.matmul(z, u.t().contiguous())
-                    if self.bias is not None:
-                        out = out + self.bias.to(x.dtype)
-        else:
-            v = self.V.to(x.dtype)
-            s = self.S.to(x.dtype)
-            u = self.U.to(x.dtype)
-            g = gate.to(x.dtype)
-            z = torch.matmul(x, v)
-            z = z * s.unsqueeze(0).unsqueeze(0) * g.unsqueeze(1)
-            out = torch.matmul(z, u.t().contiguous())
-            if self.bias is not None:
-                out = out + self.bias.to(x.dtype)
+                    out = None
+
+        if out is None:
+            out = self._pytorch_forward(x, gate)
 
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             la = self.lora_A.to(x.dtype)
@@ -351,8 +359,16 @@ class VSpecAttention(BaseAttention):
             self.is_decoder: bool = is_dec
         else:
             self.adapter = None
-            self.hidden_size = _cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768))
-            self.num_heads = _cfg_get(config, "num_attention_heads", kwargs.get("num_heads", 12))
+            self.hidden_size = _cfg_get(
+                config,
+                "hidden_size",
+                kwargs.get("hidden_size", kwargs.get("dim", kwargs.get("embed_dim", kwargs.get("d_model", 768)))),
+            )
+            self.num_heads = _cfg_get(
+                config,
+                "num_attention_heads",
+                kwargs.get("num_heads", kwargs.get("num_attention_heads", kwargs.get("n_heads", 12))),
+            )
             self.num_kv_heads = _cfg_get(config, "num_key_value_heads", self.num_heads)
             self.head_dim = (
                 int(cfg_head_dim) if cfg_head_dim is not None else (self.hidden_size // max(1, self.num_heads))
@@ -362,12 +378,24 @@ class VSpecAttention(BaseAttention):
             self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
             self.is_decoder = is_dec
 
-        if "hidden_size" in kwargs:
-            self.hidden_size = kwargs["hidden_size"]
-        if "num_heads" in kwargs:
-            self.num_heads = kwargs["num_heads"]
-        if "head_dim" in kwargs:
-            self.head_dim = kwargs["head_dim"]
+        for dim_key in ("hidden_size", "dim", "embed_dim", "d_model"):
+            if dim_key in kwargs and kwargs[dim_key] is not None:
+                self.hidden_size = int(kwargs[dim_key])
+                break
+        num_heads_overridden = False
+        for head_key in ("num_heads", "num_attention_heads", "n_heads"):
+            if head_key in kwargs and kwargs[head_key] is not None:
+                self.num_heads = int(kwargs[head_key])
+                num_heads_overridden = True
+                break
+        if "num_key_value_heads" in kwargs and kwargs["num_key_value_heads"] is not None:
+            self.num_kv_heads = int(kwargs["num_key_value_heads"])
+        elif "num_kv_heads" in kwargs and kwargs["num_kv_heads"] is not None:
+            self.num_kv_heads = int(kwargs["num_kv_heads"])
+        elif num_heads_overridden and _cfg_get(config, "num_key_value_heads", None) is None:
+            self.num_kv_heads = self.num_heads
+        if "head_dim" in kwargs and kwargs["head_dim"] is not None:
+            self.head_dim = int(kwargs["head_dim"])
         elif cfg_head_dim is not None:
             self.head_dim = int(cfg_head_dim)
         else:

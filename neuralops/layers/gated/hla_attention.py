@@ -462,23 +462,35 @@ class HLAAttention(BaseAttention):
             return y.to(q.dtype), (S_curr, Z_curr)
 
         if initial_state is None and q.is_cuda and not reverse:
-            try:
-                from neuralops.ops.cuda.hla_attention import hla_attention
+            is_pow2_d = d > 0 and (d & (d - 1)) == 0 and d <= 64
+            ws_bytes = B * H * L * d * d * 4
+            allow_full_ws = (not torch.is_grad_enabled()) or (ws_bytes <= 32 * 1024 * 1024 and B * H * L <= 2048)
+            if is_pow2_d and allow_full_ws:
+                try:
+                    from neuralops.ops.cuda.hla_attention import hla_attention
 
-                y_accel = hla_attention(q, k, v, decay, eps=1e-5)
-                return y_accel.to(q.dtype), (None, None)
-            except Exception:
-                pass
-            try:
-                from neuralops.ops.triton.gla_scan import kda_hla_chunk_scan_triton
+                    y_accel = hla_attention(q_f, k_f, v_f, decay.float(), eps=1e-5)
+                    return y_accel.to(q.dtype), (None, None)
+                except Exception as exc:
+                    logger.warning(
+                        "HLAAttention: Level 1 CUDA hla_attention failed (%s); falling back to Triton.",
+                        exc,
+                    )
+                try:
+                    from neuralops.ops.triton.gla_scan import kda_hla_chunk_scan_triton
 
-                log_dec = (log_gamma.view(1, H, 1, 1).expand(B, H, L, 1)).squeeze(-1)
-                y_triton = kda_hla_chunk_scan_triton(q_f, k_f, v_f, log_dec)
-                return y_triton.to(q.dtype), (None, None)
-            except Exception:
-                pass
+                    log_dec = (log_gamma.view(1, H, 1, 1).expand(B, H, L, 1)).squeeze(-1).contiguous()
+                    y_triton = kda_hla_chunk_scan_triton(q_f, k_f, v_f, log_dec)
+                    return y_triton.to(q.dtype), (None, None)
+                except Exception as exc:
+                    logger.warning(
+                        "HLAAttention: Level 2 Triton kda_hla_chunk_scan_triton failed (%s); "
+                        "falling back to chunked PyTorch.",
+                        exc,
+                    )
 
-        C = self.chunk_size
+        use_cp = torch.is_grad_enabled()
+        C = min(self.chunk_size, 32) if (use_cp and B * H * L > 4096) else self.chunk_size
         pad_len = (C - (L % C)) % C
         if pad_len > 0:
             q_f = F.pad(q_f, (0, 0, 0, pad_len))
@@ -516,35 +528,60 @@ class HLAAttention(BaseAttention):
             S_prev = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
             Z_prev = torch.zeros(B, H, d, 1, device=device, dtype=torch.float32)
 
-        outputs = []
-        for c in range(N):
-            q_chunk = q_c[:, :, c]
-            k_chunk = k_c[:, :, c]
-            v_chunk = v_c[:, :, c]
-
+        def _hla_chunk_step(
+            q_chunk: torch.Tensor,
+            k_chunk: torch.Tensor,
+            v_chunk: torch.Tensor,
+            s_in: torch.Tensor,
+            z_in: torch.Tensor,
+        ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
             qk = torch.matmul(q_chunk, k_chunk.transpose(-1, -2).contiguous())
             scores = qk * decay_mat
             num_intra = torch.matmul(scores, v_chunk)
             den_intra = scores.sum(dim=-1, keepdim=True)
 
-            qS = torch.matmul(q_chunk, S_prev)
+            qS = torch.matmul(q_chunk, s_in)
             num_inter = qS * pos_decay
 
-            qZ = torch.matmul(q_chunk, Z_prev)
+            qZ = torch.matmul(q_chunk, z_in)
             den_inter = qZ * pos_decay
 
             num = num_intra + num_inter
             den = den_intra + den_inter + 1e-5
             y_chunk = num / den
-            outputs.append(y_chunk)
 
             k_weighted = k_chunk * update_weight
-
             S_update = torch.matmul(k_weighted.transpose(-1, -2).contiguous(), v_chunk)
             Z_update = k_weighted.sum(dim=2).unsqueeze(-1)
 
-            S_prev = block_decay * S_prev + S_update
-            Z_prev = block_decay * Z_prev + Z_update
+            s_out = block_decay * s_in + S_update
+            z_out = block_decay * z_in + Z_update
+            return y_chunk, s_out, z_out
+
+        if use_cp:
+            import torch.utils.checkpoint as cp
+
+        outputs = []
+        for c in range(N):
+            if use_cp:
+                y_chunk, S_prev, Z_prev = cp.checkpoint(
+                    _hla_chunk_step,
+                    q_c[:, :, c],
+                    k_c[:, :, c],
+                    v_c[:, :, c],
+                    S_prev,
+                    Z_prev,
+                    use_reentrant=False,
+                )
+            else:
+                y_chunk, S_prev, Z_prev = _hla_chunk_step(
+                    q_c[:, :, c],
+                    k_c[:, :, c],
+                    v_c[:, :, c],
+                    S_prev,
+                    Z_prev,
+                )
+            outputs.append(y_chunk)
 
         y_out = torch.cat(outputs, dim=2)
         if pad_len > 0:
@@ -683,16 +720,19 @@ class HLAAttention(BaseAttention):
 
         context = y.transpose(1, 2).contiguous().view(B, L, H * Dh)
 
-        v_flat = v.transpose(1, 2).contiguous().view(B, kv_len, -1)
-        v_rms = torch.sqrt(torch.mean(v_flat**2, dim=-1, keepdim=True).clamp_min(1e-8))
-        c_rms = torch.sqrt(torch.mean(context**2, dim=-1, keepdim=True).clamp_min(1e-8))
-        scale = (v_rms / c_rms).clamp(0.25, 4.0)
         proj_dtype = (
             self.out_proj.weight.dtype
             if hasattr(self.out_proj, "weight") and self.out_proj.weight is not None
             else hidden_states.dtype
         )
-        context = (context * scale).to(proj_dtype)
+        if kv_len == L:
+            v_flat = v.transpose(1, 2).contiguous().view(B, kv_len, -1)
+            v_rms = torch.sqrt(torch.mean(v_flat**2, dim=-1, keepdim=True).clamp_min(1e-8))
+            c_rms = torch.sqrt(torch.mean(context**2, dim=-1, keepdim=True).clamp_min(1e-8))
+            scale = (v_rms / c_rms).clamp(0.25, 4.0)
+            context = (context * scale).to(proj_dtype)
+        else:
+            context = context.to(proj_dtype)
 
         if self.is_nested_encoder:
             out = context * self.lora_output_scale
@@ -740,8 +780,8 @@ class HLAAttention(BaseAttention):
         v = self.v_proj(x).view(B, 1, self.num_kv_heads, Dh).transpose(1, 2)
 
         if self.num_kv_heads != self.num_heads:
-            k = repeat_kv(k, self.kv_repeat)
-            v = repeat_kv(v, self.kv_repeat)
+            k = repeat_kv(k, self.num_key_value_groups)
+            v = repeat_kv(v, self.num_key_value_groups)
 
         scale = 1.0 / math.sqrt(Dh)
         q_act = F.elu(q.float() * scale) + 1.0

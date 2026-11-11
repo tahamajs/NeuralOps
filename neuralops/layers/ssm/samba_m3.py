@@ -467,7 +467,7 @@ class SAMBAM3Block(BaseAttention):
             k_idx = torch.arange(k_abs_start, k_abs_end, device=q.device).view(1, 1, 1, -1)
             dist = (q_idx - k_idx).abs()
             valid = dist <= self.window
-            if self.is_decoder:
+            if is_dec:
                 valid = valid & (k_idx <= q_idx)
 
             scores = scores.masked_fill(~valid, -1e4)
@@ -477,13 +477,19 @@ class SAMBAM3Block(BaseAttention):
                     pad = (attention_mask[:, k_abs_start:k_abs_end] == 0).unsqueeze(1).unsqueeze(2)
                     scores = scores.masked_fill(pad, -1e4)
                 elif attention_mask.dim() == 3:
-                    scores = scores + attention_mask[:, q_abs_start:q_abs_end, k_abs_start:k_abs_end].unsqueeze(1).to(
-                        scores.dtype
+                    am3 = (
+                        attention_mask[:, :, k_abs_start:k_abs_end]
+                        if attention_mask.shape[1] == 1
+                        else attention_mask[:, q_abs_start:q_abs_end, k_abs_start:k_abs_end]
                     )
+                    scores = scores + am3.unsqueeze(1).to(scores.dtype)
                 elif attention_mask.dim() == 4:
-                    scores = scores + attention_mask[:, :, q_abs_start:q_abs_end, k_abs_start:k_abs_end].to(
-                        scores.dtype
+                    am4 = (
+                        attention_mask[:, :, :, k_abs_start:k_abs_end]
+                        if attention_mask.shape[2] == 1
+                        else attention_mask[:, :, q_abs_start:q_abs_end, k_abs_start:k_abs_end]
                     )
+                    scores = scores + am4.to(scores.dtype)
 
             probs = F.softmax(scores, dim=-1)
             probs = torch.nan_to_num(probs, nan=0.0)
@@ -584,13 +590,30 @@ class SAMBAM3Block(BaseAttention):
         past_mamba = kwargs_mamba.pop("past_state", past_mamba)
         kwargs_mamba["is_decoder"] = is_dec
         kwargs_mamba["is_causal"] = is_dec
-        m_res = self.mamba(hidden_states, attention_mask=attention_mask, past_state=past_mamba, **kwargs_mamba)
-        if isinstance(m_res, tuple):
-            mamba_out = m_res[0]
-            present_mamba = m_res[1] if len(m_res) > 1 else None
-        else:
-            mamba_out = m_res
+        if (
+            self.training
+            and torch.is_grad_enabled()
+            and hidden_states.requires_grad
+            and L > 64
+            and past_mamba is None
+            and not kwargs_mamba.get("use_cache", False)
+        ):
+            from torch.utils.checkpoint import checkpoint
+
+            def _run_mamba_ckpt(h: torch.Tensor) -> torch.Tensor:
+                res = self.mamba(h, attention_mask=attention_mask, past_state=None, **kwargs_mamba)
+                return res[0] if isinstance(res, tuple) else res
+
+            mamba_out = checkpoint(_run_mamba_ckpt, hidden_states, use_reentrant=False)
             present_mamba = None
+        else:
+            m_res = self.mamba(hidden_states, attention_mask=attention_mask, past_state=past_mamba, **kwargs_mamba)
+            if isinstance(m_res, tuple):
+                mamba_out = m_res[0]
+                present_mamba = m_res[1] if len(m_res) > 1 else None
+            else:
+                mamba_out = m_res
+                present_mamba = None
         mamba_out = mamba_out.to(target_dtype)
 
         if present_mamba is not None:

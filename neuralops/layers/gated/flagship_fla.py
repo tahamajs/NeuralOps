@@ -73,8 +73,8 @@ def gdn2_chunk_scan(
     chunk_size: int = 64,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """
-    Chunk-wise parallel forward execution for GDN2 with gradient checkpointing.
-    Processes sequence in chunks of size 64 to avoid recording L separate autograd nodes on tape.
+    Chunk-wise parallel forward execution for GDN2 via exact WY representation.
+    Eliminates per-timestep Python loops while preserving exact FP32 recurrent state stability.
     """
     B, H, L, d_k = q.shape
     d_v = v.shape[-1]
@@ -86,22 +86,11 @@ def gdn2_chunk_scan(
     else:
         S = initial_state.to(device=device, dtype=torch.float32)
 
-    if L <= 64 or not torch.is_grad_enabled():
-        outs = []
-        for t in range(L):
-            qt = q[:, :, t : t + 1].float()
-            kt = k[:, :, t : t + 1].float()
-            vt = v[:, :, t : t + 1].float()
-            at = alpha[:, :, t : t + 1, None].float()
-            be = beta_erase[:, :, t : t + 1, None].float()
-            bw = beta_write[:, :, t : t + 1, None].float()
+    if L == 0:
+        return q.new_empty((B, H, 0, d_v)), S.to(dtype)
 
-            yt, S = gdn2_recurrent_step(S, qt, kt, vt, at, be, bw)
-            outs.append(yt.to(dtype))
-        return torch.cat(outs, dim=2), S.to(dtype)
-
-    num_chunks = (L + chunk_size - 1) // chunk_size
-    pad_len = (chunk_size - (L % chunk_size)) % chunk_size
+    c_size = min(max(1, int(chunk_size)), 32)
+    pad_len = (c_size - (L % c_size)) % c_size
 
     if pad_len > 0:
         q_p = F.pad(q, (0, 0, 0, pad_len))
@@ -113,40 +102,55 @@ def gdn2_chunk_scan(
     else:
         q_p, k_p, v_p, alpha_p, be_p, bw_p = q, k, v, alpha, beta_erase, beta_write
 
-    def _run_chunk(s_in, qc, kc, vc, ac, bec, bwc):
-        curr = s_in
-        c_outs = []
-        for t in range(qc.shape[2]):
-            yt, curr = gdn2_recurrent_step(
-                curr,
-                qc[:, :, t : t + 1].float(),
-                kc[:, :, t : t + 1].float(),
-                vc[:, :, t : t + 1].float(),
-                ac[:, :, t : t + 1, None].float(),
-                bec[:, :, t : t + 1, None].float(),
-                bwc[:, :, t : t + 1, None].float(),
-            )
-            c_outs.append(yt)
-        return torch.cat(c_outs, dim=2), curr
+    num_chunks = q_p.shape[2] // c_size
+
+    q_blk = F.normalize(q_p.float(), p=2, dim=-1, eps=1e-6).view(B, H, num_chunks, c_size, d_k)
+    k_blk = F.normalize(k_p.float(), p=2, dim=-1, eps=1e-6).view(B, H, num_chunks, c_size, d_k)
+    v_blk = v_p.float().view(B, H, num_chunks, c_size, d_v)
+    a_blk = alpha_p.float().clamp(min=1e-4, max=1.0).view(B, H, num_chunks, c_size)
+    be_blk = be_p.float().view(B, H, num_chunks, c_size)
+    bw_blk = bw_p.float().view(B, H, num_chunks, c_size)
+
+    gamma = torch.cumsum(torch.log(a_blk), dim=-1)
+    exp_gamma = torch.exp(gamma)
+
+    kk = torch.matmul(k_blk, k_blk.transpose(-1, -2))
+    g_diff = (gamma.unsqueeze(-1) - gamma.unsqueeze(-2)).clamp(max=0.0)
+    tril_strict = torch.tril(torch.ones((c_size, c_size), device=device, dtype=torch.bool), diagonal=-1)
+    tril_causal = torch.tril(torch.ones((c_size, c_size), device=device, dtype=torch.bool), diagonal=0)
+
+    exp_diff = torch.exp(g_diff)
+    decay_mat = exp_diff * tril_causal.float()
+    M = kk * (be_blk.unsqueeze(-1) * (exp_diff * tril_strict.float()))
+    I_plus_M = torch.eye(c_size, device=device, dtype=torch.float32) + M
+
+    rhs_v = bw_blk.unsqueeze(-1) * v_blk
+    rhs_k = (be_blk * exp_gamma).unsqueeze(-1) * k_blk
+    rhs = torch.cat([rhs_v, rhs_k], dim=-1)
+    sol = torch.linalg.solve_triangular(I_plus_M, rhs, upper=False, unitriangular=True)
+    U_v = sol[..., :d_v]
+    W_k = sol[..., d_v:]
+
+    qk_decay = torch.matmul(q_blk, k_blk.transpose(-1, -2)) * decay_mat
+    q_decayed = q_blk * exp_gamma.unsqueeze(-1)
+    gamma_end = gamma[..., -1:]
+    exp_gamma_end = torch.exp(gamma_end).unsqueeze(-1)
+    k_to_end = k_blk * torch.exp((gamma_end - gamma).clamp(max=0.0)).unsqueeze(-1)
 
     outs = []
     for c in range(num_chunks):
-        st = c * chunk_size
-        en = (c + 1) * chunk_size
-        qc = q_p[:, :, st:en]
-        kc = k_p[:, :, st:en]
-        vc = v_p[:, :, st:en]
-        ac = alpha_p[:, :, st:en]
-        bec = be_p[:, :, st:en]
-        bwc = bw_p[:, :, st:en]
-
-        yc, S = torch.utils.checkpoint.checkpoint(_run_chunk, S, qc, kc, vc, ac, bec, bwc, use_reentrant=False)
-        outs.append(yc.to(dtype))
+        U_c = U_v[:, :, c] - torch.matmul(W_k[:, :, c], S)
+        y_c = torch.matmul(q_decayed[:, :, c], S) + torch.matmul(qk_decay[:, :, c], U_c)
+        S = exp_gamma_end[:, :, c] * S + torch.matmul(k_to_end[:, :, c].transpose(-1, -2), U_c)
+        outs.append(y_c)
 
     y = torch.cat(outs, dim=2)
     if pad_len > 0:
         y = y[:, :, :L, :]
-    return y, S.to(dtype)
+    if dtype == torch.float16:
+        fmax = torch.finfo(dtype).max * 0.5
+        y = y.clamp(min=-fmax, max=fmax)
+    return y.to(dtype), S.to(dtype)
 
 
 def _copy_attention_weights(module: nn.Module, src: Any) -> bool:
@@ -298,6 +302,12 @@ class GDN2Attention(BaseAttention):
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
         self.chunk_size = chunk_size
         self.is_nested_encoder = False
+        self.is_decoder = bool(
+            kwargs.get(
+                "is_decoder",
+                kwargs.get("is_causal", _cfg_get(config, "is_decoder", False) or _cfg_get(config, "is_causal", False)),
+            )
+        )
 
         self.q_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=True)
         self.k_proj = nn.Linear(self.d_model, self.num_kv_heads * self.head_dim, bias=True)
@@ -340,7 +350,8 @@ class GDN2Attention(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         is_causal = self.supports_causal and (
-            kwargs.get("is_causal", False)
+            self.is_decoder
+            or kwargs.get("is_causal", False)
             or getattr(self.config, "is_decoder", False)
             or getattr(self.config, "is_causal", False)
         )
@@ -387,7 +398,7 @@ class GDN2Attention(BaseAttention):
             elif isinstance(past_key_value, torch.Tensor):
                 init_state = past_key_value
 
-        if init_state is None and D <= 64 and q.is_cuda and not use_cache:
+        if init_state is None and D <= 64 and q.is_cuda and q.dtype == torch.bfloat16 and not use_cache:
             try:
                 from fla.ops.gdn2 import chunk_gdn2
 
@@ -533,6 +544,12 @@ class DeltaProductAttention(BaseAttention):
         self.num_heads = _cfg_get(config, "num_attention_heads", num_heads)
         self.head_dim = _cfg_get(config, "head_dim", head_dim or (self.d_model // self.num_heads))
         self.is_nested_encoder = False
+        self.is_decoder = bool(
+            kwargs.get(
+                "is_decoder",
+                kwargs.get("is_causal", _cfg_get(config, "is_decoder", False) or _cfg_get(config, "is_causal", False)),
+            )
+        )
 
         self.q_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=True)
         self.k_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=True)
@@ -564,7 +581,8 @@ class DeltaProductAttention(BaseAttention):
         u = self.u_proj(hidden_states).view(B, L, H, D).transpose(1, 2)
 
         is_causal = self.supports_causal and (
-            kwargs.get("is_causal", False)
+            self.is_decoder
+            or kwargs.get("is_causal", False)
             or getattr(self.config, "is_decoder", False)
             or getattr(self.config, "is_causal", False)
         )
@@ -608,7 +626,7 @@ class DeltaProductAttention(BaseAttention):
             elif isinstance(past_key_value, torch.Tensor):
                 init_state = past_key_value
 
-        if init_state is None and D <= 64 and q.is_cuda and not use_cache:
+        if init_state is None and D <= 64 and q.is_cuda and q.dtype == torch.bfloat16 and not use_cache:
             try:
                 from fla.ops import parallel_path_attn
 
@@ -620,74 +638,84 @@ class DeltaProductAttention(BaseAttention):
                 res = parallel_path_attn(q_fl, k_fl, v_fl, u_fl, beta_fl)
                 y_fl = res[0] if isinstance(res, tuple) else res
                 y = y_fl.contiguous().view(B, L, H * D)
+                if self.is_nested_encoder:
+                    return y, None
                 return self.out_proj(y), None
             except Exception:
                 # allowed-swallow: best-effort-telemetry
                 pass
 
-        beta = beta_raw.transpose(1, 2).unsqueeze(-1)
+        beta = beta_raw.transpose(1, 2)
         S = (
             torch.zeros((B, H, D, D), device=q.device, dtype=torch.float32)
             if init_state is None
             else init_state.to(device=q.device, dtype=torch.float32)
         )
 
-        def _run_delta_product_chunk(s_in, qc, kc, vc, uc, bc):
-            curr = s_in
-            c_outs = []
-            for t in range(qc.shape[2]):
-                qt = F.normalize(qc[:, :, t : t + 1].float(), p=2, dim=-1, eps=1e-6)
-                kt = F.normalize(kc[:, :, t : t + 1].float(), p=2, dim=-1, eps=1e-6)
-                vt = vc[:, :, t : t + 1].float()
-                ut = uc[:, :, t : t + 1].float()
-                bt = bc[:, :, t : t + 1].float()
-
-                u_norm_sq = (ut * ut).sum(dim=-1, keepdim=True) + 1e-6
-                u_S = torch.matmul(ut, curr)
-                refl = (2.0 * bt / u_norm_sq) * torch.matmul(ut.transpose(-1, -2), u_S)
-                S_reflected = curr - refl
-                curr = S_reflected + bt * torch.matmul(kt.transpose(-1, -2), vt)
-                yt = torch.matmul(qt, curr)
-                c_outs.append(yt.to(qc.dtype))
-            return torch.cat(c_outs, dim=2), curr
-
-        chunk_size = 64
-        if L <= 64 or not torch.is_grad_enabled():
-            y, present_state = _run_delta_product_chunk(S, q, k, v, u, beta)
+        # Vectorized chunked WY representation for Householder DeltaProduct (zero per-token loop)
+        c_size = 32
+        pad_len = (c_size - (L % c_size)) % c_size
+        if pad_len > 0:
+            q_p = F.pad(q, (0, 0, 0, pad_len))
+            k_p = F.pad(k, (0, 0, 0, pad_len))
+            v_p = F.pad(v, (0, 0, 0, pad_len))
+            u_p = F.pad(u, (0, 0, 0, pad_len))
+            b_p = F.pad(beta, (0, pad_len), value=0.0)
         else:
-            num_chunks = (L + chunk_size - 1) // chunk_size
-            pad_len = (chunk_size - (L % chunk_size)) % chunk_size
-            if pad_len > 0:
-                q_p = F.pad(q, (0, 0, 0, pad_len))
-                k_p = F.pad(k, (0, 0, 0, pad_len))
-                v_p = F.pad(v, (0, 0, 0, pad_len))
-                u_p = F.pad(u, (0, 0, 0, pad_len))
-                b_p = F.pad(beta, (0, 0, 0, pad_len), value=0.0)
-            else:
-                q_p, k_p, v_p, u_p, b_p = q, k, v, u, beta
+            q_p, k_p, v_p, u_p, b_p = q, k, v, u, beta
 
-            outs = []
-            curr = S
-            for c in range(num_chunks):
-                st = c * chunk_size
-                en = (c + 1) * chunk_size
-                qc = q_p[:, :, st:en]
-                kc = k_p[:, :, st:en]
-                vc = v_p[:, :, st:en]
-                uc = u_p[:, :, st:en]
-                bc = b_p[:, :, st:en]
+        num_chunks = q_p.shape[2] // c_size
+        q_blk = F.normalize(q_p.float(), p=2, dim=-1, eps=1e-6).view(B, H, num_chunks, c_size, D)
+        k_blk = F.normalize(k_p.float(), p=2, dim=-1, eps=1e-6).view(B, H, num_chunks, c_size, D)
+        v_blk = v_p.float().view(B, H, num_chunks, c_size, D)
+        u_raw = u_p.float().view(B, H, num_chunks, c_size, D)
+        u_hat = u_raw * torch.rsqrt((u_raw * u_raw).sum(dim=-1, keepdim=True) + 1e-6)
+        b_blk = b_p.float().view(B, H, num_chunks, c_size)
+        eta = 2.0 * b_blk
 
-                yc, curr = torch.utils.checkpoint.checkpoint(
-                    _run_delta_product_chunk, curr, qc, kc, vc, uc, bc, use_reentrant=False
-                )
-                outs.append(yc)
+        tril_strict = torch.tril(torch.ones((c_size, c_size), device=q.device, dtype=torch.bool), diagonal=-1)
+        tril_causal = torch.tril(torch.ones((c_size, c_size), device=q.device, dtype=torch.bool), diagonal=0)
 
-            y = torch.cat(outs, dim=2)
-            if pad_len > 0:
-                y = y[:, :, :L, :]
-            present_state = curr
+        uu = torch.matmul(u_hat, u_hat.transpose(-1, -2))
+        M = uu * (eta.unsqueeze(-1) * tril_strict.float())
+        I_plus_M = torch.eye(c_size, device=q.device, dtype=torch.float32) + M
 
-        y = y.transpose(1, 2).contiguous().view(B, L, H * D)
+        bv = b_blk.unsqueeze(-1) * v_blk
+        uk_strict = torch.matmul(u_hat, k_blk.transpose(-1, -2)) * tril_strict.float()
+        P_c = torch.matmul(uk_strict, bv)
+
+        rhs_v = -eta.unsqueeze(-1) * P_c
+        rhs_S = -eta.unsqueeze(-1) * u_hat
+        rhs = torch.cat([rhs_v, rhs_S], dim=-1)
+        sol = torch.linalg.solve_triangular(I_plus_M, rhs, upper=False, unitriangular=True)
+        W_v = sol[..., :D]
+        W_S = sol[..., D:]
+
+        qu_causal = torch.matmul(q_blk, u_hat.transpose(-1, -2)) * tril_causal.float()
+        qk_causal = torch.matmul(q_blk, k_blk.transpose(-1, -2)) * tril_causal.float()
+        qk_bv = torch.matmul(qk_causal, bv)
+
+        outs = []
+        curr = S
+        for c in range(num_chunks):
+            W_c = W_v[:, :, c] + torch.matmul(W_S[:, :, c], curr)
+            y_c = torch.matmul(q_blk[:, :, c], curr) + torch.matmul(qu_causal[:, :, c], W_c) + qk_bv[:, :, c]
+            curr = (
+                curr
+                + torch.matmul(u_hat[:, :, c].transpose(-1, -2), W_c)
+                + torch.matmul(k_blk[:, :, c].transpose(-1, -2), bv[:, :, c])
+            )
+            outs.append(y_c)
+
+        y = torch.cat(outs, dim=2)
+        if pad_len > 0:
+            y = y[:, :, :L, :]
+        present_state = curr
+
+        if q.dtype == torch.float16:
+            fmax = torch.finfo(q.dtype).max * 0.5
+            y = y.clamp(min=-fmax, max=fmax)
+        y = y.to(q.dtype).transpose(1, 2).contiguous().view(B, L, H * D)
         present_kv = (present_state.to(q.dtype),) if use_cache else None
         if self.is_nested_encoder:
             return y, present_kv
@@ -715,14 +743,10 @@ class DeltaProductAttention(BaseAttention):
         step_idx = state.get("step_idx", 0)
 
         q = self.q_proj(x).view(B, 1, H, D).transpose(1, 2)
-        k = self.k_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
-        v = self.v_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
+        k = self.k_proj(x).view(B, 1, H, D).transpose(1, 2)
+        v = self.v_proj(x).view(B, 1, H, D).transpose(1, 2)
         u = self.u_proj(x).view(B, 1, H, D).transpose(1, 2)
         beta = torch.sigmoid(self.beta_proj(x)).transpose(1, 2).unsqueeze(-1)
-
-        if self.kv_repeat > 1:
-            k = repeat_kv(k, self.kv_repeat)
-            v = repeat_kv(v, self.kv_repeat)
 
         if "kv_state" not in state or state["kv_state"] is None:
             state["kv_state"] = torch.zeros((B, H, D, D), device=device, dtype=torch.float32)
@@ -787,6 +811,12 @@ class PreconditionedGDNAttention(BaseAttention):
         self.head_dim = _cfg_get(config, "head_dim", head_dim or (self.d_model // self.num_heads))
         self.damping = preconditioner_damping
         self.is_nested_encoder = False
+        self.is_decoder = bool(
+            kwargs.get(
+                "is_decoder",
+                kwargs.get("is_causal", _cfg_get(config, "is_decoder", False) or _cfg_get(config, "is_causal", False)),
+            )
+        )
 
         self.q_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=True)
         self.k_proj = nn.Linear(self.d_model, self.num_heads * self.head_dim, bias=True)
@@ -823,7 +853,8 @@ class PreconditionedGDNAttention(BaseAttention):
         k_preconditioned = k * p_scale
 
         is_causal = self.supports_causal and (
-            kwargs.get("is_causal", False)
+            self.is_decoder
+            or kwargs.get("is_causal", False)
             or getattr(self.config, "is_decoder", False)
             or getattr(self.config, "is_causal", False)
         )
@@ -868,7 +899,7 @@ class PreconditionedGDNAttention(BaseAttention):
             elif isinstance(past_key_value, torch.Tensor):
                 init_state = past_key_value
 
-        if init_state is None and D <= 64 and q.is_cuda and not use_cache:
+        if init_state is None and D <= 64 and q.is_cuda and q.dtype == torch.bfloat16 and not use_cache:
             try:
                 from fla.ops import chunk_gdn
 
@@ -880,28 +911,13 @@ class PreconditionedGDNAttention(BaseAttention):
                 res = chunk_gdn(q_fl, k_fl, v_fl, log_g, step_beta)
                 y_fl = res[0] if isinstance(res, tuple) else res
                 y = y_fl.contiguous().view(B, L, H * D)
+                if self.is_nested_encoder:
+                    return y, None
                 out = self.out_proj(y)
                 return out, None
             except Exception:
                 # allowed-swallow: best-effort-telemetry
                 pass
-
-        def _run_pgdn_chunk(s_in, qc, kc, vc, ac, bc):
-            curr = s_in
-            c_outs = []
-            for t in range(qc.shape[2]):
-                qt = F.normalize(qc[:, :, t : t + 1].float(), p=2, dim=-1, eps=1e-6)
-                kt = F.normalize(kc[:, :, t : t + 1].float(), p=2, dim=-1, eps=1e-6)
-                vt = vc[:, :, t : t + 1].float()
-                at = ac[:, :, t : t + 1, None].float()
-                bt = bc[:, :, t : t + 1, None].float()
-
-                inter_v = torch.matmul(kt, curr)
-                err = vt - inter_v
-                curr = at * curr + bt * torch.matmul(kt.transpose(-1, -2), err)
-                yt = torch.matmul(qt, curr)
-                c_outs.append(yt.to(qc.dtype))
-            return torch.cat(c_outs, dim=2), curr
 
         S = (
             torch.zeros((B, H, D, D), device=q.device, dtype=torch.float32)
@@ -909,43 +925,71 @@ class PreconditionedGDNAttention(BaseAttention):
             else init_state.to(device=q.device, dtype=torch.float32)
         )
 
-        chunk_size = 64
-        if L <= 64 or not torch.is_grad_enabled():
-            y, present_state = _run_pgdn_chunk(S, q, k_preconditioned, v, alpha, beta)
+        # Vectorized chunked WY representation for Preconditioned GDN (zero per-token loop)
+        c_size = 32
+        pad_len = (c_size - (L % c_size)) % c_size
+        if pad_len > 0:
+            q_p = F.pad(q, (0, 0, 0, pad_len))
+            k_p = F.pad(k_preconditioned, (0, 0, 0, pad_len))
+            v_p = F.pad(v, (0, 0, 0, pad_len))
+            a_p = F.pad(alpha, (0, pad_len), value=1.0)
+            b_p = F.pad(beta, (0, pad_len), value=0.0)
         else:
-            num_chunks = (L + chunk_size - 1) // chunk_size
-            pad_len = (chunk_size - (L % chunk_size)) % chunk_size
-            if pad_len > 0:
-                q_p = F.pad(q, (0, 0, 0, pad_len))
-                k_p = F.pad(k_preconditioned, (0, 0, 0, pad_len))
-                v_p = F.pad(v, (0, 0, 0, pad_len))
-                a_p = F.pad(alpha, (0, pad_len), value=1.0)
-                b_p = F.pad(beta, (0, pad_len), value=0.0)
-            else:
-                q_p, k_p, v_p, a_p, b_p = q, k_preconditioned, v, alpha, beta
+            q_p, k_p, v_p, a_p, b_p = q, k_preconditioned, v, alpha, beta
 
-            outs = []
-            curr = S
-            for c in range(num_chunks):
-                st = c * chunk_size
-                en = (c + 1) * chunk_size
-                qc = q_p[:, :, st:en]
-                kc = k_p[:, :, st:en]
-                vc = v_p[:, :, st:en]
-                ac = a_p[:, :, st:en]
-                bc = b_p[:, :, st:en]
+        num_chunks = q_p.shape[2] // c_size
+        q_blk = F.normalize(q_p.float(), p=2, dim=-1, eps=1e-6).view(B, H, num_chunks, c_size, D)
+        k_blk = F.normalize(k_p.float(), p=2, dim=-1, eps=1e-6).view(B, H, num_chunks, c_size, D)
+        v_blk = v_p.float().view(B, H, num_chunks, c_size, D)
+        a_blk = a_p.float().clamp(min=1e-4, max=1.0).view(B, H, num_chunks, c_size)
+        b_blk = b_p.float().view(B, H, num_chunks, c_size)
 
-                yc, curr = torch.utils.checkpoint.checkpoint(
-                    _run_pgdn_chunk, curr, qc, kc, vc, ac, bc, use_reentrant=False
-                )
-                outs.append(yc)
+        log_a = torch.log(a_blk)
+        gamma = torch.cumsum(log_a, dim=-1)
+        gamma_prev = gamma - log_a
+        exp_gamma = torch.exp(gamma)
+        exp_gamma_prev = torch.exp(gamma_prev)
 
-            y = torch.cat(outs, dim=2)
-            if pad_len > 0:
-                y = y[:, :, :L, :]
-            present_state = curr
+        kk = torch.matmul(k_blk, k_blk.transpose(-1, -2))
+        g_diff = (gamma.unsqueeze(-1) - gamma.unsqueeze(-2)).clamp(max=0.0)
+        g_diff_prev = (gamma_prev.unsqueeze(-1) - gamma.unsqueeze(-2)).clamp(max=0.0)
+        tril_strict = torch.tril(torch.ones((c_size, c_size), device=q.device, dtype=torch.bool), diagonal=-1)
+        tril_causal = torch.tril(torch.ones((c_size, c_size), device=q.device, dtype=torch.bool), diagonal=0)
 
-        y = y.transpose(1, 2).contiguous().view(B, L, H * D)
+        decay_mat = torch.exp(g_diff) * tril_causal.float()
+        M = kk * (b_blk.unsqueeze(-1) * (torch.exp(g_diff_prev) * tril_strict.float()))
+        I_plus_M = torch.eye(c_size, device=q.device, dtype=torch.float32) + M
+
+        rhs_v = b_blk.unsqueeze(-1) * v_blk
+        rhs_k = (b_blk * exp_gamma_prev).unsqueeze(-1) * k_blk
+        rhs = torch.cat([rhs_v, rhs_k], dim=-1)
+        sol = torch.linalg.solve_triangular(I_plus_M, rhs, upper=False, unitriangular=True)
+        U_v = sol[..., :D]
+        W_k = sol[..., D:]
+
+        qk_decay = torch.matmul(q_blk, k_blk.transpose(-1, -2)) * decay_mat
+        q_decayed = q_blk * exp_gamma.unsqueeze(-1)
+        gamma_end = gamma[..., -1:]
+        exp_gamma_end = torch.exp(gamma_end).unsqueeze(-1)
+        k_to_end = k_blk * torch.exp((gamma_end - gamma).clamp(max=0.0)).unsqueeze(-1)
+
+        outs = []
+        curr = S
+        for c in range(num_chunks):
+            U_c = U_v[:, :, c] - torch.matmul(W_k[:, :, c], curr)
+            y_c = torch.matmul(q_decayed[:, :, c], curr) + torch.matmul(qk_decay[:, :, c], U_c)
+            curr = exp_gamma_end[:, :, c] * curr + torch.matmul(k_to_end[:, :, c].transpose(-1, -2), U_c)
+            outs.append(y_c)
+
+        y = torch.cat(outs, dim=2)
+        if pad_len > 0:
+            y = y[:, :, :L, :]
+        present_state = curr
+
+        if q.dtype == torch.float16:
+            fmax = torch.finfo(q.dtype).max * 0.5
+            y = y.clamp(min=-fmax, max=fmax)
+        y = y.to(q.dtype).transpose(1, 2).contiguous().view(B, L, H * D)
         present_kv = (present_state.to(q.dtype),) if use_cache else None
         if self.is_nested_encoder:
             return y, present_kv
@@ -973,12 +1017,8 @@ class PreconditionedGDNAttention(BaseAttention):
         step_idx = state.get("step_idx", 0)
 
         q = self.q_proj(x).view(B, 1, H, D).transpose(1, 2)
-        k = self.k_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
-        v = self.v_proj(x).view(B, 1, self.num_kv_heads, D).transpose(1, 2)
-
-        if self.kv_repeat > 1:
-            k = repeat_kv(k, self.kv_repeat)
-            v = repeat_kv(v, self.kv_repeat)
+        k = self.k_proj(x).view(B, 1, H, D).transpose(1, 2)
+        v = self.v_proj(x).view(B, 1, H, D).transpose(1, 2)
 
         alpha = torch.sigmoid(self.alpha_proj(x)).transpose(1, 2).unsqueeze(-1)
         beta = torch.sigmoid(self.beta_proj(x)).transpose(1, 2).unsqueeze(-1)
@@ -992,7 +1032,7 @@ class PreconditionedGDNAttention(BaseAttention):
         curv = rho * curv + (1.0 - rho) * (k_f * k_f)
         state["curvature_state"] = curv
 
-        p_scale = torch.rsqrt(curv + self.lambda_diag)
+        p_scale = torch.rsqrt(curv + self.damping)
         k_prec = k_f * p_scale
 
         if "kv_state" not in state or state["kv_state"] is None:
