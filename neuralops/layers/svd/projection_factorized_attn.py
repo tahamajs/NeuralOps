@@ -25,11 +25,20 @@ from neuralops.layers.svd.svd_linear_attention import SVDLinear, SVDLinearAttent
 logger = logging.getLogger(__name__)
 
 
-@ATTENTION_REGISTRY.register("projection_factorized_attn")
+@ATTENTION_REGISTRY.register(
+    "projection_factorized_attn",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
 class ProjectionFactorizedAttention(SVDLinearAttention):
     r"""Projection Factorized SVD Linear Attention."""
 
     is_custom_attention: bool = True
+    supports_gqa: bool = True
+    supports_causal: bool = True
+    supports_bidirectional: bool = True
+    supports_rope: bool = True
 
 
 _CANDIDATE_ATTRS = ("attn", "attention", "self_attn", "self")
@@ -215,6 +224,7 @@ def inject_projection_factorized_attn(
             old_attn=src_attn,
             layer_idx=layer_idx,
             total_layers=total_layers,
+            _attn_cls=ProjectionFactorizedAttention,
             **delegate_kwargs,
         )
     except Exception as e:

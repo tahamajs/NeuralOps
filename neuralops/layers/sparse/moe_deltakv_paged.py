@@ -52,16 +52,23 @@ def low_rank_delta_compress(
     """
     Low-rank + STE-quantize a temporal delta tensor.
 
+    Supports both 4D `(B, H, T, d)` and 5D `(B, H, P, T, d)` batched per-page inputs.
     Returns (compressed, relative_reconstruction_error).
     """
     if delta.numel() == 0:
         return delta, 0.0
 
-    B, H, N, d = delta.shape
+    d = delta.shape[-1]
     original_norm = delta.float().norm().item() + 1e-12
 
-    flat = delta.reshape(-1, d)
-    r = min(rank, flat.shape[0], flat.shape[1])
+    if delta.dim() == 5:
+        B, H, P, T, _ = delta.shape
+        flat = delta.reshape(B * H * P, T, d)
+        r = min(rank, T, d)
+    else:
+        B, H, T, _ = delta.shape
+        flat = delta.reshape(-1, d)
+        r = min(rank, flat.shape[0], flat.shape[1])
 
     if r < 1:
         compressed = ste_quantize(delta, bits)
@@ -70,11 +77,11 @@ def low_rank_delta_compress(
 
     try:
         U, S, Vh = torch.linalg.svd(flat.float(), full_matrices=False)
-        U_r = U[:, :r]
-        S_r = S[:r]
-        Vh_r = Vh[:r, :]
-        approx = ((U_r * S_r.unsqueeze(0)) @ Vh_r).to(delta.dtype)
-        approx = approx.reshape(B, H, N, d)
+        U_r = U[..., :, :r]
+        S_r = S[..., :r]
+        Vh_r = Vh[..., :r, :]
+        approx = ((U_r * S_r.unsqueeze(-2)) @ Vh_r).to(delta.dtype)
+        approx = approx.reshape(delta.shape)
     except Exception as e:
         logger.debug("SVD failed (%s); falling back to direct quantization.", e)
         approx = delta
@@ -90,12 +97,15 @@ def simulate_paged_delta_kv(
     rank: int,
     bits: int,
     max_delta_error: float = 0.35,
+    page_size: int | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor, float, float]:
     """
     Delta-KV temporal compression with reconstruction-error guard and STE gradient pass-through.
 
     MDP-FIX-02: if the reconstruction error exceeds `max_delta_error`, the
     raw K/V is returned instead of the compressed version.
+    When `page_size` is provided (> 1), compression runs independently per page so
+    future pages never leak into earlier pages in causal mode.
     Runs SVD/quantization under no_grad and uses STE (K + (K_hat - K).detach())
     so singular-value degeneracies in torch.linalg.svd backward never produce NaNs.
 
@@ -106,21 +116,59 @@ def simulate_paged_delta_kv(
         return K, V, 0.0, 0.0
 
     with torch.no_grad():
-        delta_K = K[:, :, 1:, :] - K[:, :, :-1, :]
-        delta_V = V[:, :, 1:, :] - V[:, :, :-1, :]
+        if page_size is not None and page_size > 1:
+            num_full_pages = N // page_size
+            full_len = num_full_pages * page_size
+            K_hat_val = K.clone()
+            V_hat_val = V.clone()
+            err_K, err_V = 0.0, 0.0
 
-        delta_K_hat, err_K = low_rank_delta_compress(delta_K, rank, bits)
-        delta_V_hat, err_V = low_rank_delta_compress(delta_V, rank, bits)
+            if num_full_pages > 0:
+                Kp = K[:, :, :full_len, :].view(B, H, num_full_pages, page_size, d)
+                Vp = V[:, :, :full_len, :].view(B, H, num_full_pages, page_size, d)
+                dKp = Kp[:, :, :, 1:, :] - Kp[:, :, :, :-1, :]
+                dVp = Vp[:, :, :, 1:, :] - Vp[:, :, :, :-1, :]
+                dKp_hat, err_K = low_rank_delta_compress(dKp, rank, bits)
+                dVp_hat, err_V = low_rank_delta_compress(dVp, rank, bits)
+                if err_K <= max_delta_error and err_V <= max_delta_error:
+                    Kp_rec = torch.empty_like(Kp)
+                    Vp_rec = torch.empty_like(Vp)
+                    Kp_rec[:, :, :, 0, :] = Kp[:, :, :, 0, :]
+                    Vp_rec[:, :, :, 0, :] = Vp[:, :, :, 0, :]
+                    Kp_rec[:, :, :, 1:, :] = Kp[:, :, :, 0:1, :] + torch.cumsum(dKp_hat, dim=3)
+                    Vp_rec[:, :, :, 1:, :] = Vp[:, :, :, 0:1, :] + torch.cumsum(dVp_hat, dim=3)
+                    K_hat_val[:, :, :full_len, :] = Kp_rec.reshape(B, H, full_len, d)
+                    V_hat_val[:, :, :full_len, :] = Vp_rec.reshape(B, H, full_len, d)
 
-        if err_K > max_delta_error or err_V > max_delta_error:
-            return K, V, err_K, err_V
+            tail_len = N - full_len
+            if tail_len > 1:
+                Kt = K[:, :, full_len:, :]
+                Vt = V[:, :, full_len:, :]
+                dKt = Kt[:, :, 1:, :] - Kt[:, :, :-1, :]
+                dVt = Vt[:, :, 1:, :] - Vt[:, :, :-1, :]
+                dKt_hat, err_Kt = low_rank_delta_compress(dKt, rank, bits)
+                dVt_hat, err_Vt = low_rank_delta_compress(dVt, rank, bits)
+                if err_Kt <= max_delta_error and err_Vt <= max_delta_error:
+                    K_hat_val[:, :, full_len + 1 :, :] = Kt[:, :, 0:1, :] + torch.cumsum(dKt_hat, dim=2)
+                    V_hat_val[:, :, full_len + 1 :, :] = Vt[:, :, 0:1, :] + torch.cumsum(dVt_hat, dim=2)
+                err_K = max(err_K, err_Kt)
+                err_V = max(err_V, err_Vt)
+        else:
+            delta_K = K[:, :, 1:, :] - K[:, :, :-1, :]
+            delta_V = V[:, :, 1:, :] - V[:, :, :-1, :]
 
-        K_hat_val = torch.empty_like(K)
-        V_hat_val = torch.empty_like(V)
-        K_hat_val[:, :, 0, :] = K[:, :, 0, :]
-        V_hat_val[:, :, 0, :] = V[:, :, 0, :]
-        K_hat_val[:, :, 1:, :] = K[:, :, 0:1, :] + torch.cumsum(delta_K_hat, dim=2)
-        V_hat_val[:, :, 1:, :] = V[:, :, 0:1, :] + torch.cumsum(delta_V_hat, dim=2)
+            delta_K_hat, err_K = low_rank_delta_compress(delta_K, rank, bits)
+            delta_V_hat, err_V = low_rank_delta_compress(delta_V, rank, bits)
+
+            if err_K > max_delta_error or err_V > max_delta_error:
+                return K, V, err_K, err_V
+
+            K_hat_val = torch.empty_like(K)
+            V_hat_val = torch.empty_like(V)
+            K_hat_val[:, :, 0, :] = K[:, :, 0, :]
+            V_hat_val[:, :, 0, :] = V[:, :, 0, :]
+            K_hat_val[:, :, 1:, :] = K[:, :, 0:1, :] + torch.cumsum(delta_K_hat, dim=2)
+            V_hat_val[:, :, 1:, :] = V[:, :, 0:1, :] + torch.cumsum(delta_V_hat, dim=2)
 
     K_hat = K + (K_hat_val - K).detach()
     V_hat = V + (V_hat_val - V).detach()
@@ -625,106 +673,109 @@ class MoEDeltaKVPagedAttention(BaseAttention):
         num_pages = (N + page_size - 1) // page_size
         pad_len = num_pages * page_size - N
 
-        q_f = q.float()
-        k_f = k_hat.float()
-        v_f = v_hat.float()
+        with torch.amp.autocast(device_type=device.type, enabled=False):
+            q_f = q.float()
+            k_f = k_hat.float()
+            v_f = v_hat.float()
 
-        if pad_len > 0:
-            q_pad = F.pad(q_f, (0, 0, 0, pad_len))
-            k_pad = F.pad(k_f, (0, 0, 0, pad_len))
-            v_pad = F.pad(v_f, (0, 0, 0, pad_len))
-            valid_pad = F.pad(valid_mask, (0, pad_len), value=False)
-        else:
-            q_pad, k_pad, v_pad, valid_pad = q_f, k_f, v_f, valid_mask
+            if pad_len > 0:
+                q_pad = F.pad(q_f, (0, 0, 0, pad_len))
+                k_pad = F.pad(k_f, (0, 0, 0, pad_len))
+                v_pad = F.pad(v_f, (0, 0, 0, pad_len))
+                valid_pad = F.pad(valid_mask, (0, pad_len), value=False)
+            else:
+                q_pad, k_pad, v_pad, valid_pad = q_f, k_f, v_f, valid_mask
 
-        padded_N = num_pages * page_size
+            padded_N = num_pages * page_size
 
-        q_blocks = q_pad.view(B, H, num_pages, page_size, d)
-        k_blocks = k_pad.view(B, H, num_pages, page_size, d)
-        v_blocks = v_pad.view(B, H, num_pages, page_size, d)
+            q_blocks = q_pad.view(B, H, num_pages, page_size, d)
+            k_blocks = k_pad.view(B, H, num_pages, page_size, d)
+            v_blocks = v_pad.view(B, H, num_pages, page_size, d)
 
-        valid_blocks = valid_pad.view(B, 1, num_pages, page_size).float()
+            valid_blocks = valid_pad.view(B, 1, num_pages, page_size).float()
 
-        valid_sum = valid_blocks.sum(dim=-1, keepdim=True).clamp_min(1.0)
-        q_bar = (q_blocks * valid_blocks.unsqueeze(-1)).sum(dim=3) / valid_sum
-        k_bar = (k_blocks * valid_blocks.unsqueeze(-1)).sum(dim=3) / valid_sum
+            valid_sum = valid_blocks.sum(dim=-1, keepdim=True).clamp_min(1.0)
+            q_bar = (q_blocks * valid_blocks.unsqueeze(-1)).sum(dim=3) / valid_sum
+            k_bar = (k_blocks * valid_blocks.unsqueeze(-1)).sum(dim=3) / valid_sum
 
-        router_logits = torch.matmul(
-            self.W_rg(q_bar.to(self.W_rg.weight.dtype)).float(),
-            k_bar.transpose(-1, -2).contiguous(),
-        ) / math.sqrt(d)
-
-        page_valid = valid_pad.view(B, 1, num_pages, page_size).any(dim=-1)
-        router_invalid = ~page_valid.unsqueeze(2).expand(B, 1, num_pages, num_pages)
-        if self.is_causal:
-            causal_pages = torch.tril(torch.ones(num_pages, num_pages, device=device, dtype=torch.bool))
-            router_invalid = router_invalid | (~causal_pages.unsqueeze(0).unsqueeze(0))
-
-        router_all_masked = router_invalid.all(dim=-1, keepdim=True)
-        router_safe_mask = router_invalid.clone()
-        if router_all_masked.any():
-            router_safe_mask[..., 0:1] = router_safe_mask[..., 0:1] & (~router_all_masked)
-
-        f32_min = torch.finfo(torch.float32).min
-        router_logits = router_logits.masked_fill(router_safe_mask, f32_min)
-
-        router_logits_for_topk = router_logits.clone()
-        router_logits_for_topk[:, :, :, 0] = router_logits_for_topk[:, :, :, 0] + 1e4
-
-        k_experts = min(self.k_experts, num_pages)
-        _, topk_indices = torch.topk(router_logits_for_topk, k_experts, dim=-1)
-        topk_logits = torch.gather(router_logits, -1, topk_indices)
-        g_j = F.softmax(topk_logits, dim=-1)
-
-        router_probs = F.softmax(router_logits, dim=-1)
-        expert_mask = F.one_hot(topk_indices, num_classes=num_pages).float()
-        density = expert_mask.sum(dim=-2).mean(dim=(0, 1, 2))
-        prob_mean = router_probs.mean(dim=(0, 1, 2))
-        with torch.no_grad():
-            self.aux_loss.copy_(num_pages * torch.sum(density * prob_mean).detach())
-
-        expanded_idx = topk_indices.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, -1, page_size, d)
-        k_blocks_exp = k_blocks.unsqueeze(2).expand(-1, -1, num_pages, -1, -1, -1)
-        v_blocks_exp = v_blocks.unsqueeze(2).expand(-1, -1, num_pages, -1, -1, -1)
-        k_gathered = torch.gather(k_blocks_exp, dim=3, index=expanded_idx)
-        v_gathered = torch.gather(v_blocks_exp, dim=3, index=expanded_idx)
-
-        valid_blocks_exp = valid_blocks.unsqueeze(2).expand(-1, -1, num_pages, -1, -1)
-        exp_valid_idx = topk_indices.unsqueeze(-1).expand(-1, -1, -1, -1, page_size)
-        valid_blocks_exp_h = valid_blocks_exp.expand(-1, H, -1, -1, -1)
-        k_valid = torch.gather(valid_blocks_exp_h, dim=3, index=exp_valid_idx)
-        attn_invalid = ~k_valid.bool().unsqueeze(-2).expand(-1, -1, -1, -1, page_size, -1)
-
-        if self.is_causal:
-            q_pos = (
-                torch.arange(num_pages, device=device).view(1, 1, num_pages, 1, 1, 1) * page_size
-                + torch.arange(page_size, device=device).view(1, 1, 1, 1, page_size, 1)
+            q_bar_rg = F.linear(
+                q_bar,
+                self.W_rg.weight.float(),
+                self.W_rg.bias.float() if getattr(self.W_rg, "bias", None) is not None else None,
             )
-            k_pos = (
-                topk_indices.unsqueeze(-1).unsqueeze(-1) * page_size
-                + torch.arange(page_size, device=device).view(1, 1, 1, 1, 1, page_size)
-            )
-            attn_invalid = attn_invalid | (k_pos > q_pos)
+            router_logits = torch.matmul(q_bar_rg, k_bar.transpose(-1, -2).contiguous()) / math.sqrt(d)
 
-        attn_all_masked = attn_invalid.all(dim=-1, keepdim=True)
-        attn_safe_mask = attn_invalid.clone()
-        if attn_all_masked.any():
-            attn_safe_mask[..., 0:1] = attn_safe_mask[..., 0:1] & (~attn_all_masked)
+            page_valid = valid_pad.view(B, 1, num_pages, page_size).any(dim=-1)
+            router_invalid = ~page_valid.unsqueeze(2).expand(B, 1, num_pages, num_pages)
+            if self.is_causal:
+                causal_pages = torch.tril(torch.ones(num_pages, num_pages, device=device, dtype=torch.bool))
+                router_invalid = router_invalid | (~causal_pages.unsqueeze(0).unsqueeze(0))
 
-        q_exp = q_blocks.unsqueeze(3)
-        attn_scores = torch.matmul(q_exp, k_gathered.transpose(-1, -2).contiguous()) / math.sqrt(d)
-        attn_scores = attn_scores.masked_fill(attn_safe_mask, f32_min)
+            router_all_masked = router_invalid.all(dim=-1, keepdim=True)
+            router_safe_mask = router_invalid.clone()
+            if router_all_masked.any():
+                router_safe_mask[..., 0:1] = router_safe_mask[..., 0:1] & (~router_all_masked)
 
-        scores_max = attn_scores.amax(dim=-1, keepdim=True).detach()
-        exp_scores = torch.exp((attn_scores - scores_max).clamp(max=0.0)).masked_fill(attn_safe_mask, 0.0)
-        attn_den = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-4)
-        attn_probs = (exp_scores / attn_den).masked_fill(attn_all_masked, 0.0)
-        attn_probs_drop = self.dropout(attn_probs)
+            f32_min = torch.finfo(torch.float32).min
+            router_logits = router_logits.masked_fill(router_safe_mask, f32_min)
 
-        context_per_expert = torch.matmul(attn_probs_drop, v_gathered)
-        g_j_exp = g_j.unsqueeze(-1).unsqueeze(-1)
-        context = (context_per_expert * g_j_exp).sum(dim=3)
-        context = context.reshape(B, H, padded_N, d)
+            router_logits_for_topk = router_logits.clone()
+            router_logits_for_topk[:, :, :, 0] = router_logits_for_topk[:, :, :, 0] + 1e4
+
+            k_experts = min(self.k_experts, num_pages)
+            _, topk_indices = torch.topk(router_logits_for_topk, k_experts, dim=-1)
+            topk_logits = torch.gather(router_logits, -1, topk_indices)
+            g_j = F.softmax(topk_logits, dim=-1)
+
+            router_probs = F.softmax(router_logits, dim=-1)
+            expert_mask = F.one_hot(topk_indices, num_classes=num_pages).float()
+            density = expert_mask.sum(dim=-2).mean(dim=(0, 1, 2))
+            prob_mean = router_probs.mean(dim=(0, 1, 2))
+            with torch.no_grad():
+                self.aux_loss.copy_(num_pages * torch.sum(density * prob_mean).detach())
+
+            expanded_idx = topk_indices.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, -1, page_size, d)
+            k_blocks_exp = k_blocks.unsqueeze(2).expand(-1, -1, num_pages, -1, -1, -1)
+            v_blocks_exp = v_blocks.unsqueeze(2).expand(-1, -1, num_pages, -1, -1, -1)
+            k_gathered = torch.gather(k_blocks_exp, dim=3, index=expanded_idx)
+            v_gathered = torch.gather(v_blocks_exp, dim=3, index=expanded_idx)
+
+            valid_blocks_exp = valid_blocks.unsqueeze(2).expand(-1, -1, num_pages, -1, -1)
+            exp_valid_idx = topk_indices.unsqueeze(-1).expand(-1, -1, -1, -1, page_size)
+            valid_blocks_exp_h = valid_blocks_exp.expand(-1, H, -1, -1, -1)
+            k_valid = torch.gather(valid_blocks_exp_h, dim=3, index=exp_valid_idx)
+            attn_invalid = ~k_valid.bool().unsqueeze(-2).expand(-1, -1, -1, -1, page_size, -1)
+
+            if self.is_causal:
+                q_pos = (
+                    torch.arange(num_pages, device=device).view(1, 1, num_pages, 1, 1, 1) * page_size
+                    + torch.arange(page_size, device=device).view(1, 1, 1, 1, page_size, 1)
+                )
+                k_pos = (
+                    topk_indices.unsqueeze(-1).unsqueeze(-1) * page_size
+                    + torch.arange(page_size, device=device).view(1, 1, 1, 1, 1, page_size)
+                )
+                attn_invalid = attn_invalid | (k_pos > q_pos)
+
+            attn_all_masked = attn_invalid.all(dim=-1, keepdim=True)
+            attn_safe_mask = attn_invalid.clone()
+            if attn_all_masked.any():
+                attn_safe_mask[..., 0:1] = attn_safe_mask[..., 0:1] & (~attn_all_masked)
+
+            q_exp = q_blocks.unsqueeze(3)
+            attn_scores = torch.matmul(q_exp, k_gathered.transpose(-1, -2).contiguous()) / math.sqrt(d)
+            attn_scores = attn_scores.masked_fill(attn_safe_mask, f32_min)
+
+            scores_max = attn_scores.amax(dim=-1, keepdim=True).detach()
+            exp_scores = torch.exp((attn_scores - scores_max).clamp(max=0.0)).masked_fill(attn_safe_mask, 0.0)
+            attn_den = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-4)
+            attn_probs = (exp_scores / attn_den).masked_fill(attn_all_masked, 0.0)
+            attn_probs_drop = self.dropout(attn_probs)
+
+            context_per_expert = torch.matmul(attn_probs_drop, v_gathered)
+            g_j_exp = g_j.unsqueeze(-1).unsqueeze(-1)
+            context = (context_per_expert * g_j_exp).sum(dim=3)
+            context = context.reshape(B, H, padded_N, d)
 
         return context, attn_probs
 
@@ -773,6 +824,7 @@ class MoEDeltaKVPagedAttention(BaseAttention):
                 rank=self.svd_rank,
                 bits=self.q_bits,
                 max_delta_error=self.max_delta_error,
+                page_size=self.page_size if (self.is_causal and not is_cross) else None,
             )
             with torch.no_grad():
                 self.delta_kv_error_k.copy_(torch.tensor(err_k, device=device))
@@ -815,29 +867,30 @@ class MoEDeltaKVPagedAttention(BaseAttention):
             context, attn_probs = self._paged_moe_attention(q, k_hat, v_hat, valid_mask)
         else:
             scale = 1.0 / math.sqrt(d)
-            scores = torch.matmul(q.float(), k_hat.float().transpose(-2, -1).contiguous()) * scale
+            with torch.amp.autocast(device_type=device.type, enabled=False):
+                scores = torch.matmul(q.float(), k_hat.float().transpose(-2, -1).contiguous()) * scale
 
-            invalid_mask = ~valid_mask[:, None, None, :].bool().expand(B, 1, N, kv_len)
-            if self.is_causal and not is_cross and N > 1:
-                q_idx = torch.arange(N, device=device).unsqueeze(1)
-                k_idx = torch.arange(kv_len, device=device).unsqueeze(0)
-                offset = max(0, kv_len - N)
-                causal_invalid = k_idx > (q_idx + offset)
-                invalid_mask = invalid_mask | causal_invalid.unsqueeze(0).unsqueeze(0)
+                invalid_mask = ~valid_mask[:, None, None, :].bool().expand(B, 1, N, kv_len)
+                if self.is_causal and not is_cross and N > 1:
+                    q_idx = torch.arange(N, device=device).unsqueeze(1)
+                    k_idx = torch.arange(kv_len, device=device).unsqueeze(0)
+                    offset = max(0, kv_len - N)
+                    causal_invalid = k_idx > (q_idx + offset)
+                    invalid_mask = invalid_mask | causal_invalid.unsqueeze(0).unsqueeze(0)
 
-            all_masked = invalid_mask.all(dim=-1, keepdim=True)
-            safe_mask = invalid_mask.clone()
-            if all_masked.any():
-                safe_mask[..., 0:1] = safe_mask[..., 0:1] & (~all_masked)
+                all_masked = invalid_mask.all(dim=-1, keepdim=True)
+                safe_mask = invalid_mask.clone()
+                if all_masked.any():
+                    safe_mask[..., 0:1] = safe_mask[..., 0:1] & (~all_masked)
 
-            f32_min = torch.finfo(torch.float32).min
-            scores = scores.masked_fill(safe_mask, f32_min)
-            scores_max = scores.amax(dim=-1, keepdim=True).detach()
-            exp_scores = torch.exp((scores - scores_max).clamp(max=0.0)).masked_fill(safe_mask, 0.0)
-            den = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-4)
-            attn_probs = (exp_scores / den).masked_fill(all_masked, 0.0)
-            attn_probs_drop = self.dropout(attn_probs)
-            context = torch.matmul(attn_probs_drop, v_hat.float())
+                f32_min = torch.finfo(torch.float32).min
+                scores = scores.masked_fill(safe_mask, f32_min)
+                scores_max = scores.amax(dim=-1, keepdim=True).detach()
+                exp_scores = torch.exp((scores - scores_max).clamp(max=0.0)).masked_fill(safe_mask, 0.0)
+                den = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-4)
+                attn_probs = (exp_scores / den).masked_fill(all_masked, 0.0)
+                attn_probs_drop = self.dropout(attn_probs)
+                context = torch.matmul(attn_probs_drop, v_hat.float())
 
             with torch.no_grad():
                 self.aux_loss.zero_()

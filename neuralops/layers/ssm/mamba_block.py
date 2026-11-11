@@ -568,7 +568,7 @@ class MambaBlock(BaseAttention):
 
         h_prev, conv_prev, _, past_len = self._read_state(past_state)
 
-        xz = self.in_proj(hidden_states)
+        xz = self.in_proj(hidden_states.to(self.in_proj.weight.dtype)).to(target_dtype)
         x_ssm, z = xz.chunk(2, dim=-1)
 
         if conv_prev is not None:
@@ -577,8 +577,8 @@ class MambaBlock(BaseAttention):
         else:
             x_cat = F.pad(x_ssm.transpose(1, 2), (self.d_conv - 1, 0)).transpose(1, 2)
 
-        x_conv_full = self.conv1d(x_cat.transpose(1, 2))
-        x_conv = x_conv_full[..., -L:].transpose(1, 2)
+        x_conv_full = self.conv1d(x_cat.transpose(1, 2).to(self.conv1d.weight.dtype))
+        x_conv = x_conv_full[..., -L:].transpose(1, 2).to(target_dtype)
 
         if self.d_conv - 1 <= L:
             conv_next = x_cat[:, -(self.d_conv - 1) :, :].transpose(1, 2).contiguous()
@@ -598,9 +598,9 @@ class MambaBlock(BaseAttention):
 
         x_ssm = F.silu(x_conv)
 
-        x_dbl = self.x_proj(x_ssm)
+        x_dbl = self.x_proj(x_ssm.to(self.x_proj.weight.dtype))
         dt, B_ssm, C_ssm = x_dbl.split([self.dt_rank, self.d_state, self.d_state], dim=-1)
-        dt = self.dt_proj(dt)
+        dt = self.dt_proj(dt.to(self.dt_proj.weight.dtype))
 
         A = -torch.exp(self.A_log)
 
@@ -619,12 +619,12 @@ class MambaBlock(BaseAttention):
 
         if self.bidirectional and not self.is_decoder:
             x_rev = torch.flip(x_ssm, dims=[1])
-            x_dbl_rev = self.x_proj_bwd(x_rev)
+            x_dbl_rev = self.x_proj_bwd(x_rev.to(self.x_proj_bwd.weight.dtype))
             dt_b, B_b, C_b = x_dbl_rev.split([self.dt_rank, self.d_state, self.d_state], dim=-1)
-            dt_b = self.dt_proj_bwd(dt_b)
+            dt_b = self.dt_proj_bwd(dt_b.to(self.dt_proj_bwd.weight.dtype))
             A_b = -torch.exp(self.A_log_bwd)
             y_b = self._parallel_scan(
-                torch.flip(x_ssm, dims=[1]).transpose(1, 2),
+                x_rev.transpose(1, 2),
                 dt_b.transpose(1, 2),
                 A_b,
                 B_b.transpose(1, 2),
@@ -641,7 +641,7 @@ class MambaBlock(BaseAttention):
             .to(target_dtype)
         )
 
-        out = self.out_proj(y).to(target_dtype)
+        out = self.out_proj(y.to(self.out_proj.weight.dtype)).to(target_dtype)
         out = (
             torch.nan_to_num(out.float(), nan=0.0, posinf=65000.0, neginf=-65000.0)
             .clamp(-65000.0, 65000.0)

@@ -150,7 +150,7 @@ class Mamba2(nn.Module):
         dt = F.softplus(self.dt_proj(x_ssm))
         A_f = -torch.exp(torch.clamp(self.A_log.float(), min=-20.0, max=10.0))
 
-        chunk_len = min(L, 64) if L > 0 else 1
+        chunk_len = min(L, 32) if L > 0 else 1
         num_chunks = (L + chunk_len - 1) // chunk_len if L > 0 else 0
         running_h = (
             past_state.float()

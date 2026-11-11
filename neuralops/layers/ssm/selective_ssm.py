@@ -314,8 +314,8 @@ class SelectiveSSM(BaseAttention):
         else:
             x_cat = F.pad(x_ssm_t, (self.d_conv - 1, 0))
 
-        x_conv_full = conv1d_layer(x_cat)
-        x_conv = x_conv_full[..., -L:].transpose(1, 2).contiguous()
+        x_conv_full = conv1d_layer(x_cat.to(conv1d_layer.weight.dtype))
+        x_conv = x_conv_full[..., -L:].transpose(1, 2).contiguous().to(target_dtype)
         x_conv = F.silu(x_conv)
 
         if self.d_conv - 1 <= x_cat.shape[2]:
@@ -327,9 +327,9 @@ class SelectiveSSM(BaseAttention):
                 dim=2,
             ).contiguous()
 
-        x_dbl = x_proj_layer(x_conv)
+        x_dbl = x_proj_layer(x_conv.to(x_proj_layer.weight.dtype))
         dt, B_ssm, C_ssm = x_dbl.split([self.dt_rank, self.d_state, self.d_state], dim=-1)
-        dt = dt_proj_layer(dt)
+        dt = dt_proj_layer(dt.to(dt_proj_layer.weight.dtype))
         dt = F.softplus(dt)
 
         A = -torch.exp(A_log_param.float())

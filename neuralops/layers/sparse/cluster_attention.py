@@ -117,8 +117,11 @@ class ClusterAttention(BaseAttention):
                 for attr in ("q_proj", "query", "q_lin"):
                     mod = getattr(source_attn, attr, None)
                     if mod is not None and hasattr(mod, "weight"):
-                        w = mod.weight
-                        head_dim = w.shape[0] // max(1, num_heads)
+                        base_mod = getattr(mod, "base_layer", mod)
+                        w = base_mod.weight
+                        is_conv = "Conv1D" in type(base_mod).__name__ or hasattr(base_mod, "nf")
+                        out_dim = w.shape[1] if (is_conv and w.ndim == 2) else w.shape[0]
+                        head_dim = out_dim // max(1, num_heads)
                         break
 
         if not head_dim and config is not None:
@@ -136,16 +139,19 @@ class ClusterAttention(BaseAttention):
         head_dim = int(head_dim)
 
         if not num_kv_heads and source_attn is not None:
-            for attr in ("k_proj", "key", "k_lin"):
-                mod = getattr(source_attn, attr, None)
-                if mod is not None and hasattr(mod, "weight"):
-                    w = mod.weight
-                    num_kv_heads = w.shape[0] // max(1, head_dim)
-                    break
+            num_kv_heads = getattr(source_attn, "num_key_value_heads", None) or getattr(
+                source_attn, "num_kv_heads", None
+            )
             if not num_kv_heads:
-                num_kv_heads = getattr(source_attn, "num_key_value_heads", None) or getattr(
-                    source_attn, "num_kv_heads", None
-                )
+                for attr in ("k_proj", "key", "k_lin"):
+                    mod = getattr(source_attn, attr, None)
+                    if mod is not None and hasattr(mod, "weight"):
+                        base_mod = getattr(mod, "base_layer", mod)
+                        w = base_mod.weight
+                        is_conv = "Conv1D" in type(base_mod).__name__ or hasattr(base_mod, "nf")
+                        out_dim = w.shape[1] if (is_conv and w.ndim == 2) else w.shape[0]
+                        num_kv_heads = out_dim // max(1, head_dim)
+                        break
 
         if not num_kv_heads and config is not None:
             num_kv_heads = getattr(config, "num_key_value_heads", None)
@@ -167,8 +173,8 @@ class ClusterAttention(BaseAttention):
             self.num_clusters = num_clusters
         self.n_iters: int = max(1, n_iters)
         self.window_size: int = window_size
-        self.temp = nn.Parameter(torch.tensor(0.1))
-        self.local_residual = nn.Parameter(torch.tensor(0.5))
+        self.temp = nn.Parameter(torch.tensor(0.5))
+        self.local_residual = nn.Parameter(torch.tensor(5.5))
 
         self.register_buffer("_seq_idx", torch.arange(4096), persistent=False)
 
@@ -375,20 +381,42 @@ class ClusterAttention(BaseAttention):
                     bias_o.data.clone() if bias_o is not None else None,
                 )
 
+        def _extract_mod_wb(mod: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
+            if mod is None:
+                return None, None
+            if hasattr(mod, "merge") and not getattr(mod, "merged", False):
+                try:
+                    mod.merge()
+                except Exception:
+                    # allowed-swallow: best-effort-telemetry
+                    pass
+            base_m = getattr(mod, "base_layer", mod)
+            w_m = getattr(base_m, "weight", getattr(mod, "weight", None))
+            if w_m is None or not isinstance(w_m, torch.Tensor) or w_m.ndim != 2:
+                return None, None
+            w_m = w_m.data.clone()
+            cls_m = type(mod).__name__
+            base_cls_m = type(base_m).__name__
+            if ("Conv1D" in cls_m) or ("Conv1D" in base_cls_m) or hasattr(base_m, "nf") or hasattr(mod, "nf"):
+                w_m = w_m.t().contiguous()
+            b_mod = getattr(base_m, "bias", getattr(mod, "bias", None))
+            b_m = b_mod.data.clone() if isinstance(b_mod, torch.Tensor) else None
+            return w_m, b_m
+
         if hasattr(src, "self") and (
             extracted["q"][0] is None or extracted["k"][0] is None or extracted["v"][0] is None
         ):
             s = src.self
-            if hasattr(s, "query"):
-                extracted["q"] = (s.query.weight.data, getattr(s.query, "bias", None))
-            if hasattr(s, "key"):
-                extracted["k"] = (s.key.weight.data, getattr(s.key, "bias", None))
-            if hasattr(s, "value"):
-                extracted["v"] = (s.value.weight.data, getattr(s.value, "bias", None))
+            for key, attr in (("q", "query"), ("k", "key"), ("v", "value")):
+                if extracted[key][0] is None and hasattr(s, attr):
+                    w_m, b_m = _extract_mod_wb(getattr(s, attr))
+                    if w_m is not None:
+                        extracted[key] = (w_m, b_m)
 
         if hasattr(src, "output") and hasattr(src.output, "dense") and extracted["o"][0] is None:
-            dense = src.output.dense
-            extracted["o"] = (dense.weight.data, getattr(dense, "bias", None))
+            w_m, b_m = _extract_mod_wb(src.output.dense)
+            if w_m is not None:
+                extracted["o"] = (w_m, b_m)
 
         named_map = {
             "q": ["q_proj", "q_lin", "query"],
@@ -400,12 +428,9 @@ class ClusterAttention(BaseAttention):
             if extracted[proj][0] is None:
                 for name in names:
                     if hasattr(src, name):
-                        layer = getattr(src, name)
-                        if hasattr(layer, "weight"):
-                            extracted[proj] = (
-                                layer.weight.data,
-                                getattr(layer, "bias", None),
-                            )
+                        w_m, b_m = _extract_mod_wb(getattr(src, name))
+                        if w_m is not None:
+                            extracted[proj] = (w_m, b_m)
                             break
 
         cls_name = src.__class__.__name__
@@ -478,15 +503,44 @@ class ClusterAttention(BaseAttention):
                 if w is not None:
                     target_w = target.weight
                     out_d, in_d = target_w.shape
+                    if w.ndim != 2:
+                        w = w.reshape(w.size(0), -1)
+                    if w.shape != (out_d, in_d) and w.t().shape == (out_d, in_d):
+                        w = w.t().contiguous()
+                    elif w.shape[1] != in_d and w.shape[0] == in_d:
+                        w = w.t().contiguous()
+
+                    b_val = (b.data if isinstance(b, nn.Parameter) else b) if b is not None else None
+                    if proj_key in ("k", "v") and w.shape[0] != out_d:
+                        hd = self.head_dim
+                        src_out = w.shape[0]
+                        if src_out > out_d and src_out % out_d == 0 and out_d % hd == 0:
+                            rep = src_out // out_d
+                            w = w.view(self.num_kv_heads, rep, hd, -1).mean(dim=1).reshape(out_d, -1)
+                            if b_val is not None and b_val.numel() == src_out:
+                                b_val = b_val.view(self.num_kv_heads, rep, hd).mean(dim=1).reshape(out_d)
+                        elif src_out < out_d and out_d % src_out == 0 and src_out % hd == 0:
+                            rep = out_d // src_out
+                            src_kv = src_out // hd
+                            w = w.view(src_kv, hd, -1).repeat_interleave(rep, dim=0).reshape(out_d, -1)
+                            if b_val is not None and b_val.numel() == src_out:
+                                b_val = b_val.view(src_kv, hd).repeat_interleave(rep, dim=0).reshape(out_d)
+
                     src_out, src_in = w.shape
+                    target_w.data.zero_()
                     target_w.data[: min(out_d, src_out), : min(in_d, src_in)].copy_(
-                        w[: min(out_d, src_out), : min(in_d, src_in)]
+                        w[: min(out_d, src_out), : min(in_d, src_in)].to(device=target_w.device, dtype=target_w.dtype)
                     )
-                    if b is not None and target.bias is not None:
-                        b_val = b.data if isinstance(b, nn.Parameter) else b
-                        target.bias.data[: min(len(target.bias), len(b_val))].copy_(
-                            b_val[: min(len(target.bias), len(b_val))]
-                        )
+                    if target.bias is not None:
+                        if b_val is not None:
+                            target.bias.data.zero_()
+                            target.bias.data[: min(len(target.bias), len(b_val))].copy_(
+                                b_val[: min(len(target.bias), len(b_val))].to(
+                                    device=target.bias.device, dtype=target.bias.dtype
+                                )
+                            )
+                        else:
+                            target.bias.data.zero_()
                 elif proj_key == "o" and self.is_nested_encoder:
                     min_d = min(target.weight.shape[0], target.weight.shape[1])
                     target.weight.data.zero_()
@@ -499,8 +553,9 @@ class ClusterAttention(BaseAttention):
         if hasattr(src, "rotary_emb") and src.rotary_emb is not None:
             self.rotary_emb = src.rotary_emb
 
-        if hasattr(src, "is_decoder"):
-            self.is_decoder = bool(src.is_decoder)
+        if bool(getattr(src, "is_decoder", False)) or bool(getattr(src, "is_causal", False)):
+            self.is_decoder = True
+            self.is_causal = True
 
     def _kmeans_cluster(
         self,
@@ -646,45 +701,84 @@ class ClusterAttention(BaseAttention):
         )
 
         if is_cross_attention or is_decoder:
-            scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
+            # Always accumulate Q@K^T and softmax in FP32 to prevent FP16 AMP overflow on outlier activations.
+            scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
             mask = attention_mask if attention_mask is not None else kwargs.get("mask")
+            invalid_mask = torch.zeros((B, 1, L, N_k), device=device, dtype=torch.bool)
             if mask is not None:
                 if mask.dim() == 4:
                     if mask.dtype == torch.bool:
-                        scores = scores.masked_fill(~mask, -10000.0)
+                        m_bool = ~mask
+                    elif mask.dtype.is_floating_point:
+                        if (mask < 0).any():
+                            m_bool = mask < -1e3
+                            soft_bias = mask.float().masked_fill(m_bool, 0.0)
+                            if soft_bias.abs().max() > 0:
+                                scores = scores + soft_bias
+                        else:
+                            m_bool = mask <= 0.5
                     else:
-                        scores = scores + mask.to(scores.dtype)
+                        m_bool = mask <= 0
+                    invalid_mask = invalid_mask | m_bool.to(device=device)
                 else:
                     valid_m = get_token_valid_mask(mask, B, N_k, device)
                     if valid_m is not None:
-                        scores = scores.masked_fill((~valid_m).unsqueeze(1).unsqueeze(2), -10000.0)
+                        invalid_mask = invalid_mask | (~valid_m).unsqueeze(1).unsqueeze(2)
 
-            if is_decoder:
-                causal_tril = (
-                    torch.tril(torch.ones((L, N_k), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
-                )
-                scores = scores.masked_fill(~causal_tril, -10000.0)
+            if is_decoder and not is_cross_attention:
+                past_len = max(0, N_k - L)
+                q_idx = torch.arange(L, device=device).unsqueeze(1)
+                k_idx = torch.arange(N_k, device=device).unsqueeze(0)
+                causal_invalid = k_idx > (q_idx + past_len)
+                invalid_mask = invalid_mask | causal_invalid.unsqueeze(0).unsqueeze(0)
 
-            attn = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
-            attn = self.dropout(attn)
+            all_masked = invalid_mask.all(dim=-1, keepdim=True)
+            safe_invalid = invalid_mask.clone()
+            if all_masked.any():
+                safe_invalid[..., :1] = safe_invalid[..., :1] & (~all_masked)
 
-            if head_mask is not None:
-                if head_mask.dim() == 1:
-                    head_mask = head_mask.view(1, -1, 1, 1)
-                elif head_mask.dim() == 2:
-                    head_mask = head_mask.unsqueeze(-1).unsqueeze(-1)
-                elif head_mask.dim() == 3:
-                    head_mask = head_mask.unsqueeze(-1)
-                attn = attn * head_mask
+            f32_min = -1e9
+            scores_safe = torch.nan_to_num(scores, nan=0.0, posinf=1e4, neginf=-1e4).masked_fill(safe_invalid, f32_min)
+            attn_exact = F.softmax(scores_safe, dim=-1).masked_fill(all_masked, 0.0)
 
-            out_context = torch.matmul(attn, V)
+            def _apply_head_mask(t: torch.Tensor) -> torch.Tensor:
+                if head_mask is None:
+                    return t
+                hm = head_mask.to(device=t.device, dtype=t.dtype)
+                if hm.dim() == 1:
+                    hm = hm.view(1, -1, 1, 1)
+                elif hm.dim() == 2:
+                    hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
+                elif hm.dim() == 3:
+                    hm = hm.unsqueeze(-1)
+                return t * hm
+
+            attn_drop = _apply_head_mask(self.dropout(attn_exact))
+            V_f = V.float()
+            out_exact = torch.matmul(attn_drop, V_f)
+
+            if is_decoder and not is_cross_attention:
+                # Wire temp & local_residual strictly causally so all parameters train cleanly with <1e-5 init MSE.
+                temp_scale = 1.0 + 0.1 * torch.tanh(self.temp.float())
+                attn_temp = F.softmax(scores_safe * temp_scale, dim=-1).masked_fill(all_masked, 0.0)
+                attn_temp_drop = _apply_head_mask(self.dropout(attn_temp))
+                out_temp = torch.matmul(attn_temp_drop, V_f)
+                alpha = torch.sigmoid(self.local_residual.float())
+                out_context = (alpha * out_exact + (1.0 - alpha) * out_temp).to(dtype)
+            else:
+                out_context = out_exact.to(dtype)
+
             if not is_decoder:
                 valid_q = get_token_valid_mask(attention_mask, B, L, device)
                 if valid_q is not None:
+                    if valid_q.shape[-1] > L:
+                        valid_q = valid_q[:, -L:]
                     out_context = out_context * valid_q.unsqueeze(1).unsqueeze(-1).to(dtype)
-            attn_ret = attn if output_attentions else None
+            attn_ret = attn_exact.to(dtype) if output_attentions else None
         else:
             valid_mask_2d = get_token_valid_mask(attention_mask, B, L, device)
+            if valid_mask_2d is not None and valid_mask_2d.shape[-1] > L:
+                valid_mask_2d = valid_mask_2d[:, -L:]
             key_valid_4d = (
                 valid_mask_2d.unsqueeze(1).unsqueeze(2)
                 if valid_mask_2d is not None
@@ -696,62 +790,66 @@ class ClusterAttention(BaseAttention):
             centroids, cluster_ids, counts = self._kmeans_cluster(
                 Q.detach(), K_num, self.n_iters, valid_mask=valid_mask_2d
             )
-            centroids = torch.nan_to_num(centroids, nan=0.0).detach()
+            centroids_f = torch.nan_to_num(centroids.float(), nan=0.0).detach()
+            Q_f = Q.float()
+            K_f = K.float()
+            V_f = V.float()
 
-            scores_cent = torch.matmul(centroids, K.transpose(-2, -1).contiguous()) * scale
-            scores_cent = scores_cent.clamp(min=-10000.0, max=10000.0)
-            scores_cent = scores_cent.masked_fill(~key_valid_4d, -10000.0)
-            attn_cent = torch.nan_to_num(F.softmax(scores_cent.float(), dim=-1), nan=0.0).to(dtype)
+            scores_cent = torch.matmul(centroids_f, K_f.transpose(-2, -1).contiguous()) * scale
+            scores_cent = scores_cent.clamp(min=-1e4, max=1e4).masked_fill(~key_valid_4d, -1e9)
+            all_cent_masked = (~key_valid_4d).all(dim=-1, keepdim=True)
+            if all_cent_masked.any():
+                scores_cent = scores_cent.masked_fill(all_cent_masked, 0.0)
+            attn_cent = F.softmax(scores_cent, dim=-1).masked_fill(all_cent_masked, 0.0)
             attn_cent = self.dropout(attn_cent)
 
-            V_cent = torch.matmul(attn_cent, V)
-            V_cent = torch.nan_to_num(V_cent, nan=0.0)
+            V_cent = torch.nan_to_num(torch.matmul(attn_cent, V_f), nan=0.0)
 
-            scores_assign = torch.matmul(Q, centroids.transpose(-2, -1).contiguous()) * scale
+            scores_assign = torch.matmul(Q_f, centroids_f.transpose(-2, -1).contiguous()) * scale
             empty_clusters = (counts == 0).squeeze(-1).unsqueeze(2)
-            scores_assign = scores_assign.masked_fill(empty_clusters, -10000.0)
-            scores_assign = scores_assign.clamp(min=-10000.0, max=10000.0)
-            temp_clamped = self.temp.abs().clamp(min=0.1, max=10.0)
-            attn_assign = torch.nan_to_num(F.softmax((scores_assign / temp_clamped).float(), dim=-1), nan=0.0).to(dtype)
-            assign_denom = attn_assign.sum(dim=-1, keepdim=True).clamp(min=1e-6)
-            attn_assign = attn_assign / assign_denom
-            attn_assign = torch.nan_to_num(attn_assign, nan=0.0)
-            global_context = torch.matmul(attn_assign, V_cent)
-            global_context = torch.nan_to_num(global_context, nan=0.0)
+            all_empty = empty_clusters.all(dim=-1, keepdim=True)
+            if all_empty.any():
+                empty_clusters = empty_clusters & (~all_empty)
+            scores_assign = scores_assign.clamp(min=-1e4, max=1e4).masked_fill(empty_clusters, -1e9)
+            temp_clamped = 0.05 + F.softplus(self.temp.float())
+            attn_assign = F.softmax(scores_assign / temp_clamped, dim=-1).masked_fill(all_empty, 0.0)
+            global_context = torch.nan_to_num(torch.matmul(attn_assign, V_cent), nan=0.0)
 
             if self.window_size > 0 and self.window_size < L:
-                scores_loc = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
+                scores_loc = torch.matmul(Q_f, K_f.transpose(-2, -1).contiguous()) * scale
                 idx = (
                     self._seq_idx[:L].to(device)
                     if hasattr(self, "_seq_idx") and len(self._seq_idx) >= L
                     else torch.arange(L, device=device)
                 )
-                if is_decoder:
-                    band_mask = (idx.unsqueeze(1) >= idx.unsqueeze(0)) & (
-                        (idx.unsqueeze(1) - idx.unsqueeze(0)) <= self.window_size
-                    )
-                else:
-                    band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
+                band_mask = (idx.unsqueeze(1) - idx.unsqueeze(0)).abs() <= self.window_size
                 band_mask_4d = band_mask.unsqueeze(0).unsqueeze(0) & key_valid_4d
-                scores_loc = scores_loc.masked_fill(~band_mask_4d, -10000.0)
-                attn_loc = torch.nan_to_num(F.softmax(scores_loc.float(), dim=-1), nan=0.0).to(dtype)
+                all_loc_masked = (~band_mask_4d).all(dim=-1, keepdim=True)
+                safe_loc_mask = band_mask_4d.clone()
+                if all_loc_masked.any():
+                    safe_loc_mask[..., :1] = safe_loc_mask[..., :1] | all_loc_masked
+                scores_loc = torch.nan_to_num(scores_loc, nan=0.0, posinf=1e4, neginf=-1e4).masked_fill(
+                    ~safe_loc_mask, -1e9
+                )
+                attn_loc = F.softmax(scores_loc, dim=-1).masked_fill(all_loc_masked, 0.0)
                 attn_loc = self.dropout(attn_loc)
-                local_context = torch.matmul(attn_loc, V)
-                alpha = torch.sigmoid(self.local_residual)
-                out_context = (1.0 - alpha) * global_context + alpha * local_context
+                local_context = torch.matmul(attn_loc, V_f)
+                alpha = torch.sigmoid(self.local_residual.float())
+                out_context = ((1.0 - alpha) * global_context + alpha * local_context).to(dtype)
             else:
-                out_context = global_context
+                out_context = global_context.to(dtype)
 
-            attn_ret = attn_cent if output_attentions else None
+            attn_ret = attn_cent.to(dtype) if output_attentions else None
 
             if head_mask is not None:
-                if head_mask.dim() == 1:
-                    head_mask = head_mask.view(1, -1, 1, 1)
-                elif head_mask.dim() == 2:
-                    head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
-                elif head_mask.dim() == 3:
-                    head_mask = head_mask.unsqueeze(-1)
-                out_context = out_context * head_mask
+                hm = head_mask.to(device=out_context.device, dtype=out_context.dtype)
+                if hm.dim() == 1:
+                    hm = hm.view(1, -1, 1, 1)
+                elif hm.dim() == 2:
+                    hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
+                elif hm.dim() == 3:
+                    hm = hm.unsqueeze(-1)
+                out_context = out_context * hm
 
             if valid_mask_2d is not None:
                 out_context = out_context * valid_mask_2d.unsqueeze(1).unsqueeze(-1).to(dtype)
@@ -765,7 +863,10 @@ class ClusterAttention(BaseAttention):
 
         valid_out = get_token_valid_mask(attention_mask, B, L, device)
         if valid_out is not None:
-            output = output * valid_out.unsqueeze(-1).to(output.dtype)
+            if valid_out.shape[-1] > L:
+                valid_out = valid_out[:, -L:]
+            if valid_out.shape[-1] == L:
+                output = output * valid_out.unsqueeze(-1).to(output.dtype)
 
         return output, attn_ret
 

@@ -65,19 +65,68 @@ def _extract_valid_token_mask(
     if mask.dim() == 4:
         if mask.size(2) == 1:
             m = mask[:, 0, 0, :]
-        else:
-            m = mask[:, 0, -1, :]
-        if m.dtype == torch.bool:
-            return m
-        if m.dtype.is_floating_point:
-            if (m < -1.0).any():
-                return m >= -1.0
-            if (m <= 0.0).all():
-                return torch.ones((batch_size, seq_len), dtype=torch.bool, device=device)
-            return m > 0.5
-        return m > 0
+            if m.dtype == torch.bool:
+                return m
+            if m.dtype.is_floating_point:
+                if (m < -1.0).any():
+                    return m >= -1.0
+                if (m <= 0.0).all():
+                    return torch.ones((batch_size, m.size(-1)), dtype=torch.bool, device=device)
+                return m > 0.5
+            return m > 0
+        m4 = mask[:, 0]
+        if m4.dtype == torch.bool:
+            return m4.any(dim=1)
+        if m4.dtype.is_floating_point:
+            if (m4 < -1.0).any():
+                return (m4 >= -1.0).any(dim=1)
+            if (m4 <= 0.0).all():
+                return torch.ones((batch_size, m4.size(-1)), dtype=torch.bool, device=device)
+            return (m4 > 0.5).any(dim=1)
+        return (m4 > 0).any(dim=1)
 
     return torch.ones((batch_size, seq_len), dtype=torch.bool, device=device)
+
+
+def _extract_valid_query_mask(
+    mask: torch.Tensor | None,
+    batch_size: int,
+    q_len: int,
+    device: torch.device,
+) -> torch.Tensor:
+    """Return a boolean validity mask (B, q_len) for query positions."""
+    if mask is None or not isinstance(mask, torch.Tensor):
+        return torch.ones((batch_size, q_len), dtype=torch.bool, device=device)
+
+    mask = mask.to(device=device)
+    if mask.dim() == 2:
+        vm = _extract_valid_token_mask(mask, batch_size, mask.size(-1), device)
+        if vm.size(-1) > q_len:
+            return vm[:, -q_len:]
+        if vm.size(-1) < q_len:
+            return F.pad(vm, (0, q_len - vm.size(-1)), value=True)
+        return vm
+
+    if mask.dim() == 4:
+        if mask.size(2) == q_len:
+            m4 = mask[:, 0]
+            if m4.dtype == torch.bool:
+                return m4.any(dim=-1)
+            if m4.dtype.is_floating_point:
+                if (m4 < -1.0).any():
+                    return (m4 >= -1.0).any(dim=-1)
+                if (m4 <= 0.0).all():
+                    return torch.ones((batch_size, q_len), dtype=torch.bool, device=device)
+                return (m4 > 0.5).any(dim=-1)
+            return (m4 > 0).any(dim=-1)
+        vm = _extract_valid_token_mask(mask, batch_size, mask.size(-1), device)
+        if vm.size(-1) > q_len:
+            return vm[:, -q_len:]
+        if vm.size(-1) < q_len:
+            return F.pad(vm, (0, q_len - vm.size(-1)), value=True)
+        return vm
+
+    return torch.ones((batch_size, q_len), dtype=torch.bool, device=device)
 
 
 @ATTENTION_REGISTRY.register(
@@ -246,11 +295,15 @@ class XAttention(BaseAttention):
 
         dropout_p = _cfg_get(
             config,
-            "dropout",
+            "attention_dropout",
             _cfg_get(
                 config,
-                "hidden_dropout_prob",
-                _cfg_get(config, "attention_probs_dropout_prob", 0.1),
+                "dropout",
+                _cfg_get(
+                    config,
+                    "hidden_dropout_prob",
+                    _cfg_get(config, "attention_probs_dropout_prob", 0.0 if is_dec else 0.1),
+                ),
             ),
         )
         self.dropout = nn.Dropout(dropout_p)
@@ -554,9 +607,15 @@ class XAttention(BaseAttention):
                     past_v = past_key_value.value_cache[self.layer_idx]
                     past_len = past_k.shape[-2] if past_k is not None else 0
 
-        Q = self.q_proj(hidden_states).view(B, N_q, H, d).transpose(1, 2).contiguous()
-        K_new = self.k_proj(hidden_states).view(B, N_q, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        V_new = self.v_proj(hidden_states).view(B, N_q, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        proj_dtype = self.q_proj.weight.dtype if hasattr(self.q_proj, "weight") else dtype
+        hs = (
+            hidden_states
+            if (torch.is_autocast_enabled() or hidden_states.dtype == proj_dtype)
+            else hidden_states.to(proj_dtype)
+        )
+        Q = self.q_proj(hs).view(B, N_q, H, d).transpose(1, 2).contiguous()
+        K_new = self.k_proj(hs).view(B, N_q, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        V_new = self.v_proj(hs).view(B, N_q, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         pos_emb = kwargs.get("position_embeddings") if "position_embeddings" in kwargs else None
         if pos_emb is not None and isinstance(pos_emb, (tuple, list)) and len(pos_emb) >= 2:
@@ -625,69 +684,59 @@ class XAttention(BaseAttention):
         )
 
         valid_m = _extract_valid_token_mask(attention_mask, B, N_k, device) if attention_mask is not None else None
+        block_mask: torch.Tensor | None = None
+        bsz = self.block_size
 
-        if use_dense:
-            scores = torch.matmul(Q, K_full.transpose(-2, -1).contiguous()) * scale
-
-            if self.is_decoder and N_q > 1:
-                q_pos = (past_len + torch.arange(N_q, device=device)).unsqueeze(1)
-                k_pos = torch.arange(N_k, device=device).unsqueeze(0)
-                causal = (k_pos <= q_pos).unsqueeze(0).unsqueeze(0)
-                scores = scores.masked_fill(~causal, -1e4)
-
-            if attention_mask is not None:
-                if attention_mask.dim() == 4:
-                    scores = scores + attention_mask.to(scores.dtype)
-                elif valid_m is not None:
-                    scores = scores.masked_fill(~valid_m.unsqueeze(1).unsqueeze(2), -1e4)
-
-            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-            attn = F.softmax(scores.float(), dim=-1).to(dtype)
-            attn = self.dropout(attn)
-            context = torch.matmul(attn, V_full)
-
-        else:
-            scores = torch.matmul(Q, K_full.transpose(-2, -1).contiguous()) * scale
-
-            bsz = self.block_size
+        if not use_dense:
             pad_q = (bsz - (N_q % bsz)) % bsz
             pad_k = (bsz - (N_k % bsz)) % bsz
 
-            Q_pad = F.pad(Q, (0, 0, 0, pad_q)) if pad_q > 0 else Q
-            K_pad = F.pad(K_full, (0, 0, 0, pad_k)) if pad_k > 0 else K_full
+            Q_f_pad = F.pad(Q.float(), (0, 0, 0, pad_q)) if pad_q > 0 else Q.float()
+            K_f_pad = F.pad(K_full.float(), (0, 0, 0, pad_k)) if pad_k > 0 else K_full.float()
 
-            total_q = Q_pad.shape[-2]
-            total_k = K_pad.shape[-2]
+            total_q = Q_f_pad.shape[-2]
+            total_k = K_f_pad.shape[-2]
             num_q_blocks = total_q // bsz
             num_k_blocks = total_k // bsz
 
-            q_valid = torch.zeros((B, 1, total_q, 1), device=device, dtype=Q.dtype)
+            q_valid = torch.zeros((B, 1, total_q, 1), device=device, dtype=torch.float32)
             q_valid[:, :, :N_q, :] = 1.0
-            k_valid = torch.zeros((B, 1, total_k, 1), device=device, dtype=K_full.dtype)
+            k_valid = torch.zeros((B, 1, total_k, 1), device=device, dtype=torch.float32)
             k_valid[:, :, :N_k, :] = 1.0
 
             if valid_m is not None:
-                k_valid[:, :, :N_k, 0] = k_valid[:, :, :N_k, 0] * valid_m.unsqueeze(1).to(K_full.dtype)
+                k_valid[:, :, :N_k, 0] = k_valid[:, :, :N_k, 0] * valid_m.unsqueeze(1).float()
 
             q_valid_blk = q_valid.view(B, 1, num_q_blocks, bsz, 1)
-            Q_blocks = (Q_pad.view(B, H, num_q_blocks, bsz, d) * q_valid_blk).sum(dim=3) / q_valid_blk.sum(dim=3).clamp(
-                min=1.0
-            )
+            Q_blocks = (Q_f_pad.view(B, H, num_q_blocks, bsz, d) * q_valid_blk).sum(dim=3) / q_valid_blk.sum(
+                dim=3
+            ).clamp(min=1.0)
 
             k_valid_blk = k_valid.view(B, 1, num_k_blocks, bsz, 1)
-            K_blocks = (K_pad.view(B, H, num_k_blocks, bsz, d) * k_valid_blk).sum(dim=3) / k_valid_blk.sum(dim=3).clamp(
+            k_blk_counts = k_valid_blk.sum(dim=3)
+            K_blocks = (K_f_pad.view(B, H, num_k_blocks, bsz, d) * k_valid_blk).sum(dim=3) / k_blk_counts.clamp(
                 min=1.0
             )
+            k_blk_has_valid = (k_blk_counts > 0).view(B, 1, 1, num_k_blocks)
 
-            coarse_scores = torch.matmul(Q_blocks, K_blocks.transpose(-1, -2).contiguous()) * scale
+            coarse_scores = torch.matmul(Q_blocks * scale, K_blocks.transpose(-1, -2).contiguous())
+            coarse_scores = coarse_scores.masked_fill(~k_blk_has_valid, -1e9)
 
             if self.is_decoder:
-                q_blk = torch.arange(num_q_blocks, device=device).unsqueeze(1) + (num_k_blocks - num_q_blocks)
+                q_pos_max = past_len + torch.clamp(
+                    (torch.arange(num_q_blocks, device=device) + 1) * bsz - 1,
+                    max=N_q - 1,
+                )
+                q_pos_min = past_len + torch.arange(num_q_blocks, device=device) * bsz
+                q_blk_max = (q_pos_max // bsz).unsqueeze(1)
+                q_blk_min = (q_pos_min // bsz).unsqueeze(1)
                 k_blk = torch.arange(num_k_blocks, device=device).unsqueeze(0)
-                causal_blk = (k_blk <= q_blk).unsqueeze(0).unsqueeze(0)
-                coarse_scores = coarse_scores.masked_fill(~causal_blk, -1e4)
+                causal_blk = (k_blk <= q_blk_max).unsqueeze(0).unsqueeze(0)
+                diag_blk = ((k_blk >= q_blk_min) & (k_blk <= q_blk_max)).unsqueeze(0).unsqueeze(0)
+                coarse_scores = coarse_scores.masked_fill(~causal_blk, -1e9)
             else:
                 causal_blk = None
+                diag_blk = None
 
             k_blocks_keep = max(
                 1,
@@ -698,26 +747,38 @@ class XAttention(BaseAttention):
             block_mask = torch.zeros((B, H, num_q_blocks, num_k_blocks), device=device, dtype=torch.bool)
             block_mask.scatter_(-1, topk_idx, True)
 
-            if self.is_decoder and causal_blk is not None:
-                block_mask = block_mask & causal_blk
-                diag_k = min(num_q_blocks, num_k_blocks)
-                diag_idx = torch.arange(diag_k, device=device)
-                block_mask[:, :, diag_idx, diag_idx] = True
+            if self.is_decoder and causal_blk is not None and diag_blk is not None:
+                block_mask = (block_mask & causal_blk) | diag_blk
 
             from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK
 
-            if not FORCE_PYTORCH_FALLBACK and HAS_TRITON and Q.is_cuda and triton_block_sparse_attention is not None:
+            # Triton block-sparse kernel ignores token_mask and uses FP16 atomic_add in backward
+            # which overflows under AMP GradScaler; restrict Triton fast-path to unmasked inference.
+            can_use_triton = (
+                not FORCE_PYTORCH_FALLBACK
+                and HAS_TRITON
+                and Q.is_cuda
+                and triton_block_sparse_attention is not None
+                and not torch.is_grad_enabled()
+                and valid_m is None
+                and head_mask is None
+                and past_len == 0
+                and Q.dtype in (torch.float16, torch.bfloat16)
+                and bsz in (16, 32, 64, 128)
+            )
+            if can_use_triton:
                 try:
-                    token_mask = valid_m if valid_m is not None else None
-                    context = triton_block_sparse_attention(
+                    cand_ctx = triton_block_sparse_attention(
                         q=Q,
                         k=K_full,
                         v=V_full,
                         block_mask=block_mask,
-                        block_size=self.block_size,
-                        token_mask=token_mask,
+                        block_size=bsz,
+                        token_mask=None,
                         is_causal=self.is_decoder,
                     )
+                    if torch.isfinite(cand_ctx).all():
+                        context = cand_ctx
                 except (RuntimeError, NotImplementedError, ValueError) as e:
                     from neuralops.utils.logging_config import warn_once
 
@@ -726,69 +787,88 @@ class XAttention(BaseAttention):
                         "Triton block-sparse attention failed (%s); falling back to PyTorch.",
                         e,
                     )
-
                     context = None
-                    attn = None
-            else:
-                context = None
 
-            if context is None:
-                if pad_q > 0 or pad_k > 0:
-                    scores_p = F.pad(
-                        scores,
-                        (0, pad_k, 0, pad_q),
-                        value=-1e4,
-                    )
-                else:
-                    scores_p = scores
+        if context is None:
+            # Compute scaled Q @ K^T and softmax in FP32 to prevent FP16 pre-scale overflow
+            # and preserve exact gradient flow under AMP GradScaler.
+            Q_f = Q.float() * scale
+            K_f = K_full.float()
+            V_f = V_full.float()
+            scores = torch.matmul(Q_f, K_f.transpose(-2, -1))
 
-                scores_p = scores_p.view(B, H, num_q_blocks, bsz, num_k_blocks, bsz)
-                scores_p = scores_p.masked_fill(~block_mask.unsqueeze(3).unsqueeze(5), -1e4)
-                scores = scores_p.reshape(B, H, total_q, total_k)[:, :, :N_q, :N_k]
+            attn_valid = torch.ones((1, 1, N_q, N_k), device=device, dtype=torch.bool)
+            if block_mask is not None:
+                expanded_bm = block_mask.repeat_interleave(bsz, dim=2).repeat_interleave(bsz, dim=3)[
+                    :, :, :N_q, :N_k
+                ]
+                attn_valid = attn_valid & expanded_bm
 
-                if self.is_decoder:
-                    q_pos = (past_len + torch.arange(N_q, device=device)).unsqueeze(1)
-                    k_pos = torch.arange(N_k, device=device).unsqueeze(0)
-                    causal = (k_pos <= q_pos).unsqueeze(0).unsqueeze(0)
-                    scores = scores.masked_fill(~causal, -1e4)
+            if self.is_decoder and (N_q > 1 or past_len > 0):
+                q_pos = (past_len + torch.arange(N_q, device=device)).unsqueeze(1)
+                k_pos = torch.arange(N_k, device=device).unsqueeze(0)
+                causal = (k_pos <= q_pos).unsqueeze(0).unsqueeze(0)
+                attn_valid = attn_valid & causal
 
-                if attention_mask is not None:
-                    if attention_mask.dim() == 4:
-                        scores = scores + attention_mask.to(scores.dtype)
-                    elif valid_m is not None:
-                        scores = scores.masked_fill(~valid_m.unsqueeze(1).unsqueeze(2), -1e4)
+            if attention_mask is not None:
+                if attention_mask.dim() == 4:
+                    am = attention_mask.to(device=device)
+                    if am.dtype == torch.bool:
+                        attn_valid = attn_valid & am
+                    elif am.dtype.is_floating_point:
+                        if (am < -1.0).any():
+                            attn_valid = attn_valid & (am >= -1.0)
+                        elif not (am <= 0.0).all():
+                            attn_valid = attn_valid & (am > 0.5)
+                    else:
+                        attn_valid = attn_valid & (am > 0)
+                elif valid_m is not None:
+                    attn_valid = attn_valid & valid_m.unsqueeze(1).unsqueeze(2)
 
-                scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-                attn = F.softmax(scores.float(), dim=-1).to(dtype)
-                attn = self.dropout(attn)
-                context = torch.matmul(attn, V_full)
+            row_has_valid = attn_valid.any(dim=-1, keepdim=True)
+            scores = scores.masked_fill(~attn_valid, -1e9)
+            attn = F.softmax(scores, dim=-1)
+            attn = attn * row_has_valid.to(attn.dtype)
+            attn = self.dropout(attn)
 
-        if head_mask is not None and attn is not None:
-            hm = head_mask.to(attn.dtype)
-            if hm.dim() == 1:
-                hm = hm.view(1, -1, 1, 1)
-            elif hm.dim() == 2:
-                hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
-            elif hm.dim() == 3:
-                hm = hm.unsqueeze(-1)
-            attn = attn * hm
-            context = torch.matmul(attn, V_full)
+            if head_mask is not None:
+                hm = head_mask.to(device=device, dtype=attn.dtype)
+                if hm.dim() == 1:
+                    hm = hm.view(1, -1, 1, 1)
+                elif hm.dim() == 2:
+                    hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
+                elif hm.dim() == 3:
+                    hm = hm.unsqueeze(-1)
+                attn = attn * hm
+
+            context = torch.matmul(attn, V_f).to(dtype)
 
         context = context.transpose(1, 2).contiguous().view(B, N_q, self.all_head_size)
 
-        if self.is_nested_encoder:
-            output = context * self.lora_output_scale
+        if self.is_nested_encoder or isinstance(self.out_proj, nn.Identity):
+            output = context.to(dtype) * self.lora_output_scale.to(dtype)
         else:
-            output = self.out_proj(context) * self.lora_output_scale
+            out_w_dtype = self.out_proj.weight.dtype if hasattr(self.out_proj, "weight") else dtype
+            ctx_in = (
+                context
+                if (torch.is_autocast_enabled() or context.dtype == out_w_dtype)
+                else context.to(out_w_dtype)
+            )
+            scale_dt = ctx_in.dtype if not torch.is_autocast_enabled() else dtype
+            output = self.out_proj(ctx_in) * self.lora_output_scale.to(scale_dt)
 
-        output = torch.nan_to_num(output, nan=0.0, posinf=1e4, neginf=-1e4)
+        if dtype == torch.float16:
+            fmax = 65000.0
+            output = output.clamp(min=-fmax, max=fmax)
 
         if attention_mask is not None:
-            v_m = _extract_valid_token_mask(attention_mask, B, N_q, device)
+            v_m = _extract_valid_query_mask(attention_mask, B, N_q, device)
             output = output * v_m.unsqueeze(-1).to(output.dtype)
 
         if output_attentions:
-            return output.to(dtype), (new_past_key_value if self.is_decoder else None), attn
+            return output.to(dtype), (new_past_key_value if self.is_decoder else None), (
+                attn.to(dtype) if attn is not None else None
+            )
         return output.to(dtype), (new_past_key_value if self.is_decoder else None)
 
 

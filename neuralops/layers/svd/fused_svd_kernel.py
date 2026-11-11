@@ -166,10 +166,10 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
 
                 _fused_svd_linear_fwd_kernel[grid](
                     x_2d,
-                    V,
-                    U,
-                    norm_weight if (norm_weight is not None and use_rms_norm) else x_2d,
-                    bias if bias is not None else x_2d,
+                    V.to(x_2d.dtype),
+                    U.to(x_2d.dtype),
+                    norm_weight.to(x_2d.dtype) if (norm_weight is not None and use_rms_norm) else x_2d,
+                    bias.to(x_2d.dtype) if bias is not None else x_2d,
                     y_2d,
                     x_2d.stride(0),
                     x_2d.stride(1),
@@ -199,7 +199,8 @@ class _FusedSVDLinearAutogradFunction(torch.autograd.Function):
                         else:
                             rms = torch.rsqrt(torch.mean(z**2, dim=-1, keepdim=True) + eps)
                         z_hat = z * rms
-                        z_norm = z_hat * norm_weight if norm_weight is not None else z_hat
+                        nw = norm_weight.to(z.dtype) if norm_weight is not None else None
+                        z_norm = z_hat * nw if nw is not None else z_hat
                     else:
                         rms = torch.empty(0, device=x.device, dtype=x.dtype)
                         z_hat = z
@@ -301,6 +302,27 @@ def fused_svd_linear(
     return _FusedSVDLinearAutogradFunction.apply(x, V, U, norm_weight, bias, eps, use_rms_norm)
 
 
+class _FactorizedWeightProxy(torch.Tensor):
+    """Tensor proxy forwarding `.data.copy_(src)` / `.copy_(src)` into FusedSVDLinear SVD decomposition."""
+
+    @staticmethod
+    def __new__(cls, tensor: torch.Tensor, owner: FusedSVDLinear) -> _FactorizedWeightProxy:
+        proxy = tensor.as_subclass(cls)
+        proxy._owner = owner
+        return proxy
+
+    @property
+    def data(self) -> _FactorizedWeightProxy:
+        return self
+
+    def copy_(self, src: torch.Tensor, non_blocking: bool = False) -> _FactorizedWeightProxy:
+        owner = getattr(self, "_owner", None)
+        if owner is not None:
+            owner.decompose_from_weight(src)
+            return self
+        return super().copy_(src, non_blocking=non_blocking)
+
+
 class FusedSVDLinear(nn.Module):
     """
     RESEARCH SOTA: Fused SVD-Linear Module.
@@ -351,8 +373,8 @@ class FusedSVDLinear(nn.Module):
 
     @property
     def weight(self) -> torch.Tensor:
-        """Reconstructed effective weight matrix for compatibility."""
-        return torch.matmul(self.U, self.V)
+        """Reconstructed effective weight matrix for compatibility (supports `.data.copy_` decomposition)."""
+        return _FactorizedWeightProxy(torch.matmul(self.U, self.V), self)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return fused_svd_linear(
@@ -408,7 +430,7 @@ class FusedSVDLinear(nn.Module):
 
 import logging
 
-from neuralops.core.attention_mask import get_token_valid_mask
+from neuralops.core.attention_mask import apply_attention_mask, get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import _cfg_get
 
@@ -542,6 +564,7 @@ class FusedSVDKernelAttention(BaseAttention):
         )
         self.dropout = nn.Dropout(self.dropout_rate)
 
+        kv_rank = min(self.rank, self.kv_head_size)
         self.q_proj = FusedSVDLinear(
             self.hidden_size,
             self.q_head_size,
@@ -552,14 +575,14 @@ class FusedSVDKernelAttention(BaseAttention):
         self.k_proj = FusedSVDLinear(
             self.hidden_size,
             self.kv_head_size,
-            rank=self.rank,
+            rank=kv_rank,
             bias=True,
             use_rms_norm=self.use_rms_norm,
         )
         self.v_proj = FusedSVDLinear(
             self.hidden_size,
             self.kv_head_size,
-            rank=self.rank,
+            rank=kv_rank,
             bias=True,
             use_rms_norm=self.use_rms_norm,
         )
@@ -570,6 +593,7 @@ class FusedSVDKernelAttention(BaseAttention):
             bias=True,
             use_rms_norm=self.use_rms_norm,
         )
+        self.rotary_emb = getattr(src_attn, "rotary_emb", None) if src_attn is not None else None
 
         if src_attn is not None:
             self.copy_weights(src_attn)
@@ -590,6 +614,9 @@ class FusedSVDKernelAttention(BaseAttention):
         """Multi-architecture weight copying supporting GPT-2 Conv1D, RoBERTa nested, and flat projections."""
         if old_attn is None:
             return
+
+        if hasattr(old_attn, "rotary_emb"):
+            self.rotary_emb = old_attn.rotary_emb
 
         with torch.no_grad():
             w_q, b_q = None, None
@@ -844,9 +871,12 @@ class FusedSVDKernelAttention(BaseAttention):
                 if torch.linalg.norm(w_o.float()).item() < 1e-4:
                     logger.warning("Copied weight w_o failed Frobenius norm check (< 1e-4)")
 
-            self.q_proj.decompose_from_weight(w_q, b_q)
-            self.k_proj.decompose_from_weight(w_k, b_k)
-            self.v_proj.decompose_from_weight(w_v, b_v)
+            if w_q is not None:
+                self.q_proj.decompose_from_weight(w_q, b_q)
+            if w_k is not None:
+                self.k_proj.decompose_from_weight(w_k, b_k)
+            if w_v is not None:
+                self.v_proj.decompose_from_weight(w_v, b_v)
             if w_o is not None:
                 self.out_proj.decompose_from_weight(w_o, b_o)
             elif self.is_nested_encoder:
@@ -890,54 +920,92 @@ class FusedSVDKernelAttention(BaseAttention):
         k = self.k_proj(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
         v = self.v_proj(x).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
+        position_ids = kwargs.get("position_ids")
         if position_embeddings is not None:
             cos, sin = position_embeddings
-            q, k = apply_rotary_pos_emb(q, k, cos, sin)
+            q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
+        elif getattr(self, "rotary_emb", None) is not None and position_ids is not None:
+            try:
+                cos, sin = self.rotary_emb(v, position_ids)
+            except TypeError:
+                cos, sin = self.rotary_emb(v, seq_len=L)
+            q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
 
         if self.kv_repeat > 1:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
         scale = 1.0 / math.sqrt(self.head_dim)
+        causal_flag = bool(kwargs.get("is_causal", getattr(self, "is_decoder", False) or getattr(self, "is_causal", False)))
 
-        try:
-            _qs = maybe_half(q)
-            _ks = maybe_half(k)
-            _vs = maybe_half(v)
-            _is_causal = (getattr(self, "is_decoder", False) or getattr(self, "is_causal", False)) and L > 1
-            _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
-                _qs,
-                _ks,
-                _vs,
-                is_causal=_is_causal,
-                dropout_p=self.dropout.p if self.training else 0.0,
-            )
-            _sdpa_out = _sdpa_out.to(x.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-            _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
-            return (self.out_proj(_sdpa_out) if not getattr(self, "is_nested_encoder", False) else _sdpa_out), None
-        except Exception:
-            # allowed-swallow: best-effort-telemetry
-            pass
+        if not output_attentions and head_mask is None:
+            try:
+                _qs = maybe_half(q)
+                _ks = maybe_half(k)
+                _vs = maybe_half(v)
+                if attention_mask is None:
+                    _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
+                        _qs,
+                        _ks,
+                        _vs,
+                        is_causal=(causal_flag and L > 1),
+                        dropout_p=self.dropout.p if self.training else 0.0,
+                    )
+                elif attention_mask.dim() == 2:
+                    valid_mask = get_token_valid_mask(attention_mask, B, L, x.device)
+                    if bool(valid_mask.all()):
+                        _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
+                            _qs,
+                            _ks,
+                            _vs,
+                            is_causal=(causal_flag and L > 1),
+                            dropout_p=self.dropout.p if self.training else 0.0,
+                        )
+                    else:
+                        attn_bool = valid_mask[:, None, None, :].expand(B, 1, L, L).clone()
+                        if causal_flag and L > 1:
+                            causal_tril = torch.tril(torch.ones((L, L), device=x.device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
+                            attn_bool = attn_bool & causal_tril
+                        row_empty = ~attn_bool.any(dim=-1, keepdim=True)
+                        if bool(row_empty.any()):
+                            diag = torch.eye(L, device=x.device, dtype=torch.bool).unsqueeze(0).unsqueeze(0)
+                            attn_bool = attn_bool | (row_empty & diag)
+                        _sdpa_out = torch.nn.functional.scaled_dot_product_attention(
+                            _qs,
+                            _ks,
+                            _vs,
+                            attn_mask=attn_bool,
+                            is_causal=False,
+                            dropout_p=self.dropout.p if self.training else 0.0,
+                        )
+                else:
+                    raise RuntimeError("Use explicit attention path for 3D/4D mask")
+                _sdpa_out = _sdpa_out.to(x.dtype).transpose(1, 2).contiguous().view(B, L, self.all_head_size)
+                _sdpa_out = torch.nan_to_num(_sdpa_out, nan=0.0, posinf=1e4, neginf=-1e4)
+                return (self.out_proj(_sdpa_out) if not getattr(self, "is_nested_encoder", False) else _sdpa_out), None
+            except Exception:
+                # allowed-swallow: best-effort-telemetry
+                pass
 
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
-        if self.is_decoder or self.is_causal:
+        if causal_flag and L > 1:
             causal_mask = torch.tril(torch.ones(L, L, device=x.device, dtype=torch.bool))
             scores = scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
 
         if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                valid_mask = get_token_valid_mask(attention_mask, B, L, x.device)
-                if valid_mask is None:
-                    valid_mask = torch.ones(B, L, device=x.device, dtype=torch.bool)
-                scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(2), -1e4)
-            elif attention_mask.dim() == 4:
-                scores = scores + attention_mask.clamp(min=-1e4)
+            scores = apply_attention_mask(scores, attention_mask, mask_value=-1e4)
 
-        probs = F.softmax(scores, dim=-1, dtype=torch.float32).to(v.dtype)
+        probs = torch.nan_to_num(F.softmax(scores, dim=-1, dtype=torch.float32), nan=0.0).to(v.dtype)
         probs = self.dropout(probs)
 
         if head_mask is not None:
+            if head_mask.dim() == 1:
+                head_mask = head_mask.view(1, -1, 1, 1)
+            elif head_mask.dim() == 2:
+                head_mask = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
+            elif head_mask.dim() == 3:
+                head_mask = head_mask.unsqueeze(-1)
             probs = probs * head_mask
 
         context = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, L, self.q_head_size)

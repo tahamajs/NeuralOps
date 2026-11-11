@@ -107,6 +107,18 @@ def _is_compressed_module(sub: nn.Module) -> bool:
         return True
     if hasattr(sub, "qweight") and getattr(sub, "qweight", None) is not None:
         return True
+    if hasattr(sub, "pruning_mask") or hasattr(sub, "weight_mask"):
+        return True
+    if hasattr(sub, "mask") and isinstance(getattr(sub, "mask", None), torch.Tensor):
+        return True
+    if hasattr(sub, "int_weight") and hasattr(sub, "scale"):
+        return True
+    if hasattr(sub, "U_packed") or hasattr(sub, "U_q"):
+        return True
+    if hasattr(sub, "S_sparse") and getattr(sub, "S_sparse", None) is not None:
+        return True
+    if hasattr(sub, "kept_idx") or hasattr(sub, "keep_idx"):
+        return True
     return False
 
 
@@ -177,13 +189,21 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
         if any(name.startswith(p + ".") for p in cataloged_attn_names):
             continue
 
+        is_compressed = _is_compressed_module(sub)
+        is_lora = _is_lora_module(sub)
+        is_from_compression = (sub.__class__.__module__ or "").startswith("neuralops.compression")
+
         is_attention = (
-            cls_name in _WRAPPER_CLASS_NAMES
-            or getattr(sub, "is_custom_attention", False)
-            or isinstance(sub, BaseAttention)
-            or any(isinstance(sub, c) or sub.__class__ == c for c in registered_attn_classes)
+            not is_compressed
+            and not is_from_compression
+            and (
+                cls_name in _WRAPPER_CLASS_NAMES
+                or getattr(sub, "is_custom_attention", False)
+                or isinstance(sub, BaseAttention)
+                or any(isinstance(sub, c) or sub.__class__ == c for c in registered_attn_classes)
+            )
         )
-        if not is_attention:
+        if not is_attention and not is_compressed and not is_from_compression:
             # Also detect generic wrappers holding a registered/BaseAttention child via .attn or ._wrapped_attention
             inner_probe = getattr(sub, "_wrapped_attention", None) or getattr(sub, "attn", None)
             if isinstance(inner_probe, nn.Module) and (
@@ -191,9 +211,6 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
                 or any(isinstance(inner_probe, c) or inner_probe.__class__ == c for c in registered_attn_classes)
             ):
                 is_attention = True
-
-        is_compressed = _is_compressed_module(sub)
-        is_lora = _is_lora_module(sub)
 
         if is_attention:
             cataloged_attn_names.append(name)
@@ -212,9 +229,9 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
                 target_key = eff_cls_name.lower()
 
             embed_dim = getattr(
-                effective_sub,
+                sub,
                 "embed_dim",
-                getattr(effective_sub, "hidden_size", getattr(sub, "embed_dim", None)),
+                getattr(effective_sub, "embed_dim", getattr(effective_sub, "hidden_size", None)),
             )
             if embed_dim is None:
                 for p in effective_sub.parameters():
@@ -227,19 +244,24 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
                 embed_dim = 768
 
             num_heads = getattr(
-                effective_sub,
+                sub,
                 "num_heads",
-                getattr(effective_sub, "num_attention_heads", getattr(sub, "num_heads", 12)),
+                getattr(effective_sub, "num_heads", getattr(effective_sub, "num_attention_heads", 12)),
             )
-            num_kv_heads = getattr(
+            core_num_kv_heads = getattr(
                 effective_sub,
                 "num_kv_heads",
-                getattr(effective_sub, "num_key_value_heads", getattr(sub, "num_kv_heads", None)),
+                getattr(effective_sub, "num_key_value_heads", None),
+            )
+            num_kv_heads = getattr(
+                sub,
+                "num_kv_heads",
+                core_num_kv_heads,
             )
             head_dim = getattr(
-                effective_sub,
+                sub,
                 "head_dim",
-                getattr(sub, "head_dim", embed_dim // max(int(num_heads), 1)),
+                getattr(effective_sub, "head_dim", embed_dim // max(int(num_heads), 1)),
             )
             rank = getattr(effective_sub, "rank", getattr(effective_sub, "svd_rank", 32))
 
@@ -251,6 +273,7 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
                 "embed_dim": embed_dim,
                 "num_heads": num_heads,
                 "num_kv_heads": num_kv_heads,
+                "core_num_kv_heads": core_num_kv_heads,
                 "head_dim": head_dim,
                 "rank": rank,
                 "layer_idx": getattr(effective_sub, "layer_idx", getattr(sub, "layer_idx", None)),
@@ -301,7 +324,7 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
             out_f = getattr(sub, "out_features", getattr(base_layer, "out_features", None))
             rank = getattr(sub, "r", getattr(sub, "rank", None))
             if rank is None and hasattr(sub, "lora_A"):
-                la = getattr(sub, "lora_A")
+                la = sub.lora_A
                 if isinstance(la, torch.Tensor) and la.ndim == 2:
                     rank = int(la.shape[0])
                 elif hasattr(la, "weight") and la.weight.ndim == 2:
@@ -368,6 +391,19 @@ def _is_fallback_delta_tensor(key: str) -> bool:
         "qweight",
         "qzeros",
         "g_idx",
+        "pruning_mask",
+        "weight_mask",
+        "int_weight",
+        "zero_point",
+        "U_packed",
+        "U_q",
+        "S_packed",
+        "S_q",
+        "Vt_packed",
+        "Vt_q",
+        "S_sparse",
+        "kept_idx",
+        "keep_idx",
     }:
         return True
     lowered = key.lower()
@@ -574,11 +610,22 @@ def load_surgical_checkpoint(
                 except (ImportError, AttributeError, ModuleNotFoundError):
                     cls = None
 
-            if existing is not None and cls is not None:
-                try:
-                    new_sub = cls(existing, r=rank)
-                except TypeError:
-                    new_sub = cls(existing)
+            if existing is not None:
+                if cls is not None:
+                    try:
+                        new_sub = cls(existing, r=rank)
+                    except TypeError:
+                        new_sub = cls(existing)
+                elif "lora_A.weight" in (info.get("param_shapes") or {}) and isinstance(existing, nn.Linear):
+                    from neuralops.trainer.methods.lora import LoRALinear
+
+                    new_sub = LoRALinear(existing, r=rank)
+                else:
+                    from neuralops.hub.surgery_loader import _LoRALinearAdapter
+
+                    scaling_val = info.get("scaling")
+                    alpha_val = float(scaling_val) * rank if scaling_val is not None else 16.0
+                    new_sub = _LoRALinearAdapter(existing, r=rank, alpha=alpha_val)
                 if target_device is not None:
                     new_sub = new_sub.to(target_device)
                 replace_module(base_model, module_path, new_sub)
@@ -612,7 +659,7 @@ def load_surgical_checkpoint(
             else:
                 embed_dim = info.get("embed_dim", 768)
                 num_heads = info.get("num_heads", 12)
-                num_kv_heads = info.get("num_kv_heads", None)
+                num_kv_heads = info.get("core_num_kv_heads", info.get("num_kv_heads", None))
                 rank = info.get("rank", 32)
                 from transformers import BertConfig
 
@@ -697,19 +744,27 @@ def load_surgical_checkpoint(
             replace_module(base_model, module_path, new_sub)
 
         elif category == "compressed_linear":
-            in_f = info.get("in_features", 768)
-            out_f = info.get("out_features", 768)
-            rank = info.get("rank", 32)
+            in_f = info.get("in_features") or 768
+            out_f = info.get("out_features") or 768
+            rank = info.get("rank") or 32
             has_b = info.get("has_bias", True)
+            dummy_linear = nn.Linear(in_f, out_f, bias=has_b)
 
-            try:
-                new_sub = cls(in_features=in_f, out_features=out_f, rank=rank, bias=has_b)
-            except (TypeError, ValueError, AttributeError):
+            new_sub = None
+            for ctor in (
+                lambda: cls(in_features=in_f, out_features=out_f, rank=rank, bias=has_b),
+                lambda: cls.from_linear(dummy_linear, rank=rank),
+                lambda: cls(dummy_linear, rank=rank),
+                lambda: cls(dummy_linear),
+                lambda: cls(in_features=in_f, out_features=out_f),
+            ):
                 try:
-                    dummy_linear = nn.Linear(in_f, out_f, bias=has_b)
-                    new_sub = cls.from_linear(dummy_linear, rank=rank)
+                    new_sub = ctor()
+                    break
                 except (TypeError, ValueError, AttributeError):
-                    new_sub = cls(in_features=in_f, out_features=out_f)
+                    continue
+            if new_sub is None:
+                raise RuntimeError(f"Could not reconstruct compressed_linear '{cls_name}' at '{module_path}'")
 
             if target_device is not None:
                 new_sub = new_sub.to(target_device)

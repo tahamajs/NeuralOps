@@ -78,6 +78,8 @@ def normalize_base_model_id(model_name: str) -> str:
     lower = cleaned.lower()
     if "llava-interleave-qwen-0.5b" in lower or ("llava" in lower and "0.5b" in lower):
         return "llava-hf/llava-interleave-qwen-0.5b-hf"
+    if "qwen2.5-0.5b-instruct" in lower or "qwen_2.5_0.5b_instruct" in lower:
+        return "Qwen/Qwen2.5-0.5B-Instruct"
     if "qwen2.5-0.5b" in lower or "qwen_2.5_0.5b" in lower:
         return "Qwen/Qwen2.5-0.5B"
     if "tinyllama" in lower and ("1.1b" in lower or cleaned.startswith("/") or os.path.exists(cleaned)):
@@ -132,47 +134,55 @@ def _instantiate_core_attention(
     hidden_size: int,
     num_heads: int,
     text_cfg: Any,
-    rank: int,
+    rank: Optional[int],
     layer_idx: int,
 ) -> nn.Module:
     """Instantiate a registered NeuralOps attention module with graceful kwarg fallback."""
     from neuralops.core.registry import create_attention
 
-    attempts = [
-        {
-            "dim": hidden_size,
-            "num_heads": num_heads,
-            "rank": rank,
-            "config": text_cfg,
-            "is_causal": True,
-            "layer_idx": layer_idx,
-        },
-        {
-            "dim": hidden_size,
-            "num_heads": num_heads,
-            "rank": rank,
-            "config": text_cfg,
-            "is_causal": True,
-        },
-        {
-            "dim": hidden_size,
-            "num_heads": num_heads,
-            "config": text_cfg,
-            "is_causal": True,
-            "layer_idx": layer_idx,
-        },
-        {
-            "dim": hidden_size,
-            "num_heads": num_heads,
-            "config": text_cfg,
-            "is_causal": True,
-        },
-        {
-            "dim": hidden_size,
-            "num_heads": num_heads,
-            "config": text_cfg,
-        },
-    ]
+    attempts: list[dict[str, Any]] = []
+    if rank is not None:
+        attempts.extend(
+            [
+                {
+                    "dim": hidden_size,
+                    "num_heads": num_heads,
+                    "rank": rank,
+                    "config": text_cfg,
+                    "is_causal": True,
+                    "layer_idx": layer_idx,
+                },
+                {
+                    "dim": hidden_size,
+                    "num_heads": num_heads,
+                    "rank": rank,
+                    "config": text_cfg,
+                    "is_causal": True,
+                },
+            ]
+        )
+    attempts.extend(
+        [
+            {
+                "dim": hidden_size,
+                "num_heads": num_heads,
+                "config": text_cfg,
+                "is_causal": True,
+                "layer_idx": layer_idx,
+            },
+            {
+                "dim": hidden_size,
+                "num_heads": num_heads,
+                "config": text_cfg,
+                "is_causal": True,
+            },
+            {
+                "dim": hidden_size,
+                "num_heads": num_heads,
+                "config": text_cfg,
+            },
+        ]
+    )
     last_err: Optional[Exception] = None
     for kw in attempts:
         try:
@@ -187,7 +197,7 @@ def apply_decoder_attention_surgery(
     model: nn.Module,
     attn_key: str,
     pattern: str = "hybrid_3_1",
-    rank: int = 64,
+    rank: Optional[int] = 64,
     dtype: Any = None,
 ) -> Tuple[nn.Module, list[str], list[str]]:
     """Transplant a NeuralOps attention mechanism into decoder layers via QwenAttentionAdapter.
@@ -425,27 +435,43 @@ def _infer_surgery_spec(
         or meta.get("compression_method")
         or meta.get("compressor_key")
     )
-    pattern = cfg_dict.get("surgery_pattern") or cfg_dict.get("pattern") or meta.get("pattern")
-    rank = cfg_dict.get("compression_rank") or cfg_dict.get("rank") or meta.get("rank")
+    pattern = cfg_dict.get("surgery_pattern") or cfg_dict.get("pattern") or meta.get("pattern") or manifest.get("pattern")
+    rank = cfg_dict.get("compression_rank") or cfg_dict.get("rank") or meta.get("rank") or manifest.get("rank")
     lora_rank = cfg_dict.get("lora_rank") or meta.get("lora_rank")
 
     for op in ops:
         if not isinstance(op, dict):
             continue
-        op_name = str(op.get("op") or op.get("type") or "").lower()
+        op_name = str(op.get("component_type") or op.get("op") or op.get("type") or "").lower()
         if not attn_key and ("attention" in op_name or "replace" in op_name):
-            attn_key = op.get("attn_key") or op.get("attention_type") or op.get("method")
+            attn_key = op.get("operator_key") or op.get("attn_key") or op.get("attention_type") or op.get("method")
             pattern = pattern or op.get("pattern")
             rank = rank or op.get("rank")
         if not comp_key and "compress" in op_name:
-            comp_key = op.get("method") or op.get("compression_method") or op.get("compressor")
+            comp_key = (
+                op.get("operator_key")
+                or op.get("method")
+                or op.get("compression_method")
+                or op.get("compressor")
+            )
             rank = rank or op.get("rank")
         if lora_rank is None and "lora" in op_name:
             lora_rank = op.get("rank") or op.get("r")
 
+    if not attn_key and not comp_key and manifest.get("mechanism_key"):
+        zoo_type = str(manifest.get("zoo_type") or "").lower()
+        if "comp" in zoo_type:
+            comp_key = manifest["mechanism_key"]
+        else:
+            attn_key = manifest["mechanism_key"]
+
     if pattern is None and attn_key:
         if any(".layers.3.self_attn.core." in k for k in state_dict):
             pattern = "all"
+        elif any(".layers.2.self_attn.core." in k for k in state_dict) and not any(
+            ".layers.1.self_attn.core." in k for k in state_dict
+        ):
+            pattern = "hybrid_1_1"
         else:
             pattern = "hybrid_3_1"
 
@@ -453,7 +479,7 @@ def _infer_surgery_spec(
         "attention_type": attn_key,
         "compression_method": comp_key,
         "pattern": pattern or "hybrid_3_1",
-        "rank": int(rank) if rank is not None else 64,
+        "rank": int(rank) if rank is not None else None,
         "lora_rank": int(lora_rank) if lora_rank is not None else None,
     }
 
@@ -461,7 +487,7 @@ def _infer_surgery_spec(
 def _apply_bert_attention_surgery(
     model: nn.Module,
     attn_key: str,
-    rank: int,
+    rank: Optional[int],
     state_dict: dict[str, torch.Tensor],
 ) -> nn.Module:
     """Replay BERT attention surgery using BertAttentionAdapter or replace_attention."""
@@ -494,7 +520,9 @@ def _apply_bert_attention_surgery(
 
     from neuralops.api import replace_attention
 
-    return replace_attention(model, attention=attn_key, rank=rank, copy_weights=False)
+    if rank is not None:
+        return replace_attention(model, attention=attn_key, rank=rank, copy_weights=False)
+    return replace_attention(model, attention=attn_key, copy_weights=False)
 
 
 def _attach_lora_adapters_from_state_dict(
@@ -706,13 +734,14 @@ def load_surgeried_model(
     elif comp_key:
         from neuralops.core.compression_pipeline import compress_model
 
-        comp_step: dict[str, Any] = {"method": comp_key, "rank": surgery["rank"]}
+        comp_rank = surgery["rank"] if surgery["rank"] is not None else 64
+        comp_step: dict[str, Any] = {"method": comp_key, "rank": comp_rank}
         if model_type in ("qwen2", "llama", "mistral") or comp_key == "aa_svd":
             comp_step.update({"force_rank": True, "use_strs": False})
         try:
             model = compress_model(model, {"compressors": [comp_step]})
         except TypeError:
-            model = compress_model(model, {"compressors": [{"method": comp_key, "rank": surgery["rank"]}]})
+            model = compress_model(model, {"compressors": [{"method": comp_key, "rank": comp_rank}]})
 
         _attach_lora_adapters_from_state_dict(
             model,

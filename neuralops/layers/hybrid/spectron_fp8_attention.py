@@ -192,7 +192,12 @@ def _local_window_attention(
         attn = F.dropout(attn, p=dropout_p, training=training)
         return torch.matmul(attn, V.to(attn.dtype)), attn
 
-    if hasattr(F, "scaled_dot_product_attention") and not return_attn and (token_valid is None or bool(token_valid.all())):
+    if (
+        Q.is_cuda
+        and hasattr(F, "scaled_dot_product_attention")
+        and not return_attn
+        and (token_valid is None or bool(token_valid.all()))
+    ):
         abs_q = (past_len + torch.arange(N, device=Q.device)).unsqueeze(1)
         abs_k = torch.arange(N_k, device=Q.device).unsqueeze(0)
         band = ((abs_q - abs_k).abs() <= radius).unsqueeze(0).unsqueeze(0)
@@ -284,22 +289,33 @@ def _causal_global_linear_attention(
 ) -> torch.Tensor:
     """Chunked dual-form causal linear attention, memory O(B * chunk^2 + B * rank * h*d)."""
     B, N, rank = Q_feat.shape
+    N_kv = K_feat.shape[1]
+    past_len = max(0, N_kv - N)
     D = V_flat.shape[-1]
     dtype = Q_feat.dtype
     device = Q_feat.device
 
     state_kv = torch.zeros(B, rank, D, device=device, dtype=dtype)
     state_k = torch.zeros(B, rank, device=device, dtype=dtype)
+
+    if past_len > 0:
+        for p_start in range(0, past_len, chunk_size):
+            p_end = min(p_start + chunk_size, past_len)
+            Kp = K_feat[:, p_start:p_end]
+            Vp = V_flat[:, p_start:p_end]
+            state_kv = state_kv + torch.matmul(Kp.transpose(-2, -1), Vp)
+            state_k = state_k + Kp.sum(dim=1)
+
     outs = []
 
     for start in range(0, N, chunk_size):
         end = min(start + chunk_size, N)
         Qc = Q_feat[:, start:end]
-        Kc = K_feat[:, start:end]
-        Vc = V_flat[:, start:end]
+        Kc = K_feat[:, past_len + start : past_len + end]
+        Vc = V_flat[:, past_len + start : past_len + end]
 
         intra_scores = torch.matmul(Qc, Kc.transpose(-2, -1)).tril()
-        if start == 0:
+        if start == 0 and past_len == 0:
             num = torch.matmul(intra_scores, Vc)
             den = intra_scores.sum(dim=-1).unsqueeze(-1).clamp(min=1e-6)
         else:
@@ -348,7 +364,7 @@ def _state_recurrence_jit(u: torch.Tensor, gamma: torch.Tensor, reverse: bool = 
             out = torch.flip(out, dims=[1])
         return out
 
-    chunk = min(64, N)
+    chunk = min(32, N)
     pad_len = (chunk - (N % chunk)) % chunk
     if pad_len > 0:
         u_p = F.pad(u, (0, 0, 0, pad_len))

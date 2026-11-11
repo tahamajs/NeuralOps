@@ -13,6 +13,7 @@ Associative memory network utilizing delta update rules and gating mechanisms fo
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from typing import Any
 
@@ -50,9 +51,9 @@ def _delta_chunk_forward(
     mask_i: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """
-    Sequential delta-rule recurrence over one chunk of size C.
+    Parallel chunked WY delta-rule recurrence over one chunk of size C.
 
-    For each t:
+    Exact algebraic equivalent to sequential steps:
         inter_v = k_t · S_{t-1}
         err     = v_t - inter_v
         step    = alpha_t / (1 + ||k_t||²)
@@ -62,33 +63,82 @@ def _delta_chunk_forward(
     If mask_i is provided (shape (B, H, C) bool), padded steps do not update S.
     """
     C = q_i.shape[2]
-    outs = []
-    curr = S
+    if mask_i is not None:
+        m_f = mask_i.unsqueeze(-1).to(k_i.dtype)
+        k_m = k_i * m_f
+        v_m = v_i * m_f
+    else:
+        k_m = k_i
+        v_m = v_i
 
-    for t in range(C):
-        kt = k_i[:, :, t : t + 1, :]
-        vt = v_i[:, :, t : t + 1, :]
-        qt = q_i[:, :, t : t + 1, :]
-        bt = beta_i[:, :, t : t + 1].unsqueeze(-1)
-        at = alpha_i[:, :, t : t + 1].unsqueeze(-1)
+    dev_type = S.device.type
+    ctx = (
+        torch.amp.autocast(device_type=dev_type, enabled=False)
+        if hasattr(torch, "amp") and dev_type in ("cuda", "cpu")
+        else contextlib.nullcontext()
+    )
+    with ctx:
+        S_f = S.float()
+        q_f = q_i.float()
+        k_m = k_m.float()
+        v_m = v_m.float()
+        beta_f = beta_i.float().clamp(min=1e-6)
+        alpha_f = alpha_i.float()
 
-        if mask_i is not None:
-            m_t = mask_i[:, :, t : t + 1].unsqueeze(-1).to(kt.dtype)
-            kt = kt * m_t
-            vt = vt * m_t
+        norm_k_sq = (k_m * k_m).sum(dim=-1)
+        w = alpha_f / (1.0 + norm_k_sq).clamp_min(1.0)
 
-        inter_v = torch.matmul(kt, curr)
-        err = vt - inter_v
-        norm_k_sq = (kt * kt).sum(dim=-1, keepdim=True)
-        step = at / (1.0 + norm_k_sq).clamp_min(1.0)
-        delta = step * torch.matmul(kt.transpose(-1, -2).contiguous(), err)
-        curr = bt * curr + delta
-        curr = torch.nan_to_num(curr, nan=0.0, posinf=1e4, neginf=-1e4)
+        if C == 1:
+            inter_v = torch.matmul(k_m, S_f)
+            err = v_m - inter_v
+            delta = w.unsqueeze(-1) * torch.matmul(k_m.transpose(-1, -2), err)
+            S_next = beta_f.unsqueeze(-1) * S_f + delta
+            S_next = torch.nan_to_num(S_next, nan=0.0, posinf=1e4, neginf=-1e4)
+            y_i = torch.matmul(q_f, S_next)
+            return y_i, S_next
 
-        yt = torch.matmul(qt, curr)
-        outs.append(yt)
+        log_beta = torch.log(beta_f)
+        gamma = torch.cumsum(log_beta, dim=-1)
+        gamma_prev = gamma - log_beta
 
-    return torch.cat(outs, dim=2), curr
+        tril_strict = torch.tril(
+            torch.ones((C, C), device=S_f.device, dtype=S_f.dtype),
+            diagonal=-1,
+        )
+        tril_incl = torch.tril(
+            torch.ones((C, C), device=S_f.device, dtype=S_f.dtype),
+            diagonal=0,
+        )
+
+        # Clamp exponent difference to <= 0 so the masked upper triangle never overflows exp().
+        decay_m = torch.exp((gamma_prev.unsqueeze(-1) - gamma.unsqueeze(-2)).clamp(max=0.0)) * tril_strict
+        M = torch.matmul(k_m, k_m.transpose(-1, -2)) * (w.unsqueeze(-1) * decay_m)
+        eye = torch.eye(C, device=S_f.device, dtype=S_f.dtype)
+        I_M = eye + M
+
+        rhs = w.unsqueeze(-1) * (v_m - torch.exp(gamma_prev).unsqueeze(-1) * torch.matmul(k_m, S_f))
+        U = torch.linalg.solve_triangular(I_M, rhs, upper=False, unitriangular=True)
+
+        decay_end = torch.exp(gamma[:, :, -1])
+        scale_to_end = torch.exp((gamma[:, :, -1:] - gamma).clamp(max=0.0))
+        k_scaled = k_m * scale_to_end.unsqueeze(-1)
+        S_next = decay_end.unsqueeze(-1).unsqueeze(-1) * S_f + torch.matmul(k_scaled.transpose(-1, -2), U)
+        S_next = torch.nan_to_num(S_next, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        decay_qk = torch.exp((gamma.unsqueeze(-1) - gamma.unsqueeze(-2)).clamp(max=0.0)) * tril_incl
+        attn_qk = torch.matmul(q_f, k_m.transpose(-1, -2)) * decay_qk
+        y_i = torch.exp(gamma).unsqueeze(-1) * torch.matmul(q_f, S_f) + torch.matmul(attn_qk, U)
+        return y_i, S_next
+
+
+def _clamp_fp16_safe_to_dtype(y: torch.Tensor, target_dtype: torch.dtype) -> torch.Tensor:
+    """Sanitize non-finite values and clamp within FP16 safe bounds before casting."""
+    fp16_lim = torch.finfo(torch.float16).max * 0.5
+    y = torch.nan_to_num(y, nan=0.0, posinf=fp16_lim, neginf=-fp16_lim)
+    if target_dtype.is_floating_point:
+        lim = min(fp16_lim, torch.finfo(target_dtype).max * 0.5)
+        y = y.clamp(min=-lim, max=lim)
+    return y.to(target_dtype)
 
 
 def chunked_delta_rule_scan(
@@ -184,7 +234,7 @@ def chunked_delta_rule_scan(
 
     if L == 1:
         y_i, S_out = _delta_chunk_forward(S, q_f, k_f, v_f, beta_f, alpha_f, mask_h)
-        return torch.nan_to_num(y_i, nan=0.0).to(q.dtype), S_out
+        return _clamp_fp16_safe_to_dtype(y_i, q.dtype), S_out
 
     pad_len = (chunk_size - L % chunk_size) % chunk_size
     if pad_len > 0:
@@ -241,7 +291,7 @@ def chunked_delta_rule_scan(
     if pad_len > 0:
         y = y[:, :, :L, :]
 
-    return torch.nan_to_num(y, nan=0.0).to(q.dtype), S
+    return _clamp_fp16_safe_to_dtype(y, q.dtype), S
 
 
 @ATTENTION_REGISTRY.register(

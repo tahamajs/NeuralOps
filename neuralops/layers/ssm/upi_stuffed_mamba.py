@@ -465,7 +465,7 @@ class SelectiveMamba(BaseAttention):
             x = x * m
             dt = dt * m
 
-        chunk_size = 64
+        chunk_size = 32
         num_chunks = (seqlen + chunk_size - 1) // chunk_size if seqlen > 0 else 0
         h_running = x.new_zeros(batch, self.inner_dim, self.d_state, dtype=torch.float32)
         y_chunks = []

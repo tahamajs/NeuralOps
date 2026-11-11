@@ -30,14 +30,28 @@ from neuralops.core.utils.gqa import repeat_kv
 logger = logging.getLogger(__name__)
 
 
-@ATTENTION_REGISTRY.register("svd_attention", supports_causal=True, supports_gqa=True)
-@ATTENTION_REGISTRY.register("svd_seq", is_alias=True, supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register(
+    "svd_attention",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
+    "svd_seq",
+    is_alias=True,
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
 class SVDLinearAttention(BaseAttention):
     r"""Low-Rank SVD-Compressed Sequence Attention Mechanism.
     Hardened for production use across diverse transformer architectures.
     """
 
     supports_gqa: bool = True
+    supports_causal: bool = True
+    supports_bidirectional: bool = True
+    supports_rope: bool = True
     is_custom_attention: bool = True
     triton_kernel: str = "low_rank"
 
@@ -50,11 +64,23 @@ class SVDLinearAttention(BaseAttention):
         lora_alpha: float = 32.0,
         is_decoder: bool | None = None,
         dropout: float | None = 0.1,
+        pretrained_attn: nn.Module | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(config, rank)
+        if old_attn is None and pretrained_attn is not None:
+            old_attn = pretrained_attn
 
-        self.hidden_size: int = int(_cfg_get(config, "hidden_size", kwargs.get("hidden_size", 768)))
+        self.hidden_size: int = int(
+            _cfg_get(
+                config,
+                "hidden_size",
+                kwargs.get(
+                    "hidden_size",
+                    kwargs.get("embed_dim", kwargs.get("dim", kwargs.get("d_model", 768))),
+                ),
+            )
+        )
         self.num_heads: int = int(
             kwargs.get("num_heads")
             or kwargs.get("num_attention_heads")
@@ -106,6 +132,8 @@ class SVDLinearAttention(BaseAttention):
         else:
             self.is_decoder = (
                 bool(_cfg_get(config, "is_decoder", False))
+                or bool(_cfg_get(config, "is_causal", False))
+                or bool(kwargs.get("is_causal", False))
                 or any(
                     str(_cfg_get(config, "model_type", "")).lower().startswith(p)
                     for p in (
@@ -160,6 +188,10 @@ class SVDLinearAttention(BaseAttention):
             lora_alpha=self.lora_alpha,
             freeze_base=True,
         )
+        with torch.no_grad():
+            for proj in (self.query, self.key, self.value, self.out_proj):
+                if getattr(proj, "bias", None) is not None:
+                    proj.bias.zero_()
 
         dropout_val: float = dropout if dropout is not None else getattr(config, "dropout", 0.1)
         self.dropout: nn.Dropout = nn.Dropout(dropout_val)
@@ -345,24 +377,50 @@ class SVDLinearAttention(BaseAttention):
                 self.query.bias.data[: min(len(self.query.bias), len(b_q))].copy_(
                     b_q[: min(len(self.query.bias), len(b_q))]
                 )
+            elif self.query.bias is not None:
+                self.query.bias.data.zero_()
 
             def _copy_kv(target_proj, w, b):
                 if w.shape[0] == self.kv_head_size:
                     target_proj.weight.copy_(w)
-                    if b is not None and target_proj.bias is not None:
-                        target_proj.bias.copy_(b)
+                    if target_proj.bias is not None:
+                        if b is not None:
+                            target_proj.bias.copy_(b)
+                        else:
+                            target_proj.bias.zero_()
                 elif w.shape[0] > self.kv_head_size and w.shape[0] % self.kv_head_size == 0:
                     rep = w.shape[0] // self.kv_head_size
                     w_grouped = w.view(self.num_kv_heads, rep, self.head_dim, -1)[:, 0].reshape(self.kv_head_size, -1)
                     target_proj.weight.copy_(w_grouped)
-                    if b is not None and target_proj.bias is not None:
-                        b_grouped = b.view(self.num_kv_heads, rep, self.head_dim)[:, 0].reshape(-1)
-                        target_proj.bias.copy_(b_grouped)
+                    if target_proj.bias is not None:
+                        if b is not None:
+                            b_grouped = b.view(self.num_kv_heads, rep, self.head_dim)[:, 0].reshape(-1)
+                            target_proj.bias.copy_(b_grouped)
+                        else:
+                            target_proj.bias.zero_()
                 elif w.shape[0] < self.kv_head_size and self.kv_head_size % w.shape[0] == 0:
                     rep = self.kv_head_size // w.shape[0]
-                    target_proj.weight.copy_(w.repeat(rep, 1))
-                    if b is not None and target_proj.bias is not None:
-                        target_proj.bias.copy_(b.repeat(rep))
+                    src_heads = max(1, w.shape[0] // self.head_dim)
+                    if src_heads * self.head_dim == w.shape[0]:
+                        w_rep = (
+                            w.view(src_heads, self.head_dim, -1)
+                            .repeat_interleave(rep, dim=0)
+                            .reshape(self.kv_head_size, -1)
+                        )
+                        target_proj.weight.copy_(w_rep)
+                        if target_proj.bias is not None:
+                            if b is not None:
+                                b_rep = b.view(src_heads, self.head_dim).repeat_interleave(rep, dim=0).reshape(-1)
+                                target_proj.bias.copy_(b_rep)
+                            else:
+                                target_proj.bias.zero_()
+                    else:
+                        target_proj.weight.copy_(w.repeat(rep, 1))
+                        if target_proj.bias is not None:
+                            if b is not None:
+                                target_proj.bias.copy_(b.repeat(rep))
+                            else:
+                                target_proj.bias.zero_()
                 else:
                     target_proj.weight.data[
                         : min(self.kv_head_size, w.shape[0]),
@@ -373,10 +431,13 @@ class SVDLinearAttention(BaseAttention):
                             : min(self.hidden_size, w.shape[1]),
                         ]
                     )
-                    if b is not None and target_proj.bias is not None:
-                        target_proj.bias.data[: min(len(target_proj.bias), len(b))].copy_(
-                            b[: min(len(target_proj.bias), len(b))]
-                        )
+                    if target_proj.bias is not None:
+                        if b is not None:
+                            target_proj.bias.data[: min(len(target_proj.bias), len(b))].copy_(
+                                b[: min(len(target_proj.bias), len(b))]
+                            )
+                        else:
+                            target_proj.bias.data.zero_()
 
             _copy_kv(self.key, w_k, b_k)
             _copy_kv(self.value, w_v, b_v)
@@ -391,33 +452,51 @@ class SVDLinearAttention(BaseAttention):
                         r = min(self.out_proj.weight.shape[0], w_o.shape[0])
                         c = min(self.out_proj.weight.shape[1], w_o.shape[1])
                         self.out_proj.weight.data[:r, :c].copy_(w_o[:r, :c])
-                    if b_o is not None and self.out_proj.bias is not None:
-                        mn = min(len(self.out_proj.bias), len(b_o))
-                        self.out_proj.bias.data[:mn].copy_(b_o[:mn])
+                    if self.out_proj.bias is not None:
+                        if b_o is not None:
+                            mn = min(len(self.out_proj.bias), len(b_o))
+                            self.out_proj.bias.data[:mn].copy_(b_o[:mn])
+                        else:
+                            self.out_proj.bias.data.zero_()
 
-            try:
-                with torch.no_grad():
-                    wk = self.key.weight.float()
+            self._compute_svd_proj_from_key()
+
+    def _compute_svd_proj_from_key(self) -> None:
+        """Compute right singular subspace projection from current key weights."""
+        try:
+            with torch.no_grad():
+                wk = self.key.weight.float()
+                try:
                     _, _, Vh = torch.linalg.svd(wk, full_matrices=False)
-                    r = min(self.rank or 64, Vh.shape[0], self.hidden_size)
-                    proj = Vh[:r, :].T
-                    if proj.shape == self.svd_proj.shape:
-                        self.svd_proj.copy_(proj)
-                    else:
-                        mn_r = min(proj.shape[1], self.svd_proj.shape[1])
-                        self.svd_proj[:, :mn_r].copy_(proj[:, :mn_r])
-                    self._svd_proj_ready = True
-                    logger.info(
-                        "SVD projection computed from W_K: shape=%s, rank=%d",
-                        self.svd_proj.shape,
-                        r,
-                    )
-            except Exception as e:
-                logger.warning(
-                    "SVD projection computation failed: %s — falling back to identity",
-                    e,
+                except Exception:
+                    _, _, Vh = torch.linalg.svd(wk.cpu(), full_matrices=False)
+                    Vh = Vh.to(device=wk.device)
+                r = min(self.rank or 64, Vh.shape[0], self.hidden_size, self.svd_proj.shape[1])
+                proj = Vh[:r, :].T.to(device=self.svd_proj.device, dtype=self.svd_proj.dtype)
+                self.svd_proj.zero_()
+                self.svd_proj[:, :r].copy_(proj)
+                self._svd_proj_ready = True
+                logger.info(
+                    "SVD projection computed from W_K: shape=%s, rank=%d",
+                    self.svd_proj.shape,
+                    r,
                 )
-                self._svd_proj_ready = False
+        except Exception as e:
+            logger.warning(
+                "SVD projection computation failed: %s — falling back to identity",
+                e,
+            )
+            self._svd_proj_ready = False
+
+    def _reshape_head_mask(self, head_mask: torch.Tensor, dtype: torch.dtype, device: torch.device) -> torch.Tensor:
+        hm = head_mask.to(device=device, dtype=dtype)
+        if hm.dim() == 1:
+            return hm.view(1, -1, 1, 1)
+        if hm.dim() == 2:
+            return hm.unsqueeze(1).unsqueeze(-1)
+        if hm.dim() == 3:
+            return hm.unsqueeze(-1)
+        return hm
 
     def forward(
         self,
@@ -462,28 +541,30 @@ class SVDLinearAttention(BaseAttention):
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         is_causal = self.is_decoder and not is_cross
+        scale = 1.0 / math.sqrt(self.head_dim)
 
-        use_full_attention = self.rank is None or kv_len <= (self.rank or 0) + 8
+        use_full_attention = (
+            self.rank is None
+            or kv_len <= (self.rank or 0) + 8
+            or (is_causal and seq_len != kv_len)
+            or bool(output_attentions)
+        )
 
         if use_full_attention:
-            _use_sdpa = head_mask is None and output_attentions is False
+            _use_sdpa = head_mask is None and not output_attentions and (eff_mask is None or not is_causal)
 
             if _use_sdpa:
                 try:
-                    _q = Q if Q.dtype in (torch.float16, torch.bfloat16) else Q.half()
-                    _k = K if K.dtype in (torch.float16, torch.bfloat16) else K.half()
-                    _v = V if V.dtype in (torch.float16, torch.bfloat16) else V.half()
-
                     _attn_mask = None
                     if eff_mask is not None and eff_mask.dim() == 2:
                         _attn_mask = eff_mask.bool().view(eff_mask.shape[0], 1, 1, eff_mask.shape[1])
                     elif eff_mask is not None and eff_mask.dim() == 4:
-                        _attn_mask = eff_mask.bool() if eff_mask.dtype == torch.bool else eff_mask
+                        _attn_mask = eff_mask.bool() if eff_mask.dtype == torch.bool else eff_mask.to(dtype=Q.dtype)
 
                     context = torch.nn.functional.scaled_dot_product_attention(
-                        _q,
-                        _k,
-                        _v,
+                        Q,
+                        K,
+                        V,
                         attn_mask=_attn_mask,
                         is_causal=is_causal if _attn_mask is None else False,
                         dropout_p=self.dropout.p if self.training else 0.0,
@@ -494,7 +575,7 @@ class SVDLinearAttention(BaseAttention):
                     _use_sdpa = False
 
             if not _use_sdpa:
-                scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) / math.sqrt(self.head_dim)
+                scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
                 if is_causal and seq_len > 1:
                     causal_mask = (
                         torch.triu(
@@ -504,7 +585,7 @@ class SVDLinearAttention(BaseAttention):
                                 device=device,
                                 dtype=torch.float32,
                             ),
-                            diagonal=1,
+                            diagonal=1 + (kv_len - seq_len),
                         )
                         .unsqueeze(0)
                         .unsqueeze(0)
@@ -513,17 +594,11 @@ class SVDLinearAttention(BaseAttention):
                 if eff_mask is not None:
                     scores = apply_attention_mask(scores, eff_mask)
                 scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-                probs = F.softmax(scores, dim=-1).to(dtype)
+                probs = F.softmax(scores, dim=-1)
                 probs = self.dropout(probs)
                 if head_mask is not None:
-                    if head_mask.dim() == 1:
-                        head_mask = head_mask.view(1, -1, 1, 1)
-                    elif head_mask.dim() == 2:
-                        head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
-                    elif head_mask.dim() == 3:
-                        head_mask = head_mask.unsqueeze(-1)
-                    probs = probs * head_mask
-                context = torch.matmul(probs, V)
+                    probs = probs * self._reshape_head_mask(head_mask, probs.dtype, device)
+                context = torch.matmul(probs, V.float()).to(dtype)
 
             if attention_mask is not None:
                 q_valid_mask = get_token_valid_mask(
@@ -532,68 +607,153 @@ class SVDLinearAttention(BaseAttention):
                     seq_len,
                     device,
                 )
-                if q_valid_mask is not None:
+                if q_valid_mask is not None and not q_valid_mask.all():
                     context = context * q_valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
-            attn_ret = probs if output_attentions else None
+            attn_ret = probs.to(dtype) if output_attentions else None
         else:
+            if not self._svd_proj_ready:
+                self._compute_svd_proj_from_key()
+
             with torch.no_grad():
-                proj = self.svd_proj.to(device=device, dtype=dtype)
+                proj = self.svd_proj.to(device=device, dtype=torch.float32)
                 actual_r = proj.shape[1]
-
-                seq_scores = torch.matmul(kv_input.float(), proj.float())
+                seq_scores = torch.matmul(kv_input.float(), proj)
                 try:
-                    U_r, _ = torch.linalg.qr(seq_scores.float(), mode="reduced")
+                    U_r, _ = torch.linalg.qr(seq_scores, mode="reduced")
                 except Exception:
-                    U_r, _ = torch.linalg.qr(seq_scores.cpu().float(), mode="reduced")
+                    U_r, _ = torch.linalg.qr(seq_scores.cpu(), mode="reduced")
                     U_r = U_r.to(device=device)
-                U_r = U_r.to(dtype)
+                self._last_u_r = U_r.to(dtype).detach()
 
-            self._last_u_r = U_r.detach()
+            k_valid_mask = None
+            if eff_mask is not None:
+                k_valid_mask = get_token_valid_mask(eff_mask, batch_size, kv_len, device)
 
-            U_r_t = U_r.unsqueeze(1)
-            K_proj = torch.matmul(U_r_t.transpose(-2, -1).contiguous(), K)
-            V_proj = torch.matmul(U_r_t.transpose(-2, -1).contiguous(), V)
+            if is_causal:
+                chunk_size = max(16, min(actual_r, 64))
+                num_chunks = (kv_len + chunk_size - 1) // chunk_size
+                m_per_chunk = max(2, min(8, actual_r // max(1, num_chunks - 1)))
+                proj_sub = proj[:, :m_per_chunk]
+                proj_scale = 1.0 / math.sqrt(max(1, proj_sub.shape[0]))
 
-            scores = torch.matmul(Q.float(), K_proj.float().transpose(-2, -1).contiguous()) / math.sqrt(self.head_dim)
+                Q_f = Q.float()
+                K_f = K.float()
+                V_f = V.float()
 
-            if is_causal and seq_len > 1 and actual_r == kv_len:
-                causal_mask = (
-                    torch.triu(
-                        torch.full(
-                            (seq_len, actual_r),
-                            float("-inf"),
-                            device=device,
-                            dtype=torch.float32,
-                        ),
-                        diagonal=1,
+                prefix_k: list[torch.Tensor] = []
+                prefix_v: list[torch.Tensor] = []
+                prefix_bias: list[torch.Tensor] = []
+                out_chunks: list[torch.Tensor] = []
+
+                for c in range(num_chunks):
+                    start = c * chunk_size
+                    end = min(start + chunk_size, kv_len)
+                    Lc = end - start
+
+                    qc = Q_f[:, :, start:end, :]
+                    kc = K_f[:, :, start:end, :]
+                    vc = V_f[:, :, start:end, :]
+                    km_c = k_valid_mask[:, start:end] if k_valid_mask is not None else None
+
+                    if c > 0:
+                        k_cat = torch.cat(prefix_k + [kc], dim=2)
+                        v_cat = torch.cat(prefix_v + [vc], dim=2)
+                        scores_c = torch.matmul(qc, k_cat.transpose(-2, -1).contiguous()) * scale
+                        p_bias = torch.cat(prefix_bias, dim=-1)
+                        M_p = p_bias.shape[-1]
+                        scores_c[:, :, :, :M_p] = scores_c[:, :, :, :M_p] + p_bias.unsqueeze(1).unsqueeze(2)
+                    else:
+                        v_cat = vc
+                        scores_c = torch.matmul(qc, kc.transpose(-2, -1).contiguous()) * scale
+                        M_p = 0
+
+                    if Lc > 1:
+                        causal_intra = torch.triu(
+                            torch.full((Lc, Lc), float("-inf"), device=device, dtype=torch.float32),
+                            diagonal=1,
+                        )
+                        scores_c[:, :, :, M_p:] = scores_c[:, :, :, M_p:] + causal_intra.unsqueeze(0).unsqueeze(0)
+
+                    if km_c is not None:
+                        pad_intra = torch.zeros((batch_size, Lc), device=device, dtype=torch.float32)
+                        pad_intra = pad_intra.masked_fill(~km_c, -1e4)
+                        scores_c[:, :, :, M_p:] = scores_c[:, :, :, M_p:] + pad_intra.unsqueeze(1).unsqueeze(2)
+
+                    scores_c = torch.nan_to_num(scores_c, nan=-1e4, posinf=1e4, neginf=-1e4)
+                    probs_c = F.softmax(scores_c, dim=-1)
+                    probs_c = self.dropout(probs_c)
+                    if head_mask is not None:
+                        probs_c = probs_c * self._reshape_head_mask(head_mask, probs_c.dtype, device)
+                    out_chunks.append(torch.matmul(probs_c, v_cat))
+
+                    if c < num_chunks - 1:
+                        xc = kv_input[:, start:end, :].float()
+                        logits_p = torch.matmul(xc, proj_sub) * proj_scale
+                        if km_c is not None:
+                            logits_p = logits_p.masked_fill(~km_c.unsqueeze(-1), -1e9)
+                            w_p = F.softmax(logits_p, dim=1) * km_c.unsqueeze(-1).float()
+                            cnt_p = km_c.float().sum(dim=1, keepdim=True)
+                            has_valid_p = km_c.any(dim=1, keepdim=True)
+                            bias_p = torch.where(
+                                has_valid_p,
+                                torch.log((cnt_p / float(m_per_chunk)).clamp(min=1.0)),
+                                torch.full_like(cnt_p, -1e4),
+                            ).expand(-1, m_per_chunk)
+                        else:
+                            w_p = F.softmax(logits_p, dim=1)
+                            bias_p = torch.full(
+                                (batch_size, m_per_chunk),
+                                math.log(max(1.0, float(Lc) / float(m_per_chunk))),
+                                device=device,
+                                dtype=torch.float32,
+                            )
+
+                        w_p_t = w_p.unsqueeze(1).transpose(-2, -1).contiguous()
+                        prefix_k.append(torch.matmul(w_p_t, kc))
+                        prefix_v.append(torch.matmul(w_p_t, vc))
+                        prefix_bias.append(bias_p)
+
+                context = torch.cat(out_chunks, dim=2).to(dtype)
+            else:
+                m_total = max(1, min(actual_r, kv_len))
+                proj_sub = proj[:, :m_total]
+                proj_scale = 1.0 / math.sqrt(max(1, proj_sub.shape[0]))
+                logits_s = torch.matmul(kv_input.float(), proj_sub) * proj_scale
+
+                if k_valid_mask is not None:
+                    logits_s = logits_s.masked_fill(~k_valid_mask.unsqueeze(-1), -1e9)
+                    w_s = F.softmax(logits_s, dim=1) * k_valid_mask.unsqueeze(-1).float()
+                    cnt_s = k_valid_mask.float().sum(dim=1, keepdim=True).clamp(min=1.0)
+                    has_valid = k_valid_mask.any(dim=1, keepdim=True)
+                    log_bias = torch.where(
+                        has_valid,
+                        torch.log((cnt_s / float(m_total)).clamp(min=1.0)),
+                        torch.full_like(cnt_s, -1e4),
+                    ).expand(-1, m_total)
+                else:
+                    w_s = F.softmax(logits_s, dim=1)
+                    log_bias = torch.full(
+                        (batch_size, m_total),
+                        math.log(max(1.0, float(kv_len) / float(m_total))),
+                        device=device,
+                        dtype=torch.float32,
                     )
-                    .unsqueeze(0)
-                    .unsqueeze(0)
-                )
-                scores = scores + causal_mask
-            elif is_causal:
-                logger.debug(
-                    "SVD-Sequence: causal mode with r=%d < kv_len=%d. "
-                    "Causal masking not strictly enforced because SVD "
-                    "compression combines multiple tokens.",
-                    actual_r,
-                    kv_len,
-                )
 
-            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-            probs = F.softmax(scores, dim=-1).to(dtype)
-            probs = self.dropout(probs)
+                w_s_t = w_s.unsqueeze(1).transpose(-2, -1).contiguous()
+                K_proj = torch.matmul(w_s_t, K.float())
+                V_proj = torch.matmul(w_s_t, V.float())
 
-            if head_mask is not None:
-                if head_mask.dim() == 1:
-                    head_mask = head_mask.view(1, -1, 1, 1)
-                elif head_mask.dim() == 2:
-                    head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
-                elif head_mask.dim() == 3:
-                    head_mask = head_mask.unsqueeze(-1)
-                probs = probs * head_mask
+                scores = torch.matmul(Q.float(), K_proj.transpose(-2, -1).contiguous()) * scale
+                scores = scores + log_bias.unsqueeze(1).unsqueeze(2)
+                scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+                probs = F.softmax(scores, dim=-1)
+                probs = self.dropout(probs)
 
-            context = torch.matmul(probs, V_proj)
+                if head_mask is not None:
+                    probs = probs * self._reshape_head_mask(head_mask, probs.dtype, device)
+
+                context = torch.matmul(probs, V_proj).to(dtype)
+
             if attention_mask is not None:
                 q_valid_mask = get_token_valid_mask(
                     attention_mask,
@@ -601,14 +761,17 @@ class SVDLinearAttention(BaseAttention):
                     seq_len,
                     device,
                 )
-                if q_valid_mask is not None:
+                if q_valid_mask is not None and not q_valid_mask.all():
                     context = context * q_valid_mask.unsqueeze(1).unsqueeze(-1).to(dtype)
-            attn_ret = probs if output_attentions else None
+            attn_ret = None
 
         context = context.transpose(1, 2).contiguous().view(batch_size, seq_len, self.all_head_size)
         context = torch.nan_to_num(context, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        out = self.out_proj(context)
+        if self.is_nested_encoder:
+            out = context
+        else:
+            out = self.out_proj(context)
 
         if out.shape[-1] != hidden_states.shape[-1]:
             if out.shape[-1] < hidden_states.shape[-1]:

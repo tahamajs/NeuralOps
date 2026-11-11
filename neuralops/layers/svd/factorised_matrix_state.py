@@ -207,12 +207,18 @@ class FactorisedMatrixState(BaseAttention):
             freeze_base=self.freeze_base,
         )
 
-        self.beta = nn.Parameter(torch.ones(self.num_heads, 1, 1) * 2.0)
-        self.rotary_emb = None
+        # Multi-scale decay schedule across heads: local heads (~0.88) to long-range visual memory heads (~0.9985)
+        self.beta = nn.Parameter(torch.linspace(2.0, 6.5, self.num_heads).view(self.num_heads, 1, 1))
+        self.rotary_emb = getattr(source_attn, "rotary_emb", None) if source_attn is not None else None
         self.comp_config: Any | None = comp_config
 
         if source_attn is not None:
             self.copy_weights(source_attn)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name in ("out_proj", "o_proj", "dense", "out_lin", "c_proj") and isinstance(value, nn.Module):
+            super().__setattr__("W_res", value)
+        super().__setattr__(name, value)
 
     @property
     def query(self) -> LoRALinear:
@@ -227,16 +233,28 @@ class FactorisedMatrixState(BaseAttention):
         return self.v_proj
 
     @property
-    def dense(self) -> LoRALinear:
+    def dense(self) -> nn.Module:
         return self.W_res
 
-    @property
-    def out_proj(self) -> LoRALinear:
-        return self.W_res
+    @dense.setter
+    def dense(self, value: nn.Module) -> None:
+        self.W_res = value
 
     @property
-    def o_proj(self) -> LoRALinear:
+    def out_proj(self) -> nn.Module:
         return self.W_res
+
+    @out_proj.setter
+    def out_proj(self, value: nn.Module) -> None:
+        self.W_res = value
+
+    @property
+    def o_proj(self) -> nn.Module:
+        return self.W_res
+
+    @o_proj.setter
+    def o_proj(self, value: nn.Module) -> None:
+        self.W_res = value
 
     @property
     def q_lin(self) -> LoRALinear:
@@ -251,8 +269,12 @@ class FactorisedMatrixState(BaseAttention):
         return self.v_proj
 
     @property
-    def out_lin(self) -> LoRALinear:
+    def out_lin(self) -> nn.Module:
         return self.W_res
+
+    @out_lin.setter
+    def out_lin(self, value: nn.Module) -> None:
+        self.W_res = value
 
     @property
     def W_q(self) -> LoRALinear:
@@ -267,8 +289,12 @@ class FactorisedMatrixState(BaseAttention):
         return self.v_proj
 
     @property
-    def c_proj(self) -> LoRALinear:
+    def c_proj(self) -> nn.Module:
         return self.W_res
+
+    @c_proj.setter
+    def c_proj(self, value: nn.Module) -> None:
+        self.W_res = value
 
     def copy_weights(self, old_attn: Any) -> None:
         """Transfer pretrained projection weights with strict Frobenius norm verification."""
@@ -479,7 +505,7 @@ class FactorisedMatrixState(BaseAttention):
         B, H, L, d = q.shape
 
         suitable = False
-        if HAS_TRITON_FMS and q.is_cuda and d <= MAX_REGISTER_DIM and mask is None and not reverse:
+        if HAS_TRITON_FMS and q.is_cuda and d <= MAX_REGISTER_DIM and mask is None and not reverse and L <= 256:
             from neuralops.ops.triton._types import check_triton_suitability
 
             suitable, _ = check_triton_suitability(q, "fms_scan", head_dim=d, seq_len=L, supports_backward=True)
@@ -533,6 +559,20 @@ class FactorisedMatrixState(BaseAttention):
 
             log_decay = torch.log(decay_f)
 
+            def _build_chunk_decay(c_len: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+                idx_c = torch.arange(c_len, device=q.device, dtype=torch.float32)
+                dist_c = idx_c.unsqueeze(1) - idx_c.unsqueeze(0)
+                causal_mask_c = dist_c >= 0
+                Dc = torch.exp(dist_c.unsqueeze(0).unsqueeze(0) * log_decay).masked_fill(
+                    ~causal_mask_c.unsqueeze(0).unsqueeze(0), 0.0
+                )
+                decay_from_prev = torch.exp((idx_c + 1.0).view(1, 1, c_len, 1) * log_decay)
+                decay_to_end = torch.exp((c_len - 1.0 - idx_c).view(1, 1, c_len, 1) * log_decay)
+                decay_chunk = torch.exp(float(c_len) * log_decay)
+                return Dc, decay_from_prev, decay_to_end, decay_chunk
+
+            full_tables = _build_chunk_decay(chunk_size) if L >= chunk_size else None
+
             for i in range(num_chunks):
                 start = i * chunk_size
                 end = min(start + chunk_size, L)
@@ -542,38 +582,24 @@ class FactorisedMatrixState(BaseAttention):
                 kc = k_f[:, :, start:end, :]
                 vc = v_f[:, :, start:end, :]
 
-                idx_c = torch.arange(curr_c, device=q.device, dtype=torch.float32)
-                dist_c = idx_c.unsqueeze(1) - idx_c.unsqueeze(0)
-                causal_mask_c = dist_c >= 0
-                Dc = torch.exp(dist_c.unsqueeze(0).unsqueeze(0) * log_decay).masked_fill(
-                    ~causal_mask_c.unsqueeze(0).unsqueeze(0), 0.0
-                )
+                if full_tables is not None and curr_c == chunk_size:
+                    Dc, decay_from_prev, decay_to_end, decay_chunk = full_tables
+                else:
+                    Dc, decay_from_prev, decay_to_end, decay_chunk = _build_chunk_decay(curr_c)
 
                 scores_c = torch.matmul(qc, kc.transpose(-1, -2)) * Dc
                 num_intra = torch.matmul(scores_c, vc)
                 denom_intra = scores_c.sum(dim=-1, keepdim=True)
 
-                decay_from_prev = torch.exp((idx_c + 1).view(1, 1, curr_c, 1) * log_decay)
-
-                num_inter = torch.einsum("bhcd,bhde->bhce", qc, S)
-                num_inter = num_inter * decay_from_prev
-
-                denom_inter = torch.einsum("bhcd,bhde->bhce", qc, z)
-                denom_inter = denom_inter * decay_from_prev
+                num_inter = torch.matmul(qc, S) * decay_from_prev
+                denom_inter = torch.matmul(qc, z) * decay_from_prev
 
                 num_c = num_intra + num_inter
                 denom_c = (denom_intra + denom_inter).clamp_min(1e-5)
                 y_chunks.append(num_c / denom_c)
 
-                decay_chunk = torch.exp(float(curr_c) * log_decay)
-
-                dist_to_end = (curr_c - 1 - idx_c).view(1, 1, curr_c, 1)
-                decay_to_end = torch.exp(dist_to_end * log_decay)
-
                 kc_decayed = kc * decay_to_end
-
-                chunk_S = torch.einsum("bhcd,bhce->bhde", kc_decayed, vc)
-
+                chunk_S = torch.matmul(kc_decayed.transpose(-1, -2), vc)
                 chunk_z = kc_decayed.sum(dim=2).unsqueeze(-1)
 
                 S = S * decay_chunk + chunk_S
@@ -622,7 +648,10 @@ class FactorisedMatrixState(BaseAttention):
                 q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
         elif self.rotary_emb is not None and not is_cross_attention:
             if position_ids is not None:
-                cos, sin = self.rotary_emb(v, seq_len=kv_len)
+                try:
+                    cos, sin = self.rotary_emb(v, position_ids)
+                except TypeError:
+                    cos, sin = self.rotary_emb(v, seq_len=kv_len)
                 q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
 
         if self.num_kv_heads != self.num_heads:
@@ -633,16 +662,21 @@ class FactorisedMatrixState(BaseAttention):
         mask_bool = None
         if eff_mask is not None:
             if eff_mask.dim() == 2:
-                mask_bool = eff_mask.bool()
+                m_b = eff_mask.bool() if eff_mask.dtype == torch.bool else (eff_mask > 0)
+                if not bool(m_b.all()):
+                    mask_bool = m_b
             elif eff_mask.dim() == 4:
                 m_sub = eff_mask > -1000.0 if eff_mask.dtype != torch.bool else eff_mask
-                mask_bool = m_sub.any(dim=1).any(dim=-2).bool()
+                m_b = m_sub.any(dim=1).any(dim=-2).bool()
+                if not bool(m_b.all()):
+                    mask_bool = m_b
 
         decay = torch.sigmoid(self.beta)
 
         y_fwd = self._matrix_scan_linear(q, k, v, decay, mask=mask_bool, reverse=False)
 
-        if self.is_decoder or is_cross_attention:
+        is_causal = bool(kwargs.get("is_causal", self.is_decoder))
+        if is_causal or is_cross_attention:
             y = y_fwd
         else:
             y_bwd = self._matrix_scan_linear(q, k, v, decay, mask=mask_bool, reverse=True)
@@ -664,7 +698,7 @@ class FactorisedMatrixState(BaseAttention):
             out = y_flat
         else:
             low_rank = torch.matmul(torch.matmul(y_flat, self.L), self.R.t().contiguous())
-            out = self.W_res(y_flat) + low_rank
+            out = self.out_proj(y_flat) + low_rank
 
         return out, None
 

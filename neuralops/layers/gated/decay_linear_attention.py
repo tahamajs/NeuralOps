@@ -13,6 +13,7 @@ Linear attention mechanism equipped with data-dependent exponential decay for re
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import math
 from typing import Any
@@ -37,6 +38,24 @@ except Exception:
     HAS_TRITON_DECAY = False
 
 logger = logging.getLogger(__name__)
+
+
+def _clamp_to_dtype(tensor: torch.Tensor, dtype: torch.dtype) -> torch.Tensor:
+    """Sanitize non-finite values and clamp to dtype safe range before casting."""
+    if dtype.is_floating_point:
+        max_val = torch.finfo(dtype).max * 0.5
+        return torch.nan_to_num(tensor, nan=0.0, posinf=max_val, neginf=-max_val).clamp(-max_val, max_val).to(dtype)
+    return torch.nan_to_num(tensor, nan=0.0).to(dtype)
+
+
+def _proj_input(mod: nn.Module, x: torch.Tensor) -> torch.Tensor:
+    """Match projection weight dtype only when autocast is disabled."""
+    if torch.is_autocast_enabled():
+        return x
+    w = getattr(mod, "weight", None)
+    if isinstance(w, torch.Tensor) and w.is_floating_point() and x.dtype != w.dtype:
+        return x.to(w.dtype)
+    return x
 
 
 def _read_past_kv(past_key_value: Any, layer_idx: int):
@@ -547,166 +566,136 @@ class DecayLinearAttention(BaseAttention):
         lambdas: torch.Tensor,
         mask: torch.Tensor | None = None,
         reverse: bool = False,
-        chunk_size: int = 32,
+        chunk_size: int = 64,
     ) -> torch.Tensor:
         r"""
-        Numerically stable parallel decay scan with O(1) state per chunk.
-        Eliminates O(L^2) memory footprint.
+        Numerically stable vectorized chunked decay scan in true FP32 (autocast disabled).
+        Eliminates sequential Python chunk loops and FP16 matmul/GradScaler overflows.
         """
         B, H, L, d = q.shape
+        dev_type = q.device.type
+        amp_ctx = (
+            torch.amp.autocast(device_type=dev_type, enabled=False)
+            if hasattr(torch, "amp") and dev_type in ("cuda", "cpu")
+            else contextlib.nullcontext()
+        )
 
-        if HAS_TRITON_DECAY and q.is_cuda and d <= MAX_REGISTER_DIM and mask is None:
-            try:
-                from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK
+        with amp_ctx:
+            q_f = q.float() * (1.0 / math.sqrt(int(d)))
+            k_f = k.float()
+            v_f = v.float()
+            lambdas_f = lambdas.float().clamp(min=0.01, max=0.999)
 
-                if (
-                    not FORCE_PYTORCH_FALLBACK
-                    and torch.cuda.is_available()
-                    and torch.cuda.get_device_capability(q.device)[0] >= 8
-                ):
-                    try:
-                        from fla.ops.gla import chunk_gla
+            if mask is not None:
+                m_b = mask.bool().unsqueeze(1)
+                m_f = m_b.unsqueeze(-1).float()
+                q_f = q_f * m_f
+                k_f = k_f * m_f
+                v_f = v_f * m_f
+                lambdas_f = torch.where(m_b, lambdas_f, torch.ones_like(lambdas_f))
 
-                        target_dtype = q.dtype if q.dtype in (torch.float16, torch.bfloat16) else torch.float16
-                        log_l = torch.log(lambdas.float().clamp(min=1e-4, max=1.0 - 1e-4))
-                        g = log_l.transpose(1, 2).unsqueeze(-1).expand(-1, -1, -1, d).contiguous().to(target_dtype)
-                        q_fl = q.to(target_dtype).transpose(1, 2).contiguous()
-                        k_fl = k.to(target_dtype).transpose(1, 2).contiguous()
-                        v_fl = v.to(target_dtype).transpose(1, 2).contiguous()
-                        v_ones = torch.ones_like(v_fl)
-                        if reverse:
-                            q_fl = q_fl.flip(dims=[1])
-                            k_fl = k_fl.flip(dims=[1])
-                            v_fl = v_fl.flip(dims=[1])
-                            g = g.flip(dims=[1])
-                        out_num, _ = chunk_gla(q_fl, k_fl, v_fl, g, scale=1.0 / math.sqrt(d))
-                        out_den, _ = chunk_gla(q_fl, k_fl, v_ones, g, scale=1.0 / math.sqrt(d))
-                        out = out_num.transpose(1, 2) / out_den.transpose(1, 2).clamp(min=1e-6)
-                        if reverse:
-                            out = out.flip(dims=[2])
-                        return out.to(q.dtype)
-                    except Exception:
-                        # allowed-swallow: best-effort-telemetry
-                        pass
-                if not reverse:
-                    return gla_scan_triton(q.float(), k.float(), v.float(), lambdas.float()).to(q.dtype)
-            except Exception as e:
-                logger.debug("Triton decay scan failed, falling back to chunked PyTorch: %s", e)
+            if reverse:
+                q_f = q_f.flip(dims=[2])
+                k_f = k_f.flip(dims=[2])
+                v_f = v_f.flip(dims=[2])
+                lambdas_f = lambdas_f.flip(dims=[-1])
 
-        q_f = q.float()
-        k_f = k.float()
-        v_f = v.float()
-        lambdas_f = lambdas.float()
+            log_lambdas = torch.log(lambdas_f)
+            cum_log = torch.cumsum(log_lambdas, dim=-1)
 
-        scale = 1.0 / math.sqrt(int(d))
-        q_f = q_f * scale
-
-        lambdas_f = lambdas_f.clamp(min=0.01, max=0.999)
-
-        if mask is not None:
-            m_f = mask.float().unsqueeze(1).unsqueeze(-1)
-            k_f = k_f * m_f
-            v_f = v_f * m_f
-
-        if reverse:
-            q_f = q_f.flip(dims=[2])
-            k_f = k_f.flip(dims=[2])
-            v_f = v_f.flip(dims=[2])
-            lambdas_f = lambdas_f.flip(dims=[-1])
-
-        log_lambdas = torch.log(lambdas_f)
-        cum_log = torch.cumsum(log_lambdas, dim=-1)
-
-        if chunk_size >= L:
-            log_decay = cum_log.unsqueeze(-1) - cum_log.unsqueeze(-2)
-            decay = torch.exp(log_decay.clamp(max=0.0))
-            causal_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
-            decay = decay.masked_fill(~causal_mask, 0.0)
-            scores = torch.matmul(q_f, k_f.transpose(-1, -2).contiguous()) * decay
-            num = torch.matmul(scores, v_f)
-            denom = scores.sum(dim=-1, keepdim=True)
-        else:
-            pad_len = (chunk_size - (L % chunk_size)) % chunk_size
-            if pad_len > 0:
-                q_pad = F.pad(q_f, (0, 0, 0, pad_len))
-                k_pad = F.pad(k_f, (0, 0, 0, pad_len))
-                v_pad = F.pad(v_f, (0, 0, 0, pad_len))
-                last_cum = cum_log[:, :, -1:]
-                cum_pad = torch.cat([cum_log, last_cum.expand(-1, -1, pad_len)], dim=-1)
+            if chunk_size >= L:
+                log_decay = cum_log.unsqueeze(-1) - cum_log.unsqueeze(-2)
+                decay = torch.exp(log_decay.clamp(max=0.0))
+                causal_mask = torch.tril(torch.ones(L, L, device=q.device, dtype=torch.bool))
+                decay = decay.masked_fill(~causal_mask, 0.0)
+                scores = torch.matmul(q_f, k_f.transpose(-1, -2).contiguous()) * decay
+                num = torch.matmul(scores, v_f)
+                denom = scores.sum(dim=-1, keepdim=True)
             else:
-                q_pad, k_pad, v_pad, cum_pad = q_f, k_f, v_f, cum_log
-
-            total_L = L + pad_len
-            num_chunks = total_L // chunk_size
-
-            qc = q_pad.view(B, H, num_chunks, chunk_size, d)
-            kc = k_pad.view(B, H, num_chunks, chunk_size, d)
-            vc = v_pad.view(B, H, num_chunks, chunk_size, d)
-            cum_c = cum_pad.view(B, H, num_chunks, chunk_size)
-
-            intra_log_decay = cum_c.unsqueeze(-1) - cum_c.unsqueeze(-2)
-            intra_decay = torch.exp(intra_log_decay.clamp(max=0.0))
-            causal_mask = torch.tril(torch.ones(chunk_size, chunk_size, device=q.device, dtype=torch.bool))
-            intra_decay = intra_decay.masked_fill(~causal_mask, 0.0)
-
-            if pad_len > 0:
-                valid_in_last = chunk_size - pad_len
-                intra_decay[:, :, -1, :, valid_in_last:] = 0.0
-
-            intra_scores = torch.matmul(qc, kc.transpose(-1, -2).contiguous()) * intra_decay
-            num_intra = torch.matmul(intra_scores, vc)
-            denom_intra = intra_scores.sum(dim=-1, keepdim=True)
-
-            S = torch.zeros(B, H, d, d, device=q.device, dtype=torch.float32)
-            z = torch.zeros(B, H, d, 1, device=q.device, dtype=torch.float32)
-
-            num_list = []
-            denom_list = []
-            prev_cum_end = None
-
-            for c in range(num_chunks):
-                curr_cum = cum_c[:, :, c]
-                if c == 0:
-                    inter_decay = torch.zeros(B, H, chunk_size, 1, device=q.device, dtype=torch.float32)
+                pad_len = (chunk_size - (L % chunk_size)) % chunk_size
+                if pad_len > 0:
+                    q_pad = F.pad(q_f, (0, 0, 0, pad_len))
+                    k_pad = F.pad(k_f, (0, 0, 0, pad_len))
+                    v_pad = F.pad(v_f, (0, 0, 0, pad_len))
+                    last_cum = cum_log[:, :, -1:]
+                    cum_pad = torch.cat([cum_log, last_cum.expand(-1, -1, pad_len)], dim=-1)
                 else:
-                    inter_decay = torch.exp((curr_cum - prev_cum_end).clamp(max=0.0)).unsqueeze(-1)
+                    q_pad, k_pad, v_pad, cum_pad = q_f, k_f, v_f, cum_log
 
-                num_inter = torch.matmul(qc[:, :, c], S) * inter_decay
-                denom_inter = torch.matmul(qc[:, :, c], z) * inter_decay
+                total_L = L + pad_len
+                num_chunks = total_L // chunk_size
 
-                num_list.append(num_intra[:, :, c] + num_inter)
-                denom_list.append(denom_intra[:, :, c] + denom_inter)
+                qc = q_pad.view(B, H, num_chunks, chunk_size, d)
+                kc = k_pad.view(B, H, num_chunks, chunk_size, d)
+                vc = v_pad.view(B, H, num_chunks, chunk_size, d)
+                cum_c = cum_pad.view(B, H, num_chunks, chunk_size)
 
-                cum_end = curr_cum[:, :, -1:]
-                decay_to_end = torch.exp((cum_end - curr_cum).clamp(max=0.0)).unsqueeze(-1)
+                # Vectorized intra-chunk attention across all chunks in parallel
+                intra_log_decay = cum_c.unsqueeze(-1) - cum_c.unsqueeze(-2)
+                intra_decay = torch.exp(intra_log_decay.clamp(max=0.0))
+                causal_mask = torch.tril(torch.ones(chunk_size, chunk_size, device=q.device, dtype=torch.bool))
+                intra_decay = intra_decay.masked_fill(~causal_mask, 0.0)
 
-                k_curr = kc[:, :, c]
-                v_curr = vc[:, :, c]
-                if c == num_chunks - 1 and pad_len > 0:
+                if pad_len > 0:
                     valid_in_last = chunk_size - pad_len
-                    k_curr = k_curr.clone()
-                    k_curr[:, :, valid_in_last:] = 0.0
-
-                k_to_end = k_curr * decay_to_end
-
-                if c == 0:
-                    decay_prev_to_end = 0.0
+                    last_k_mask = torch.ones(1, 1, 1, 1, chunk_size, device=q.device, dtype=torch.bool)
+                    last_k_mask[:, :, :, :, valid_in_last:] = False
+                    pad_mask_4d = torch.ones(1, 1, num_chunks, 1, chunk_size, device=q.device, dtype=torch.bool)
+                    pad_mask_4d[:, :, -1:, :, :] = last_k_mask
+                    intra_decay = intra_decay.masked_fill(~pad_mask_4d, 0.0)
+                    kc_valid = kc * pad_mask_4d.transpose(-1, -2).to(kc.dtype)
                 else:
-                    decay_prev_to_end = torch.exp((cum_end - prev_cum_end).clamp(max=0.0)).unsqueeze(-1)
+                    kc_valid = kc
 
-                S = S * decay_prev_to_end + torch.matmul(k_to_end.transpose(-1, -2).contiguous(), v_curr)
-                z = z * decay_prev_to_end + k_to_end.sum(dim=-2, keepdim=True).transpose(-1, -2).contiguous()
-                prev_cum_end = cum_end
+                intra_scores = torch.matmul(qc, kc.transpose(-1, -2).contiguous()) * intra_decay
+                num_intra = torch.matmul(intra_scores, vc)
+                denom_intra = intra_scores.sum(dim=-1, keepdim=True)
 
-            num = torch.cat(num_list, dim=2)[:, :, :L, :]
-            denom = torch.cat(denom_list, dim=2)[:, :, :L, :]
+                # Parallel O(log num_chunks) Hillis-Steele inter-chunk state scan (no Python chunk loop)
+                cum_end = cum_c[:, :, :, -1:]
+                decay_to_end = torch.exp((cum_end - cum_c).clamp(max=0.0)).unsqueeze(-1)
+                k_to_end = kc_valid * decay_to_end
 
-        y = num / denom.clamp(min=1e-6)
+                kv_chunks = torch.matmul(k_to_end.transpose(-1, -2).contiguous(), vc)
+                z_chunks = k_to_end.sum(dim=-2)
 
-        if reverse:
-            y = y.flip(dims=[2])
+                gamma_chunks = torch.exp((cum_end[:, :, 1:, :] - cum_end[:, :, :-1, :]).clamp(max=0.0)).squeeze(-1)
+                g_scan = F.pad(gamma_chunks, (1, 0), value=0.0)
+                s_scan = kv_chunks
+                z_scan = z_chunks
+                stride = 1
+                while stride < num_chunks:
+                    g_prev = g_scan[:, :, :-stride]
+                    g_curr = g_scan[:, :, stride:]
+                    s_prev = s_scan[:, :, :-stride]
+                    s_curr = s_scan[:, :, stride:]
+                    z_prev = z_scan[:, :, :-stride]
+                    z_curr = z_scan[:, :, stride:]
+                    g_scan = torch.cat([g_scan[:, :, :stride], g_curr * g_prev], dim=2)
+                    s_scan = torch.cat([s_scan[:, :, :stride], g_curr[..., None, None] * s_prev + s_curr], dim=2)
+                    z_scan = torch.cat([z_scan[:, :, :stride], g_curr[..., None] * z_prev + z_curr], dim=2)
+                    stride *= 2
 
-        return y.to(q.dtype)
+                s_prev_all = F.pad(s_scan[:, :, :-1], (0, 0, 0, 0, 1, 0), value=0.0)
+                z_prev_all = F.pad(z_scan[:, :, :-1], (0, 0, 1, 0), value=0.0)
+
+                prev_cum_end = F.pad(cum_end[:, :, :-1, :], (0, 0, 1, 0), value=0.0)
+                inter_decay = torch.exp((cum_c - prev_cum_end).clamp(max=0.0)).unsqueeze(-1)
+                q_inter = qc * inter_decay
+                num_inter = torch.matmul(q_inter, s_prev_all)
+                denom_inter = torch.matmul(q_inter, z_prev_all.unsqueeze(-1))
+
+                num = (num_intra + num_inter).view(B, H, total_L, d)[:, :, :L, :]
+                denom = (denom_intra + denom_inter).view(B, H, total_L, 1)[:, :, :L, :]
+
+            y = num / denom.clamp(min=1e-4)
+
+            if reverse:
+                y = y.flip(dims=[2])
+            if mask is not None:
+                y = y * mask.float().unsqueeze(1).unsqueeze(-1)
+
+        return _clamp_to_dtype(y, q.dtype)
 
     def forward(
         self,
@@ -727,6 +716,7 @@ class DecayLinearAttention(BaseAttention):
         if not hidden_states.is_contiguous():
             hidden_states = hidden_states.contiguous()
 
+        dtype_in = hidden_states.dtype
         B, L, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
 
@@ -740,9 +730,19 @@ class DecayLinearAttention(BaseAttention):
             past_k, past_v = _read_past_kv(past_key_value, self.layer_idx)
             past_len = past_k.shape[-2] if past_k is not None else 0
 
-        q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
-        k_new = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        v_new = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        q = self.q_proj(_proj_input(self.q_proj, hidden_states)).view(B, L, H, d).transpose(1, 2).contiguous()
+        k_new = (
+            self.k_proj(_proj_input(self.k_proj, kv_input))
+            .view(B, kv_len, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
+        v_new = (
+            self.v_proj(_proj_input(self.v_proj, kv_input))
+            .view(B, kv_len, self.num_kv_heads, d)
+            .transpose(1, 2)
+            .contiguous()
+        )
 
         if not is_cross_attention:
             if position_embeddings is not None and isinstance(position_embeddings, tuple):
@@ -783,26 +783,50 @@ class DecayLinearAttention(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        q = F.elu(q) + 1.0
-        k = F.elu(k) + 1.0
-
-        decay_logits = self.lora_decay_gate(hidden_states).transpose(1, 2).contiguous() + self.lora_log_decay.view(
-            1, -1, 1
+        dev_type = hidden_states.device.type
+        amp_ctx = (
+            torch.amp.autocast(device_type=dev_type, enabled=False)
+            if hasattr(torch, "amp") and dev_type in ("cuda", "cpu")
+            else contextlib.nullcontext()
         )
-        lambdas = torch.sigmoid(decay_logits).clamp(min=0.01, max=0.999)
+        with amp_ctx:
+            q_f = F.elu(q.float()) + 1.0
+            k_f = F.elu(k.float()) + 1.0
+            v_f = v.float()
+
+            gate_in = hidden_states.float()
+            gw = self.lora_decay_gate.weight.float()
+            gb = self.lora_decay_gate.bias.float() if self.lora_decay_gate.bias is not None else None
+            decay_logits = F.linear(gate_in, gw, gb).transpose(1, 2).contiguous() + self.lora_log_decay.float().view(
+                1, -1, 1
+            )
+            lambdas = torch.sigmoid(decay_logits).clamp(min=0.01, max=0.999)
+            if full_kv_len > L:
+                pad_lam = (
+                    torch.sigmoid(self.lora_log_decay.float())
+                    .clamp(min=0.01, max=0.999)
+                    .view(1, -1, 1)
+                    .expand(B, -1, full_kv_len - L)
+                )
+                lambdas = torch.cat([pad_lam, lambdas], dim=-1)
+                if q_f.shape[2] < full_kv_len:
+                    q_f = F.pad(q_f, (0, 0, full_kv_len - q_f.shape[2], 0))
 
         eff_mask = encoder_attention_mask if is_cross_attention else attention_mask
         mask_bool = None
         if eff_mask is not None:
             mask_bool = get_token_valid_mask(eff_mask, B, full_kv_len, hidden_states.device)
 
-        y_fwd = self._decay_scan_linear(q, k, v, lambdas, mask=mask_bool, reverse=False)
+        y_fwd = self._decay_scan_linear(q_f, k_f, v_f, lambdas, mask=mask_bool, reverse=False)
 
         if self.is_decoder or is_cross_attention:
             y = y_fwd
         else:
-            y_bwd = self._decay_scan_linear(q, k, v, lambdas, mask=mask_bool, reverse=True)
+            y_bwd = self._decay_scan_linear(q_f, k_f, v_f, lambdas, mask=mask_bool, reverse=True)
             y = 0.5 * (y_fwd + y_bwd)
+
+        if y.shape[2] > L:
+            y = y[:, :, -L:, :]
 
         if head_mask is not None:
             if head_mask.dim() == 1:
@@ -811,18 +835,20 @@ class DecayLinearAttention(BaseAttention):
                 head_mask = head_mask.view(head_mask.shape[0], head_mask.shape[1], 1, 1)
             elif head_mask.dim() == 3:
                 head_mask = head_mask.unsqueeze(-1)
-            y = y * head_mask
+            y = y * head_mask.to(device=y.device, dtype=y.dtype)
 
-        y = torch.nan_to_num(y, nan=0.0)
+        y = _clamp_to_dtype(y, dtype_in)
         out = y.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
 
         if self.is_nested_encoder:
             final_out = out
         else:
-            final_out = self.out_proj(out)
+            final_out = self.out_proj(_proj_input(self.out_proj, out))
+            final_out = _clamp_to_dtype(final_out.float(), dtype_in)
 
-        if mask_bool is not None and not is_cross_attention and mask_bool.shape[-1] == L:
-            final_out = final_out * mask_bool.unsqueeze(-1).to(final_out.dtype)
+        if mask_bool is not None and not is_cross_attention and mask_bool.shape[-1] >= L:
+            m_tail = mask_bool[:, -L:]
+            final_out = final_out * m_tail.unsqueeze(-1).to(final_out.dtype)
 
         present = new_past_key_value if (self.is_decoder and not is_cross_attention) else None
         if output_attentions:

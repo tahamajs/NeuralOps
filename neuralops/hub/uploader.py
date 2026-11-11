@@ -75,6 +75,16 @@ class AsyncHFHubUploader:
             except Exception:
                 cfg_dict = {}
 
+        manifest_zoo = ""
+        manifest_file = staging_dir / "surgical_manifest.json"
+        if manifest_file.exists():
+            try:
+                manifest_zoo = str(json.loads(manifest_file.read_text(encoding="utf-8")).get("zoo_type") or "").lower()
+            except Exception:
+                manifest_zoo = ""
+        if manifest_zoo:
+            combined_hint = f"{combined_hint} {manifest_zoo}".strip()
+
         model_type = str(cfg_dict.get("model_type") or "").lower()
         is_comp = bool(
             cfg_dict.get("compression_method")

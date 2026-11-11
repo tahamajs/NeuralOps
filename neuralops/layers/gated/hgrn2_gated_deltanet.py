@@ -344,7 +344,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
             and hgrn_past is None
             and delta_past is None
             and head_mask is None
-            and hidden_states.shape[1] > 64
+            and hidden_states.shape[1] >= 64
         )
         if can_ckpt:
             import torch.utils.checkpoint as cp
@@ -372,15 +372,21 @@ class HGRN2GatedDeltaNet(BaseAttention):
                     hgrn_out = hgrn_res
 
         if not disable_delta:
+            delta_w_dtype = (
+                self.deltanet.q_proj.weight.dtype
+                if hasattr(self.deltanet, "q_proj") and hasattr(self.deltanet.q_proj, "weight")
+                else hidden_states.dtype
+            )
+            hs_delta = hidden_states.to(delta_w_dtype)
             if can_ckpt:
                 def _run_delta_ckpt(hs: torch.Tensor, am: torch.Tensor | None) -> torch.Tensor:
                     res = self.deltanet(hs, attention_mask=am, head_mask=None, past_key_value=None, **kwargs)
                     return res[0] if isinstance(res, tuple) else res
 
-                delta_out = cp.checkpoint(_run_delta_ckpt, hidden_states, attention_mask, use_reentrant=False)
+                delta_out = cp.checkpoint(_run_delta_ckpt, hs_delta, attention_mask, use_reentrant=False)
             else:
                 delta_res = self.deltanet(
-                    hidden_states,
+                    hs_delta,
                     attention_mask=attention_mask,
                     head_mask=head_mask,
                     past_key_value=delta_past,
@@ -427,7 +433,7 @@ class HGRN2GatedDeltaNet(BaseAttention):
                 gamma = torch.sigmoid(raw_gamma).to(hidden_states.dtype)
                 out = gamma * hgrn_out.to(hidden_states.dtype) + (1.0 - gamma) * delta_out.to(hidden_states.dtype)
 
-        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
+        out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4).to(hidden_states.dtype)
 
         new_past_key_value: Any = None
         if self.is_decoder:

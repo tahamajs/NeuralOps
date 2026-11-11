@@ -450,7 +450,7 @@ class HGRN2GatedOuterBlock(BaseAttention):
             else:
                 S_prev = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
 
-            f_1 = f[:, :, 0].unsqueeze(-1).unsqueeze(-1)
+            f_1 = f.float()[:, :, 0].unsqueeze(-1).unsqueeze(-1)
             k_1 = k.float()[:, :, 0]
             v_1 = v.float()[:, :, 0]
             S_next = f_1 * S_prev + torch.matmul(k_1.unsqueeze(-1), v_1.unsqueeze(-2))
@@ -600,9 +600,9 @@ class HGRN2GatedOuterBlock(BaseAttention):
         B, L, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
 
-        q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2).contiguous()
-        k = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        v = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        q = self.q_proj(hidden_states.to(self.q_proj.weight.dtype)).view(B, L, H, d).transpose(1, 2).contiguous()
+        k = self.k_proj(hidden_states.to(self.k_proj.weight.dtype)).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v = self.v_proj(hidden_states.to(self.v_proj.weight.dtype)).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         if self.num_kv_heads != self.num_heads:
             k = repeat_kv(k, self.num_key_value_groups)

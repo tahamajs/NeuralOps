@@ -32,10 +32,53 @@ from neuralops.core.utils.gqa import repeat_kv
 from neuralops.utils.model_family import ModelAdapter
 
 
+class _FactorizedSliceWeightTensor(torch.Tensor):
+    """Tensor proxy forwarding `.data.copy_(src)` / `.copy_(src)` into CompressedDistilBertAttention SVD update."""
+
+    @staticmethod
+    def __new__(
+        cls, tensor: torch.Tensor, owner: CompressedDistilBertAttention | None = None, kind: str = "q"
+    ) -> _FactorizedSliceWeightTensor:
+        proxy = tensor.as_subclass(cls)
+        proxy._owner = owner
+        proxy._kind = kind
+        return proxy
+
+    @property
+    def data(self) -> _FactorizedSliceWeightTensor:
+        return self
+
+    def copy_(self, src: torch.Tensor, non_blocking: bool = False) -> _FactorizedSliceWeightTensor:
+        owner = getattr(self, "_owner", None)
+        kind = getattr(self, "_kind", "q")
+        if owner is not None:
+            owner._update_projection_from_weight(kind, src)
+            return self
+        return super().copy_(src, non_blocking=non_blocking)
+
+
 class _ProjectionWeightProxy:
-    def __init__(self, weight: torch.Tensor, bias: torch.Tensor | None = None) -> None:
-        self.weight = weight
+    def __init__(
+        self,
+        weight: torch.Tensor,
+        bias: torch.Tensor | None = None,
+        in_features: int | None = None,
+        out_features: int | None = None,
+        owner: CompressedDistilBertAttention | None = None,
+        kind: str = "q",
+    ) -> None:
+        self._weight = weight
         self.bias = bias
+        self.in_features = in_features if in_features is not None else (weight.shape[1] if weight.ndim == 2 else 0)
+        self.out_features = out_features if out_features is not None else (weight.shape[0] if weight.ndim >= 1 else 0)
+        self._owner = owner
+        self._kind = kind
+
+    @property
+    def weight(self) -> torch.Tensor:
+        if self._owner is not None:
+            return _FactorizedSliceWeightTensor(self._weight, owner=self._owner, kind=self._kind)
+        return self._weight
 
 
 @ATTENTION_REGISTRY.register(
@@ -64,8 +107,8 @@ class CompressedDistilBertAttention(BaseAttention):
         self,
         model_config: Any | None = None,
         rank: int | None = None,
-        rank_qkv: int = 256,
-        rank_out: int = 256,
+        rank_qkv: int | None = None,
+        rank_out: int | None = None,
         dropout: float = 0.1,
         lora_rank: int = 16,
         pretrained_attn: nn.Module | None = None,
@@ -100,14 +143,25 @@ class CompressedDistilBertAttention(BaseAttention):
             "stablelm",
         )
         self.is_decoder: bool = bool(
-            getattr(cfg, "is_decoder", False) or any(_mt.startswith(p) for p in _decoder_prefixes)
+            getattr(cfg, "is_decoder", False)
+            or getattr(cfg, "is_causal", False)
+            or kwargs.get("is_decoder", False)
+            or kwargs.get("is_causal", False)
+            or any(_mt.startswith(p) for p in _decoder_prefixes)
         )
         self.is_nested_encoder: bool = False
+        self._bypass_out_proj: bool = False
+        self._staged_qkv: dict[str, torch.Tensor | None] = {"q": None, "k": None, "v": None}
+        self._out_proj_proxy: _ProjectionWeightProxy | None = None
+        self._q_proxy: _ProjectionWeightProxy | None = None
+        self._k_proxy: _ProjectionWeightProxy | None = None
+        self._v_proxy: _ProjectionWeightProxy | None = None
 
-        rank_val = rank or kwargs.get("rank_qkv", rank_qkv)
-        self.rank_qkv = min(rank_val, self.all_head_size + 2 * self.kv_head_size, self.hidden_size)
-        out_r = rank or kwargs.get("rank_out", rank_out)
-        self.rank_out = min(out_r, self.all_head_size, self.hidden_size)
+        default_rank = max(256, self.hidden_size // 2)
+        rank_val = rank if rank is not None else kwargs.get("rank_qkv", rank_qkv if rank_qkv is not None else default_rank)
+        self.rank_qkv = min(int(rank_val), self.all_head_size + 2 * self.kv_head_size, self.hidden_size)
+        out_r = rank if rank is not None else kwargs.get("rank_out", rank_out if rank_out is not None else default_rank)
+        self.rank_out = min(int(out_r), self.all_head_size, self.hidden_size)
         self.lora_rank = getattr(cfg, "lora_rank", lora_rank)
         self.lora_scaling = (32.0 / self.lora_rank) if self.lora_rank > 0 else 1.0
 
@@ -145,6 +199,11 @@ class CompressedDistilBertAttention(BaseAttention):
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name in ("out_proj", "o_proj", "dense", "out_lin", "c_proj") and isinstance(value, nn.Module):
+            self.__dict__["_bypass_out_proj"] = isinstance(value, nn.Identity)
+        super().__setattr__(name, value)
+
     @property
     def qkv_weight(self) -> torch.Tensor:
         """Reconstruct the effective base QKV weight from SVD factors."""
@@ -157,24 +216,62 @@ class CompressedDistilBertAttention(BaseAttention):
 
     @property
     def query(self) -> _ProjectionWeightProxy:
-        return _ProjectionWeightProxy(self.qkv_weight[: self.all_head_size], self.bias_q)
+        if getattr(self, "_q_proxy", None) is None:
+            self._q_proxy = _ProjectionWeightProxy(
+                self.qkv_weight[: self.all_head_size],
+                self.bias_q,
+                in_features=self.hidden_size,
+                out_features=self.all_head_size,
+                owner=self,
+                kind="q",
+            )
+        return self._q_proxy
 
     @property
     def key(self) -> _ProjectionWeightProxy:
-        return _ProjectionWeightProxy(
-            self.qkv_weight[self.all_head_size : self.all_head_size + self.kv_head_size], self.bias_k
-        )
+        if getattr(self, "_k_proxy", None) is None:
+            self._k_proxy = _ProjectionWeightProxy(
+                self.qkv_weight[self.all_head_size : self.all_head_size + self.kv_head_size],
+                self.bias_k,
+                in_features=self.hidden_size,
+                out_features=self.kv_head_size,
+                owner=self,
+                kind="k",
+            )
+        return self._k_proxy
 
     @property
     def value(self) -> _ProjectionWeightProxy:
-        return _ProjectionWeightProxy(
-            self.qkv_weight[self.all_head_size + self.kv_head_size : self.all_head_size + 2 * self.kv_head_size],
-            self.bias_v,
-        )
+        if getattr(self, "_v_proxy", None) is None:
+            self._v_proxy = _ProjectionWeightProxy(
+                self.qkv_weight[self.all_head_size + self.kv_head_size : self.all_head_size + 2 * self.kv_head_size],
+                self.bias_v,
+                in_features=self.hidden_size,
+                out_features=self.kv_head_size,
+                owner=self,
+                kind="v",
+            )
+        return self._v_proxy
 
     @property
-    def out_proj(self) -> _ProjectionWeightProxy:
-        return _ProjectionWeightProxy(self.out_weight, self.bias_out)
+    def out_proj(self) -> Any:
+        if getattr(self, "_bypass_out_proj", False) or "out_proj" in self._modules:
+            return self._modules.get("out_proj", nn.Identity())
+        if getattr(self, "_out_proj_proxy", None) is None:
+            self._out_proj_proxy = _ProjectionWeightProxy(
+                self.out_weight,
+                self.bias_out,
+                in_features=self.all_head_size,
+                out_features=self.hidden_size,
+                owner=self,
+                kind="o",
+            )
+        return self._out_proj_proxy
+
+    @out_proj.setter
+    def out_proj(self, value: nn.Module) -> None:
+        if isinstance(value, nn.Identity):
+            self._bypass_out_proj = True
 
     @property
     def q_proj(self) -> _ProjectionWeightProxy:
@@ -189,12 +286,95 @@ class CompressedDistilBertAttention(BaseAttention):
         return self.value
 
     @property
-    def o_proj(self) -> _ProjectionWeightProxy:
+    def o_proj(self) -> Any:
         return self.out_proj
 
+    @o_proj.setter
+    def o_proj(self, value: nn.Module) -> None:
+        if isinstance(value, nn.Identity):
+            self._bypass_out_proj = True
+
     @property
-    def dense(self) -> _ProjectionWeightProxy:
+    def dense(self) -> Any:
         return self.out_proj
+
+    @dense.setter
+    def dense(self, value: nn.Module) -> None:
+        if isinstance(value, nn.Identity):
+            self._bypass_out_proj = True
+
+    def _decompose_qkv_weights(self, w_q: torch.Tensor, w_k: torch.Tensor, w_v: torch.Tensor) -> None:
+        """Decompose [W_q; W_k; W_v] via GQA-energy-balanced truncated SVD into U_qkv, S_qkv, Vh_qkv."""
+        with torch.no_grad():
+            wq = w_q.detach().float()
+            wk = w_k.detach().float()
+            wv = w_v.detach().float()
+
+            scale_k = 1.0
+            scale_v = 1.0
+            if self.kv_head_size < self.all_head_size:
+                nq = float(torch.linalg.norm(wq).item())
+                nk = float(torch.linalg.norm(wk).item())
+                nv = float(torch.linalg.norm(wv).item())
+                if nk > 1e-6 and nq > 0.0:
+                    scale_k = min(8.0, max(1.0, math.sqrt(nq / nk)))
+                if nv > 1e-6 and nq > 0.0:
+                    scale_v = min(8.0, max(1.0, math.sqrt(nq / nv)))
+
+            w_qkv = torch.cat([wq, wk * scale_k, wv * scale_v], dim=0).cpu()
+            U, S, Vh = torch.linalg.svd(w_qkv, full_matrices=False)
+            r_qkv = min(self.rank_qkv, U.size(1), Vh.size(0))
+
+            U_r = U[:, :r_qkv].clone()
+            if scale_k != 1.0:
+                U_r[self.all_head_size : self.all_head_size + self.kv_head_size] /= scale_k
+            if scale_v != 1.0:
+                U_r[self.all_head_size + self.kv_head_size :] /= scale_v
+
+            qkv_out_dim = self.all_head_size + 2 * self.kv_head_size
+            self.U_qkv.data.zero_()
+            self.S_qkv.data.zero_()
+            self.Vh_qkv.data.zero_()
+            rows = min(qkv_out_dim, U_r.size(0))
+            cols = min(self.hidden_size, Vh.size(1))
+            self.U_qkv.data[:rows, :r_qkv].copy_(U_r[:rows, :r_qkv].to(device=self.U_qkv.device, dtype=self.U_qkv.dtype))
+            self.S_qkv.data[:r_qkv].copy_(S[:r_qkv].to(device=self.S_qkv.device, dtype=self.S_qkv.dtype))
+            self.Vh_qkv.data[:r_qkv, :cols].copy_(Vh[:r_qkv, :cols].to(device=self.Vh_qkv.device, dtype=self.Vh_qkv.dtype))
+
+    def _update_projection_from_weight(self, kind: str, src: torch.Tensor) -> None:
+        """Accept external `.weight.data.copy_(src)` (e.g. QwenAttentionAdapter) and re-factorize."""
+        with torch.no_grad():
+            if kind == "o":
+                w_o = src.detach().float().cpu()
+                U_o, S_o, Vh_o = torch.linalg.svd(w_o, full_matrices=False)
+                r_out = min(self.rank_out, U_o.size(1), Vh_o.size(0))
+                self.U_out.data.zero_()
+                self.S_out.data.zero_()
+                self.Vh_out.data.zero_()
+                rows = min(self.hidden_size, U_o.size(0))
+                cols = min(self.all_head_size, Vh_o.size(1))
+                self.U_out.data[:rows, :r_out].copy_(U_o[:rows, :r_out].to(device=self.U_out.device, dtype=self.U_out.dtype))
+                self.S_out.data[:r_out].copy_(S_o[:r_out].to(device=self.S_out.device, dtype=self.S_out.dtype))
+                self.Vh_out.data[:r_out, :cols].copy_(Vh_o[:r_out, :cols].to(device=self.Vh_out.device, dtype=self.Vh_out.dtype))
+                return
+
+            self._staged_qkv[kind] = src.detach().clone()
+            self._q_proxy = None
+            self._k_proxy = None
+            self._v_proxy = None
+            cur_qkv = self.qkv_weight.detach()
+            w_q = self._staged_qkv["q"] if self._staged_qkv["q"] is not None else cur_qkv[: self.all_head_size]
+            w_k = (
+                self._staged_qkv["k"]
+                if self._staged_qkv["k"] is not None
+                else cur_qkv[self.all_head_size : self.all_head_size + self.kv_head_size]
+            )
+            w_v = (
+                self._staged_qkv["v"]
+                if self._staged_qkv["v"] is not None
+                else cur_qkv[self.all_head_size + self.kv_head_size :]
+            )
+            self._decompose_qkv_weights(w_q, w_k, w_v)
 
     def reset_lora_parameters(self) -> None:
         if self.lora_rank > 0:
@@ -394,17 +574,8 @@ class CompressedDistilBertAttention(BaseAttention):
             if w_v.shape[0] != self.kv_head_size:
                 w_v = _pool_kv_tensor(w_v, self.kv_head_size, self.head_dim)
 
-            w_qkv = torch.cat([w_q, w_k, w_v], dim=0)
-
-            U, S, Vh = torch.linalg.svd(w_qkv, full_matrices=False)
-            r_qkv = min(self.rank_qkv, U.size(1), Vh.size(0))
-
-            qkv_out_dim = self.all_head_size + 2 * self.kv_head_size
-            self.U_qkv.data[: min(qkv_out_dim, U.size(0)), :r_qkv].copy_(U[: min(qkv_out_dim, U.size(0)), :r_qkv])
-            self.S_qkv.data[:r_qkv].copy_(S[:r_qkv])
-            self.Vh_qkv.data[:r_qkv, : min(self.hidden_size, Vh.size(1))].copy_(
-                Vh[:r_qkv, : min(self.hidden_size, Vh.size(1))]
-            )
+            self._staged_qkv = {"q": w_q.clone(), "k": w_k.clone(), "v": w_v.clone()}
+            self._decompose_qkv_weights(w_q, w_k, w_v)
 
             if extracted["q"][1] is not None:
                 b_q = extracted["q"][1]
@@ -470,6 +641,8 @@ class CompressedDistilBertAttention(BaseAttention):
             if self.lora_rank > 0:
                 self.reset_lora_parameters()
 
+        if hasattr(src, "rotary_emb"):
+            self.rotary_emb = src.rotary_emb
         if hasattr(src, "is_decoder"):
             self.is_decoder = bool(src.is_decoder)
 
@@ -537,6 +710,7 @@ class CompressedDistilBertAttention(BaseAttention):
         k = k.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
         v = v.view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
+        position_ids = kwargs.get("position_ids")
         position_embeddings = kwargs.get("position_embeddings")
         if (
             position_embeddings is not None
@@ -544,19 +718,19 @@ class CompressedDistilBertAttention(BaseAttention):
             and len(position_embeddings) >= 2
         ):
             cos, sin = position_embeddings[0], position_embeddings[1]
-            q, k = apply_rotary_pos_emb(q, k, cos, sin, kwargs.get("position_ids"))
+            q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
+        elif getattr(self, "rotary_emb", None) is not None and position_ids is not None:
+            try:
+                cos, sin = self.rotary_emb(v, position_ids)
+            except TypeError:
+                cos, sin = self.rotary_emb(v, seq_len=N)
+            q, k = apply_rotary_pos_emb(q, k, cos, sin, position_ids)
 
         if self.kv_repeat > 1:
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        scale = 1.0 / math.sqrt(self.head_dim)
-        scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
-
         mask = attention_mask if attention_mask is not None else kwargs.get("mask")
-        if mask is not None:
-            scores = apply_attention_mask(scores, mask, mask_value=-10000.0)
-
         mt = str(getattr(self.config, "model_type", "") or "").lower()
         decoder_prefixes = (
             "gpt",
@@ -572,31 +746,85 @@ class CompressedDistilBertAttention(BaseAttention):
             "mpt",
             "stablelm",
         )
-        is_decoder = (
-            self.is_decoder
-            or getattr(self.config, "is_decoder", False)
-            or any(mt.startswith(p) for p in decoder_prefixes)
+        is_decoder = bool(
+            kwargs.get(
+                "is_causal",
+                self.is_decoder
+                or getattr(self.config, "is_decoder", False)
+                or any(mt.startswith(p) for p in decoder_prefixes),
+            )
         )
-        if is_decoder:
-            causal_tril = torch.tril(torch.ones((N, N), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
-            scores = scores.masked_fill(~causal_tril, -10000.0)
 
-        attn_probs = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
-        attn_probs = self.dropout(attn_probs)
+        context = None
+        attn_probs = None
+        if not output_attentions and head_mask is None:
+            try:
+                if mask is None:
+                    context = F.scaled_dot_product_attention(
+                        q,
+                        k,
+                        v,
+                        is_causal=(is_decoder and N > 1),
+                        dropout_p=self.dropout.p if self.training else 0.0,
+                    )
+                elif mask.dim() == 2:
+                    valid_m = get_token_valid_mask(mask, B, N, device)
+                    if bool(valid_m.all()):
+                        context = F.scaled_dot_product_attention(
+                            q,
+                            k,
+                            v,
+                            is_causal=(is_decoder and N > 1),
+                            dropout_p=self.dropout.p if self.training else 0.0,
+                        )
+                    else:
+                        attn_bool = valid_m[:, None, None, :].expand(B, 1, N, N).clone()
+                        if is_decoder and N > 1:
+                            causal_tril = torch.tril(torch.ones((N, N), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
+                            attn_bool = attn_bool & causal_tril
+                        row_empty = ~attn_bool.any(dim=-1, keepdim=True)
+                        if bool(row_empty.any()):
+                            diag = torch.eye(N, device=device, dtype=torch.bool).unsqueeze(0).unsqueeze(0)
+                            attn_bool = attn_bool | (row_empty & diag)
+                        context = F.scaled_dot_product_attention(
+                            q,
+                            k,
+                            v,
+                            attn_mask=attn_bool,
+                            is_causal=False,
+                            dropout_p=self.dropout.p if self.training else 0.0,
+                        )
+            except Exception:
+                context = None
 
-        if head_mask is not None:
-            if head_mask.dim() == 1:
-                head_mask = head_mask.view(1, -1, 1, 1)
-            elif head_mask.dim() == 2:
-                head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
-            elif head_mask.dim() == 3:
-                head_mask = head_mask.unsqueeze(-1)
-            attn_probs = attn_probs * head_mask
+        if context is None:
+            scale = 1.0 / math.sqrt(self.head_dim)
+            scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
 
-        context = torch.matmul(attn_probs, v)
+            if mask is not None:
+                scores = apply_attention_mask(scores, mask, mask_value=-10000.0)
+
+            if is_decoder and N > 1:
+                causal_tril = torch.tril(torch.ones((N, N), device=device, dtype=torch.bool)).unsqueeze(0).unsqueeze(0)
+                scores = scores.masked_fill(~causal_tril, -10000.0)
+
+            attn_probs = torch.nan_to_num(F.softmax(scores.float(), dim=-1), nan=0.0).to(dtype)
+            attn_probs = self.dropout(attn_probs)
+
+            if head_mask is not None:
+                if head_mask.dim() == 1:
+                    head_mask = head_mask.view(1, -1, 1, 1)
+                elif head_mask.dim() == 2:
+                    head_mask = head_mask.unsqueeze(1).unsqueeze(-1)
+                elif head_mask.dim() == 3:
+                    head_mask = head_mask.unsqueeze(-1)
+                attn_probs = attn_probs * head_mask
+
+            context = torch.matmul(attn_probs, v)
+
         context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
 
-        if self.is_nested_encoder:
+        if self.is_nested_encoder or getattr(self, "_bypass_out_proj", False):
             out = context
         else:
             out_w_up = self.U_out * self.S_out
@@ -697,7 +925,7 @@ def inject_compressed_mha(
 
     try:
         h_sz = getattr(model_config, "hidden_size", getattr(model_config, "dim", 768)) if model_config else 768
-        default_rank = min(256, h_sz // 2)
+        default_rank = max(256, h_sz // 2) if h_sz >= 512 else max(1, h_sz // 2)
         rank_qkv = (
             getattr(comp_config, "rank_qkv", getattr(comp_config, "rank", default_rank))
             if comp_config is not None

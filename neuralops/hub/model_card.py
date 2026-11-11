@@ -402,6 +402,7 @@ def audit_artifacts_on_disk(
         "weight_bytes": 0,
         "total_bytes": 0,
         "manifest": None,
+        "config": None,
         "base_model_bytes": base_model_bytes,
         "savings_bytes": None,
         "savings_pct": None,
@@ -475,6 +476,13 @@ def audit_artifacts_on_disk(
             audit["manifest"] = json.loads(manifest_path.read_text(encoding="utf-8"))
         except Exception:
             audit["manifest"] = None
+
+    config_path = root / "config.json"
+    if config_path.is_file():
+        try:
+            audit["config"] = json.loads(config_path.read_text(encoding="utf-8"))
+        except Exception:
+            audit["config"] = None
 
     audit["files"] = files
     audit["weight_files"] = weight_files
@@ -586,23 +594,43 @@ def generate_unified_model_card(
 
     audit = audit_artifacts_on_disk(out_dir, base_model_bytes=ref_base_bytes)
     manifest = audit.get("manifest") or {}
+    manifest_meta = manifest.get("metadata") if isinstance(manifest.get("metadata"), dict) else {}
+    disk_cfg = audit.get("config") or {}
 
     # Resolve surgical / compression scope
     total_layers = int(
         surgery.get("total_layers")
         or manifest.get("total_layers")
+        or manifest_meta.get("total_layers")
         or spec["default_total_layers"]
     )
     pattern = str(
         surgery.get("pattern")
         or manifest.get("pattern")
+        or manifest_meta.get("pattern")
         or metrics_dict.get("pattern")
+        or disk_cfg.get("surgery_pattern")
         or spec["default_pattern"]
     )
-    rank_val = surgery.get("rank") or manifest.get("rank") or metrics_dict.get("rank") or metrics_dict.get("showcase_rank")
+    rank_val = (
+        surgery.get("rank")
+        or manifest.get("rank")
+        or manifest_meta.get("rank")
+        or metrics_dict.get("rank")
+        or metrics_dict.get("showcase_rank")
+        or disk_cfg.get("compression_rank")
+    )
 
-    surgeried_layers = surgery.get("surgeried_layers") or manifest.get("surgeried_layers")
-    anchor_layers = surgery.get("anchor_layers") or manifest.get("anchor_layers")
+    surgeried_layers = (
+        surgery.get("surgeried_layers")
+        or manifest.get("surgeried_layers")
+        or manifest_meta.get("surgeried_layers")
+    )
+    anchor_layers = (
+        surgery.get("anchor_layers")
+        or manifest.get("anchor_layers")
+        or manifest_meta.get("anchor_layers")
+    )
 
     if spec["mode"] == "attention_surgery":
         if surgeried_layers is None:
@@ -619,6 +647,7 @@ def generate_unified_model_card(
             surgery.get("modified_layers")
             or len(manifest.get("submodules", {}))
             or len(manifest.get("modified_prefixes", []))
+            or len(manifest.get("surgeried_prefixes", []))
             or total_layers
         )
         if surgeried_layers is None:
@@ -771,7 +800,12 @@ def generate_unified_model_card(
     else:
         rank_label = f", rank={rank_val}" if rank_val is not None else ""
         scope_label = f"`compress_model(method='{mechanism_key}'{rank_label})`"
-        mod_prefixes = surgery.get("modified_prefixes") or manifest.get("modified_prefixes") or []
+        mod_prefixes = (
+            surgery.get("modified_prefixes")
+            or manifest.get("modified_prefixes")
+            or manifest.get("surgeried_prefixes")
+            or []
+        )
         if mod_prefixes:
             preview = ", ".join(f"`{p}`" for p in mod_prefixes[:6])
             suffix = f" (+{len(mod_prefixes) - 6} more)" if len(mod_prefixes) > 6 else ""
@@ -886,11 +920,19 @@ def generate_unified_model_card(
                 f"**`{_format_size(audit['savings_bytes'])}` saved (`-{audit['savings_pct']:.1f}%`, `{audit['footprint_ratio']:.2f}x` smaller artifact)**"
             )
         if manifest:
-            t_cnt = manifest.get("saved_tensor_count")
-            w_fmt = manifest.get("weights_format")
-            if t_cnt is not None or w_fmt:
+            t_cnt = manifest.get("saved_tensor_count") or disk_cfg.get("saved_tensor_count")
+            w_fmt = manifest.get("weights_format") or disk_cfg.get("weights_format")
+            schema_v = manifest.get("schema_version")
+            parts = []
+            if schema_v:
+                parts.append(f"`schema_version={schema_v}`")
+            if t_cnt is not None:
+                parts.append(f"`saved_tensor_count={t_cnt}`")
+            if w_fmt:
+                parts.append(f"`weights_format={w_fmt}`")
+            if parts:
                 weight_summary_lines.append(
-                    f"- **Manifest Verification (`surgical_manifest.json`):** `saved_tensor_count={t_cnt}`, `weights_format={w_fmt}`"
+                    f"- **Manifest Verification (`surgical_manifest.json`):** {', '.join(parts)}"
                 )
         artifact_section = (
             "\n".join(weight_summary_lines)

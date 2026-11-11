@@ -476,67 +476,68 @@ class HALOReGLAAttention(BaseAttention):
         N_k = k_new.shape[2]
         device = q.device
 
-        lin_scale = d**-0.25
-        q_lin = F.elu(q.float() * lin_scale) + 1.0
-        k_lin = F.elu(k_new.float() * lin_scale) + 1.0
-        v_f = v_new.float()
+        with torch.amp.autocast(device_type=device.type, enabled=False):
+            lin_scale = d**-0.25
+            q_lin = F.elu(q.float() * lin_scale) + 1.0
+            k_lin = F.elu(k_new.float() * lin_scale) + 1.0
+            v_f = v_new.float()
 
-        if valid_mask is not None:
-            valid_kv = valid_mask.to(dtype=k_lin.dtype)
-            k_lin = k_lin * valid_kv
-            v_f = v_f * valid_kv
+            if valid_mask is not None:
+                valid_kv = valid_mask.to(dtype=k_lin.dtype)
+                k_lin = k_lin * valid_kv
+                v_f = v_f * valid_kv
 
-        if linear_state is not None:
-            S_state, Z_state = linear_state
-            S_state = S_state.to(device=device, dtype=torch.float32)
-            Z_state = Z_state.to(device=device, dtype=torch.float32)
-        else:
-            S_state = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
-            Z_state = torch.zeros(B, H, d, device=device, dtype=torch.float32)
+            if linear_state is not None:
+                S_state, Z_state = linear_state
+                S_state = S_state.to(device=device, dtype=torch.float32)
+                Z_state = Z_state.to(device=device, dtype=torch.float32)
+            else:
+                S_state = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
+                Z_state = torch.zeros(B, H, d, device=device, dtype=torch.float32)
 
-        if N_q == 1 and N_k == 1:
-            S_next = S_state + torch.einsum("bhd,bhe->bhde", k_lin[:, :, 0], v_f[:, :, 0])
-            Z_next = Z_state + k_lin[:, :, 0]
-            num = torch.einsum("bhd,bhde->bhe", q_lin[:, :, 0], S_next)
-            den = torch.einsum("bhd,bhd->bh", q_lin[:, :, 0], Z_next).clamp(min=1e-4)
-            out = (num / den.unsqueeze(-1)).unsqueeze(2)
-            return out, (S_next, Z_next)
+            if N_q == 1 and N_k == 1:
+                S_next = S_state + torch.einsum("bhd,bhe->bhde", k_lin[:, :, 0], v_f[:, :, 0])
+                Z_next = Z_state + k_lin[:, :, 0]
+                num = torch.einsum("bhd,bhde->bhe", q_lin[:, :, 0], S_next)
+                den = torch.einsum("bhd,bhd->bh", q_lin[:, :, 0], Z_next).clamp(min=1e-4)
+                out = (num / den.unsqueeze(-1)).unsqueeze(2)
+                return out, (S_next, Z_next)
 
-        pad_len = (chunk_size - (N_q % chunk_size)) % chunk_size
-        if pad_len > 0:
-            q_p = F.pad(q_lin, (0, 0, 0, pad_len))
-            k_p = F.pad(k_lin, (0, 0, 0, pad_len))
-            v_p = F.pad(v_f, (0, 0, 0, pad_len))
-        else:
-            q_p, k_p, v_p = q_lin, k_lin, v_f
+            pad_len = (chunk_size - (N_q % chunk_size)) % chunk_size
+            if pad_len > 0:
+                q_p = F.pad(q_lin, (0, 0, 0, pad_len))
+                k_p = F.pad(k_lin, (0, 0, 0, pad_len))
+                v_p = F.pad(v_f, (0, 0, 0, pad_len))
+            else:
+                q_p, k_p, v_p = q_lin, k_lin, v_f
 
-        num_chunks = q_p.shape[2] // chunk_size
-        q_blk = q_p.view(B, H, num_chunks, chunk_size, d)
-        k_blk = k_p.view(B, H, num_chunks, chunk_size, d)
-        v_blk = v_p.view(B, H, num_chunks, chunk_size, d)
+            num_chunks = q_p.shape[2] // chunk_size
+            q_blk = q_p.view(B, H, num_chunks, chunk_size, d)
+            k_blk = k_p.view(B, H, num_chunks, chunk_size, d)
+            v_blk = v_p.view(B, H, num_chunks, chunk_size, d)
 
-        kv_chunks = torch.matmul(k_blk.transpose(-1, -2), v_blk)  # (B, H, num_chunks, d, d)
-        z_chunks = k_blk.sum(dim=-2)  # (B, H, num_chunks, d)
+            kv_chunks = torch.matmul(k_blk.transpose(-1, -2), v_blk)  # (B, H, num_chunks, d, d)
+            z_chunks = k_blk.sum(dim=-2)  # (B, H, num_chunks, d)
 
-        S_cumsum = torch.cumsum(kv_chunks, dim=2)
-        Z_cumsum = torch.cumsum(z_chunks, dim=2)
-        S_prefix = S_cumsum - kv_chunks + S_state.unsqueeze(2)
-        Z_prefix = Z_cumsum - z_chunks + Z_state.unsqueeze(2)
+            S_cumsum = torch.cumsum(kv_chunks, dim=2)
+            Z_cumsum = torch.cumsum(z_chunks, dim=2)
+            S_prefix = S_cumsum - kv_chunks + S_state.unsqueeze(2)
+            Z_prefix = Z_cumsum - z_chunks + Z_state.unsqueeze(2)
 
-        num_inter = torch.matmul(q_blk, S_prefix)
-        den_inter = (q_blk * Z_prefix.unsqueeze(-2)).sum(dim=-1, keepdim=True)
+            num_inter = torch.matmul(q_blk, S_prefix)
+            den_inter = (q_blk * Z_prefix.unsqueeze(-2)).sum(dim=-1, keepdim=True)
 
-        causal_c = torch.tril(torch.ones((chunk_size, chunk_size), device=device, dtype=torch.bool))
-        scores_intra = torch.matmul(q_blk, k_blk.transpose(-1, -2)).masked_fill(~causal_c, 0.0)
-        num_intra = torch.matmul(scores_intra, v_blk)
-        den_intra = scores_intra.sum(dim=-1, keepdim=True)
+            causal_c = torch.tril(torch.ones((chunk_size, chunk_size), device=device, dtype=torch.bool))
+            scores_intra = torch.matmul(q_blk, k_blk.transpose(-1, -2)).masked_fill(~causal_c, 0.0)
+            num_intra = torch.matmul(scores_intra, v_blk)
+            den_intra = scores_intra.sum(dim=-1, keepdim=True)
 
-        denom = (den_inter + den_intra).clamp(min=1e-4)
-        outs = ((num_inter + num_intra) / denom).reshape(B, H, num_chunks * chunk_size, d)[:, :, :N_q, :]
+            denom = (den_inter + den_intra).clamp(min=1e-4)
+            outs = ((num_inter + num_intra) / denom).reshape(B, H, num_chunks * chunk_size, d)[:, :, :N_q, :]
 
-        S_final = S_state + kv_chunks.sum(dim=2)
-        Z_final = Z_state + z_chunks.sum(dim=2)
-        return outs, (S_final, Z_final)
+            S_final = S_state + kv_chunks.sum(dim=2)
+            Z_final = Z_state + z_chunks.sum(dim=2)
+            return outs, (S_final, Z_final)
 
     def _global_linear_attention(
         self,
@@ -649,73 +650,78 @@ class HALOReGLAAttention(BaseAttention):
 
         scale = 1.0 / math.sqrt(self.head_dim)
 
-        K_dense_f = K_full_dense.to(dtype=torch.float32)
-        V_dense_f = V_full_dense.to(dtype=torch.float32)
-        q_f = q.to(dtype=torch.float32)
+        with torch.amp.autocast(device_type=device.type, enabled=False):
+            K_dense_f = K_full_dense.to(dtype=torch.float32)
+            V_dense_f = V_full_dense.to(dtype=torch.float32)
+            q_f = q.to(dtype=torch.float32)
 
-        dense_scores = torch.matmul(q_f, K_dense_f.transpose(-2, -1).contiguous()) * scale
+            dense_scores = torch.matmul(q_f, K_dense_f.transpose(-2, -1).contiguous()) * scale
 
-        mask_val = torch.finfo(torch.float32).min
-        invalid_mask = torch.zeros((B, 1, N, N_kv), device=device, dtype=torch.bool)
+            mask_val = torch.finfo(torch.float32).min
+            invalid_mask = torch.zeros((B, 1, N, N_kv), device=device, dtype=torch.bool)
 
-        eff_causal = self.is_causal or bool(kwargs.get("is_causal", False))
-        if eff_causal:
-            q_idx = torch.arange(past_len, past_len + N, device=device).unsqueeze(1)
-            k_idx = torch.arange(N_kv, device=device).unsqueeze(0)
-            causal = (k_idx <= q_idx).unsqueeze(0).unsqueeze(0)
-            invalid_mask = invalid_mask | (~causal)
+            eff_causal = self.is_causal or bool(kwargs.get("is_causal", False))
+            if eff_causal:
+                q_idx = torch.arange(past_len, past_len + N, device=device).unsqueeze(1)
+                k_idx = torch.arange(N_kv, device=device).unsqueeze(0)
+                causal = (k_idx <= q_idx).unsqueeze(0).unsqueeze(0)
+                invalid_mask = invalid_mask | (~causal)
 
-        if eff_mask is not None:
-            if eff_mask.dim() == 2 and valid_kv_bool is not None:
-                invalid_mask = invalid_mask | (~valid_kv_bool).view(B, 1, 1, N_kv)
-            elif eff_mask.dim() == 4:
-                if eff_mask.dtype == torch.bool:
-                    invalid_mask = invalid_mask | (~eff_mask)
-                elif eff_mask.dtype.is_floating_point:
-                    dense_scores = dense_scores + eff_mask.float().clamp(min=mask_val, max=0.0)
-                    invalid_mask = invalid_mask | (eff_mask < -1e3)
-                else:
-                    invalid_mask = invalid_mask | (eff_mask <= 0)
+            if eff_mask is not None:
+                if eff_mask.dim() == 2 and valid_kv_bool is not None:
+                    invalid_mask = invalid_mask | (~valid_kv_bool).view(B, 1, 1, N_kv)
+                elif eff_mask.dim() == 4:
+                    if eff_mask.dtype == torch.bool:
+                        invalid_mask = invalid_mask | (~eff_mask)
+                    elif eff_mask.dtype.is_floating_point:
+                        dense_scores = dense_scores + eff_mask.float().clamp(min=mask_val, max=0.0)
+                        invalid_mask = invalid_mask | (eff_mask < -1e3)
+                    else:
+                        invalid_mask = invalid_mask | (eff_mask <= 0)
 
-        all_masked = invalid_mask.all(dim=-1, keepdim=True)
-        safe_mask = invalid_mask.clone()
-        if all_masked.any():
-            safe_mask[..., 0:1] = safe_mask[..., 0:1] & (~all_masked)
+            all_masked = invalid_mask.all(dim=-1, keepdim=True)
+            safe_mask = invalid_mask.clone()
+            if all_masked.any():
+                safe_mask[..., 0:1] = safe_mask[..., 0:1] & (~all_masked)
 
-        dense_scores = dense_scores.masked_fill(safe_mask, mask_val)
-        scores_max = dense_scores.amax(dim=-1, keepdim=True).detach()
-        exp_scores = torch.exp((dense_scores - scores_max).clamp(max=0.0)).masked_fill(safe_mask, 0.0)
-        dense_den = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-4)
-        dense_attn = (exp_scores / dense_den).masked_fill(all_masked, 0.0)
-        dense_attn_drop = self.dropout(dense_attn)
+            dense_scores = dense_scores.masked_fill(safe_mask, mask_val)
+            scores_max = dense_scores.amax(dim=-1, keepdim=True).detach()
+            exp_scores = torch.exp((dense_scores - scores_max).clamp(max=0.0)).masked_fill(safe_mask, 0.0)
+            dense_den = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-4)
+            dense_attn = (exp_scores / dense_den).masked_fill(all_masked, 0.0)
+            dense_attn_drop = self.dropout(dense_attn)
 
-        dense_out = torch.matmul(dense_attn_drop, V_dense_f)
+            dense_out = torch.matmul(dense_attn_drop, V_dense_f)
 
-        next_linear_state = None
-        if eff_causal:
-            linear_out, next_linear_state = self._causal_linear_attention(
-                q, k_new_lin, v_new_lin, past_len=past_len, valid_mask=valid_kv_for_linear, linear_state=linear_state
+            next_linear_state = None
+            if eff_causal:
+                linear_out, next_linear_state = self._causal_linear_attention(
+                    q, k_new_lin, v_new_lin, past_len=past_len, valid_mask=valid_kv_for_linear, linear_state=linear_state
+                )
+            else:
+                valid_global = valid_kv_bool[:, None, :, None].float() if valid_kv_bool is not None else None
+                linear_out = self._global_linear_attention(q, K_full_dense, V_full_dense, valid_mask=valid_global)
+
+            gate_out = F.linear(
+                hidden_states.float(),
+                self.lora_gate.weight.float(),
+                self.lora_gate.bias.float() if self.lora_gate.bias is not None else None,
             )
-        else:
-            valid_global = valid_kv_bool[:, None, :, None].float() if valid_kv_bool is not None else None
-            linear_out = self._global_linear_attention(q, K_full_dense, V_full_dense, valid_mask=valid_global)
+            g = torch.sigmoid(gate_out).permute(0, 2, 1).unsqueeze(-1)
+            fused = g * dense_out + (1.0 - g) * linear_out
 
-        gate_out = self.lora_gate(hidden_states.to(self.lora_gate.weight.dtype)).float()
-        g = torch.sigmoid(gate_out).permute(0, 2, 1).unsqueeze(-1)
-        fused = g * dense_out + (1.0 - g) * linear_out
+            if head_mask is not None:
+                if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
+                    fused = fused * head_mask.view(1, self.num_heads, 1, 1).float()
+                elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
+                    fused = fused * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).float()
+                elif head_mask.dim() == 4:
+                    fused = fused * head_mask.float()
 
-        if head_mask is not None:
-            if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:
-                fused = fused * head_mask.view(1, self.num_heads, 1, 1).float()
-            elif head_mask.dim() == 2 and head_mask.size(1) == self.num_heads:
-                fused = fused * head_mask.view(head_mask.size(0), self.num_heads, 1, 1).float()
-            elif head_mask.dim() == 4:
-                fused = fused * head_mask.float()
-
-        if dtype == torch.float16:
-            fmax = torch.finfo(dtype).max * 0.5
-            fused = fused.clamp(min=-fmax, max=fmax)
-        out = fused.to(dtype).permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
+            if dtype == torch.float16:
+                fmax = torch.finfo(dtype).max * 0.5
+                fused = fused.clamp(min=-fmax, max=fmax)
+            out = fused.to(dtype).permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
 
         if self.is_nested_encoder:
             out_final = out

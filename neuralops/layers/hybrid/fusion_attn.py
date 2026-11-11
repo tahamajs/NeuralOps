@@ -119,11 +119,27 @@ class FUSIONATTN(BaseAttention):
                     getattr(config, "num_kv_heads", self.num_heads),
                 )
             )
+        elif source_attn is not None:
+            nkv = getattr(source_attn, "num_key_value_heads", None) or getattr(source_attn, "num_kv_heads", None)
+            if nkv is None:
+                hd_probe = getattr(source_attn, "head_dim", None) or max(1, self.hidden_size // self.num_heads)
+                for attr in ("k_proj", "key", "k_lin", "W_k"):
+                    mod = getattr(source_attn, attr, None)
+                    if mod is not None and hasattr(mod, "weight"):
+                        base_mod = getattr(mod, "base_layer", mod)
+                        w = base_mod.weight
+                        is_conv = "Conv1D" in type(base_mod).__name__ or hasattr(base_mod, "nf")
+                        out_dim = w.shape[1] if (is_conv and w.ndim == 2) else w.shape[0]
+                        nkv = out_dim // max(1, int(hd_probe))
+                        break
+            self.num_kv_heads = int(nkv or self.num_heads)
         else:
             self.num_kv_heads = self.num_heads
         self.num_kv_heads = max(1, min(self.num_kv_heads, self.num_heads))
 
         cfg_hd = getattr(config, "head_dim", None) if config else None
+        if cfg_hd is None and source_attn is not None:
+            cfg_hd = getattr(source_attn, "head_dim", None)
         self.head_dim = int(cfg_hd) if cfg_hd is not None else max(1, self.hidden_size // self.num_heads)
         self.all_head_size = self.num_heads * self.head_dim
         self.kv_head_size = self.num_kv_heads * self.head_dim
@@ -186,7 +202,13 @@ class FUSIONATTN(BaseAttention):
         if kwargs.get("is_decoder", False) or kwargs.get("is_causal", False):
             is_dec = True
         if source_attn is not None:
-            if hasattr(source_attn, "c_attn") or getattr(source_attn, "is_decoder", False):
+            cls_lower = source_attn.__class__.__name__.lower()
+            if (
+                hasattr(source_attn, "c_attn")
+                or getattr(source_attn, "is_decoder", False)
+                or getattr(source_attn, "is_causal", False)
+                or any(p in cls_lower for p in ("qwen", "llama", "mistral", "gpt", "causal"))
+            ):
                 is_dec = True
         self.is_decoder = bool(is_dec)
         self.is_causal = self.is_decoder
@@ -230,6 +252,9 @@ class FUSIONATTN(BaseAttention):
             nn.GELU(),
             nn.Linear(4 * self.head_dim, 1),
         )
+        nn.init.normal_(self.lora_attn_gate[2].weight, mean=0.0, std=0.02)
+        if self.lora_attn_gate[2].bias is not None:
+            nn.init.zeros_(self.lora_attn_gate[2].bias)
         self.lora_gate_head_bias = nn.Parameter(torch.zeros(self.num_heads))
         self.lora_gate_temp = nn.Parameter(torch.ones(1))
 
@@ -396,25 +421,40 @@ class FUSIONATTN(BaseAttention):
                         bias_o.data.clone() if bias_o is not None else None,
                     )
 
-        elif hasattr(pretrained_attn, "self") and hasattr(pretrained_attn.self, "query"):
+        def _extract_mod_wb(mod: Any) -> tuple[torch.Tensor | None, torch.Tensor | None]:
+            if mod is None:
+                return None, None
+            if hasattr(mod, "merge") and callable(mod.merge) and not getattr(mod, "merged", False):
+                try:
+                    mod.merge()
+                except Exception:
+                    # allowed-swallow: best-effort-telemetry
+                    pass
+            base_m = getattr(mod, "base_layer", mod)
+            w_m = getattr(base_m, "weight", getattr(mod, "weight", None))
+            if w_m is None or not isinstance(w_m, torch.Tensor) or w_m.ndim != 2:
+                return None, None
+            w_m = w_m.data.clone()
+            cls_m = type(mod).__name__
+            base_cls_m = type(base_m).__name__
+            if ("Conv1D" in cls_m) or ("Conv1D" in base_cls_m) or hasattr(base_m, "nf") or hasattr(mod, "nf"):
+                w_m = w_m.t().contiguous()
+            b_mod = getattr(base_m, "bias", getattr(mod, "bias", None))
+            b_m = b_mod.data.clone() if isinstance(b_mod, torch.Tensor) else None
+            return w_m, b_m
+
+        if hasattr(pretrained_attn, "self") and hasattr(pretrained_attn.self, "query"):
             s = pretrained_attn.self
             for key, sub in (("q", "query"), ("k", "key"), ("v", "value")):
-                mod = getattr(s, sub, None)
-                if mod is not None and hasattr(mod, "weight"):
-                    b = getattr(mod, "bias", None)
-                    extracted[key] = (
-                        mod.weight.data.clone(),
-                        b.data.clone() if b is not None else None,
-                    )
+                w_m, b_m = _extract_mod_wb(getattr(s, sub, None))
+                if w_m is not None:
+                    extracted[key] = (w_m, b_m)
             if hasattr(pretrained_attn, "output") and hasattr(pretrained_attn.output, "dense"):
-                out_mod = pretrained_attn.output.dense
-                b = getattr(out_mod, "bias", None)
-                extracted["o"] = (
-                    out_mod.weight.data.clone(),
-                    b.data.clone() if b is not None else None,
-                )
+                w_m, b_m = _extract_mod_wb(pretrained_attn.output.dense)
+                if w_m is not None:
+                    extracted["o"] = (w_m, b_m)
 
-        else:
+        elif extracted["q"][0] is None:
             candidates = {
                 "q": ("q_lin", "q_proj", "query", "W_q"),
                 "k": ("k_lin", "k_proj", "key", "W_k"),
@@ -422,15 +462,13 @@ class FUSIONATTN(BaseAttention):
                 "o": ("out_lin", "out_proj", "dense", "o_proj"),
             }
             for key, names in candidates.items():
+                if extracted[key][0] is not None:
+                    continue
                 for n in names:
                     if hasattr(pretrained_attn, n):
-                        mod = getattr(pretrained_attn, n)
-                        if mod is not None and hasattr(mod, "weight"):
-                            b = getattr(mod, "bias", None)
-                            extracted[key] = (
-                                mod.weight.data.clone(),
-                                b.data.clone() if b is not None else None,
-                            )
+                        w_m, b_m = _extract_mod_wb(getattr(pretrained_attn, n))
+                        if w_m is not None:
+                            extracted[key] = (w_m, b_m)
                             break
 
         missing = [k for k, (w, _) in extracted.items() if w is None and (k != "o" or not self.is_nested_encoder)]
@@ -471,15 +509,35 @@ class FUSIONATTN(BaseAttention):
                     w = w.reshape(w.size(0), -1)
                 if w.shape != target_mod.weight.shape and target_mod.weight.shape == w.t().contiguous().shape:
                     w = w.t().contiguous()
+                elif w.shape[1] != target_mod.weight.size(1) and w.shape[0] == target_mod.weight.size(1):
+                    w = w.t().contiguous()
 
-                out_d = min(target_mod.weight.size(0), w.size(0))
+                tgt_out = target_mod.weight.size(0)
+                if proj_key in ("k", "v") and w.size(0) != tgt_out:
+                    hd = self.head_dim
+                    src_out = w.size(0)
+                    if src_out > tgt_out and src_out % tgt_out == 0 and tgt_out % hd == 0:
+                        rep = src_out // tgt_out
+                        w = w.view(self.num_kv_heads, rep, hd, -1).mean(dim=1).reshape(tgt_out, -1)
+                        if b is not None and b.numel() == src_out:
+                            b = b.view(self.num_kv_heads, rep, hd).mean(dim=1).reshape(tgt_out)
+                    elif src_out < tgt_out and tgt_out % src_out == 0 and src_out % hd == 0:
+                        rep = tgt_out // src_out
+                        src_kv = src_out // hd
+                        w = w.view(src_kv, hd, -1).repeat_interleave(rep, dim=0).reshape(tgt_out, -1)
+                        if b is not None and b.numel() == src_out:
+                            b = b.view(src_kv, hd).repeat_interleave(rep, dim=0).reshape(tgt_out)
+
+                out_d = min(tgt_out, w.size(0))
                 in_d = min(target_mod.weight.size(1), w.size(1))
+                target_mod.weight.data.zero_()
                 target_mod.weight.data[:out_d, :in_d].copy_(
                     w[:out_d, :in_d].to(target_mod.weight.device, target_mod.weight.dtype)
                 )
 
                 if b is not None and target_mod.bias is not None:
                     min_b = min(target_mod.bias.numel(), b.numel())
+                    target_mod.bias.data.zero_()
                     target_mod.bias.data[:min_b].copy_(b[:min_b].to(target_mod.bias.device, target_mod.bias.dtype))
                 elif target_mod.bias is not None:
                     nn.init.zeros_(target_mod.bias)
@@ -502,19 +560,44 @@ class FUSIONATTN(BaseAttention):
             if t.dtype == torch.bool:
                 return t
             if t.dtype.is_floating_point:
-                return t > -1e4
+                return t > -1e3
             return t > 0
 
         if mask.dim() == 2:
             m = _to_bool(mask)
             if m.shape[-1] == N:
-                return m
+                return m.to(device=device)
+        elif mask.dim() == 3:
+            m = _to_bool(mask)
+            m = m.any(dim=-2)
+            if m.shape[-1] == N:
+                return m.to(device=device)
         elif mask.dim() == 4:
             m = _to_bool(mask)
-            m = m.any(dim=-2).squeeze(1)
+            m = m.any(dim=1).any(dim=-2)
             if m.shape[-1] == N:
-                return m
+                return m.to(device=device)
         return None
+
+    def _compute_gate_logits(
+        self,
+        q_cent: torch.Tensor,
+        k_cent: torch.Tensor,
+    ) -> torch.Tensor:
+        """Compute differentiable content-aware + learned block gate logits [B, H, n_q, n_k]."""
+        B, H, _, D = q_cent.shape
+        raw_affinity = torch.matmul(q_cent.float(), k_cent.float().transpose(-2, -1)) * (1.0 / math.sqrt(int(D)))
+        gate_dtype = self.lora_attn_gate[0].weight.dtype
+        q_f = q_cent.to(gate_dtype)
+        k_f = k_cent.to(gate_dtype)
+        q_feat = torch.cat([q_f, torch.zeros_like(q_f)], dim=-1)
+        k_feat = torch.cat([torch.zeros_like(k_f), k_f], dim=-1)
+        q_gate = self.lora_attn_gate(q_feat).squeeze(-1).float()
+        k_gate = self.lora_attn_gate(k_feat).squeeze(-1).float()
+        learned_gate = torch.matmul(q_gate.unsqueeze(-1), k_gate.unsqueeze(-2))
+        temp = self.lora_gate_temp.abs().clamp(min=0.1, max=10.0).float()
+        head_bias = self.lora_gate_head_bias.float().view(1, H, 1, 1)
+        return (raw_affinity + learned_gate + head_bias) / temp
 
     def _dense_attention(
         self,
@@ -530,55 +613,38 @@ class FUSIONATTN(BaseAttention):
         N_kv = k.shape[2]
         scale = 1.0 / math.sqrt(int(D))
 
-        use_sdpa = (
-            not output_attentions
-            and head_mask is None
-            and (valid_mask is None or valid_mask.all())
-            and not self.training
-        )
-
-        if use_sdpa:
-            try:
-                _qs = maybe_half(q)
-                _ks = maybe_half(k)
-                _vs = maybe_half(v)
-                _out = F.scaled_dot_product_attention(
-                    _qs,
-                    _ks,
-                    _vs,
-                    is_causal=is_causal and N > 1 and N_kv == N,
-                    dropout_p=self.dropout.p if self.training else 0.0,
-                )
-                _out = _out.to(q.dtype).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-                _out = torch.nan_to_num(_out, nan=0.0, posinf=1e4, neginf=-1e4)
-                return _out, None
-            except Exception as e:
-                logger.debug("SDPA failed, falling back to manual: %s", e)
-
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+
+        gate_dt = self.lora_attn_gate[0].weight.dtype
+        q_g = self.lora_attn_gate(torch.cat([q.to(gate_dt), torch.zeros_like(q.to(gate_dt))], dim=-1)).squeeze(-1).float()
+        k_g = self.lora_attn_gate(torch.cat([torch.zeros_like(k.to(gate_dt)), k.to(gate_dt)], dim=-1)).squeeze(-1).float()
+        temp = self.lora_gate_temp.abs().clamp(min=0.1, max=10.0).float()
+        head_bias = self.lora_gate_head_bias.float().view(1, H, 1, 1)
+        gate_bias = 0.05 * torch.tanh((q_g.unsqueeze(-1) * k_g.unsqueeze(-2) + head_bias) / temp)
+        scores = scores + gate_bias
+
+        invalid = torch.zeros((B, 1, N, N_kv), device=q.device, dtype=torch.bool)
 
         if is_causal and N > 1:
             past_len = max(0, N_kv - N)
-            causal = (
-                torch.triu(
-                    torch.full((N, N_kv), float("-inf"), device=q.device, dtype=torch.float32),
-                    diagonal=1 + past_len,
-                )
-                .unsqueeze(0)
-                .unsqueeze(0)
-            )
-            scores = scores + causal
+            q_idx = torch.arange(N, device=q.device).unsqueeze(1)
+            k_idx = torch.arange(N_kv, device=q.device).unsqueeze(0)
+            invalid = invalid | (k_idx > (q_idx + past_len)).unsqueeze(0).unsqueeze(0)
 
         if valid_mask is not None:
-            scores = scores.masked_fill(~valid_mask[:, None, None, :], -1e4)
+            invalid = invalid | (~valid_mask[:, None, None, :])
 
-        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-        probs = F.softmax(scores, dim=-1).to(v.dtype)
-        probs = torch.nan_to_num(probs, nan=0.0)
+        all_masked = invalid.all(dim=-1, keepdim=True)
+        safe_invalid = invalid.clone()
+        if all_masked.any():
+            safe_invalid[..., :1] = safe_invalid[..., :1] & (~all_masked)
+
+        scores = torch.nan_to_num(scores, nan=0.0, posinf=1e4, neginf=-1e4).masked_fill(safe_invalid, -1e9)
+        probs = F.softmax(scores, dim=-1).masked_fill(all_masked, 0.0)
         probs = self.dropout(probs)
 
         if head_mask is not None:
-            hm = head_mask.to(probs.dtype)
+            hm = head_mask.float()
             if hm.dim() == 1:
                 hm = hm.view(1, -1, 1, 1)
             elif hm.dim() == 2:
@@ -587,8 +653,9 @@ class FUSIONATTN(BaseAttention):
                 hm = hm.unsqueeze(1)
             probs = probs * hm
 
-        context = torch.matmul(probs, v).transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-        return context, (probs if output_attentions else None)
+        context = torch.matmul(probs, v.float()).to(q.dtype)
+        context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
+        return context, (probs.to(q.dtype) if output_attentions else None)
 
     def _block_sparse_attention(
         self,
@@ -602,129 +669,173 @@ class FUSIONATTN(BaseAttention):
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, H, N, D = q.shape
         N_kv = k.shape[2]
+        past_len = max(0, N_kv - N)
         bs = self.block_size
         device = q.device
 
-        pad_len = (bs - (N % bs)) % bs
-        if pad_len > 0:
-            q_pad = F.pad(q, (0, 0, 0, pad_len))
-            k_pad = F.pad(k, (0, 0, 0, pad_len))
-            v_pad = F.pad(v, (0, 0, 0, pad_len))
-            valid_pad = F.pad(valid_mask, (0, pad_len), value=False) if valid_mask is not None else None
+        pad_q = (bs - (N % bs)) % bs
+        pad_k = (bs - (N_kv % bs)) % bs
+        q_pad = F.pad(q, (0, 0, 0, pad_q)) if pad_q > 0 else q
+        k_pad = F.pad(k, (0, 0, 0, pad_k)) if pad_k > 0 else k
+        v_pad = F.pad(v, (0, 0, 0, pad_k)) if pad_k > 0 else v
+
+        if valid_mask is not None:
+            valid_pad = F.pad(valid_mask, (0, pad_k), value=False) if pad_k > 0 else valid_mask
+        elif pad_k > 0:
+            valid_pad = torch.cat(
+                [
+                    torch.ones((B, N_kv), device=device, dtype=torch.bool),
+                    torch.zeros((B, pad_k), device=device, dtype=torch.bool),
+                ],
+                dim=-1,
+            )
         else:
-            q_pad, k_pad, v_pad, valid_pad = q, k, v, valid_mask
+            valid_pad = None
 
-        N_pad = q_pad.size(2)
-        num_blocks = N_pad // bs
-        top_k = min(self.top_k_blocks, num_blocks)
+        N_q_pad = q_pad.size(2)
+        N_k_pad = k_pad.size(2)
+        num_q_blocks = N_q_pad // bs
+        num_k_blocks = N_k_pad // bs
 
-        q_blocks = q_pad.reshape(B, H, num_blocks, bs, D)
-        k_blocks = k_pad.reshape(B, H, num_blocks, bs, D)
-        v_blocks = v_pad.reshape(B, H, num_blocks, bs, D)
+        q_blocks = q_pad.reshape(B, H, num_q_blocks, bs, D)
+        k_blocks = k_pad.reshape(B, H, num_k_blocks, bs, D)
+        v_blocks = v_pad.reshape(B, H, num_k_blocks, bs, D)
 
-        q_cent = q_blocks.mean(dim=3)
-        k_cent = k_blocks.mean(dim=3)
+        q_cent = q_blocks.float().mean(dim=3)
+        if valid_pad is not None:
+            valid_k_blk = valid_pad.reshape(B, 1, num_k_blocks, bs).float()
+            k_cnt = valid_k_blk.sum(dim=-1, keepdim=True).clamp(min=1.0)
+            k_cent = (k_blocks.float() * valid_k_blk.unsqueeze(-1)).sum(dim=3) / k_cnt
+            v_cent = (v_blocks.float() * valid_k_blk.unsqueeze(-1)).sum(dim=3) / k_cnt
+            block_valid = valid_k_blk.sum(dim=-1) > 0
+        else:
+            k_cent = k_blocks.float().mean(dim=3)
+            v_cent = v_blocks.float().mean(dim=3)
+            block_valid = torch.ones((B, 1, num_k_blocks), device=device, dtype=torch.bool)
 
-        q_feat = torch.cat([q_cent, torch.zeros_like(q_cent)], dim=-1)
-        k_feat = torch.cat([torch.zeros_like(k_cent), k_cent], dim=-1)
+        gate_scores = self._compute_gate_logits(q_cent, k_cent)
 
-        q_gate = self.lora_attn_gate(q_feat).squeeze(-1)
-        k_gate = self.lora_attn_gate(k_feat).squeeze(-1)
-
-        gate_scores = torch.matmul(q_gate.unsqueeze(-1), k_gate.unsqueeze(-2))
-        gate_scores = (gate_scores + self.lora_gate_head_bias.view(1, H, 1, 1)) / (self.lora_gate_temp.abs() + 1e-5)
-
+        q_blk = torch.arange(num_q_blocks, device=device).unsqueeze(1)
+        k_blk = torch.arange(num_k_blocks, device=device).unsqueeze(0)
         if is_causal:
-            q_blk = torch.arange(num_blocks, device=device).unsqueeze(1)
-            k_blk = torch.arange(num_blocks, device=device).unsqueeze(0)
-            past_blocks = 0
-            causal_blocks = k_blk <= (q_blk + past_blocks)
-            gate_scores = gate_scores.masked_fill(~causal_blocks.unsqueeze(0).unsqueeze(0), float("-inf"))
+            q_blk_max_pos = torch.clamp((q_blk + 1) * bs - 1, max=N - 1) + past_len
+            k_blk_min_pos = k_blk * bs
+            causal_blocks = k_blk_min_pos <= q_blk_max_pos
+        else:
+            causal_blocks = torch.ones((num_q_blocks, num_k_blocks), device=device, dtype=torch.bool)
 
-        _, top_idx = torch.topk(gate_scores, top_k, dim=-1)
+        allowed_blocks = causal_blocks.unsqueeze(0).unsqueeze(0) & block_valid.unsqueeze(2)
+        gate_masked = gate_scores.masked_fill(~allowed_blocks, -1e9)
 
-        from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
+        top_k = min(self.top_k_blocks, num_k_blocks)
+        _, top_idx = torch.topk(gate_masked, top_k, dim=-1)
 
-        if (
-            HAS_TRITON
-            and not FORCE_PYTORCH_FALLBACK
-            and q.is_cuda
-            and not output_attentions
-            and head_mask is None
-            and D in (16, 32, 64, 128)
-            and bs in (16, 32, 64, 128)
-        ):
-            try:
-                from neuralops.core.triton_sparse_attn import triton_block_sparse_attention
+        # Guarantee sink (0), local diagonal block(s), and immediate neighbor blocks are never dropped.
+        sel_mask = torch.zeros((B, H, num_q_blocks, num_k_blocks), device=device, dtype=torch.bool)
+        sel_mask.scatter_(-1, top_idx, True)
+        sel_mask[:, :, :, 0] = True
+        q_start_kblk = torch.clamp((q_blk.squeeze(1) * bs + past_len) // bs, max=num_k_blocks - 1)
+        q_end_kblk = torch.clamp((torch.clamp((q_blk.squeeze(1) + 1) * bs - 1, max=N - 1) + past_len) // bs, max=num_k_blocks - 1)
+        q_idx_1d = torch.arange(num_q_blocks, device=device)
+        sel_mask[:, :, q_idx_1d, q_start_kblk] = True
+        sel_mask[:, :, q_idx_1d, q_end_kblk] = True
+        prev_kblk = torch.clamp(q_start_kblk - 1, min=0)
+        sel_mask[:, :, q_idx_1d, prev_kblk] = True
+        if not is_causal:
+            next_kblk = torch.clamp(q_end_kblk + 1, max=num_k_blocks - 1)
+            sel_mask[:, :, q_idx_1d, next_kblk] = True
+        sel_mask = sel_mask & allowed_blocks
 
-                block_mask = torch.zeros((B, H, num_blocks, num_blocks), device=device, dtype=torch.bool)
-                block_mask.scatter_(-1, top_idx, True)
-                out_triton = triton_block_sparse_attention(
-                    q_pad, k_pad, v_pad, block_mask=block_mask, block_size=bs, is_causal=is_causal
-                )
-                context = out_triton[:, :, :N, :].transpose(1, 2).contiguous().view(B, N, self.all_head_size)
-                return context, None
-            except Exception:
-                # allowed-swallow: best-effort-telemetry
-                pass
+        max_sel = max(1, min(num_k_blocks, int(sel_mask.sum(dim=-1).max().item())))
+        sel_priority = torch.where(
+            sel_mask,
+            100.0 + gate_scores.clamp(-50.0, 50.0),
+            gate_scores.clamp(-50.0, 50.0) - 100.0,
+        ).masked_fill(~allowed_blocks, -1e9)
+        _, sel_idx = torch.topk(sel_priority, k=max_sel, dim=-1)
+        sel_blk_valid = torch.gather(allowed_blocks.expand(B, H, num_q_blocks, num_k_blocks), -1, sel_idx)
+        sel_gate_vals = torch.gather(gate_scores, -1, sel_idx)
 
-        top_idx_exp = top_idx.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, -1, bs, D)
-        k_exp = k_blocks.unsqueeze(2).expand(-1, -1, num_blocks, -1, -1, -1)
-        v_exp = v_blocks.unsqueeze(2).expand(-1, -1, num_blocks, -1, -1, -1)
+        sel_idx_exp = sel_idx.unsqueeze(-1).unsqueeze(-1).expand(-1, -1, -1, -1, bs, D)
+        k_exp = k_blocks.unsqueeze(2).expand(-1, -1, num_q_blocks, -1, -1, -1)
+        v_exp = v_blocks.unsqueeze(2).expand(-1, -1, num_q_blocks, -1, -1, -1)
 
-        k_sel = torch.gather(k_exp, 3, top_idx_exp).reshape(B, H, num_blocks, top_k * bs, D)
-        v_sel = torch.gather(v_exp, 3, top_idx_exp).reshape(B, H, num_blocks, top_k * bs, D)
+        k_sel = torch.gather(k_exp, 3, sel_idx_exp).reshape(B, H, num_q_blocks, max_sel * bs, D)
+        v_sel = torch.gather(v_exp, 3, sel_idx_exp).reshape(B, H, num_q_blocks, max_sel * bs, D)
 
         if valid_pad is not None:
-            valid_blocks = valid_pad.reshape(B, 1, num_blocks, bs)
-            valid_exp = valid_blocks.unsqueeze(2).expand(-1, H, num_blocks, -1, -1)
-            top_idx_m = top_idx.unsqueeze(-1).expand(-1, -1, -1, -1, bs)
-            valid_sel = torch.gather(valid_exp, 3, top_idx_m).reshape(B, H, num_blocks, top_k * bs)
+            valid_blocks = valid_pad.reshape(B, 1, num_k_blocks, bs)
+            valid_exp = valid_blocks.unsqueeze(2).expand(-1, H, num_q_blocks, -1, -1)
+            sel_idx_m = sel_idx.unsqueeze(-1).expand(-1, -1, -1, -1, bs)
+            valid_sel = torch.gather(valid_exp, 3, sel_idx_m).reshape(B, H, num_q_blocks, max_sel * bs)
         else:
             valid_sel = None
 
         scale = 1.0 / math.sqrt(int(D))
-        scores = torch.matmul(q_blocks.float(), k_sel.float().transpose(-2, -1).contiguous()) * scale
+        scores_tok = torch.matmul(q_blocks.float(), k_sel.float().transpose(-2, -1).contiguous()) * scale
+        gate_bias_tok = (0.05 * torch.tanh(sel_gate_vals)).unsqueeze(-1).expand(-1, -1, -1, -1, bs)
+        scores_tok = scores_tok + gate_bias_tok.reshape(B, H, num_q_blocks, 1, max_sel * bs)
 
+        invalid_tok = (~sel_blk_valid).unsqueeze(-1).expand(-1, -1, -1, -1, bs).reshape(
+            B, H, num_q_blocks, 1, max_sel * bs
+        )
         if is_causal:
-            q_pos = torch.arange(num_blocks, device=device).view(num_blocks, 1) * bs + torch.arange(
-                bs, device=device
-            ).view(1, bs)
-            q_pos = q_pos.view(1, 1, num_blocks, bs, 1)
-
-            k_base = top_idx.unsqueeze(-1) * bs
+            q_pos = (
+                torch.arange(num_q_blocks, device=device).view(num_q_blocks, 1) * bs
+                + torch.arange(bs, device=device).view(1, bs)
+                + past_len
+            ).view(1, 1, num_q_blocks, bs, 1)
+            k_base = sel_idx.unsqueeze(-1) * bs
             k_off = torch.arange(bs, device=device).view(1, 1, 1, 1, bs)
-            k_pos = (k_base + k_off).view(B, H, num_blocks, 1, top_k * bs)
-
-            causal_tok = k_pos <= q_pos
-            scores = scores.masked_fill(~causal_tok, float("-inf"))
+            k_pos = (k_base + k_off).view(B, H, num_q_blocks, 1, max_sel * bs)
+            invalid_tok = invalid_tok | (k_pos > q_pos)
 
         if valid_sel is not None:
-            scores = scores.masked_fill(~valid_sel.unsqueeze(-2), float("-inf"))
+            invalid_tok = invalid_tok | (~valid_sel.unsqueeze(-2))
 
-        scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-        probs = F.softmax(scores, dim=-1).to(v_sel.dtype)
-        probs = torch.nan_to_num(probs, nan=0.0)
+        # Compressed centroid pathway for unselected allowed causal blocks so distant context is preserved.
+        unsel_mask = allowed_blocks & (~sel_mask)
+        has_unsel = bool(unsel_mask.any().item())
+        if has_unsel:
+            scores_cent = torch.matmul(q_blocks.float(), k_cent.unsqueeze(2).transpose(-2, -1)) * scale
+            scores_cent = scores_cent + 0.05 * torch.tanh(gate_scores.unsqueeze(3))
+            invalid_cent = ~unsel_mask.unsqueeze(3).expand(-1, H, -1, bs, -1)
+            scores_all = torch.cat([scores_tok, scores_cent], dim=-1)
+            invalid_all = torch.cat([invalid_tok.expand(-1, -1, -1, bs, -1), invalid_cent], dim=-1)
+        else:
+            scores_all = scores_tok
+            invalid_all = invalid_tok.expand(-1, -1, -1, bs, -1)
+
+        all_masked = invalid_all.all(dim=-1, keepdim=True)
+        safe_invalid = invalid_all.clone()
+        if all_masked.any():
+            safe_invalid[..., :1] = safe_invalid[..., :1] & (~all_masked)
+
+        scores_all = torch.nan_to_num(scores_all, nan=0.0, posinf=1e4, neginf=-1e4).masked_fill(safe_invalid, -1e9)
+        probs = F.softmax(scores_all, dim=-1).masked_fill(all_masked, 0.0)
         probs = self.dropout(probs)
 
         if head_mask is not None:
-            hm = head_mask.to(probs.dtype)
+            hm = head_mask.float()
             if hm.dim() == 1:
-                hm = hm.view(1, H, 1, 1)
+                hm = hm.view(1, H, 1, 1, 1)
             elif hm.dim() == 2:
-                hm = hm.view(hm.shape[0], H, 1, 1)
+                hm = hm.view(hm.shape[0], H, 1, 1, 1)
             elif hm.dim() == 3:
-                hm = hm.unsqueeze(1)
+                hm = hm.unsqueeze(1).unsqueeze(-1)
             probs = probs * hm
 
-        out_blocks = torch.matmul(probs, v_sel)
-        out_blocks = torch.nan_to_num(out_blocks, nan=0.0, posinf=1e4, neginf=-1e4)
+        tok_len = max_sel * bs
+        out_blocks = torch.matmul(probs[..., :tok_len], v_sel.float())
+        if has_unsel:
+            out_blocks = out_blocks + torch.matmul(probs[..., tok_len:], v_cent.unsqueeze(2))
+        out_blocks = torch.nan_to_num(out_blocks, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
 
-        context = out_blocks.reshape(B, H, N_pad, D)[:, :, :N, :]
+        context = out_blocks.reshape(B, H, N_q_pad, D)[:, :, :N, :]
         context = context.transpose(1, 2).contiguous().view(B, N, self.all_head_size)
 
         if output_attentions:
-            return context, probs
+            return context, probs.to(q.dtype)
         return context, None
 
     def forward(
@@ -805,7 +916,7 @@ class FUSIONATTN(BaseAttention):
                 v_cat,
                 valid_mask,
                 head_mask,
-                is_causal=is_causal and N_kv == N,
+                is_causal=is_causal,
                 output_attentions=bool(output_attentions),
             )
         else:
@@ -815,7 +926,7 @@ class FUSIONATTN(BaseAttention):
                 v_cat,
                 valid_mask,
                 head_mask,
-                is_causal=is_causal and N_kv == N,
+                is_causal=is_causal,
                 output_attentions=bool(output_attentions),
             )
 
@@ -826,7 +937,8 @@ class FUSIONATTN(BaseAttention):
         else:
             out = self.out_proj(context)
 
-        if self.is_decoder and not is_cross_attention:
+        use_cache = bool(kwargs.get("use_cache", False))
+        if self.is_decoder and not is_cross_attention and (use_cache or past_key_value is not None):
             if past_key_value is not None and hasattr(past_key_value, "update"):
                 new_past_kv = past_key_value
             else:

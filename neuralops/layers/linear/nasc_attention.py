@@ -510,11 +510,61 @@ class NASCAttention(BaseAttention):
         return out
 
     def _global_spectral_rff_attention(self, Q, K, V, valid_mask, is_causal):
-        from neuralops.ops.triton.linear_attn import fused_nasc_spectral_linear_scan_triton
+        """Chunked dual-form spectral RFF linear attention avoiding 5D (B, H, L, F, d) tensors."""
+        rff_features = self.rff_proj.shape[-1]
+        norm = 1.0 / math.sqrt(rff_features)
+        rff_f = self.rff_proj.float()
 
-        return fused_nasc_spectral_linear_scan_triton(
-            Q, K, V, self.rff_proj, valid_mask=valid_mask, is_causal=is_causal
-        )
+        phi_Q = (F.elu(torch.matmul(Q.float(), rff_f)) + 1.0) * norm
+        phi_K = (F.elu(torch.matmul(K.float(), rff_f)) + 1.0) * norm
+
+        if valid_mask is not None:
+            pad = (~valid_mask).unsqueeze(1).unsqueeze(-1)
+            phi_K = phi_K.masked_fill(pad, 0.0)
+            V_masked = V.float().masked_fill(pad, 0.0)
+        else:
+            V_masked = V.float()
+
+        if is_causal:
+            B, H, L, F_dim = phi_Q.shape
+            d = V_masked.shape[-1]
+            chunk_size = 64
+            state_kv = torch.zeros(B, H, F_dim, d, device=Q.device, dtype=phi_Q.dtype)
+            state_k = torch.zeros(B, H, F_dim, device=Q.device, dtype=phi_Q.dtype)
+            outs = []
+            for start in range(0, L, chunk_size):
+                end = min(start + chunk_size, L)
+                qc = phi_Q[:, :, start:end]
+                kc = phi_K[:, :, start:end]
+                vc = V_masked[:, :, start:end]
+
+                intra_scores = torch.matmul(qc, kc.transpose(-2, -1)).tril()
+                if start == 0:
+                    num = torch.matmul(intra_scores, vc)
+                    den = intra_scores.sum(dim=-1).unsqueeze(-1).clamp(min=1e-6) + 1e-6
+                else:
+                    num = torch.matmul(qc, state_kv) + torch.matmul(intra_scores, vc)
+                    den = (
+                        (torch.matmul(qc, state_k.unsqueeze(-1)).squeeze(-1) + intra_scores.sum(dim=-1))
+                        .unsqueeze(-1)
+                        .clamp(min=1e-6)
+                        + 1e-6
+                    )
+                outs.append(num / den)
+
+                if end < L:
+                    state_kv = state_kv + torch.matmul(kc.transpose(-2, -1), vc)
+                    state_k = state_k + kc.sum(dim=2)
+
+            res = (torch.cat(outs, dim=2) if len(outs) > 1 else outs[0]).to(Q.dtype)
+            return torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4)
+
+        KV = torch.matmul(phi_K.transpose(-2, -1).contiguous(), V_masked)
+        Z = phi_K.sum(dim=-2, keepdim=True)
+        num = torch.matmul(phi_Q, KV)
+        den = torch.matmul(phi_Q, Z.transpose(-2, -1).contiguous()).clamp(min=1e-6) + 1e-6
+        res = (num / den).to(Q.dtype)
+        return torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4)
 
     def forward(
         self,

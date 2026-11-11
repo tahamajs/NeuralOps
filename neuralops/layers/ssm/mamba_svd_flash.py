@@ -924,9 +924,9 @@ class MambaSVDFlash(BaseAttention):
                 ssm_out = ssm_fwd
                 ssm_h_next = None
 
-        Q = self.q_proj(hidden_states).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        K = self.k_proj(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        V_a = self.v_proj(hidden_states).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        Q = self.q_proj(hidden_states.to(self.q_proj.weight.dtype)).view(B, L, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        K = self.k_proj(hidden_states.to(self.k_proj.weight.dtype)).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V_a = self.v_proj(hidden_states.to(self.v_proj.weight.dtype)).view(B, L, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
 
         if position_embeddings is None:
             position_embeddings = kwargs.get("position_embeddings")

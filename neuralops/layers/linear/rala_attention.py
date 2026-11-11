@@ -444,55 +444,56 @@ class RALALinearAttention(BaseAttention):
         v_m = v.float() * mask_4d_f
 
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
-        rank_mat = torch.einsum("hdr,her->hde", self.lora_U.float(), self.lora_V.float())
-        aug_num = torch.einsum("bhnd,hde->bhne", q_p, rank_mat)
+        with torch.amp.autocast(device_type=hidden_states.device.type, enabled=False):
+            rank_mat = torch.einsum("hdr,her->hde", self.lora_U.float(), self.lora_V.float())
+            aug_num = torch.einsum("bhnd,hde->bhne", q_p, rank_mat)
 
-        if is_causal:
-            chunk_size = 64
-            pad_len = (chunk_size - (seq_len % chunk_size)) % chunk_size
-            if pad_len > 0:
-                q_pad = F.pad(q_p, (0, 0, 0, pad_len))
-                k_pad = F.pad(k_p, (0, 0, 0, pad_len))
-                v_pad = F.pad(v_m, (0, 0, 0, pad_len))
+            if is_causal:
+                chunk_size = 64
+                pad_len = (chunk_size - (seq_len % chunk_size)) % chunk_size
+                if pad_len > 0:
+                    q_pad = F.pad(q_p, (0, 0, 0, pad_len))
+                    k_pad = F.pad(k_p, (0, 0, 0, pad_len))
+                    v_pad = F.pad(v_m, (0, 0, 0, pad_len))
+                else:
+                    q_pad, k_pad, v_pad = q_p, k_p, v_m
+
+                num_chunks = q_pad.shape[2] // chunk_size
+                q_blk = q_pad.view(batch_size, self.num_heads, num_chunks, chunk_size, self.head_dim)
+                k_blk = k_pad.view(batch_size, self.num_heads, num_chunks, chunk_size, self.head_dim)
+                v_blk = v_pad.view(batch_size, self.num_heads, num_chunks, chunk_size, self.head_dim)
+
+                kv_chunks = torch.matmul(k_blk.transpose(-1, -2), v_blk)
+                z_chunks = k_blk.sum(dim=-2)
+
+                S_prefix = torch.cumsum(kv_chunks, dim=2) - kv_chunks
+                Z_prefix = torch.cumsum(z_chunks, dim=2) - z_chunks
+
+                num_inter = torch.matmul(q_blk, S_prefix)
+                den_inter = (q_blk * Z_prefix.unsqueeze(-2)).sum(dim=-1, keepdim=True)
+
+                causal_c = torch.tril(torch.ones((chunk_size, chunk_size), device=hidden_states.device, dtype=torch.bool))
+                scores_intra = torch.matmul(q_blk, k_blk.transpose(-1, -2)).masked_fill(~causal_c, 0.0)
+                num_intra = torch.matmul(scores_intra, v_blk)
+                den_intra = scores_intra.sum(dim=-1, keepdim=True)
+
+                denom_blk = (den_inter + den_intra).clamp(min=1e-4)
+                lin_blk = (num_inter + num_intra) / denom_blk
+
+                lin_out = lin_blk.reshape(batch_size, self.num_heads, num_chunks * chunk_size, self.head_dim)[
+                    :, :, :seq_len, :
+                ]
+                denom = denom_blk.reshape(batch_size, self.num_heads, num_chunks * chunk_size, 1)[:, :, :seq_len, :]
+                aug_out = aug_num / denom
             else:
-                q_pad, k_pad, v_pad = q_p, k_p, v_m
+                kv = torch.matmul(k_p.transpose(-1, -2), v_m)
+                z = k_p.sum(dim=2, keepdim=True)
+                num = torch.matmul(q_p, kv)
+                denom = torch.matmul(q_p, z.transpose(-1, -2)).clamp(min=1e-4)
+                lin_out = num / denom
+                aug_out = aug_num / denom
 
-            num_chunks = q_pad.shape[2] // chunk_size
-            q_blk = q_pad.view(batch_size, self.num_heads, num_chunks, chunk_size, self.head_dim)
-            k_blk = k_pad.view(batch_size, self.num_heads, num_chunks, chunk_size, self.head_dim)
-            v_blk = v_pad.view(batch_size, self.num_heads, num_chunks, chunk_size, self.head_dim)
-
-            kv_chunks = torch.matmul(k_blk.transpose(-1, -2), v_blk)
-            z_chunks = k_blk.sum(dim=-2)
-
-            S_prefix = torch.cumsum(kv_chunks, dim=2) - kv_chunks
-            Z_prefix = torch.cumsum(z_chunks, dim=2) - z_chunks
-
-            num_inter = torch.matmul(q_blk, S_prefix)
-            den_inter = (q_blk * Z_prefix.unsqueeze(-2)).sum(dim=-1, keepdim=True)
-
-            causal_c = torch.tril(torch.ones((chunk_size, chunk_size), device=hidden_states.device, dtype=torch.bool))
-            scores_intra = torch.matmul(q_blk, k_blk.transpose(-1, -2)).masked_fill(~causal_c, 0.0)
-            num_intra = torch.matmul(scores_intra, v_blk)
-            den_intra = scores_intra.sum(dim=-1, keepdim=True)
-
-            denom_blk = (den_inter + den_intra).clamp(min=1e-4)
-            lin_blk = (num_inter + num_intra) / denom_blk
-
-            lin_out = lin_blk.reshape(batch_size, self.num_heads, num_chunks * chunk_size, self.head_dim)[
-                :, :, :seq_len, :
-            ]
-            denom = denom_blk.reshape(batch_size, self.num_heads, num_chunks * chunk_size, 1)[:, :, :seq_len, :]
-            aug_out = aug_num / denom
-        else:
-            kv = torch.matmul(k_p.transpose(-1, -2), v_m)
-            z = k_p.sum(dim=2, keepdim=True)
-            num = torch.matmul(q_p, kv)
-            denom = torch.matmul(q_p, z.transpose(-1, -2)).clamp(min=1e-4)
-            lin_out = num / denom
-            aug_out = aug_num / denom
-
-        out = (lin_out + self.lora_rank_alpha.float() * aug_out) * mask_4d_f
+            out = (lin_out + self.lora_rank_alpha.float() * aug_out) * mask_4d_f
 
         if head_mask is not None:
             if head_mask.dim() == 1 and head_mask.size(0) == self.num_heads:

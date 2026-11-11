@@ -628,6 +628,8 @@ class HymbaTransXBlock(BaseAttention):
                 q2 = self.rope(q2, past_len=past_len)
                 k2_cat = self.rope(k2_cat, past_len=0)
 
+        k1_kv, k2_kv, v_kv = k1_cat, k2_cat, v_cat
+
         if self.kv_repeat > 1:
             k1_cat = repeat_kv(k1_cat, self.kv_repeat)
             k2_cat = repeat_kv(k2_cat, self.kv_repeat)
@@ -765,7 +767,7 @@ class HymbaTransXBlock(BaseAttention):
 
         out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4)
 
-        present_key_value = (k1_cat, v_cat, k2_cat) if self.is_decoder else None
+        present_key_value = (k1_kv, v_kv, k2_kv) if self.is_decoder else None
 
         if self.is_decoder:
             if output_attentions:

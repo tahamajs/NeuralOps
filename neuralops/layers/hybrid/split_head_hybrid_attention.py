@@ -370,6 +370,8 @@ def causal_kernel_linear_attention(
     Time:   O(N * F * D) forward.
     """
     B, H, N, F_dim = Q_feat.shape
+    N_kv = K_feat.shape[2]
+    past_len = max(0, N_kv - N)
     D = V.shape[-1]
     device = Q_feat.device
     dtype = Q_feat.dtype
@@ -377,15 +379,23 @@ def causal_kernel_linear_attention(
     state_kv = torch.zeros(B, H, F_dim, D, device=device, dtype=dtype)
     state_k = torch.zeros(B, H, F_dim, device=device, dtype=dtype)
 
+    if past_len > 0:
+        for p_start in range(0, past_len, chunk_size):
+            p_end = min(p_start + chunk_size, past_len)
+            Kp = K_feat[:, :, p_start:p_end]
+            Vp = V[:, :, p_start:p_end]
+            state_kv = state_kv + torch.matmul(Kp.transpose(-2, -1), Vp)
+            state_k = state_k + Kp.sum(dim=2)
+
     outputs = []
     for start in range(0, N, chunk_size):
         end = min(start + chunk_size, N)
         Qc = Q_feat[:, :, start:end]
-        Kc = K_feat[:, :, start:end]
-        Vc = V[:, :, start:end]
+        Kc = K_feat[:, :, past_len + start : past_len + end]
+        Vc = V[:, :, past_len + start : past_len + end]
 
         intra_scores = torch.matmul(Qc, Kc.transpose(-2, -1)).tril()
-        if start == 0:
+        if start == 0 and past_len == 0:
             num = torch.matmul(intra_scores, Vc)
             den = intra_scores.sum(dim=-1).clamp(min=1e-6)
         else:

@@ -30,7 +30,12 @@ from neuralops.ops.cuda.svd_linear_decay import svd_linear_decay
 logger = logging.getLogger(__name__)
 
 
-@ATTENTION_REGISTRY.register("svd_linear_decay")
+@ATTENTION_REGISTRY.register(
+    "svd_linear_decay",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
 class DecayDecayLinearAttention(SVDLinearAttention):
     r"""
     Decay Gated SVD Linear Attention.
@@ -44,12 +49,23 @@ class DecayDecayLinearAttention(SVDLinearAttention):
     """
 
     is_custom_attention: bool = True
+    supports_gqa: bool = True
     supports_causal: bool = True
+    supports_bidirectional: bool = True
+    supports_rope: bool = True
 
     def __init__(self, config: Any | None = None, rank: int | None = None, **kwargs: Any):
         kwargs["use_decay_gating"] = True
         kwargs.setdefault("mode", "decay_linear")
         super().__init__(config=config, rank=rank, **kwargs)
+        self._return_state_requested: bool = False
+
+    def forward(self, *args: Any, **kwargs: Any):
+        self._return_state_requested = bool(kwargs.get("return_state", False))
+        try:
+            return super().forward(*args, **kwargs)
+        finally:
+            self._return_state_requested = False
 
     def _forward_decay_gated_linear_kernel(
         self,
@@ -60,42 +76,44 @@ class DecayDecayLinearAttention(SVDLinearAttention):
         mask: torch.Tensor | None = None,
         past_state: tuple[torch.Tensor, torch.Tensor] | None = None,
     ) -> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
-        if past_state is not None:
+        if past_state is not None or self._return_state_requested:
             return super()._forward_decay_gated_linear_kernel(q, k, v, hidden_states, mask=mask, past_state=past_state)
 
         B, H, N, D_k = q.shape
-        compute_dtype = torch.bfloat16 if q.dtype == torch.bfloat16 else torch.float32
+        compute_dtype = torch.float32
+
+        q_f = q.to(compute_dtype).contiguous()
+        k_f = k.to(compute_dtype).contiguous()
+        v_f = v.to(compute_dtype).contiguous()
 
         mask_expanded = _normalize_mask(mask, B, H, N, compute_dtype, q.device)
-        k_masked = k
         if mask_expanded is not None:
-            k_masked = k * mask_expanded
+            k_f = torch.where(mask_expanded > 0, k_f, torch.full_like(k_f, -20.0))
+            v_f = v_f * mask_expanded
 
-        decay_logits = self.decay_gate(hidden_states)
+        decay_logits = self.decay_gate(hidden_states).float()
         if self.decay_channel_wise:
             decay_logits = decay_logits.reshape(B, N, H, D_k).permute(0, 2, 1, 3).contiguous()
-            lambda_decay = (
-                compute_exponential_decay(decay_logits, activation=self.decay_activation)
-                .unsqueeze(-1)
-                .to(compute_dtype)
-            )
+            lambda_decay = compute_exponential_decay(decay_logits, activation=self.decay_activation).to(compute_dtype)
         else:
-            decay_logits = decay_logits.permute(0, 2, 1).contiguous().unsqueeze(-1).unsqueeze(-1)
+            decay_logits = decay_logits.permute(0, 2, 1).contiguous().unsqueeze(-1)
             lambda_decay = compute_exponential_decay(decay_logits, activation=self.decay_activation).to(compute_dtype)
 
         if mask_expanded is not None:
             m_dec = mask_expanded
             while m_dec.dim() < lambda_decay.dim():
                 m_dec = m_dec.unsqueeze(-1)
+            while m_dec.dim() > lambda_decay.dim():
+                m_dec = m_dec.squeeze(-1)
             lambda_decay = torch.where(m_dec > 0, lambda_decay, torch.ones_like(lambda_decay))
 
         context = svd_linear_decay(
-            q.contiguous(),
-            k_masked.contiguous(),
-            v.contiguous(),
+            q_f,
+            k_f.contiguous(),
+            v_f.contiguous(),
             lambda_decay.contiguous(),
             eps=self.eps,
-        )
+        ).to(q.dtype)
         D_v = v.shape[-1]
         S_final = torch.zeros(B, H, D_k, D_v, device=q.device, dtype=compute_dtype)
         Z_final = torch.zeros(B, H, D_k, 1, device=q.device, dtype=compute_dtype)
@@ -195,12 +213,14 @@ def inject_svd_linear_decay(
         return None
 
     kwargs["use_decay_gating"] = True
+    kwargs.setdefault("mode", "decay_linear")
     try:
         result = inject_svd_linear_attention(
             model=model,
             layer=layer,
             model_config=model_config,
             old_attn=src_attn,
+            _attn_cls=DecayDecayLinearAttention,
             **kwargs,
         )
     except Exception as e:

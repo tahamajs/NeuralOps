@@ -417,9 +417,9 @@ class SVDMamba(BaseAttention):
                 out_w = out_w.repeat(1, n_rep)[:, : self.all_head_size]
             self.attn_out_proj.decompose_from_weight(out_w, b_o[: self.d_model] if b_o is not None else None)
 
-            if float(torch.linalg.norm(self.in_proj.weight.float())) < 1e-4:
+            if float(torch.linalg.norm(self.in_proj.weight.detach().float())) < 1e-4:
                 logger.warning("SVDMamba: in_proj near-zero norm")
-            if float(torch.linalg.norm(self.q_proj.weight.float())) < 1e-4:
+            if float(torch.linalg.norm(self.q_proj.weight.detach().float())) < 1e-4:
                 logger.warning("SVDMamba: q_proj near-zero norm")
 
     def forward(

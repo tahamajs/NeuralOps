@@ -446,7 +446,7 @@ class HGRN2Layer(BaseAttention):
         log_f = torch.log(f_fp32.clamp(min=1e-6))
 
         use_cp = torch.is_grad_enabled()
-        eff_chunk = min(chunk_size, 16) if (use_cp and L > 64) else chunk_size
+        eff_chunk = max(1, min(chunk_size, 16) if (use_cp and L > 64) else chunk_size)
         if use_cp:
             import torch.utils.checkpoint as cp
 
@@ -571,13 +571,13 @@ class HGRN2Layer(BaseAttention):
         B, L, D = hidden_states.shape
         H, d = self.num_heads, self.head_dim
 
-        q = self.q_proj(hidden_states).view(B, L, H, d).transpose(1, 2)
-        k_new = self.k_proj(hidden_states).view(B, L, H, d).transpose(1, 2)
-        v_new = self.v_proj_attn(hidden_states).view(B, L, H, d).transpose(1, 2)
+        q = self.q_proj(hidden_states.to(self.q_proj.weight.dtype)).view(B, L, H, d).transpose(1, 2)
+        k_new = self.k_proj(hidden_states.to(self.k_proj.weight.dtype)).view(B, L, H, d).transpose(1, 2)
+        v_new = self.v_proj_attn(hidden_states.to(self.v_proj_attn.weight.dtype)).view(B, L, H, d).transpose(1, 2)
 
         if past_k is not None and past_v is not None and past_len > 0:
-            k = torch.cat([past_k, k_new], dim=2)
-            v = torch.cat([past_v, v_new], dim=2)
+            k = torch.cat([past_k.to(k_new.dtype), k_new], dim=2)
+            v = torch.cat([past_v.to(v_new.dtype), v_new], dim=2)
         else:
             k, v = k_new, v_new
 
@@ -646,7 +646,7 @@ class HGRN2Layer(BaseAttention):
                     out_chunks.append(torch.matmul(attn_c, v_c))
                 out = torch.cat(out_chunks, dim=2).transpose(1, 2).contiguous().view(B, L, D)
 
-        return out, k_new, v_new
+        return out.to(hidden_states.dtype), k_new.to(hidden_states.dtype), v_new.to(hidden_states.dtype)
 
     def forward(
         self,
@@ -700,14 +700,14 @@ class HGRN2Layer(BaseAttention):
                 if len(past_key_value) >= 4:
                     past_len = int(past_key_value[3])
 
-        raw_log_decay = -F.softplus(self.lora_forget_gate(hidden_states))
+        raw_log_decay = -F.softplus(self.lora_forget_gate(hidden_states.to(self.lora_forget_gate.weight.dtype)))
         bounded_log_decay = raw_log_decay.clamp(min=-3.0, max=-1e-4)
         f = torch.exp(bounded_log_decay).to(target_dtype)
 
-        i = torch.sigmoid(self.lora_input_gate(hidden_states)).to(target_dtype)
+        i = torch.sigmoid(self.lora_input_gate(hidden_states.to(self.lora_input_gate.weight.dtype))).to(target_dtype)
         input_scale = ((1.0 - f) * i).to(target_dtype)
 
-        v = self.v_proj(hidden_states).to(target_dtype)
+        v = self.v_proj(hidden_states.to(self.v_proj.weight.dtype)).to(target_dtype)
         if self.lora_rank > 0 and self.v_lora_A is not None and self.v_lora_B is not None:
             v_lora = (
                 torch.matmul(
@@ -721,7 +721,7 @@ class HGRN2Layer(BaseAttention):
             )
             v = v + v_lora
 
-        z = self.lora_g_proj(hidden_states).to(target_dtype)
+        z = self.lora_g_proj(hidden_states.to(self.lora_g_proj.weight.dtype)).to(target_dtype)
         iv = (input_scale * v).to(target_dtype)
 
         mask_bool = None
@@ -757,11 +757,11 @@ class HGRN2Layer(BaseAttention):
             past_len=past_len,
         )
 
-        fusion_logits = self.lora_fusion_gate(hidden_states).to(target_dtype)
+        fusion_logits = self.lora_fusion_gate(hidden_states.to(self.lora_fusion_gate.weight.dtype)).to(target_dtype)
         gate = torch.sigmoid(fusion_logits)
-        fused = gate * hgrn_out + (1 - gate) * local_out
+        fused = (gate * hgrn_out + (1 - gate) * local_out.to(target_dtype)).to(target_dtype)
 
-        out = self.out_proj(fused).to(target_dtype)
+        out = self.out_proj(fused.to(self.out_proj.weight.dtype)).to(target_dtype)
         if self.lora_rank > 0 and self.out_lora_A is not None and self.out_lora_B is not None:
             out_lora = (
                 torch.matmul(

@@ -138,20 +138,32 @@ class MoDeGPTLowRankLinear(nn.Module):
             else self.bias
         )
 
+        has_lora = self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None
+        a = None
+        bb = None
+        if has_lora:
+            a = (
+                self.lora_A.to(device=x.device, dtype=x.dtype)
+                if (self.lora_A.device != x.device or self.lora_A.dtype != x.dtype)
+                else self.lora_A
+            )
+            bb = (
+                self.lora_B.to(device=x.device, dtype=x.dtype)
+                if (self.lora_B.device != x.device or self.lora_B.dtype != x.dtype)
+                else self.lora_B
+            )
+
         if x.is_cuda:
-            base_b = b if (self.lora_r == 0 or self.lora_A is None) else None
             # Level 1: Native CUDA C++ fused SVD projection
             try:
                 from neuralops.ops.cuda.fused_svd_projection import fused_svd_projection
 
-                out = fused_svd_projection(x, V.t(), None, U.t(), bias=base_b)
-                if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-                    a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-                    bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+                out = fused_svd_projection(x, V.t(), None, U.t(), bias=b)
+                if has_lora and a is not None and bb is not None:
                     try:
                         from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
 
-                        lora_out = fused_down_up_gemm_bias_triton(x, a, bb.t().contiguous(), bias=b) * self.scaling
+                        lora_out = fused_down_up_gemm_bias_triton(x, a, bb.t().contiguous(), bias=None) * self.scaling
                     except Exception:
                         lora_out = F.linear(F.linear(x, a), bb) * self.scaling
                     return out + lora_out
@@ -167,11 +179,9 @@ class MoDeGPTLowRankLinear(nn.Module):
                 try:
                     from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
 
-                    out = fused_down_up_gemm_bias_triton(x, V, U.t().contiguous(), bias=base_b)
-                    if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-                        a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-                        bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
-                        lora_out = fused_down_up_gemm_bias_triton(x, a, bb.t().contiguous(), bias=b) * self.scaling
+                    out = fused_down_up_gemm_bias_triton(x, V, U.t().contiguous(), bias=b)
+                    if has_lora and a is not None and bb is not None:
+                        lora_out = fused_down_up_gemm_bias_triton(x, a, bb.t().contiguous(), bias=None) * self.scaling
                         return out + lora_out
                     return out
                 except Exception:
@@ -180,17 +190,51 @@ class MoDeGPTLowRankLinear(nn.Module):
         h = F.linear(x, V)
         out = F.linear(h, U, b)
 
-        if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
-            a = self.lora_A.to(x.dtype) if self.lora_A.dtype != x.dtype else self.lora_A
-            bb = self.lora_B.to(x.dtype) if self.lora_B.dtype != x.dtype else self.lora_B
+        if has_lora and a is not None and bb is not None:
             out = out + F.linear(F.linear(x, a), bb) * self.scaling
 
         return out
+
+    @classmethod
+    def from_linear(
+        cls,
+        linear: nn.Module,
+        rank: int = 64,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+    ) -> MoDeGPTLowRankLinear:
+        """Construct a MoDeGPTLowRankLinear layer from a dense Linear/Conv1D module."""
+        target_layer = getattr(linear, "base_layer", linear)
+        raw_w = target_layer.weight.data
+        cls_name = target_layer.__class__.__name__.lower()
+        is_conv1d = "conv1d" in cls_name or hasattr(target_layer, "nf")
+        W = raw_w.t().contiguous().float() if is_conv1d else raw_w.float()
+        out_f, in_f = W.shape
+        r = max(1, min(int(rank), out_f, in_f))
+        U_svd, S, Vt = torch.linalg.svd(W, full_matrices=False)
+        r = min(r, len(S))
+        U_r = (U_svd[:, :r] * S[:r].unsqueeze(0)).contiguous()
+        V_r = Vt[:r, :].contiguous()
+        bias = target_layer.bias.data if getattr(target_layer, "bias", None) is not None else None
+        return cls(
+            in_features=in_f,
+            out_features=out_f,
+            rank=r,
+            U=U_r,
+            V=V_r,
+            bias=bias,
+            lora_r=lora_r,
+            lora_alpha=lora_alpha,
+            dtype=target_layer.weight.dtype,
+            device=target_layer.weight.device,
+        )
 
     @property
     def weight(self) -> torch.Tensor:
         """Reconstructed (out, in) weight matrix."""
         V = self._V()
+        if V.device != self.U.device:
+            V = V.to(device=self.U.device)
         return (self.U.float() @ V.float()).to(self.U.dtype)
 
     def extra_repr(self) -> str:
@@ -333,18 +377,21 @@ class MoDeGPTCompressor(BaseCompressor):
             return False
 
         name_l = name.lower()
-        if any(
-            skip in name_l
-            for skip in (
-                "classifier",
-                "score",
-                "lm_head",
-                "pooler",
-                "embed",
-                "router",
-                "gate",
-                "logits_processor",
+        leaf_l = name_l.rsplit(".", 1)[-1]
+        if (
+            any(
+                skip in name_l
+                for skip in (
+                    "classifier",
+                    "score",
+                    "lm_head",
+                    "pooler",
+                    "embed",
+                    "router",
+                    "logits_processor",
+                )
             )
+            or leaf_l in ("gate", "moe_gate", "shared_expert_gate")
         ):
             return False
 
@@ -403,6 +450,8 @@ class MoDeGPTCompressor(BaseCompressor):
         if in_f != in2:
             return None
 
+        if W2.device != W1.device:
+            W2 = W2.to(W1.device)
         W_joint = torch.cat([W1, W2], dim=0)
         joint_out = W_joint.shape[0]
         r = self._select_rank(joint_out, in_f)
@@ -510,10 +559,11 @@ class MoDeGPTCompressor(BaseCompressor):
 
                 W1_rec = U1 @ V_shared
                 W2_rec = U2 @ V_shared
+                W2_rec_eval = W2_rec.to(W2_orig.device) if W2_rec.device != W2_orig.device else W2_rec
                 n1 = torch.norm(W1_orig).clamp_min(1e-12).item()
                 n2 = torch.norm(W2_orig).clamp_min(1e-12).item()
                 err1 = (torch.norm(W1_orig - W1_rec) / n1).item()
-                err2 = (torch.norm(W2_orig - W2_rec) / n2).item()
+                err2 = (torch.norm(W2_orig - W2_rec_eval) / n2).item()
 
                 self.layer_errors[name1] = float(err1)
                 self.layer_errors[name2] = float(err2)
@@ -553,9 +603,13 @@ class MoDeGPTCompressor(BaseCompressor):
                         / torch.linalg.norm(W1_rec, dim=1, keepdim=True).clamp_min(1e-8)
                     ).clamp(0.2, 5.0)
                     g2 = (
-                        torch.linalg.norm(W2_orig, dim=1, keepdim=True).clamp_min(1e-8)
-                        / torch.linalg.norm(W2_rec, dim=1, keepdim=True).clamp_min(1e-8)
-                    ).clamp(0.2, 5.0)
+                        (
+                            torch.linalg.norm(W2_orig, dim=1, keepdim=True).clamp_min(1e-8)
+                            / torch.linalg.norm(W2_rec_eval, dim=1, keepdim=True).clamp_min(1e-8)
+                        )
+                        .clamp(0.2, 5.0)
+                        .to(U2.device)
+                    )
                     U1 = U1 * g1
                     U2 = U2 * g2
 
@@ -688,8 +742,13 @@ class MoDeGPTCompressor(BaseCompressor):
                 else:
                     first_lin = next((m for m in self.model.modules() if hasattr(m, "in_features")), None)
                     hidden = getattr(first_lin, "in_features", 768) if first_lin else 768
-                    first_p = next(self.model.parameters())
-                    dummy_feat = torch.randn(1, hidden, device=device, dtype=first_p.dtype)
+                    first_p = next(
+                        (p for p in (first_lin.parameters() if first_lin is not None else []) if p.is_floating_point()),
+                        next((p for p in self.model.parameters() if p.is_floating_point()), None),
+                    )
+                    feat_device = first_p.device if first_p is not None else device
+                    feat_dtype = first_p.dtype if first_p is not None else torch.float32
+                    dummy_feat = torch.randn(1, hidden, device=feat_device, dtype=feat_dtype)
                     try:
                         self.model(dummy_feat)
                     except Exception:
@@ -789,8 +848,11 @@ def modegpt_factory(model: nn.Module, comp_config: Any = None, **kwargs: Any) ->
     return compressed_model
 
 
+MoDeGPTLinear = MoDeGPTLowRankLinear
+
 __all__ = [
     "MoDeGPTLowRankLinear",
+    "MoDeGPTLinear",
     "MoDeGPTCompressor",
     "modegpt_factory",
 ]

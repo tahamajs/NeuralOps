@@ -13,6 +13,7 @@ Hybrid adaptive architecture integrating sliding-window attention with gated rec
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import math
 import os
@@ -32,17 +33,33 @@ from neuralops.core.utils.gqa import repeat_kv
 logger = logging.getLogger(__name__)
 
 
+def _clamp_to_dtype(tensor: torch.Tensor, dtype: torch.dtype) -> torch.Tensor:
+    """Sanitize non-finite values and clamp to dtype safe range before casting."""
+    if dtype.is_floating_point:
+        max_val = torch.finfo(dtype).max * 0.5
+        return torch.nan_to_num(tensor, nan=0.0, posinf=max_val, neginf=-max_val).clamp(-max_val, max_val).to(dtype)
+    return torch.nan_to_num(tensor, nan=0.0).to(dtype)
+
+
+def _proj_input(mod: nn.Module, x: torch.Tensor) -> torch.Tensor:
+    """Match projection weight dtype only when autocast is disabled."""
+    if torch.is_autocast_enabled():
+        return x
+    w = getattr(mod, "weight", None)
+    if isinstance(w, torch.Tensor) and w.is_floating_point() and x.dtype != w.dtype:
+        return x.to(w.dtype)
+    return x
+
+
 class GatedRecurrentMemory(nn.Module):
     """
-    Gated recurrent memory with chunked parallel scan.
+    Gated recurrent memory with parallel associative scan.
 
         g_t = sigmoid(W_g x_t + b_g)
         h_t = (1 - g_t) * h_{t-1} + g_t * tanh(W_x x_t + b_x)
         y_t = h_t
 
-    Vectorized via chunked associative scan:
-      - Intra-chunk: sequential (chunk_size steps)
-      - Inter-chunk: parallel cumprod of (1-g) between chunks
+    Vectorized via out-of-place Hillis-Steele doubling scan in FP32 with full PyTorch autograd.
     """
 
     def __init__(self, d_model: int, chunk_size: int = 16):
@@ -54,31 +71,53 @@ class GatedRecurrentMemory(nn.Module):
         nn.init.constant_(self.gate_proj.bias, -1.0)
         nn.init.zeros_(self.value_proj.bias)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, valid_mask: torch.Tensor | None = None) -> torch.Tensor:
         target_dtype = x.dtype
-        gw = self.gate_proj.weight.to(target_dtype)
-        gb = self.gate_proj.bias.to(target_dtype) if self.gate_proj.bias is not None else None
-        vw = self.value_proj.weight.to(target_dtype)
-        vb = self.value_proj.bias.to(target_dtype) if self.value_proj.bias is not None else None
+        dev_type = x.device.type
+        amp_ctx = (
+            torch.amp.autocast(device_type=dev_type, enabled=False)
+            if hasattr(torch, "amp") and dev_type in ("cuda", "cpu")
+            else contextlib.nullcontext()
+        )
+        with amp_ctx:
+            x_f = x.float()
+            gw = self.gate_proj.weight.float()
+            gb = self.gate_proj.bias.float() if self.gate_proj.bias is not None else None
+            vw = self.value_proj.weight.float()
+            vb = self.value_proj.bias.float() if self.value_proj.bias is not None else None
 
-        g = torch.sigmoid(F.linear(x, gw, gb)).clamp(min=1e-5, max=1.0 - 1e-5)
-        v = torch.tanh(F.linear(x, vw, vb))
-        B, L, D = x.shape
+            g = torch.sigmoid(F.linear(x_f, gw, gb)).clamp(min=1e-4, max=1.0 - 1e-4)
+            v = torch.tanh(F.linear(x_f, vw, vb))
+            B, L, D = x_f.shape
 
-        if _env_flag("GOLDFINCH_DISABLE_RECURRENCE", False):
-            return v.to(target_dtype)
+            if valid_mask is not None:
+                m_f = valid_mask.unsqueeze(-1).to(dtype=x_f.dtype)
+                g = g * m_f
+                v = v * m_f
 
-        if L <= self.chunk_size:
-            h = torch.zeros(B, D, device=x.device, dtype=target_dtype)
-            outs = []
-            for t in range(L):
-                h = (1.0 - g[:, t]) * h + g[:, t] * v[:, t]
-                outs.append(h)
-            return torch.stack(outs, dim=1).to(target_dtype)
+            if _env_flag("GOLDFINCH_DISABLE_RECURRENCE", False):
+                return _clamp_to_dtype(v, target_dtype)
 
-        from neuralops.ops.triton.fms_scan import fused_goldfinch_hopfield_lookup_triton
+            if L <= 1:
+                return _clamp_to_dtype(g * v, target_dtype)
 
-        return fused_goldfinch_hopfield_lookup_triton(g, v, self.chunk_size)
+            # Out-of-place parallel associative scan in FP32: O(log L) depth, full autograd on CPU & CUDA
+            a = 1.0 - g
+            b = g * v
+            stride = 1
+            while stride < L:
+                a_prev = a[:, :-stride, :]
+                b_prev = b[:, :-stride, :]
+                a_curr = a[:, stride:, :]
+                b_curr = b[:, stride:, :]
+                a = torch.cat([a[:, :stride, :], a_curr * a_prev], dim=1)
+                b = torch.cat([b[:, :stride, :], a_curr * b_prev + b_curr], dim=1)
+                stride *= 2
+
+            if valid_mask is not None:
+                b = b * valid_mask.unsqueeze(-1).to(dtype=b.dtype)
+
+        return _clamp_to_dtype(b, target_dtype)
 
 
 @ATTENTION_REGISTRY.register(
@@ -636,9 +675,9 @@ class GoldFinchAHNBlock(BaseAttention):
         device = x.device
         dtype_in = x.dtype
 
-        q = self.W_q(x).view(B, L, H, d).transpose(1, 2).contiguous()
-        k = self.W_k(x).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
-        v = self.W_v(x).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        q = self.W_q(_proj_input(self.W_q, x)).view(B, L, H, d).transpose(1, 2).contiguous()
+        k = self.W_k(_proj_input(self.W_k, x)).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
+        v = self.W_v(_proj_input(self.W_v, x)).view(B, L, self.num_kv_heads, d).transpose(1, 2).contiguous()
 
         if position_embeddings is not None:
             cos, sin = position_embeddings
@@ -670,7 +709,8 @@ class GoldFinchAHNBlock(BaseAttention):
             v = repeat_kv(v, self.kv_repeat)
 
         L_kv = k.shape[-2]
-        idx_q = torch.arange(L, device=device).unsqueeze(1)
+        past_len = L_kv - L
+        idx_q = (past_len + torch.arange(L, device=device)).unsqueeze(1)
         idx_k = torch.arange(L_kv, device=device).unsqueeze(0)
         if self.window_radius is None:
             band = torch.ones(L, L_kv, device=device, dtype=torch.bool)
@@ -679,7 +719,6 @@ class GoldFinchAHNBlock(BaseAttention):
             band = diff <= self.window_radius
 
         if self.is_causal:
-            past_len = L_kv - L
             causal = torch.tril(torch.ones(L, L_kv, device=device, dtype=torch.bool), diagonal=past_len)
             valid_local = causal & band
         else:
@@ -688,7 +727,19 @@ class GoldFinchAHNBlock(BaseAttention):
         valid_mask = self._normalize_valid_mask(attention_mask, B, L, device)
         if valid_mask is not None:
             pad_mask = valid_mask[:, None, None, :]
+            if L_kv > L:
+                pad_mask = torch.cat(
+                    [torch.ones(B, 1, 1, L_kv - L, device=device, dtype=torch.bool), pad_mask],
+                    dim=-1,
+                )
             valid_local_4d = valid_local.unsqueeze(0).unsqueeze(0) & pad_mask
+            # Guarantee every query row has >= 1 True key so CUDA SDPA never produces softmax NaN
+            row_has_any = valid_local_4d.any(dim=-1, keepdim=True)
+            if not bool(row_has_any.all()):
+                self_diag = torch.zeros(1, 1, L, L_kv, device=device, dtype=torch.bool)
+                q_idx = torch.arange(L, device=device)
+                self_diag[0, 0, q_idx, past_len + q_idx] = True
+                valid_local_4d = valid_local_4d | (self_diag & ~row_has_any)
         else:
             valid_local_4d = valid_local.unsqueeze(0).unsqueeze(0)
 
@@ -712,52 +763,71 @@ class GoldFinchAHNBlock(BaseAttention):
                 raise RuntimeError("mask not bool")
         except Exception as e:
             logger.debug("Goldfinch SDPA failed (%s); using manual path.", e)
-            scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * (1.0 / math.sqrt(int(d)))
-            scores = scores.masked_fill(~valid_local_4d, -1e4)
-            if head_mask is not None:
-                hm = head_mask
-                if hm.dim() == 1:
-                    hm = hm.view(1, H, 1, 1)
-                elif hm.dim() == 2:
-                    hm = hm.view(hm.shape[0], H, 1, 1)
-                elif hm.dim() == 3:
-                    hm = hm.unsqueeze(1)
-                scores = scores * hm.float()
-            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-            attn_weights = F.softmax(scores, dim=-1).to(dtype_in)
-            attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
-            attn_weights = self.dropout(attn_weights)
-            short_out = torch.matmul(attn_weights, v)
+            dev_type = q.device.type
+            amp_ctx = (
+                torch.amp.autocast(device_type=dev_type, enabled=False)
+                if hasattr(torch, "amp") and dev_type in ("cuda", "cpu")
+                else contextlib.nullcontext()
+            )
+            with amp_ctx:
+                scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * (1.0 / math.sqrt(int(d)))
+                scores = scores.masked_fill(~valid_local_4d, -1e9)
+                scores = torch.nan_to_num(scores, nan=-1e9, posinf=1e4, neginf=-1e9)
+                attn_weights = F.softmax(scores, dim=-1)
+                attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
+                attn_weights = self.dropout(attn_weights)
+                short_out = torch.matmul(attn_weights, v.float())
+
+        if head_mask is not None:
+            hm = head_mask
+            if hm.dim() == 1:
+                hm = hm.view(1, H, 1, 1)
+            elif hm.dim() == 2:
+                hm = hm.view(hm.shape[0], H, 1, 1)
+            elif hm.dim() == 3:
+                hm = hm.unsqueeze(1)
+            short_out = short_out * hm.to(device=short_out.device, dtype=short_out.dtype)
 
         short_out = short_out.transpose(1, 2).contiguous().view(B, L, self.all_head_size)
-
-        long_out = self.delta_mem(x).to(dtype_in)
-
-        gate_w = self.gate.weight.to(dtype_in)
-        gate_b = self.gate.bias.to(dtype_in) if self.gate.bias is not None else None
-        gate = torch.sigmoid(F.linear(x, gate_w, gate_b)).to(dtype_in)
-
-        if long_out.shape[-1] != self.all_head_size:
-            if long_out.shape[-1] < self.all_head_size:
-                long_out = F.pad(long_out, (0, self.all_head_size - long_out.shape[-1]))
-            else:
-                long_out = long_out[..., : self.all_head_size]
-
-        fused = (gate * short_out.to(dtype_in) + (1.0 - gate) * long_out).to(dtype_in)
-
+        short_out = torch.nan_to_num(short_out, nan=0.0)
         if valid_mask is not None:
-            fused = fused * valid_mask.unsqueeze(-1).to(fused.dtype)
+            short_out = short_out * valid_mask.unsqueeze(-1).to(short_out.dtype)
+
+        long_out = self.delta_mem(x, valid_mask=valid_mask)
+
+        dev_type = x.device.type
+        amp_ctx = (
+            torch.amp.autocast(device_type=dev_type, enabled=False)
+            if hasattr(torch, "amp") and dev_type in ("cuda", "cpu")
+            else contextlib.nullcontext()
+        )
+        with amp_ctx:
+            gate_w = self.gate.weight.float()
+            gate_b = self.gate.bias.float() if self.gate.bias is not None else None
+            gate = torch.sigmoid(F.linear(x.float(), gate_w, gate_b))
+
+            if long_out.shape[-1] != self.all_head_size:
+                if long_out.shape[-1] < self.all_head_size:
+                    long_out = F.pad(long_out, (0, self.all_head_size - long_out.shape[-1]))
+                else:
+                    long_out = long_out[..., : self.all_head_size]
+
+            fused_f = gate * short_out.float() + (1.0 - gate) * long_out.float()
+            if valid_mask is not None:
+                fused_f = fused_f * valid_mask.unsqueeze(-1).float()
+            fused = _clamp_to_dtype(fused_f, dtype_in)
 
         if self.is_nested_encoder:
             out = fused
         else:
-            out = self.out_proj(fused)
-            out = (out * self.output_scale.to(out.dtype)).to(out.dtype)
+            out = self.out_proj(_proj_input(self.out_proj, fused))
+            with amp_ctx:
+                out = _clamp_to_dtype(out.float() * self.output_scale.float(), dtype_in)
 
         if self.is_decoder:
-            return out.to(dtype_in), present_key_value
+            return out, present_key_value
         else:
-            return out.to(dtype_in), None
+            return out, None
 
     def storage_bytes(self) -> dict[str, int]:
         def _sz(p):

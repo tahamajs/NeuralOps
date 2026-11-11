@@ -442,15 +442,16 @@ class NativeHybridAttention(BaseAttention):
         scale = 1.0 / math.sqrt(d)
         mask_val = torch.finfo(torch.float32).min
 
-        scores = torch.matmul(Q_f, K_f.transpose(-2, -1)) * scale
-        scores = scores.masked_fill(safe_mask, mask_val)
-        scores_max = scores.amax(dim=-1, keepdim=True).detach()
-        exp_scores = torch.exp((scores - scores_max).clamp(max=0.0)).masked_fill(safe_mask, 0.0)
-        denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=_DENOM_EPS)
-        attn = (exp_scores / denom).masked_fill(all_masked, 0.0)
+        with torch.amp.autocast(device_type=device.type, enabled=False):
+            scores = torch.matmul(Q_f, K_f.transpose(-2, -1)) * scale
+            scores = scores.masked_fill(safe_mask, mask_val)
+            scores_max = scores.amax(dim=-1, keepdim=True).detach()
+            exp_scores = torch.exp((scores - scores_max).clamp(max=0.0)).masked_fill(safe_mask, 0.0)
+            denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=_DENOM_EPS)
+            attn = (exp_scores / denom).masked_fill(all_masked, 0.0)
 
-        attn_drop = self.dropout(attn)
-        out = torch.matmul(attn_drop, V_f)
+            attn_drop = self.dropout(attn)
+            out = torch.matmul(attn_drop, V_f)
         if output_attentions:
             return out, attn.to(dtype)
         return out, None
@@ -462,88 +463,89 @@ class NativeHybridAttention(BaseAttention):
         device = Q.device
 
         scale = d**-0.25
-        Q_fp32 = Q.float()
-        K_fp32 = K.float()
-        V_fp32 = V.float()
-        rff_w = self.rff_proj.to(device=device, dtype=torch.float32)
+        with torch.amp.autocast(device_type=device.type, enabled=False):
+            Q_fp32 = Q.float()
+            K_fp32 = K.float()
+            V_fp32 = V.float()
+            rff_w = self.rff_proj.to(device=device, dtype=torch.float32)
 
-        Qf = torch.matmul(Q_fp32 * scale, rff_w)
-        Kf = torch.matmul(K_fp32 * scale, rff_w)
+            Qf = torch.matmul(Q_fp32 * scale, rff_w)
+            Kf = torch.matmul(K_fp32 * scale, rff_w)
 
-        norm = 1.0 / math.sqrt(m)
-        phi_Q = (F.elu(Qf) + 1.0) * norm
-        phi_K = (F.elu(Kf) + 1.0) * norm
+            norm = 1.0 / math.sqrt(m)
+            phi_Q = (F.elu(Qf) + 1.0) * norm
+            phi_K = (F.elu(Kf) + 1.0) * norm
 
-        if valid_mask is not None:
-            if valid_mask.shape[-1] != N_k:
-                pad = N_k - valid_mask.shape[-1]
-                if pad > 0:
-                    valid_mask = torch.cat(
-                        [valid_mask, torch.ones(B, pad, device=device, dtype=torch.bool)],
-                        dim=1,
-                    )
-                else:
-                    valid_mask = valid_mask[:, :N_k]
-            kv_mask = valid_mask.unsqueeze(1).unsqueeze(-1).float()
-            phi_K = phi_K * kv_mask
-            V_masked = V_fp32 * kv_mask
-        else:
-            V_masked = V_fp32
+            if valid_mask is not None:
+                if valid_mask.shape[-1] != N_k:
+                    pad = N_k - valid_mask.shape[-1]
+                    if pad > 0:
+                        valid_mask = torch.cat(
+                            [valid_mask, torch.ones(B, pad, device=device, dtype=torch.bool)],
+                            dim=1,
+                        )
+                    else:
+                        valid_mask = valid_mask[:, :N_k]
+                kv_mask = valid_mask.unsqueeze(1).unsqueeze(-1).float()
+                phi_K = phi_K * kv_mask
+                V_masked = V_fp32 * kv_mask
+            else:
+                V_masked = V_fp32
 
-        if not is_causal:
-            KV = torch.matmul(phi_K.transpose(-2, -1), V_masked)
-            Z = phi_K.sum(dim=-2, keepdim=True)
-            num = torch.matmul(phi_Q, KV)
-            den = torch.matmul(phi_Q, Z.transpose(-2, -1)).clamp(min=_DENOM_EPS)
-            return num / den
+            if not is_causal:
+                KV = torch.matmul(phi_K.transpose(-2, -1), V_masked)
+                Z = phi_K.sum(dim=-2, keepdim=True)
+                num = torch.matmul(phi_Q, KV)
+                den = torch.matmul(phi_Q, Z.transpose(-2, -1)).clamp(min=_DENOM_EPS)
+                return num / den
 
-        # Chunked vectorized causal linear attention strictly in FP32
-        prefix_len = max(0, N_k - N_q)
-        if prefix_len > 0:
-            phi_K_past = phi_K[:, :, :prefix_len, :]
-            V_past = V_masked[:, :, :prefix_len, :]
-            S_init = torch.matmul(phi_K_past.transpose(-2, -1), V_past)
-            Z_init = phi_K_past.sum(dim=-2)
-            phi_K_cur = phi_K[:, :, prefix_len : prefix_len + N_q, :]
-            V_cur = V_masked[:, :, prefix_len : prefix_len + N_q, :]
-        else:
-            S_init = torch.zeros((B, H, m, d), device=device, dtype=torch.float32)
-            Z_init = torch.zeros((B, H, m), device=device, dtype=torch.float32)
-            phi_K_cur = phi_K[:, :, :N_q, :]
-            V_cur = V_masked[:, :, :N_q, :]
+            # Chunked vectorized causal linear attention strictly in FP32
+            prefix_len = max(0, N_k - N_q)
+            if prefix_len > 0:
+                phi_K_past = phi_K[:, :, :prefix_len, :]
+                V_past = V_masked[:, :, :prefix_len, :]
+                S_init = torch.matmul(phi_K_past.transpose(-2, -1), V_past)
+                Z_init = phi_K_past.sum(dim=-2)
+                phi_K_cur = phi_K[:, :, prefix_len : prefix_len + N_q, :]
+                V_cur = V_masked[:, :, prefix_len : prefix_len + N_q, :]
+            else:
+                S_init = torch.zeros((B, H, m, d), device=device, dtype=torch.float32)
+                Z_init = torch.zeros((B, H, m), device=device, dtype=torch.float32)
+                phi_K_cur = phi_K[:, :, :N_q, :]
+                V_cur = V_masked[:, :, :N_q, :]
 
-        chunk_size = 64
-        pad_len = (chunk_size - (N_q % chunk_size)) % chunk_size
-        if pad_len > 0:
-            q_p = F.pad(phi_Q, (0, 0, 0, pad_len))
-            k_p = F.pad(phi_K_cur, (0, 0, 0, pad_len))
-            v_p = F.pad(V_cur, (0, 0, 0, pad_len))
-        else:
-            q_p, k_p, v_p = phi_Q, phi_K_cur, V_cur
+            chunk_size = 64
+            pad_len = (chunk_size - (N_q % chunk_size)) % chunk_size
+            if pad_len > 0:
+                q_p = F.pad(phi_Q, (0, 0, 0, pad_len))
+                k_p = F.pad(phi_K_cur, (0, 0, 0, pad_len))
+                v_p = F.pad(V_cur, (0, 0, 0, pad_len))
+            else:
+                q_p, k_p, v_p = phi_Q, phi_K_cur, V_cur
 
-        num_chunks = q_p.shape[2] // chunk_size
-        q_blk = q_p.view(B, H, num_chunks, chunk_size, m)
-        k_blk = k_p.view(B, H, num_chunks, chunk_size, m)
-        v_blk = v_p.view(B, H, num_chunks, chunk_size, d)
+            num_chunks = q_p.shape[2] // chunk_size
+            q_blk = q_p.view(B, H, num_chunks, chunk_size, m)
+            k_blk = k_p.view(B, H, num_chunks, chunk_size, m)
+            v_blk = v_p.view(B, H, num_chunks, chunk_size, d)
 
-        kv_chunks = torch.matmul(k_blk.transpose(-1, -2), v_blk)
-        z_chunks = k_blk.sum(dim=-2)
+            kv_chunks = torch.matmul(k_blk.transpose(-1, -2), v_blk)
+            z_chunks = k_blk.sum(dim=-2)
 
-        S_prefix = torch.cumsum(kv_chunks, dim=2) - kv_chunks + S_init.unsqueeze(2)
-        Z_prefix = torch.cumsum(z_chunks, dim=2) - z_chunks + Z_init.unsqueeze(2)
+            S_prefix = torch.cumsum(kv_chunks, dim=2) - kv_chunks + S_init.unsqueeze(2)
+            Z_prefix = torch.cumsum(z_chunks, dim=2) - z_chunks + Z_init.unsqueeze(2)
 
-        num_inter = torch.matmul(q_blk, S_prefix)
-        den_inter = (q_blk * Z_prefix.unsqueeze(-2)).sum(dim=-1, keepdim=True)
+            num_inter = torch.matmul(q_blk, S_prefix)
+            den_inter = (q_blk * Z_prefix.unsqueeze(-2)).sum(dim=-1, keepdim=True)
 
-        causal_C = torch.tril(torch.ones((chunk_size, chunk_size), device=device, dtype=torch.bool))
-        scores_intra = torch.matmul(q_blk, k_blk.transpose(-1, -2)).masked_fill(~causal_C, 0.0)
-        num_intra = torch.matmul(scores_intra, v_blk)
-        den_intra = scores_intra.sum(dim=-1, keepdim=True)
+            causal_C = torch.tril(torch.ones((chunk_size, chunk_size), device=device, dtype=torch.bool))
+            scores_intra = torch.matmul(q_blk, k_blk.transpose(-1, -2)).masked_fill(~causal_C, 0.0)
+            num_intra = torch.matmul(scores_intra, v_blk)
+            den_intra = scores_intra.sum(dim=-1, keepdim=True)
 
-        denom = (den_inter + den_intra).clamp(min=_DENOM_EPS)
-        out = (num_inter + num_intra) / denom
-        out = out.reshape(B, H, num_chunks * chunk_size, d)[:, :, :N_q, :]
-        return out
+            denom = (den_inter + den_intra).clamp(min=_DENOM_EPS)
+            out = (num_inter + num_intra) / denom
+            out = out.reshape(B, H, num_chunks * chunk_size, d)[:, :, :N_q, :]
+            return out
 
     _read_past_kv = staticmethod(_read_past_kv)
 

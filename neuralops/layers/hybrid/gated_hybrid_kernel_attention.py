@@ -33,6 +33,14 @@ from neuralops.core.utils.gqa import repeat_kv
 logger = logging.getLogger(__name__)
 
 
+def _clamp_to_dtype(tensor: torch.Tensor, dtype: torch.dtype) -> torch.Tensor:
+    """Sanitize non-finite values and clamp to dtype safe range before casting."""
+    if dtype.is_floating_point:
+        max_val = torch.finfo(dtype).max * 0.5
+        return torch.nan_to_num(tensor, nan=0.0, posinf=max_val, neginf=-max_val).clamp(-max_val, max_val).to(dtype)
+    return torch.nan_to_num(tensor, nan=0.0).to(dtype)
+
+
 class GatedHybridKernelConfig:
     def __init__(self, **kwargs: Any):
         self.hidden_size = kwargs.get("hidden_size")
@@ -250,7 +258,7 @@ class FactorisedLinear(nn.Module):
             lora_out = torch.matmul(xa, self.lora_B.float().t().contiguous())
             out = out + lora_out * self.lora_scaling
 
-        return out.to(orig_dtype)
+        return _clamp_to_dtype(out, orig_dtype)
 
     def extra_repr(self) -> str:
         return (
@@ -634,7 +642,6 @@ class GatedHybridKernelAttention(BaseAttention):
 
         if not return_attn:
             chunk_size = 64
-            mask_val = _safe_mask_value(Q.dtype)
             outputs = []
             for start in range(0, N, chunk_size):
                 end = min(start + chunk_size, N)
@@ -664,6 +671,7 @@ class GatedHybridKernelAttention(BaseAttention):
                 combined_c = band_c & v_slice
 
                 scores_c = torch.matmul(Qc, Kc.transpose(-2, -1)) * scale
+                mask_val = _safe_mask_value(scores_c.dtype)
                 scores_c = scores_c.masked_fill(~combined_c, mask_val)
                 scores_c = torch.nan_to_num(scores_c, nan=mask_val, posinf=1e4, neginf=mask_val)
 
@@ -743,7 +751,11 @@ class GatedHybridKernelAttention(BaseAttention):
                 from neuralops.ops.triton.linear_attn import fused_svd_linear_chunk_scan_triton
 
                 return fused_svd_linear_chunk_scan_triton(
-                    Q_feat.to(dtype), K_feat.to(dtype), V_f.to(dtype), chunk_size=64, eps=1e-4
+                    _clamp_to_dtype(Q_feat, dtype),
+                    _clamp_to_dtype(K_feat, dtype),
+                    _clamp_to_dtype(V_f, dtype),
+                    chunk_size=64,
+                    eps=1e-4,
                 )
             except Exception:
                 # allowed-swallow: best-effort-telemetry
@@ -786,30 +798,33 @@ class GatedHybridKernelAttention(BaseAttention):
                 state_k = state_k + Kc.sum(dim=2)
 
         out = torch.cat(outs, dim=2) if len(outs) > 1 else outs[0]
-        return torch.nan_to_num(out, nan=0.0).to(dtype)
+        return _clamp_to_dtype(out, dtype)
 
     def _noncausal_linear_attention(self, Q, K, V, valid, q_gate, in_gate):
         """Bidirectional linear attention via associativity Q(K^T V)."""
+        dtype = Q.dtype
         Qk = self.q_norm(Q) if self.pre_norm else Q
         Kk = self.k_norm(K) if self.pre_norm else K
-        Q_feat = self.kernel_map(Qk)
-        K_feat = self.kernel_map(Kk)
+        Q_feat = self.kernel_map(Qk).float()
+        K_feat = self.kernel_map(Kk).float()
+        V_f = V.float()
 
         if q_gate is not None:
-            Q_feat = Q_feat * q_gate
+            Q_feat = Q_feat * q_gate.float()
         if in_gate is not None and in_gate.shape[2] == K_feat.shape[2]:
-            K_feat = K_feat * in_gate
-            V = V * in_gate
+            in_gate_f = in_gate.float()
+            K_feat = K_feat * in_gate_f
+            V_f = V_f * in_gate_f
 
-        valid_k = valid.transpose(-1, -2).to(K_feat.dtype)
+        valid_k = valid.transpose(-1, -2).float()
         K_feat = K_feat * valid_k
-        V = V * valid_k
+        V_f = V_f * valid_k
 
-        KV = torch.matmul(K_feat.transpose(-2, -1).contiguous(), V)
+        KV = torch.matmul(K_feat.transpose(-2, -1).contiguous(), V_f)
         Z = K_feat.sum(dim=-2, keepdim=True)
         num = torch.matmul(Q_feat, KV)
         den = torch.matmul(Q_feat, Z.transpose(-2, -1).contiguous()).clamp(min=1e-6)
-        return torch.nan_to_num(num / den, nan=0.0)
+        return _clamp_to_dtype(num / den, dtype)
 
     def forward(
         self,

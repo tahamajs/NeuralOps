@@ -467,10 +467,17 @@ class HLAAttention(BaseAttention):
             allow_full_ws = (not torch.is_grad_enabled()) or (ws_bytes <= 32 * 1024 * 1024 and B * H * L <= 2048)
             if is_pow2_d and allow_full_ws:
                 try:
-                    from neuralops.ops.cuda.hla_attention import hla_attention
+                    from neuralops.ops.cuda.hla_attention.hla_attention_autograd import (
+                        _get_module as _get_hla_cuda_mod,
+                        hla_attention,
+                    )
 
-                    y_accel = hla_attention(q_f, k_f, v_f, decay.float(), eps=1e-5)
-                    return y_accel.to(q.dtype), (None, None)
+                    if _get_hla_cuda_mod() is not None:
+                        y_accel = hla_attention(q_f, k_f, v_f, decay.float(), eps=1e-5)
+                        return y_accel.to(q.dtype), (None, None)
+                    logger.warning(
+                        "HLAAttention: Level 1 CUDA cuda_hla_attention unavailable; falling back to Triton."
+                    )
                 except Exception as exc:
                     logger.warning(
                         "HLAAttention: Level 1 CUDA hla_attention failed (%s); falling back to Triton.",
@@ -616,9 +623,12 @@ class HLAAttention(BaseAttention):
         kv_input = encoder_hidden_states if is_cross else hidden_states
         kv_len = kv_input.shape[1]
 
-        q = self.q_proj(hidden_states).view(B, L, H, Dh).transpose(1, 2).contiguous()
-        k = self.k_proj(kv_input).view(B, kv_len, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
-        v = self.v_proj(kv_input).view(B, kv_len, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
+        q_dt = self.q_proj.weight.dtype
+        k_dt = self.k_proj.weight.dtype
+        v_dt = self.v_proj.weight.dtype
+        q = self.q_proj(hidden_states.to(q_dt)).view(B, L, H, Dh).transpose(1, 2).contiguous()
+        k = self.k_proj(kv_input.to(k_dt)).view(B, kv_len, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
+        v = self.v_proj(kv_input.to(v_dt)).view(B, kv_len, self.num_kv_heads, Dh).transpose(1, 2).contiguous()
 
         past_state: tuple[torch.Tensor, torch.Tensor] | None = None
         past_len = 0
@@ -775,9 +785,9 @@ class HLAAttention(BaseAttention):
             state = {}
         step_idx = state.get("step_idx", 0)
 
-        q = self.q_proj(x).view(B, 1, H, Dh).transpose(1, 2)
-        k = self.k_proj(x).view(B, 1, self.num_kv_heads, Dh).transpose(1, 2)
-        v = self.v_proj(x).view(B, 1, self.num_kv_heads, Dh).transpose(1, 2)
+        q = self.q_proj(x.to(self.q_proj.weight.dtype)).view(B, 1, H, Dh).transpose(1, 2)
+        k = self.k_proj(x.to(self.k_proj.weight.dtype)).view(B, 1, self.num_kv_heads, Dh).transpose(1, 2)
+        v = self.v_proj(x.to(self.v_proj.weight.dtype)).view(B, 1, self.num_kv_heads, Dh).transpose(1, 2)
 
         if self.num_kv_heads != self.num_heads:
             k = repeat_kv(k, self.num_key_value_groups)
@@ -820,9 +830,14 @@ class HLAAttention(BaseAttention):
         context = context * scale
 
         if self.is_nested_encoder:
-            out = context * self.lora_output_scale
+            out = (context * self.lora_output_scale).to(dtype)
         else:
-            out = self.out_proj(context.to(dtype)) * self.lora_output_scale
+            out_dt = (
+                self.out_proj.weight.dtype
+                if hasattr(self.out_proj, "weight") and self.out_proj.weight is not None
+                else dtype
+            )
+            out = (self.out_proj(context.to(out_dt)) * self.lora_output_scale).to(dtype)
 
         if is_2d:
             out = out.squeeze(1)
