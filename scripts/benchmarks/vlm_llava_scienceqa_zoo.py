@@ -82,11 +82,32 @@ def _format_scienceqa_sample(sample: dict[str, Any]) -> tuple[str, str, int]:
     return prompt, letter, min(len(choices), 5)
 
 
+def _trim_image_tokens(
+    enc: dict[str, torch.Tensor],
+    image_token_id: int,
+    expected_img_tokens: int,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Ensure exact match between expanded image token placeholders and vision encoder output length."""
+    ids = enc["input_ids"].squeeze(0)
+    mask = enc["attention_mask"].squeeze(0)
+    if expected_img_tokens > 0:
+        img_pos = (ids == image_token_id).nonzero(as_tuple=True)[0]
+        extra = int(img_pos.numel()) - expected_img_tokens
+        if extra > 0:
+            drop_set = set(img_pos[-extra:].tolist())
+            keep = torch.tensor([k not in drop_set for k in range(ids.size(0))], dtype=torch.bool)
+            ids = ids[keep]
+            mask = mask[keep]
+    return ids, mask
+
+
 def prepare_scienceqa_batches(
     data_dir: str,
     processor: Any,
     max_samples: int,
     max_seq_len: int = 896,
+    image_token_id: int = 151646,
+    expected_img_tokens: int = 729,
 ) -> list[dict[str, Any]]:
     """Pre-processes image+text ScienceQA pairs into compact CPU tensor examples."""
     from datasets import load_from_disk
@@ -110,8 +131,13 @@ def prepare_scienceqa_batches(
         enc_full = processor(text=full_text, images=rgb, return_tensors="pt", truncation=True, max_length=max_seq_len)
         enc_prompt = processor(text=prompt, images=rgb, return_tensors="pt", truncation=True, max_length=max_seq_len)
 
-        input_ids = enc_full["input_ids"].squeeze(0)
-        prompt_len = int(enc_prompt["input_ids"].size(1))
+        input_ids, att_full = _trim_image_tokens(enc_full, image_token_id, expected_img_tokens)
+        prompt_ids, att_prompt = _trim_image_tokens(enc_prompt, image_token_id, expected_img_tokens)
+        if expected_img_tokens > 0 and int((input_ids == image_token_id).sum().item()) != expected_img_tokens:
+            continue
+        if expected_img_tokens > 0 and int((prompt_ids == image_token_id).sum().item()) != expected_img_tokens:
+            continue
+        prompt_len = int(prompt_ids.size(0))
         if input_ids.size(0) <= prompt_len:
             continue
 
@@ -121,11 +147,11 @@ def prepare_scienceqa_batches(
         examples.append(
             {
                 "input_ids": input_ids,
-                "attention_mask": enc_full["attention_mask"].squeeze(0),
+                "attention_mask": att_full,
                 "pixel_values": enc_full["pixel_values"].squeeze(0).half(),
                 "labels": labels,
-                "prompt_input_ids": enc_prompt["input_ids"].squeeze(0),
-                "prompt_attention_mask": enc_prompt["attention_mask"].squeeze(0),
+                "prompt_input_ids": prompt_ids,
+                "prompt_attention_mask": att_prompt,
                 "answer_idx": OPTION_LETTERS.index(letter),
                 "num_choices": max(num_choices, 2),
             }
@@ -635,8 +661,22 @@ def main() -> None:
     for p in teacher.parameters():
         p.requires_grad = False
 
-    train_ex = prepare_scienceqa_batches(args.train_data, processor, max_samples=args.max_train_samples)
-    val_ex = prepare_scienceqa_batches(args.val_data, processor, max_samples=args.max_val_samples)
+    img_tok_id = int(getattr(teacher.config, "image_token_index", 151646))
+    vcfg = getattr(teacher.config, "vision_config", None)
+    patch_sz = int(getattr(vcfg, "patch_size", 14) or 14)
+    img_sz = int(getattr(vcfg, "image_size", 384) or 384)
+    strategy = str(getattr(teacher.config, "vision_feature_select_strategy", "full"))
+    expected_img_tokens = (img_sz // patch_sz) ** 2 + (0 if strategy == "full" else -1 if strategy == "default" else 0)
+    if getattr(teacher.config, "image_seq_length", None):
+        expected_img_tokens = int(teacher.config.image_seq_length)
+    logger.info("LLaVA vision token contract: image_token_index=%d, expected_img_tokens=%d", img_tok_id, expected_img_tokens)
+
+    train_ex = prepare_scienceqa_batches(
+        args.train_data, processor, max_samples=args.max_train_samples, image_token_id=img_tok_id, expected_img_tokens=expected_img_tokens
+    )
+    val_ex = prepare_scienceqa_batches(
+        args.val_data, processor, max_samples=args.max_val_samples, image_token_id=img_tok_id, expected_img_tokens=expected_img_tokens
+    )
     teacher_acc, teacher_ppl = evaluate_vlm_scienceqa(teacher, val_ex, processor, device, batch_size=args.batch_size)
     logger.info("Uncompressed VLM Teacher Baseline: ScienceQA Acc=%.2f%% | Answer PPL=%.2f", teacher_acc, teacher_ppl)
 
