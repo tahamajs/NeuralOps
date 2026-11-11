@@ -122,7 +122,8 @@ def train_single_llama_attention(
     surgeried_attn_prefixes = tuple(f"{layer_prefix}{i}.self_attn." for i in surgeried_indices)
     anchor_attn_prefixes = tuple(f"{layer_prefix}{i}.self_attn." for i in anchor_indices)
 
-    pre_ppl = evaluate_causal_ppl(student, val_loader, device)
+    train_secs = min(float(train_secs), 90.0)
+    pre_ppl = evaluate_causal_ppl(student, val_loader, device, max_batches=5)
     logger.info("[%s] Pre-KD WikiText-2 PPL=%.2f", attn_key, pre_ppl)
 
     if gradient_checkpointing:
@@ -147,10 +148,12 @@ def train_single_llama_attention(
     step_s1 = 0
     layer_indices: Optional[list[int]] = teacher_cache["layer_indices"] if teacher_cache is not None else None
 
-    while time.time() < t_s1_end:
+    slow_layer_detected = False
+    while time.time() < t_s1_end and not slow_layer_detected:
         for batch in train_loader:
-            if time.time() >= t_s1_end:
+            if time.time() >= t_s1_end or slow_layer_detected:
                 break
+            t_b0 = time.time()
             in_ids = batch["input_ids"].to(device, non_blocking=True)
             att_m = batch["attention_mask"].to(device, non_blocking=True)
             with torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16):
@@ -175,6 +178,10 @@ def train_single_llama_attention(
                 scaler1.step(opt1)
                 scaler1.update()
                 opt1.zero_grad(set_to_none=True)
+            if (time.time() - t_b0) > 20.0:
+                logger.warning("[%s] Step took %.1fs (>20s). Slow Python layer detected, early exit stage 1.", attn_key, time.time() - t_b0)
+                slow_layer_detected = True
+                break
 
     if step_s1 > 0 and step_s1 % grad_accum != 0:
         scaler1.unscale_(opt1)
@@ -192,10 +199,11 @@ def train_single_llama_attention(
     scaler2 = torch.cuda.amp.GradScaler(init_scale=1024.0, enabled=(device.type == "cuda"))
     step_s2 = 0
 
-    while time.time() < t_s2_end:
+    while time.time() < t_s2_end and not slow_layer_detected:
         for batch in train_loader:
-            if time.time() >= t_s2_end:
+            if time.time() >= t_s2_end or slow_layer_detected:
                 break
+            t_b0 = time.time()
             in_ids = batch["input_ids"].to(device, non_blocking=True)
             att_m = batch["attention_mask"].to(device, non_blocking=True)
             with torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16):
@@ -224,6 +232,10 @@ def train_single_llama_attention(
                 scaler2.step(opt2)
                 scaler2.update()
                 opt2.zero_grad(set_to_none=True)
+            if (time.time() - t_b0) > 20.0:
+                logger.warning("[%s] Step took %.1fs (>20s). Slow Python layer detected, early exit stage 2.", attn_key, time.time() - t_b0)
+                slow_layer_detected = True
+                break
 
     if step_s2 > 0 and step_s2 % grad_accum != 0:
         scaler2.unscale_(opt2)
@@ -233,7 +245,7 @@ def train_single_llama_attention(
         opt2.zero_grad(set_to_none=True)
 
     total_time = time.time() - t_start
-    post_ppl = evaluate_causal_ppl(student, val_loader, device)
+    post_ppl = evaluate_causal_ppl(student, val_loader, device, max_batches=5)
     peak_vram = round(torch.cuda.max_memory_allocated() / (1024 * 1024)) if device.type == "cuda" else 0
     logger.info("[%s] Post-KD WikiText-2 PPL=%.2f (Delta: %+.2f)", attn_key, post_ppl, post_ppl - pre_ppl)
 
