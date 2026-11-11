@@ -74,6 +74,22 @@ $PYTHON scripts/benchmarks/qwen_zoo_train_mix.py \
     --device cuda
 
 echo ""
+echo ">>> PHASE 2 (QWEN ATTENTION ZOO) COMPLETE AT $(date) <<<"
+
+# -----------------------------------------------------------------------------
+# PHASE 3: Canonical 5-Format Multi-Zoo Persistence Export
+# (JSON, JSONL, CSV, Markdown Summary, Parquet)
+# -----------------------------------------------------------------------------
+echo ""
+echo ">>> [STAGE 3/3] EXPORTING DUAL-ZOO CANONICAL 5-FORMAT LEDGERS AT $(date) <<<"
+$PYTHON scripts/benchmarks/export_dual_zoo_5formats.py \
+    --bert-comp-ledger /tmp/neuralops_run/results/bert_compressor_zoo/multirank_lora_ledger.jsonl \
+    --qwen-attn-ledger /tmp/neuralops_run/results/qwen_attention_zoo/metrics.jsonl \
+    --output-dir /tmp/neuralops_run/results/dual_zoo_5formats \
+    --require-parquet \
+    --overwrite
+
+echo ""
 echo "================================================================================"
 echo "MASTER DUAL-ZOO PIPELINE FULLY COMPLETED AT $(date)"
 echo "================================================================================"

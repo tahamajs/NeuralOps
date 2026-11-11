@@ -1,4 +1,10 @@
 #!/bin/bash
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
 # =============================================================================
 # Automated Extended Remediation for Low-Accuracy / Low-Delta / Failed VLM Keys
 # Uses Offline Teacher Cache (0 MB Teacher VRAM) with Double Training Budget (240s)
