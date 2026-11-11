@@ -86,6 +86,7 @@ def train_single_llama_attention(
     model_name: str = "/home/tahamajlesi.ut/NeuralOps/models/tinyllama_1.1b",
     gradient_checkpointing: bool = False,
     teacher_cache: Optional[dict[str, Any]] = None,
+    base_model: Optional[nn.Module] = None,
 ) -> dict[str, Any]:
     """Runs 2-stage hidden representation distillation for TinyLlama-1.1B."""
     logger.info("\n" + "=" * 80)
@@ -98,7 +99,9 @@ def train_single_llama_attention(
     if device.type == "cuda":
         torch.cuda.reset_peak_memory_stats(device)
 
-    if teacher_model is not None:
+    if base_model is not None:
+        student = copy.deepcopy(base_model)
+    elif teacher_model is not None:
         student = copy.deepcopy(teacher_model).float()
     else:
         from transformers import AutoModelForCausalLM
@@ -494,6 +497,16 @@ def main() -> None:
 
     logger.info("TinyLlama-1.1B Teacher Baseline WikiText-2 PPL=%.2f", teacher_ppl)
 
+    logger.info("Loading TinyLlama-1.1B CPU base template once for fast in-memory surgery (zero disk-IO reload)...")
+    base_model = AutoModelForCausalLM.from_pretrained(
+        args.model,
+        torch_dtype=torch.float32,
+        local_files_only=True,
+    )
+    base_model.eval()
+    for p in base_model.parameters():
+        p.requires_grad = False
+
     for i, key in enumerate(keys, 1):
         if key in passed:
             logger.info("[%d/%d] Skipping %s (already PASSED).", i, len(keys), key)
@@ -531,6 +544,7 @@ def main() -> None:
                     model_name=args.model,
                     gradient_checkpointing=curr_ckpt,
                     teacher_cache=teacher_cache,
+                    base_model=base_model,
                 )
                 break
             except Exception as e:
