@@ -51,12 +51,10 @@ from qwen_zoo_train_mix import (
     CausalTextDataset,
     _build_cache_wikitext,
     _extract_attention_metadata,
-    _file_size_str,
-    _summarize_attention_doc,
     apply_qwen_attention_surgery,
     evaluate_causal_ppl,
 )
-from neuralops.core.registry import get_module_capabilities
+from neuralops.hub.model_card import generate_unified_model_card
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("llama_zoo_distill")
@@ -69,145 +67,47 @@ def build_llama_readme(
     out_dir: Path,
     meta: dict[str, Any],
 ) -> str:
-    """Generates a complete TinyLlama-1.1B Hugging Face Model Card with YAML frontmatter."""
-    cls_name = meta.get("class_name", attn_key)
-    family = meta.get("family", "attention")
-    mod_path = meta.get("module_path", "neuralops/layers/")
-    docstring = meta.get("docstring") or _summarize_attention_doc(attn_key)
-
-    pre_ppl = result.get("ppl_before")
-    post_ppl = result.get("ppl_after")
-    pre_str = f"{pre_ppl:,.2f}" if isinstance(pre_ppl, (int, float)) and math.isfinite(pre_ppl) else "inf"
-    post_str = f"{post_ppl:,.2f}" if isinstance(post_ppl, (int, float)) and math.isfinite(post_ppl) else "inf"
-    badge_ppl = f"{post_ppl:.2f}" if isinstance(post_ppl, (int, float)) and math.isfinite(post_ppl) else "inf"
-
+    """Generates a complete TinyLlama-1.1B Hugging Face Model Card via the unified NeuralOps generator."""
     slug = attn_key.replace("_", "-")
-    repo_slug = f"tinyllama-1.1b-{slug}-wikitext2"
-    repo_id = f"{result.get('hf_org', 'tahamajs')}/{repo_slug}"
-    adapter_size = _file_size_str(out_dir / "attention_weights.safetensors")
+    repo_id = f"{result.get('hf_org', 'tahamajs')}/tinyllama-1.1b-{slug}-wikitext2"
+    pattern = str(result.get("pattern", "hybrid_3_1"))
+    total_layers = int(result.get("total_layers", 22))
+    surgeried_layers = result.get("surgeried_layers") or (
+        [i for i in range(total_layers) if i % 4 != 3] if pattern == "hybrid_3_1" else list(range(total_layers))
+    )
+    anchor_layers = result.get("anchor_layers") or [i for i in range(total_layers) if i not in set(surgeried_layers)]
 
-    yaml_ppl = ""
-    if isinstance(post_ppl, (int, float)) and math.isfinite(post_ppl):
-        yaml_ppl = f"""model-index:
-  - name: {repo_slug}
-    results:
-      - task:
-          type: text-generation
-          name: Causal Language Modeling
-        dataset:
-          type: Salesforce/wikitext
-          name: WikiText-2 (wikitext-2-raw-v1)
-          split: validation
-        metrics:
-          - type: perplexity
-            value: {post_ppl:.2f}
-            name: WikiText-2 Post-KD Perplexity"""
+    merged_metrics = dict(result)
+    if math.isfinite(teacher_ppl):
+        merged_metrics["teacher_ppl"] = teacher_ppl
 
-    return f"""---
-language:
-  - en
-license: mit
-license_link: https://github.com/tahamajs/NeuralOps/blob/main/LICENSE
-library_name: neuralops
-base_model: TinyLlama/TinyLlama_v1.1
-datasets:
-  - Salesforce/wikitext
-metrics:
-  - perplexity
-tags:
-  - neuralops
-  - llama
-  - tinyllama
-  - attention-zoo
-  - attention-surgery
-  - subquadratic-attention
-  - wikitext-2
-  - knowledge-distillation
-  - {family}
-  - {attn_key}
-pipeline_tag: text-generation
-{yaml_ppl}
----
+    surgery_info = {
+        "pattern": pattern,
+        "total_layers": total_layers,
+        "modified_layers": len(surgeried_layers),
+        "surgeried_layers": surgeried_layers,
+        "anchor_layers": anchor_layers,
+        "modified_components": (
+            f"`{len(surgeried_layers)}/{total_layers}` decoder `model.layers.{{i}}.self_attn` "
+            "+ trained decoder `layernorm`s"
+        ),
+        "frozen_components": (
+            f"`{len(anchor_layers)}` quadratic anchor layers `{anchor_layers}`, "
+            "decoder MLPs (`mlp.*`), `embed_tokens`, and `lm_head`"
+        ),
+        **({k: v for k, v in meta.items() if k in ("class_name", "family", "module_path", "docstring")}),
+    }
 
-# TinyLlama-1.1B ({attn_key}) — NeuralOps LLaMA Attention Surgery Zoo
-
-[![WikiText2 PPL](https://img.shields.io/badge/WikiText2_PPL-{badge_ppl}-brightgreen)](#-empirical-evaluation)
-[![Teacher Baseline](https://img.shields.io/badge/Teacher_Baseline_PPL-{teacher_ppl:.2f}-blue)](#-empirical-evaluation)
-[![Surgery](https://img.shields.io/badge/Surgery-Hybrid_3:1_(17/22_Layers)-purple)](#-llama-surgical-topology)
-[![Weights](https://img.shields.io/badge/Attention_Weights-{adapter_size.replace(' ', '_')}-indigo)](#-packaged-artifacts)
-[![License](https://img.shields.io/badge/License-MIT-green)](https://github.com/tahamajs/NeuralOps/blob/main/LICENSE)
-
-Surgically transplanted and 2-stage distilled checkpoint of **`TinyLlama/TinyLlama_v1.1`** (`LlamaForCausalLM`, `1.1B` params, `22` layers, `D=2048`, `32Q : 4KV` 8:1 GQA) using **`{attn_key}`** (`{cls_name}`) on **WikiText-2 (`Salesforce/wikitext`)**.
-
----
-
-## Architecture & Operator Profile
-
-> **{cls_name}**: {docstring}
-
-- **Registry Key:** `{attn_key}` (`{mod_path}`)
-- **Base LLaMA Geometry:** `22` decoder layers, `hidden_size=2048` ($2^{{11}}$), `num_attention_heads=32` ($2^5$), `num_key_value_heads=4` (8:1 GQA), `head_dim=64`, bias-free projections.
-
----
-
-## LLaMA Surgical Topology (`{result.get('pattern', 'hybrid_3_1')}`)
-
-- **Transplanted Layers (`17 / 22`):** Replaced with `{attn_key}` wrapped in `QwenAttentionAdapter` (8:1 GQA KV-head expansion + single-`o_proj` bias-free weight inheritance).
-- **Anchor Layers (`5 / 22`):** `[3, 7, 11, 15, 19]` retain exact native `LlamaAttention` GQA softmax.
-
----
-
-## Empirical Evaluation
-
-| Metric | Value | Notes |
-|---|---:|---|
-| **Teacher Baseline (`TinyLlama/TinyLlama_v1.1`)** | **`{teacher_ppl:.2f}`** | Reference WikiText-2 Causal Perplexity |
-| **Pre-KD Zero-Shot Student PPL** | `{pre_str}` | Immediately post 17/22 surgery |
-| **Post-KD Distilled Student PPL** | **`{post_str}`** | After 2-stage hidden representation distillation |
-| **Optimization Steps & Duration** | `{result.get('total_steps', 0)}` steps in `{result.get('train_secs', 0.0):.1f}s` | `Peak VRAM: {result.get('peak_vram_mb', 0)} MB` on RTX 3090 24GB |
-
----
-
-## Packaged Artifacts
-
-- **`attention_weights.safetensors`** (`{adapter_size}`): Distilled attention & layernorm weights (FP16; loads onto base `TinyLlama/TinyLlama_v1.1`).
-- **`config.json`, tokenizer assets, and `training_metrics.json`**
-
----
-
-## Quick Start (Attention-Only Weights)
-
-```python
-import torch
-from huggingface_hub import hf_hub_download
-from safetensors.torch import load_file
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from scripts.benchmarks.qwen_zoo_train_mix import apply_qwen_attention_surgery
-
-repo_id = "{repo_id}"
-tokenizer = AutoTokenizer.from_pretrained(repo_id)
-model = AutoModelForCausalLM.from_pretrained("TinyLlama/TinyLlama_v1.1", torch_dtype=torch.float16)
-model = apply_qwen_attention_surgery(model, attn_key="{attn_key}", pattern="{result.get('pattern', 'hybrid_3_1')}")
-
-ckpt_path = hf_hub_download(repo_id=repo_id, filename="attention_weights.safetensors")
-model.load_state_dict(load_file(ckpt_path), strict=False)
-model.eval()
-```
-
----
-
-## Citation
-
-```bibtex
-@software{{neuralops2026llamazoo,
-  title   = {{NeuralOps: Subquadratic & Hybrid Attention Surgery Zoo for TinyLlama-1.1B}},
-  author  = {{Majlesi, Taha}},
-  year    = {{2026}},
-  url     = {{https://github.com/tahamajs/NeuralOps}},
-  note    = {{Hub Repository: {repo_id}}}
-}}
-```
-"""
+    return generate_unified_model_card(
+        zoo_type="tinyllama",
+        mechanism_key=attn_key,
+        repo_id=repo_id,
+        base_model="TinyLlama/TinyLlama_v1.1",
+        out_dir=out_dir,
+        metrics=merged_metrics,
+        surgery_info=surgery_info,
+        dataset="Salesforce/wikitext",
+    )
 
 
 def train_single_llama_attention(
@@ -233,11 +133,29 @@ def train_single_llama_attention(
     student = apply_qwen_attention_surgery(student, attn_key=attn_key, pattern=pattern)
     student = student.to(device)
 
+    lm_layers = getattr(getattr(student, "model", student), "layers", [])
+    total_layers = len(lm_layers)
+    if pattern == "hybrid_3_1":
+        surgeried_indices = [i for i in range(total_layers) if i % 4 != 3]
+        anchor_indices = [i for i in range(total_layers) if i % 4 == 3]
+    else:
+        surgeried_indices = list(range(total_layers))
+        anchor_indices = []
+    layer_prefix = "model.layers." if hasattr(student, "model") and hasattr(student.model, "layers") else "layers."
+    surgeried_attn_prefixes = tuple(f"{layer_prefix}{i}.self_attn." for i in surgeried_indices)
+    anchor_attn_prefixes = tuple(f"{layer_prefix}{i}.self_attn." for i in anchor_indices)
+
     pre_ppl = evaluate_causal_ppl(student, val_loader, device)
     logger.info("[%s] Pre-KD WikiText-2 PPL=%.2f", attn_key, pre_ppl)
 
     for name, p in student.named_parameters():
-        p.requires_grad = ("self_attn" in name) or ("layernorm" in name.lower())
+        if any(name.startswith(pref) for pref in surgeried_attn_prefixes):
+            p.requires_grad = True
+        elif "layernorm" in name.lower():
+            p.requires_grad = True
+        else:
+            p.requires_grad = False
+    trained_param_names = {name for name, p in student.named_parameters() if p.requires_grad}
 
     t_start = time.time()
     t_s1_end = t_start + train_secs * 0.30
@@ -331,6 +249,9 @@ def train_single_llama_attention(
         "attn_key": attn_key,
         "dataset": "wikitext-2",
         "pattern": pattern,
+        "total_layers": total_layers,
+        "surgeried_layers": surgeried_indices,
+        "anchor_layers": anchor_indices,
         "teacher_ppl": round(teacher_ppl, 2),
         "ppl_before": round(pre_ppl, 2) if math.isfinite(pre_ppl) else None,
         "ppl_after": round(post_ppl, 2) if math.isfinite(post_ppl) else None,
@@ -348,21 +269,79 @@ def train_single_llama_attention(
     out_dir.mkdir(parents=True, exist_ok=True)
     tokenizer.save_pretrained(str(out_dir))
 
+    # Filter strictly to surgeried decoder self_attn prefixes + trained layernorms (exclude frozen anchor layers)
     attn_state = {
-        k: v.detach().cpu().half().clone().contiguous()
+        k: (v.detach().cpu().half() if v.is_floating_point() else v.detach().cpu()).clone().contiguous()
         for k, v in student.state_dict().items()
-        if any(term in k.lower() for term in ("self_attn", "attention", "adapter", "lora", "layernorm"))
+        if not (any(k.startswith(ap) for ap in anchor_attn_prefixes) and k not in trained_param_names)
+        and (
+            any(k.startswith(sp) for sp in surgeried_attn_prefixes)
+            or (k in trained_param_names and "layernorm" in k.lower())
+        )
     }
-    from safetensors.torch import save_file
 
-    save_file(attn_state, str(out_dir / "attention_weights.safetensors"))
+    saved_via_helper = False
+    try:
+        from neuralops.models.surgical_io import save_surgical_delta
+        save_surgical_delta(
+            student,
+            out_dir,
+            base_model_id="TinyLlama/TinyLlama_v1.1",
+            surgeried_prefixes=[p.rstrip(".") for p in surgeried_attn_prefixes],
+            trained_param_names=sorted(trained_param_names),
+            anchor_prefixes=[p.rstrip(".") for p in anchor_attn_prefixes],
+            operations=[{"op": "replace_attention", "attn_key": attn_key, "pattern": pattern}],
+            metadata={
+                "zoo_type": "tinyllama",
+                "attention_type": attn_key,
+                "pattern": pattern,
+                "total_layers": total_layers,
+                "surgeried_layers": surgeried_indices,
+                "anchor_layers": anchor_indices,
+            },
+        )
+        saved_via_helper = True
+    except (ImportError, TypeError, AttributeError):
+        pass
+
+    if not saved_via_helper:
+        from safetensors.torch import save_file
+        save_file(attn_state, str(out_dir / "attention_weights.safetensors"))
+        manifest = {
+            "schema_version": "neuralops.surgery/v2",
+            "zoo_type": "tinyllama",
+            "base_model": "TinyLlama/TinyLlama_v1.1",
+            "mechanism_key": attn_key,
+            "pattern": pattern,
+            "total_layers": total_layers,
+            "surgeried_layers": surgeried_indices,
+            "anchor_layers": anchor_indices,
+            "modified_prefixes": list(surgeried_attn_prefixes),
+            "excluded_prefixes": ["embed_tokens", "lm_head", "*.mlp.*", *anchor_attn_prefixes],
+            "operations": [{"op": "replace_attention", "attn_key": attn_key, "pattern": pattern}],
+            "metadata": {"attention_type": attn_key, "pattern": pattern},
+            "weights_file": "attention_weights.safetensors",
+            "weights_format": "attention_only_fp16",
+            "saved_tensor_count": len(attn_state),
+            "saved_tensor_keys": sorted(attn_state.keys()),
+        }
+        (out_dir / "surgical_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+
+    for heavy_name in ("pytorch_model.bin", "model.safetensors", "optimizer.pt"):
+        h_path = out_dir / heavy_name
+        if h_path.exists():
+            h_path.unlink()
 
     cfg = student.config.to_dict()
     cfg["_name_or_path"] = "TinyLlama/TinyLlama_v1.1"
     cfg["base_model_name_or_path"] = "TinyLlama/TinyLlama_v1.1"
     cfg["license"] = "mit"
     cfg["attention_type"] = attn_key
+    cfg["surgery_pattern"] = pattern
+    cfg["surgeried_layers"] = surgeried_indices
+    cfg["anchor_layers"] = anchor_indices
     cfg["weights_format"] = "attention_only_fp16"
+    cfg["saved_tensor_count"] = len(attn_state)
     (out_dir / "config.json").write_text(json.dumps(cfg, indent=2), encoding="utf-8")
     (out_dir / "training_metrics.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
 

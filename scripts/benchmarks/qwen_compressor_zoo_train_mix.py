@@ -49,14 +49,18 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from neuralops.core.compression_pipeline import compress_model
 from neuralops.core.registry import COMPRESSOR_REGISTRY, create_compressor
+from neuralops.hub.model_card import generate_unified_model_card, normalize_base_model_id
 from neuralops.hub.uploader import AsyncHFHubUploader
+from neuralops.models.surgical_io import extract_surgical_manifest
 from scripts.benchmarks.qwen_zoo_train_mix import (
     _build_cache_wikitext,
-    _collect_artifact_sizes,
-    _normalize_base_model_id,
     compute_topk_sparse_kd_loss,
     evaluate_causal_ppl,
 )
+
+
+def _normalize_base_model_id(model_name: str) -> str:
+    return normalize_base_model_id(model_name, zoo_type="qwen_compressor")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("qwen_compressor_zoo_train")
@@ -75,45 +79,82 @@ def _compute_sparsity_pct(model: nn.Module) -> float:
     return round((zero_elems / total_elems) * 100.0, 2)
 
 
-def _save_compressed_weights(student: nn.Module, out_dir: Path) -> int:
-    """Persist compressed / decomposed layer parameters in compact FP16 safetensors."""
-    from safetensors.torch import save_file
+_DELTA_KEYWORDS = (
+    "compress",
+    "lora",
+    "adapter",
+    "factor",
+    "svd",
+    "quant",
+    "mask",
+    "scale",
+    "zero",
+    "u_proj",
+    "v_proj",
+    "weight_u",
+    "weight_v",
+    "core",
+    "codebook",
+    "centroid",
+)
 
+
+def _save_compressed_weights(
+    student: nn.Module,
+    out_dir: Path,
+    *,
+    comp_key: str = "",
+    rank: int = 128,
+    base_model: str = "Qwen/Qwen2.5-0.5B",
+    compressed_prefixes: tuple[str, ...] = (),
+    trained_param_names: set[str] | None = None,
+) -> tuple[int, list[str]]:
+    """Persist ONLY compressed / modified / trained delta parameters in compact FP16 safetensors."""
+    trained_set = trained_param_names or set()
     comp_state: dict[str, torch.Tensor] = {}
-    keywords = (
-        "compress",
-        "lora",
-        "adapter",
-        "factor",
-        "svd",
-        "quant",
-        "mask",
-        "scale",
-        "zero",
-        "u_proj",
-        "v_proj",
-        "weight_u",
-        "weight_v",
-        "core",
-    )
+    saved_prefixes: set[str] = set()
+
     for k, v in student.state_dict().items():
         k_lower = k.lower()
-        if any(term in k_lower for term in keywords):
-            comp_state[k] = (v.detach().cpu().half() if v.is_floating_point() else v.detach().cpu()).contiguous()
+        in_compressed = any(k.startswith(pref) for pref in compressed_prefixes)
+        has_kw = any(term in k_lower for term in _DELTA_KEYWORDS)
+        is_trained = k in trained_set
+        if in_compressed or has_kw or is_trained:
+            comp_state[k] = (v.detach().cpu().half() if v.is_floating_point() else v.detach().cpu()).clone().contiguous()
+            if "." in k:
+                saved_prefixes.add(k.rsplit(".", 1)[0])
 
-    # Include compressed/modified attention & MLP weights so checkpoints are self-contained deltas.
-    for k, v in student.state_dict().items():
-        if k not in comp_state and (".self_attn." in k or ".mlp." in k):
-            comp_state[k] = (v.detach().cpu().half() if v.is_floating_point() else v.detach().cpu()).contiguous()
-
+    sorted_prefixes = sorted(saved_prefixes)
+    from safetensors.torch import save_file
     save_file(comp_state, str(out_dir / "attention_weights.safetensors"))
+    manifest = extract_surgical_manifest(student)
+    manifest.update(
+        {
+            "schema_version": "neuralops.surgery/v2",
+            "zoo_type": "qwen_compressor",
+            "base_model": _normalize_base_model_id(base_model),
+            "mechanism_key": comp_key,
+            "pattern": f"compress_model(method={comp_key}, rank={rank})",
+            "rank": rank,
+            "total_layers": int(getattr(student.config, "num_hidden_layers", 24)),
+            "modified_prefixes": sorted_prefixes,
+            "excluded_prefixes": ["model.embed_tokens.*", "lm_head.* (when uncompressed)"],
+            "operations": [{"op": "compress_model", "method": comp_key, "rank": rank}],
+            "metadata": {"compression_method": comp_key, "rank": rank},
+            "weights_file": "attention_weights.safetensors",
+            "weights_format": "compressor_only_fp16",
+            "saved_tensor_count": len(comp_state),
+            "saved_tensor_keys": sorted(comp_state.keys()),
+        }
+    )
+    (out_dir / "surgical_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
     for heavy_name in ["pytorch_model.bin", "model.safetensors", "optimizer.pt"]:
         h_path = out_dir / heavy_name
         if h_path.exists():
             os.remove(h_path)
 
-    return len(comp_state)
+    return len(comp_state), sorted_prefixes
 
 
 def _build_qwen_comp_readme(
@@ -133,110 +174,40 @@ def _build_qwen_comp_readme(
     train_secs: float,
     peak_vram_mb: int,
     out_dir: Path,
+    modified_prefixes: list[str] | None = None,
 ) -> str:
-    """Construct a complete Hugging Face Model Card for compressed Qwen2.5-0.5B."""
-    base_id = _normalize_base_model_id(base_model)
-    cls_obj = COMPRESSOR_REGISTRY.get(comp_key)
-    cls_doc = ((getattr(cls_obj, "__doc__", None) or "").strip().splitlines()[0]
-               if cls_obj is not None else f"NeuralOps `{comp_key}` compressor.")
-    pre_s = f"{pre_ppl:.2f}" if pre_ppl is not None and math.isfinite(pre_ppl) else "N/A"
-    post_s = f"{post_ppl:.2f}" if post_ppl is not None and math.isfinite(post_ppl) else "N/A"
-    delta_s = (
-        f"{post_ppl - pre_ppl:+.2f}"
-        if (pre_ppl is not None and post_ppl is not None and math.isfinite(pre_ppl) and math.isfinite(post_ppl))
-        else "N/A"
+    """Construct a complete Hugging Face Model Card via the unified NeuralOps generator."""
+    metrics = {
+        "orig_params": orig_params,
+        "comp_params": comp_params,
+        "param_reduction": param_reduction,
+        "compression_ratio": param_reduction,
+        "sparsity_pct": sparsity_pct,
+        "ppl_before": pre_ppl,
+        "ppl_after": post_ppl,
+        "steps_s1": steps_s1,
+        "steps_s2": steps_s2,
+        "total_steps": steps_s1 + steps_s2,
+        "train_secs": train_secs,
+        "peak_vram_mb": peak_vram_mb,
+        "rank": rank,
+    }
+    surgery_info = {
+        "pattern": f"compress_model(method={comp_key}, rank={rank})",
+        "rank": rank,
+        "total_layers": 24,
+        "modified_prefixes": modified_prefixes or [],
+    }
+    return generate_unified_model_card(
+        zoo_type="qwen_compressor",
+        mechanism_key=comp_key,
+        repo_id=repo_id,
+        base_model=_normalize_base_model_id(base_model),
+        out_dir=out_dir,
+        metrics=metrics,
+        surgery_info=surgery_info,
+        dataset="Salesforce/wikitext",
     )
-    artifacts, total_size = _collect_artifact_sizes(out_dir)
-    artifact_rows = "\n".join(f"| `{name}` | {sz} |" for name, sz in artifacts) or "| `attention_weights.safetensors` | FP16 |"
-
-    yaml_results = ""
-    if post_ppl is not None and math.isfinite(post_ppl):
-        yaml_results = f"""model-index:
-  - name: {repo_id}
-    results:
-      - task:
-          type: text-generation
-          name: Causal Language Modeling
-        dataset:
-          type: Salesforce/wikitext
-          name: WikiText-2 (wikitext-2-raw-v1)
-          split: validation
-        metrics:
-          - type: perplexity
-            name: Validation Perplexity
-            value: {post_ppl:.2f}
-          - type: custom
-            name: Parameter Reduction Ratio
-            value: {param_reduction:.3f}"""
-
-    return f"""---
-library_name: neuralops
-base_model: {base_id}
-license: mit
-pipeline_tag: text-generation
-language:
-  - en
-datasets:
-  - Salesforce/wikitext
-tags:
-  - neuralops
-  - model-compression
-  - knowledge-distillation
-  - qwen2.5
-  - {comp_key.replace('_', '-')}
-{yaml_results}
----
-
-# `{repo_id}`
-
-> Compressed **`{base_id}`** checkpoint using NeuralOps **`{comp_key}`** (`rank={rank}`) and healed with 2-Stage Sparse Logit & Hidden-State Knowledge Distillation on **WikiText-2 (`Salesforce/wikitext`)**.
-
-## Compression & Healing Summary
-
-{cls_doc}
-
-| Metric | Value |
-|---|---|
-| **Base Model** | [`{base_id}`](https://huggingface.co/{base_id}) |
-| **Compressor Key** | `{comp_key}` |
-| **Target Rank** | `{rank}` |
-| **Original Parameters** | `{orig_params:,}` |
-| **Compressed Parameters** | `{comp_params:,}` |
-| **Parameter Reduction Ratio** | **{param_reduction:.3f}x** |
-| **Weight Sparsity** | **{sparsity_pct:.2f}%** |
-| **Pre-KD WikiText-2 PPL** | `{pre_s}` |
-| **Post-KD WikiText-2 PPL** | **{post_s}** (`{delta_s}`) |
-| **Distillation Steps (S1 + S2)** | `{steps_s1} + {steps_s2}` (`{train_secs:.1f}s`) |
-| **Peak GPU VRAM** | `{peak_vram_mb} MB` |
-| **Weights Format** | `compressor_only_fp16` (`attention_weights.safetensors`) |
-
-## Checkpoint Artifacts ({total_size})
-
-| File | Size |
-|---|---|
-{artifact_rows}
-
-## Quick Start
-
-```python
-from huggingface_hub import hf_hub_download
-from safetensors.torch import load_file
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from neuralops.core.compression_pipeline import compress_model
-
-repo_id = "{repo_id}"
-tokenizer = AutoTokenizer.from_pretrained(repo_id)
-model = AutoModelForCausalLM.from_pretrained("{base_id}", torch_dtype="auto")
-model = compress_model(model, {{"compressors": [{{"method": "{comp_key}", "rank": {rank}, "force_rank": True, "use_strs": False}}]}})
-
-deltas = load_file(hf_hub_download(repo_id, "attention_weights.safetensors"))
-model.load_state_dict(deltas, strict=False)
-```
-
-## License
-
-Licensed under the **MIT License** (same as [NeuralOps](https://github.com/tahamajs/NeuralOps)).
-"""
 
 
 def train_single_qwen_compressor(
@@ -271,6 +242,7 @@ def train_single_qwen_compressor(
         local_files_only=True,
     )
     orig_params = sum(p.numel() for p in student.parameters())
+    teacher_shapes = {k: tuple(v.shape) for k, v in teacher_model.state_dict().items()}
 
     try:
         cfg = {"compressors": [{"method": comp_key, "rank": rank, "force_rank": True, "use_strs": False}]}
@@ -281,6 +253,23 @@ def train_single_qwen_compressor(
         if hasattr(inst, "compress"):
             res = inst.compress()
             student = res[0] if isinstance(res, tuple) else res
+
+    # Identify strictly compressed/modified prefixes by comparing post-compression state vs base teacher
+    compressed_prefix_set: set[str] = set()
+    teacher_sd = teacher_model.state_dict()
+    for k, v in student.state_dict().items():
+        k_lower = k.lower()
+        t_v = teacher_sd.get(k)
+        is_changed = (
+            t_v is None
+            or tuple(v.shape) != teacher_shapes.get(k)
+            or v.dtype != t_v.dtype
+            or any(term in k_lower for term in _DELTA_KEYWORDS)
+            or not torch.equal(v.detach().cpu().float(), t_v.detach().cpu().float())
+        )
+        if is_changed and "." in k:
+            compressed_prefix_set.add(k.rsplit(".", 1)[0] + ".")
+    compressed_prefixes = tuple(sorted(compressed_prefix_set))
 
     # Normalize any compressed float16 buffers back to FP32 if trainable so GradScaler works safely
     for p in student.parameters():
@@ -354,12 +343,24 @@ def train_single_qwen_compressor(
         opt1.zero_grad(set_to_none=True)
     del opt1
 
-    # Stage 2: End-to-End Unfrozen Top-K Sparse Logit KD + Causal LM CE
+    # Stage 2: End-to-End Compressed/Decoder Healing (Top-K Sparse Logit KD + Causal LM CE)
+    # Keep untouched embed_tokens & lm_head frozen unless compressed to avoid bloat & train/save mismatch
     trainable_s2 = []
-    for p in student.parameters():
-        if p.is_floating_point():
-            p.requires_grad = True
+    trained_param_names: set[str] = set()
+    for name, p in student.named_parameters():
+        in_compressed = any(name.startswith(pref) for pref in compressed_prefixes)
+        is_decoder_target = (".self_attn." in name or ".mlp." in name or "layernorm" in name.lower()) and not name.startswith(("model.embed_tokens.", "lm_head."))
+        should_train = p.is_floating_point() and (in_compressed or is_decoder_target)
+        p.requires_grad = bool(should_train)
+        if p.requires_grad:
             trainable_s2.append(p)
+            trained_param_names.add(name)
+    if not trainable_s2:
+        for name, p in student.named_parameters():
+            if p.is_floating_point():
+                p.requires_grad = True
+                trainable_s2.append(p)
+                trained_param_names.add(name)
 
     opt2 = torch.optim.AdamW(trainable_s2, lr=1.0e-4, weight_decay=0.01)
     student.train()
@@ -429,12 +430,23 @@ def train_single_qwen_compressor(
     if status == "PASSED":
         out_dir.mkdir(parents=True, exist_ok=True)
         tokenizer.save_pretrained(str(out_dir))
-        num_tensors = _save_compressed_weights(student, out_dir)
+        num_tensors, saved_prefixes = _save_compressed_weights(
+            student,
+            out_dir,
+            comp_key=comp_key,
+            rank=rank,
+            base_model=model_name,
+            compressed_prefixes=compressed_prefixes,
+            trained_param_names=trained_param_names,
+        )
 
         cfg_out = student.config.to_dict()
         cfg_out["_name_or_path"] = _normalize_base_model_id(model_name)
+        cfg_out["base_model_name_or_path"] = _normalize_base_model_id(model_name)
+        cfg_out["license"] = "mit"
         cfg_out["compressor_key"] = comp_key
         cfg_out["compression_rank"] = rank
+        cfg_out["compression_ratio"] = round(param_reduction, 3)
         cfg_out["weights_format"] = "compressor_only_fp16"
         cfg_out["saved_tensor_count"] = num_tensors
         (out_dir / "config.json").write_text(json.dumps(cfg_out, indent=2), encoding="utf-8")
@@ -456,6 +468,7 @@ def train_single_qwen_compressor(
             train_secs=total_time,
             peak_vram_mb=peak_vram,
             out_dir=out_dir,
+            modified_prefixes=saved_prefixes,
         )
         (out_dir / "README.md").write_text(readme_text, encoding="utf-8")
         logger.info("[%s] Saved %d compressed tensors + README to %s (PPL: %s -> %s)", comp_key, num_tensors, out_dir, pre_val, post_val)

@@ -228,7 +228,8 @@ def test_fix5_qwen_attention_adapter_single_o_proj_bypass():
 
     # 3. Forward execution contract
     x = torch.randn(2, 8, embed_dim)
-    out, attn_w = adapter(x)
+    res = adapter(x)
+    out, attn_w = res[0], res[1]
     assert out.shape == (2, 8, embed_dim)
     assert attn_w is None
     assert torch.isfinite(out).all()

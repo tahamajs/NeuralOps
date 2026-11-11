@@ -55,6 +55,8 @@ from compressor_multirank_lora_eval import (
     run_fast_lora_recovery,
 )
 from neuralops.core.compression_pipeline import compress_model
+from neuralops.hub.model_card import generate_unified_model_card
+from neuralops.models.surgical_io import extract_surgical_manifest
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("export_bert_comp_hf")
@@ -124,178 +126,52 @@ def build_compressor_readme(
     meta: dict[str, str],
     out_dir: Path,
 ) -> str:
-    """Generates a complete Hugging Face Model Card with full 4-rank Pareto benchmarks."""
-    cls_name = meta.get("class_name", comp_key)
-    family = meta.get("family", "compression")
-    mod_path = meta.get("module_path", "neuralops/compression/")
-    docstring = meta.get("docstring", f"NeuralOps {comp_key} compression operator.")
-
+    """Generates a complete Hugging Face Model Card via the unified NeuralOps generator."""
     rank = int(showcase.get("rank", 64))
     ratio = float(showcase.get("ratio", 1.0))
     orig_params = int(showcase.get("orig_params", 109483778))
     comp_params = int(showcase.get("comp_params", orig_params))
-    reduction_pct = ((orig_params - comp_params) / max(orig_params, 1)) * 100.0
     zero_acc = float(showcase.get("zero_shot_acc", 0.0))
     healed_acc = float(showcase.get("healed_acc", zero_acc))
     lora_healed = bool(showcase.get("lora_healed", False))
-    delta_teacher = healed_acc - TEACHER_BASELINE_ACC
 
     slug = comp_key.replace("_", "-")
-    repo_slug = f"bert-comp-{slug}-sst2"
-    repo_id = f"tahamajs/{repo_slug}"
+    repo_id = f"tahamajs/bert-comp-{slug}-sst2"
 
-    weights_path = out_dir / "pytorch_model.bin"
-    weights_mb = f"{weights_path.stat().st_size / (1024 * 1024):.1f}_MB" if weights_path.exists() else "Compressed_FP16"
-    badge_color = "brightgreen" if healed_acc >= 85.0 else ("green" if healed_acc >= 75.0 else ("yellow" if healed_acc >= 60.0 else "orange"))
+    metrics = {
+        "teacher_acc": TEACHER_BASELINE_ACC,
+        "acc_before": zero_acc,
+        "acc_after": healed_acc,
+        "orig_params": orig_params,
+        "comp_params": comp_params,
+        "compression_ratio": ratio,
+        "lora_healed": lora_healed,
+        "rank": rank,
+        "train_secs": float(showcase.get("train_secs", 0.0) or 0.0),
+        "steps_s1": int(showcase.get("steps_s1", 0) or 0),
+        "steps_s2": int(showcase.get("steps_s2", 50 if lora_healed else 0) or 0),
+        "total_steps": int(showcase.get("total_steps", 50 if lora_healed else 0) or 0),
+        "peak_vram_mb": int(showcase.get("peak_vram_mb", 0) or 0),
+        "timestamp": showcase.get("timestamp", ""),
+    }
+    surgery_info = {
+        "pattern": f"compress_model(method={comp_key}, rank={rank})",
+        "rank": rank,
+        "total_layers": 12,
+        "all_ranks": all_ranks,
+        **({k: v for k, v in meta.items() if k in ("class_name", "family", "module_path", "docstring")}),
+    }
 
-    pareto_rows = []
-    for rec in sorted(all_ranks, key=lambda x: -int(x.get("rank", 0))):
-        r_k = rec.get("rank", "-")
-        if rec.get("status") != "PASSED":
-            pareto_rows.append(f"| `{r_k}` | — | — | `{rec.get('status')}` | — | — |")
-            continue
-        r_ratio = float(rec.get("ratio", 1.0))
-        r_orig = int(rec.get("orig_params", orig_params))
-        r_comp = int(rec.get("comp_params", r_orig))
-        r_red = ((r_orig - r_comp) / max(r_orig, 1)) * 100.0
-        r_zero = float(rec.get("zero_shot_acc", 0.0))
-        r_heal = float(rec.get("healed_acc", r_zero))
-        r_flag = " *(LoRA)*" if rec.get("lora_healed") else ""
-        r_star = " ⭐" if int(r_k) == rank else ""
-        pareto_rows.append(
-            f"| **`{r_k}`{r_star}** | `{r_ratio:.2f}x` | `{r_comp:,}` (`-{r_red:.1f}%`) | `{r_zero:.2f}%` | **`{r_heal:.2f}%`**{r_flag} | `{r_heal - TEACHER_BASELINE_ACC:+.2f}%` |"
-        )
-    pareto_table = "\n".join(pareto_rows)
-
-    return f"""---
-language:
-  - en
-license: mit
-license_link: https://github.com/tahamajs/NeuralOps/blob/main/LICENSE
-library_name: neuralops
-base_model: google-bert/bert-base-uncased
-datasets:
-  - nyu-mll/glue
-metrics:
-  - accuracy
-tags:
-  - neuralops
-  - bert
-  - model-compression
-  - compressor-zoo
-  - lora-healing
-  - glue-sst2
-  - {family}
-  - {comp_key}
-pipeline_tag: text-classification
-model-index:
-  - name: {repo_slug}
-    results:
-      - task:
-          type: text-classification
-          name: Sentiment Classification
-        dataset:
-          type: nyu-mll/glue
-          name: GLUE SST-2
-          config: sst2
-          split: validation
-        metrics:
-          - type: accuracy
-            value: {healed_acc:.2f}
-            name: GLUE SST-2 Validation Accuracy
----
-
-# BERT-Base ({comp_key}) — NeuralOps Compressed & LoRA-Healed Model Zoo
-
-[![SST-2 Acc](https://img.shields.io/badge/GLUE_SST--2_Acc-{healed_acc:.2f}%25-{badge_color})](#-multi-rank-pareto-evaluation-k256-128-64-32)
-[![Teacher Baseline](https://img.shields.io/badge/Teacher_Baseline-{TEACHER_BASELINE_ACC:.2f}%25-blue)](#-multi-rank-pareto-evaluation-k256-128-64-32)
-[![Compression Ratio](https://img.shields.io/badge/Compression-{ratio:.2f}x_({reduction_pct:.1f}%25_Saved)-purple)](#-compression--architecture-profile)
-[![Showcase Rank](https://img.shields.io/badge/Showcase_Rank-k={rank}-teal)](#-multi-rank-pareto-evaluation-k256-128-64-32)
-[![Weights](https://img.shields.io/badge/Weights-{weights_mb}-indigo)](#-packaged-artifacts)
-[![License](https://img.shields.io/badge/License-MIT-green)](https://github.com/tahamajs/NeuralOps/blob/main/LICENSE)
-
-This repository provides a physically compressed and LoRA-healed checkpoint of **`google-bert/bert-base-uncased`** fine-tuned on **GLUE SST-2**, compressed using the **`{comp_key}`** (`{cls_name}`) engine from the [NeuralOps Library](https://github.com/tahamajs/NeuralOps) at Pareto-selected rank **`k={rank}`** (`{ratio:.2f}x` compression ratio, `-{reduction_pct:.1f}%` parameter reduction).
-
----
-
-## Compression & Architecture Profile
-
-> **{cls_name}**: {docstring}
-
-| Property | Specification |
-|---|---|
-| **Registry Key (`COMPRESSOR_REGISTRY`)** | `{comp_key}` |
-| **NeuralOps Class & Family** | `{cls_name}` (`{family}`) |
-| **Source Implementation** | [`{mod_path}`](https://github.com/tahamajs/NeuralOps/blob/main/{mod_path}) |
-| **Base Architecture** | [`google-bert/bert-base-uncased`](https://huggingface.co/google-bert/bert-base-uncased) (`109,483,778` parameters, 12 layers, $D=768$) |
-| **Showcase Rank (`k`)** | **`{rank}`** (`LoRA Recovery Applied: {lora_healed}`) |
-| **Compressed Parameter Count** | **`{comp_params:,}`** (`-{reduction_pct:.2f}%` reduction, **`{ratio:.3f}x`** physical compression ratio) |
-| **Teacher Baseline SST-2 Acc** | `{TEACHER_BASELINE_ACC:.2f}%` |
-| **Showcase Final SST-2 Acc** | **`{healed_acc:.2f}%`** (Zero-Shot: `{zero_acc:.2f}%`, Parity Delta: `{delta_teacher:+.2f}%`) |
-
----
-
-## Multi-Rank Pareto Evaluation (`k=256, 128, 64, 32`)
-
-Evaluated physically on **NVIDIA GeForce RTX 3090 (24GB)** on the GLUE SST-2 validation split (`872` samples). Whenever zero-shot compression drops accuracy by `> 2.0%` alongside `> 1.10x` reduction, NeuralOps applies targeted `r=8` LoRA healing (`50` steps, `lr=2e-4`, 45s budget):
-
-| Rank (`k`) | Physical Ratio | Compressed Params (Reduction) | Zero-Shot Acc | Healed Acc | Parity vs Teacher (`{TEACHER_BASELINE_ACC:.2f}%`) |
-|:---:|:---:|---:|---:|---:|---:|
-{pareto_table}
-
-*(⭐ indicates the serialized checkpoint packaged in this Hugging Face repository.)*
-
----
-
-## Packaged Artifacts
-
-- **`pytorch_model.bin`**: Full serialized compressed BERT state dictionary (with low-rank factors / quantization buffers / LoRA healing adapters baked in).
-- **`config.json`**: Model configuration tagged with `compression_method: "{comp_key}"` and `compression_rank: {rank}`.
-- **`compression_summary.json`**: Complete machine-readable telemetry across all evaluated ranks `[256, 128, 64, 32]`.
-- **Tokenizer Assets**: Standard `bert-base-uncased` vocabulary (`vocab.txt`, `tokenizer.json`, `tokenizer_config.json`).
-
----
-
-## Quick Start (Reconstruction & Inference)
-
-```python
-import torch
-from huggingface_hub import hf_hub_download
-from transformers import AutoTokenizer, BertForSequenceClassification
-from neuralops.core.compression_pipeline import compress_model
-
-repo_id = "{repo_id}"
-tokenizer = AutoTokenizer.from_pretrained(repo_id)
-
-# Reconstruct compressed NeuralOps topology and load serialized compressed + healed weights
-model = BertForSequenceClassification.from_pretrained("google-bert/bert-base-uncased", num_labels=2)
-model = compress_model(model, {{"compressors": [{{"method": "{comp_key}", "rank": {rank}}}]}})
-
-ckpt_path = hf_hub_download(repo_id=repo_id, filename="pytorch_model.bin")
-state_dict = torch.load(ckpt_path, map_location="cpu")
-model.load_state_dict(state_dict, strict=False)
-model.eval()
-
-inputs = tokenizer("NeuralOps achieves strong compression without sacrificing downstream accuracy.", return_tensors="pt")
-with torch.no_grad():
-    logits = model(**inputs).logits
-    pred = logits.argmax(dim=-1).item()
-print("Predicted SST-2 Sentiment (0=Negative, 1=Positive):", pred)
-```
-
----
-
-## Citation
-
-```bibtex
-@software{{neuralops2026compressorzoo,
-  title   = {{NeuralOps: Multi-Rank Compressed BERT-SST2 Zoo with Pareto LoRA Recovery}},
-  author  = {{Majlesi, Taha}},
-  year    = {{2026}},
-  url     = {{https://github.com/tahamajs/NeuralOps}}
-}}
-```
-"""
+    return generate_unified_model_card(
+        zoo_type="bert_compressor",
+        mechanism_key=comp_key,
+        repo_id=repo_id,
+        base_model="google-bert/bert-base-uncased",
+        out_dir=out_dir,
+        metrics=metrics,
+        surgery_info=surgery_info,
+        dataset="nyu-mll/glue",
+    )
 
 
 def main() -> None:
@@ -331,16 +207,39 @@ def main() -> None:
     from transformers import AutoTokenizer, BertForSequenceClassification
     tokenizer = AutoTokenizer.from_pretrained(args.teacher_path, local_files_only=True)
     base_teacher = BertForSequenceClassification.from_pretrained(args.teacher_path, local_files_only=True)
+    base_state = {k: v.detach().cpu().clone() for k, v in base_teacher.state_dict().items()}
 
     vc = torch.load(args.val_cache_path, map_location="cpu")
     val_loader = DataLoader(TensorDataset(vc["input_ids"], vc["attention_mask"], vc["labels"]), batch_size=128, shuffle=False)
     tc = torch.load(args.cache_path, map_location="cpu")
     train_loader = DataLoader(TensorDataset(tc["input_ids"], tc["attention_mask"], tc["labels"]), batch_size=64, shuffle=True)
 
+    delta_keywords = (
+        "compress",
+        "lora",
+        "adapter",
+        "factor",
+        "svd",
+        "quant",
+        "mask",
+        "scale",
+        "zero",
+        "u_proj",
+        "v_proj",
+        "weight_u",
+        "weight_v",
+        "core",
+        "codebook",
+        "centroid",
+    )
+
     for idx, comp_key in enumerate(sorted(by_comp.keys()), 1):
         comp_dir = out_base / comp_key
         summary_file = comp_dir / "compression_summary.json"
-        if summary_file.exists() and ((comp_dir / "pytorch_model.bin").exists() or (comp_dir / "upload_success.json").exists()):
+        if summary_file.exists() and (
+            ((comp_dir / "attention_weights.safetensors").exists() and (comp_dir / "surgical_manifest.json").exists())
+            or (comp_dir / "upload_success.json").exists()
+        ):
             logger.info("[%d/%d] Skipping %s (already packaged).", idx, len(by_comp), comp_key)
             continue
 
@@ -380,7 +279,61 @@ def main() -> None:
 
             comp_dir.mkdir(parents=True, exist_ok=True)
             tokenizer.save_pretrained(str(comp_dir))
-            torch.save(student.cpu().half().state_dict(), comp_dir / "pytorch_model.bin")
+
+            delta_state: dict[str, torch.Tensor] = {}
+            modified_prefixes: set[str] = set()
+            for k, v in student.state_dict().items():
+                v_cpu = v.detach().cpu()
+                base_v = base_state.get(k)
+                is_head = k.startswith(("classifier.", "bert.pooler.", "pooler."))
+                is_new_or_reshaped = base_v is None or tuple(v_cpu.shape) != tuple(base_v.shape)
+                has_comp_kw = any(term in k.lower() for term in delta_keywords)
+                is_modified_val = (
+                    not is_new_or_reshaped
+                    and (v_cpu.dtype != base_v.dtype or not torch.equal(v_cpu.float(), base_v.float()))
+                )
+                if is_head or is_new_or_reshaped or has_comp_kw or is_modified_val:
+                    delta_state[k] = (v_cpu.half() if v_cpu.is_floating_point() else v_cpu).clone().contiguous()
+                    if "." in k:
+                        modified_prefixes.add(k.rsplit(".", 1)[0])
+
+            ops_list = [{"op": "compress_model", "method": comp_key, "rank": rank}]
+            if showcase.get("lora_healed"):
+                ops_list.append({"op": "lora", "rank": 8})
+
+            from safetensors.torch import save_file
+            save_file(delta_state, str(comp_dir / "attention_weights.safetensors"))
+            manifest = extract_surgical_manifest(student)
+            manifest.update(
+                {
+                    "schema_version": "neuralops.surgery/v2",
+                    "zoo_type": "bert_compressor",
+                    "base_model": "google-bert/bert-base-uncased",
+                    "mechanism_key": comp_key,
+                    "pattern": f"compress_model(method={comp_key}, rank={rank})",
+                    "rank": rank,
+                    "lora_healed": bool(showcase.get("lora_healed", False)),
+                    "total_layers": 12,
+                    "modified_prefixes": sorted(modified_prefixes),
+                    "excluded_prefixes": ["bert.embeddings.* (when unmodified)"],
+                    "operations": ops_list,
+                    "metadata": {
+                        "compression_method": comp_key,
+                        "rank": rank,
+                        "lora_rank": 8 if showcase.get("lora_healed") else None,
+                    },
+                    "weights_file": "attention_weights.safetensors",
+                    "weights_format": "compressor_only_fp16",
+                    "saved_tensor_count": len(delta_state),
+                    "saved_tensor_keys": sorted(delta_state.keys()),
+                }
+            )
+            (comp_dir / "surgical_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+
+            for heavy_name in ("pytorch_model.bin", "model.safetensors", "optimizer.pt"):
+                h_path = comp_dir / heavy_name
+                if h_path.exists():
+                    h_path.unlink()
 
             cfg = student.config.to_dict()
             cfg["_name_or_path"] = "google-bert/bert-base-uncased"
@@ -389,6 +342,8 @@ def main() -> None:
             cfg["compression_method"] = comp_key
             cfg["compression_rank"] = rank
             cfg["compression_ratio"] = ratio
+            cfg["weights_format"] = "compressor_only_fp16"
+            cfg["saved_tensor_count"] = len(delta_state)
             (comp_dir / "config.json").write_text(json.dumps(cfg, indent=2), encoding="utf-8")
 
             summary = {
@@ -396,6 +351,7 @@ def main() -> None:
                 "showcase_rank": rank,
                 "showcase_metrics": showcase,
                 "all_ranks": ranks_list,
+                "saved_tensor_count": len(delta_state),
                 "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
             }
             summary_file.write_text(json.dumps(summary, indent=2), encoding="utf-8")

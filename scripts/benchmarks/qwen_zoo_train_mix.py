@@ -497,187 +497,51 @@ def build_qwen_readme(
     grad_accum: int = 4,
     topk: int = 64,
 ) -> str:
-    """Generate a publication-grade Hugging Face model card README.md for distilled Qwen checkpoints."""
+    """Generate a unified, honest Hugging Face model card README.md for distilled Qwen checkpoints."""
+    from neuralops.hub import generate_unified_model_card
+
     base_id = _normalize_base_model_id(base_model)
     attn_slug = attn_key.replace("_", "-")
-    target_repo = repo_id or f"Hooshaai/qwen2.5-0.5b-{attn_slug}-wikitext2"
-    model_short = target_repo.split("/")[-1]
-
+    target_repo = repo_id or f"tahamajs/qwen-2.5-0.5b-{attn_slug}-wikitext2"
     pattern = str(result.get("pattern", "hybrid_3_1"))
-    pre_ppl = float(result.get("ppl_before", 0.0))
-    post_ppl = float(result.get("ppl_after", 0.0))
-    ppl_delta = float(result.get("ppl_delta", post_ppl - pre_ppl))
-    train_secs = float(result.get("train_secs", 0.0))
-    steps_s1 = int(result.get("steps_s1", 0))
-    steps_s2 = int(result.get("steps_s2", 0))
-    total_steps = int(result.get("total_steps", steps_s1 + steps_s2))
-    peak_vram = int(result.get("peak_vram_mb", 0))
-
-    s1_sec_str = f"{dur_s1:.1f}s" if dur_s1 is not None else "30% budget"
-    s2_sec_str = f"{dur_s2:.1f}s" if dur_s2 is not None else "70% budget"
-
-    doc_summary = _summarize_attention_doc(attn_key)
-
-    cls = ATTENTION_REGISTRY.get(attn_key) if attn_key in ATTENTION_REGISTRY else None
-    caps = get_module_capabilities(attn_key) if attn_key in ATTENTION_REGISTRY else {}
-    cls_name = cls.__name__ if cls is not None else attn_key
-
-    def _cap_flag(key: str, default: Any = "N/A") -> str:
-        val = caps.get(key, getattr(cls, key, default) if cls is not None else default)
-        if isinstance(val, bool):
-            return "Yes" if val else "No"
-        return str(val)
-
     if pattern == "hybrid_3_1":
-        preserved_indices = [i for i in range(num_layers) if i % 4 == 3]
-        transplanted_count = num_layers - len(preserved_indices)
-        preserved_str = ", ".join(str(i) for i in preserved_indices)
-        topology_desc = (
-            f"3:1 interleaved hybrid (`hybrid_3_1`): **{transplanted_count}/{num_layers}** layers "
-            f"transplanted with `{attn_key}` via `QwenAttentionAdapter` (14:2 GQA expansion, "
-            f"Single-`o_proj` contract), and **{len(preserved_indices)}/{num_layers}** full quadratic "
-            f"anchor layers preserved at indices `[{preserved_str}]`."
-        )
+        anchor_layers = [i for i in range(num_layers) if i % 4 == 3]
     else:
-        transplanted_count = num_layers
-        preserved_indices = []
-        topology_desc = (
-            f"Full replacement (`all`): **{num_layers}/{num_layers}** decoder layers transplanted "
-            f"with `{attn_key}` via `QwenAttentionAdapter` (14:2 GQA expansion, Single-`o_proj` contract)."
-        )
+        anchor_layers = []
+    surgeried_layers = [i for i in range(num_layers) if i not in set(anchor_layers)]
 
-    ppl_color = (
-        "brightgreen"
-        if post_ppl < 30.0
-        else ("blue" if post_ppl < 60.0 else ("yellow" if post_ppl < 150.0 else "orange"))
+    meta = _extract_attention_metadata().get(attn_key, {})
+    merged = dict(result)
+    if dur_s1 is not None:
+        merged["dur_s1"] = round(float(dur_s1), 1)
+    if dur_s2 is not None:
+        merged["dur_s2"] = round(float(dur_s2), 1)
+
+    return generate_unified_model_card(
+        zoo_type="qwen_attention",
+        mechanism_key=attn_key,
+        repo_id=target_repo,
+        base_model=base_id,
+        out_dir=out_dir,
+        metrics=merged,
+        surgery_info={
+            "total_layers": num_layers,
+            "modified_layers": len(surgeried_layers),
+            "pattern": pattern,
+            "surgeried_layers": surgeried_layers,
+            "anchor_layers": anchor_layers,
+            "modified_components": (
+                f"`{len(surgeried_layers)}/{num_layers}` decoder `model.layers.{{i}}.self_attn` "
+                "+ trained decoder `layernorm`s"
+            ),
+            "frozen_components": (
+                f"`{len(anchor_layers)}` quadratic anchor layers `{anchor_layers}`, "
+                "decoder MLPs (`mlp.*`), `embed_tokens`, and `lm_head`"
+            ),
+            **({k: v for k, v in meta.items() if k in ("class_name", "family", "module_path", "docstring")}),
+        },
+        dataset="Salesforce/wikitext",
     )
-    pattern_badge = pattern.replace("_", "--")
-
-    artifact_rows, weights_badge = _collect_artifact_sizes(out_dir)
-    if artifact_rows:
-        artifact_table = "\n".join(f"| `{fname}` | `{fsize}` |" for fname, fsize in artifact_rows)
-    else:
-        artifact_table = "| `attention_weights.safetensors` | `FP16 adapter checkpoint` |"
-
-    return f"""---
-language:
-  - en
-license: mit
-library_name: neuralops
-base_model: {base_id}
-datasets:
-  - Salesforce/wikitext
-metrics:
-  - perplexity
-tags:
-  - neuralops
-  - qwen2
-  - qwen2.5
-  - attention-zoo
-  - subquadratic-attention
-  - knowledge-distillation
-  - {attn_key}
-pipeline_tag: text-generation
-model-index:
-  - name: {model_short}
-    results:
-      - task:
-          type: text-generation
-          name: Causal Language Modeling
-        dataset:
-          type: Salesforce/wikitext
-          name: wikitext-2-raw-v1
-          split: validation
-        metrics:
-          - type: perplexity
-            value: {post_ppl:.2f}
-            name: WikiText-2 Validation Perplexity
----
-
-# {base_id} ({attn_key}) — NeuralOps Qwen Attention Zoo
-
-[![WikiText-2 PPL](https://img.shields.io/badge/WikiText--2_PPL-{post_ppl:.2f}-{ppl_color})](#-2-stage-knowledge-distillation-telemetry)
-[![Surgery Pattern](https://img.shields.io/badge/Surgery-{pattern_badge}-blue)](#-surgery-topology)
-[![Weights](https://img.shields.io/badge/Weights-{weights_badge}-informational)](#-weight-artifacts)
-[![Base Model](https://img.shields.io/badge/Base_Model-Qwen2.5--0.5B-lightgrey)](https://huggingface.co/{base_id})
-[![License: MIT](https://img.shields.io/badge/License-MIT-green)](https://github.com/tahamajs/NeuralOps/blob/main/LICENSE)
-
-> **Module Summary (`{cls_name}`):** {doc_summary}
-
-This repository contains a distilled **`{base_id}`** checkpoint whose decoder attention blocks have undergone surgical replacement with **`{attn_key}`** from the [NeuralOps](https://github.com/tahamajs/NeuralOps) `ATTENTION_REGISTRY`, trained on **WikiText-2 (`Salesforce/wikitext` / `wikitext-2-raw-v1`)**.
-
----
-
-## Module Capability Profile
-
-| Property | Value |
-|---|---|
-| Registry Key | `{attn_key}` |
-| Implementation Class | `{cls_name}` |
-| Causal Autoregressive Support (`supports_causal`) | `{_cap_flag("supports_causal", True)}` |
-| Bidirectional Support (`supports_bidirectional`) | `{_cap_flag("supports_bidirectional")}` |
-| Cross-Attention Support (`supports_cross_attention`) | `{_cap_flag("supports_cross_attention")}` |
-| Native GQA Support (`supports_gqa`) | `{_cap_flag("supports_gqa")}` |
-| Rotary Position Support (`supports_rope`) | `{_cap_flag("supports_rope")}` |
-| Custom Attention Operator (`is_custom_attention`) | `{_cap_flag("is_custom_attention", True)}` |
-
----
-
-## Surgery Topology
-
-- **Pattern:** `{pattern}`
-- **Layer Layout:** {topology_desc}
-- **Adapter Contract:** `QwenAttentionAdapter` maps `Qwen2Attention` projections (`14` query heads, `2` KV heads, `head_dim=64`, `hidden_size=896`) with automatic 7x KV-head expansion where required and enforces the Single-`o_proj` bypass contract.
-
----
-
-## 2-Stage Knowledge Distillation Telemetry
-
-| Metric / Stage | Value | Notes |
-|---|---:|---|
-| Pre-KD Causal PPL (Stage 0) | `{pre_ppl:.2f}` | Zero-shot post-surgery baseline on `wikitext-2-raw-v1` |
-| Post-KD Causal PPL | **`{post_ppl:.2f}`** | Final validation perplexity |
-| Perplexity Delta ($\\Delta$) | `{ppl_delta:+.2f}` | Negative delta indicates recovery |
-| Stage 1 (Frozen-Backbone Alignment) | `{steps_s1} steps` ({s1_sec_str}) | `lm_head` bypassed; layerwise hidden MSE + cosine (`0.25`) |
-| Stage 2 (Multi-Layer Representation KD) | `{steps_s2} steps` ({s2_sec_str}) | Layerwise hidden MSE + cosine (`0.50`) |
-| Total Optimization Steps / Time | `{total_steps} steps` / `{train_secs:.1f}s` | `seq_len={seq_len}`, `grad_accum={grad_accum}`, `topk={topk}` |
-| Peak GPU VRAM | `{peak_vram} MB` | FP16 autocast with FP32 master student parameters |
-
----
-
-## Weight Artifacts
-
-| Artifact | Size |
-|---|---:|
-{artifact_table}
-
----
-
-## Quick Start (Attention-Only Weights)
-
-```python
-import torch
-from huggingface_hub import hf_hub_download
-from safetensors.torch import load_file
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from scripts.benchmarks.qwen_zoo_train_mix import apply_qwen_attention_surgery
-
-base_model_id = "{base_id}"
-repo_id = "{target_repo}"
-tokenizer = AutoTokenizer.from_pretrained(repo_id)
-model = AutoModelForCausalLM.from_pretrained(base_model_id, torch_dtype=torch.float16)
-model = apply_qwen_attention_surgery(model, attn_key="{attn_key}", pattern="{pattern}")
-
-ckpt_path = hf_hub_download(repo_id=repo_id, filename="attention_weights.safetensors")
-model.load_state_dict(load_file(ckpt_path), strict=False)
-model = model.eval()
-
-inputs = tokenizer("NeuralOps subquadratic attention enables", return_tensors="pt")
-with torch.no_grad():
-    out = model.generate(**inputs, max_new_tokens=32)
-print(tokenizer.decode(out[0], skip_special_tokens=True))
-```
-"""
 
 
 def train_single_qwen_attention(
@@ -695,7 +559,8 @@ def train_single_qwen_attention(
     stage2_frac: float = 0.70,
     topk: int = 64,
     grad_accum: int = 4,
-    hf_org: str = "Hooshaai",
+    hf_org: str = "tahamajs",
+    gradient_checkpointing: bool = False,
 ) -> dict[str, Any]:
     """Train one transplanted attention mechanism on Qwen with strict budget."""
     logger.info("\n" + "=" * 80)
@@ -711,14 +576,39 @@ def train_single_qwen_attention(
     pre_ppl = evaluate_causal_ppl(student, val_loader, device)
     logger.info("[%s] Pre-KD WikiText-2 Perplexity: PPL=%.2f", attn_key, pre_ppl)
 
+    if gradient_checkpointing and hasattr(student, "gradient_checkpointing_enable"):
+        try:
+            if hasattr(student, "config"):
+                student.config.use_cache = False
+            try:
+                student.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
+            except TypeError:
+                student.gradient_checkpointing_enable()
+            if hasattr(student, "enable_input_require_grads"):
+                student.enable_input_require_grads()
+            logger.info("[%s] Gradient checkpointing enabled on student decoder blocks.", attn_key)
+        except Exception as ckpt_exc:
+            logger.warning("[%s] gradient_checkpointing_enable failed (%s); continuing without.", attn_key, ckpt_exc)
+
     # Timer starts STRICTLY AFTER Stage 0 evaluation finish
     t_train_start = time.time()
     t_s1_deadline = t_train_start + (train_secs * stage1_frac)
     t_s2_deadline = t_train_start + train_secs
 
-    # Stage 1: Frozen-Backbone Subspace Alignment (lm_head bypassed)
+    # Stage 1: Frozen-Backbone Subspace Alignment (keep anchor quadratic layers frozen)
+    total_qwen_layers = int(getattr(student.config, "num_hidden_layers", 24))
+    anchor_indices_s = [i for i in range(total_qwen_layers) if pattern == "hybrid_3_1" and i % 4 == 3]
+    surgeried_indices_s = [i for i in range(total_qwen_layers) if i not in set(anchor_indices_s)]
+    surgeried_attn_prefixes = [f"model.layers.{i}.self_attn" for i in surgeried_indices_s]
+    anchor_attn_prefixes = [f"model.layers.{i}.self_attn" for i in anchor_indices_s]
+
+    trained_param_names: set[str] = set()
     for name, p in student.named_parameters():
-        p.requires_grad = ("self_attn" in name) or ("layernorm" in name.lower())
+        is_anchor = any(name.startswith(ap + ".") for ap in anchor_attn_prefixes)
+        is_target = (not is_anchor) and (("self_attn" in name) or ("layernorm" in name.lower()))
+        p.requires_grad = is_target
+        if is_target:
+            trained_param_names.add(name)
 
     opt1 = torch.optim.AdamW([p for p in student.parameters() if p.requires_grad], lr=2.0e-4, weight_decay=0.01)
     scaler1 = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda"))
@@ -858,18 +748,32 @@ def train_single_qwen_attention(
         "status": "PASSED",
     }
 
-    # Save attention-only + layernorm checkpoint in FP16 (base MLP/embeddings stay on HF Hub)
+    # Save strictly surgeried attention + trained layernorm delta weights & manifest (zero anchor/MLP bloat)
     out_dir.mkdir(parents=True, exist_ok=True)
     tokenizer.save_pretrained(str(out_dir))
 
-    attn_state: dict[str, torch.Tensor] = {}
-    for k, v in student.state_dict().items():
-        k_lower = k.lower()
-        if any(term in k_lower for term in ("self_attn", "attention", "adapter", "lora", "qwen_att", "layernorm")):
-            attn_state[k] = v.detach().cpu().half().clone().contiguous()
+    from neuralops.hub import save_surgical_delta
 
-    from safetensors.torch import save_file
-    save_file(attn_state, str(out_dir / "attention_weights.safetensors"))
+    delta_info = save_surgical_delta(
+        student,
+        out_dir,
+        weights_filename="attention_weights.safetensors",
+        base_model_id=base_model_id,
+        surgeried_prefixes=surgeried_attn_prefixes,
+        trained_param_names=sorted(trained_param_names),
+        anchor_prefixes=anchor_attn_prefixes,
+        operations=[{"component_type": "attention", "operator_key": attn_key, "pattern": pattern, "target_modules": surgeried_attn_prefixes}],
+        metadata={
+            "zoo_type": "qwen_attention",
+            "attention_type": attn_key,
+            "pattern": pattern,
+            "total_layers": num_layers,
+            "surgeried_layers": surgeried_indices_s,
+            "anchor_layers": anchor_indices_s,
+        },
+        half_precision=True,
+        remove_full_weights=True,
+    )
 
     # Normalize and save config.json and training metrics
     qwen_cfg = student.config.to_dict()
@@ -878,6 +782,7 @@ def train_single_qwen_attention(
     qwen_cfg["license"] = "mit"
     qwen_cfg["attention_type"] = attn_key
     qwen_cfg["weights_format"] = "attention_only_fp16"
+    qwen_cfg["saved_tensor_count"] = int(delta_info.get("saved_tensor_count", 0))
     (out_dir / "config.json").write_text(json.dumps(qwen_cfg, indent=2), encoding="utf-8")
     (out_dir / "training_metrics.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
 
@@ -922,6 +827,14 @@ def main() -> None:
     parser.add_argument("--hf_org", default="Hooshaai")
     parser.add_argument("--hf_upload", type=int, default=0)
     parser.add_argument("--keep_local_weights", type=int, default=1)
+    parser.add_argument(
+        "--gradient_checkpointing",
+        nargs="?",
+        const=1,
+        default=0,
+        type=int,
+        help="Enable gradient checkpointing on student decoder blocks (0/1)",
+    )
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     args = parser.parse_args()
 
@@ -1000,73 +913,92 @@ def main() -> None:
             continue
 
         logger.info("\n[%d/%d] Processing Qwen Attention: %s", i + 1, len(keys), key)
-        try:
-            res = train_single_qwen_attention(
-                attn_key=key,
-                teacher_model=teacher,
-                train_loader=train_loader,
-                val_loader=val_loader,
-                device=device,
-                tokenizer=tokenizer,
-                out_dir=ckpt_dir,
-                model_name=args.model,
-                pattern=args.surgery_pattern,
-                train_secs=args.train_secs,
-                topk=args.topk,
-                grad_accum=args.grad_accum,
-                hf_org=args.hf_org,
+        curr_bs = max(1, int(args.batch_size))
+        curr_accum = max(1, int(args.grad_accum))
+        curr_ckpt = bool(args.gradient_checkpointing)
+        res: dict[str, Any] = {}
+
+        while True:
+            curr_train_loader = (
+                train_loader
+                if curr_bs == args.batch_size
+                else DataLoader(train_dataset, batch_size=curr_bs, shuffle=True, drop_last=True)
             )
-        except Exception as e:
-            # PyTorch <= 1.13 raises RuntimeError("CUDA out of memory...") instead of OutOfMemoryError
-            if "out of memory" in str(e).lower():
-                logger.warning("[%s] OOM at batch_size=%d. Halving batch size and retrying...", key, args.batch_size)
-                if device.type == "cuda":
-                    torch.cuda.empty_cache()
-                gc.collect()
-                try:
-                    halved_loader = DataLoader(
-                        train_dataset,
-                        batch_size=max(1, args.batch_size // 2),
-                        shuffle=True,
-                        drop_last=True,
-                    )
-                    res = train_single_qwen_attention(
-                        attn_key=key,
-                        teacher_model=teacher,
-                        train_loader=halved_loader,
-                        val_loader=val_loader,
-                        device=device,
-                        tokenizer=tokenizer,
-                        out_dir=ckpt_dir,
-                        model_name=args.model,
-                        pattern=args.surgery_pattern,
-                        train_secs=args.train_secs,
-                        topk=args.topk,
-                        grad_accum=args.grad_accum * 2,
-                        hf_org=args.hf_org,
-                    )
-                except Exception as retry_e:
-                    logger.error("[%s] OOM retry failed: %s", key, retry_e)
-                    if device.type == "cuda":
-                        torch.cuda.empty_cache()
-                    gc.collect()
-                    res = {
-                        "attn_key": key,
-                        "status": "SKIPPED_OOM",
-                        "error": str(retry_e),
-                        "timestamp": datetime.datetime.utcnow().isoformat(),
-                    }
+            curr_val_loader = (
+                val_loader
+                if curr_bs == args.batch_size
+                else DataLoader(val_dataset, batch_size=curr_bs, shuffle=False)
+            )
+            if device.type == "cuda":
+                torch.cuda.reset_peak_memory_stats()
+
+            is_oom = False
+            err_msg = ""
+            try:
+                res = train_single_qwen_attention(
+                    attn_key=key,
+                    teacher_model=teacher,
+                    train_loader=curr_train_loader,
+                    val_loader=curr_val_loader,
+                    device=device,
+                    tokenizer=tokenizer,
+                    out_dir=ckpt_dir,
+                    model_name=args.model,
+                    pattern=args.surgery_pattern,
+                    train_secs=args.train_secs,
+                    topk=args.topk,
+                    grad_accum=curr_accum,
+                    hf_org=args.hf_org,
+                    gradient_checkpointing=curr_ckpt,
+                )
+                break
+            except Exception as e:
+                err_msg = str(e)
+                # PyTorch <= 1.13 raises RuntimeError("CUDA out of memory...") instead of OutOfMemoryError
+                if "out of memory" in err_msg.lower():
+                    is_oom = True
+                else:
+                    logger.error("[%s] Training exception: %s", key, e, exc_info=True)
+
+            # Free failed GPU graph and tensors strictly outside the except block
+            del curr_train_loader, curr_val_loader
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
+            gc.collect()
+
+            if is_oom and (curr_bs > 1 or not curr_ckpt):
+                if not curr_ckpt:
+                    curr_ckpt = True
+                if curr_bs > 1:
+                    next_bs = max(1, curr_bs // 2)
+                    scale = max(1, curr_bs // next_bs)
+                    curr_bs = next_bs
+                    curr_accum = curr_accum * scale
+                logger.warning(
+                    "[%s] OOM encountered. Retrying with batch_size=%d, grad_accum=%d, gradient_checkpointing=%s...",
+                    key,
+                    curr_bs,
+                    curr_accum,
+                    curr_ckpt,
+                )
+                continue
+
+            if is_oom:
+                logger.error("[%s] OOM retry exhausted at batch_size=%d: %s", key, curr_bs, err_msg)
+                res = {
+                    "attn_key": key,
+                    "status": "SKIPPED_OOM",
+                    "error": err_msg,
+                    "timestamp": datetime.datetime.utcnow().isoformat(),
+                }
             else:
-                logger.error("[%s] Training exception: %s", key, e, exc_info=True)
-                if device.type == "cuda":
-                    torch.cuda.empty_cache()
-                gc.collect()
                 res = {
                     "attn_key": key,
                     "status": "FAIL_TRAINING",
-                    "error": str(e),
+                    "error": err_msg,
                     "timestamp": datetime.datetime.utcnow().isoformat(),
                 }
+            break
 
         with open(args.metrics_log, "a", encoding="utf-8") as f:
             f.write(json.dumps(res) + "\n")

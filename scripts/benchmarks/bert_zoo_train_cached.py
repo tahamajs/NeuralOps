@@ -52,7 +52,7 @@ except Exception:
 
 sys.path.insert(0, os.path.abspath("."))
 from neuralops.api import replace_attention
-from neuralops.hub.bert_zoo import generate_bert_model_card_markdown
+from neuralops.hub import generate_unified_model_card, save_surgical_delta
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("bert_zoo_cached_train")
@@ -309,34 +309,53 @@ def train_single_attention_cached(
         "status": "PASSED",
     }
 
-    # Save STRICTLY attention and adapter weights (FP16) - zero base model bloat
+    # Save STRICTLY surgeried attention + trained task head delta weights & manifest (zero base bloat)
     out_dir.mkdir(parents=True, exist_ok=True)
     tokenizer.save_pretrained(str(out_dir))
 
-    # Extract strictly trained attention and task head weights in half precision
-    attn_state: dict[str, torch.Tensor] = {}
-    for k, v in student.state_dict().items():
-        k_lower = k.lower()
-        if any(term in k_lower for term in ("attention", "classifier", "pooler", "adapter", "lora")):
-            attn_state[k] = v.detach().cpu().half().contiguous()
-
-    from safetensors.torch import save_file
-    save_file(attn_state, str(out_dir / "attention_weights.safetensors"))
-
-    # Purge any legacy heavy whole-model files if present
-    for heavy_name in ["pytorch_model.bin", "model.safetensors", "optimizer.pt"]:
-        h_path = out_dir / heavy_name
-        if h_path.exists():
-            try:
-                os.remove(h_path)
-            except Exception:
-                pass
+    num_layers = int(getattr(student.config, "num_hidden_layers", 12))
+    surgeried_prefixes = [f"bert.encoder.layer.{i}.attention" for i in range(num_layers)] + [
+        "bert.pooler",
+        "classifier",
+    ]
+    trained_param_names = sorted([name for name, p in student.named_parameters() if p.requires_grad])
+    delta_info = save_surgical_delta(
+        student,
+        out_dir,
+        weights_filename="attention_weights.safetensors",
+        base_model_id="google-bert/bert-base-uncased",
+        surgeried_prefixes=surgeried_prefixes,
+        trained_param_names=trained_param_names,
+        anchor_prefixes=[],
+        operations=[
+            {
+                "component_type": "attention",
+                "operator_key": attn_key,
+                "pattern": "all",
+                "target_modules": [f"bert.encoder.layer.{i}.attention" for i in range(num_layers)],
+            }
+        ],
+        metadata={
+            "zoo_type": "bert_attention",
+            "attention_type": attn_key,
+            "pattern": "all",
+            "total_layers": num_layers,
+            "surgeried_layers": list(range(num_layers)),
+            "anchor_layers": [],
+        },
+        half_precision=True,
+        remove_full_weights=True,
+    )
 
     # Save lightweight config
     student_cfg = student.config.to_dict()
+    student_cfg["_name_or_path"] = "google-bert/bert-base-uncased"
+    student_cfg["base_model_name_or_path"] = "google-bert/bert-base-uncased"
+    student_cfg["license"] = "mit"
     student_cfg["attention_type"] = attn_key
     student_cfg["neuralops_attention_type"] = attn_key
     student_cfg["weights_format"] = "attention_only_fp16"
+    student_cfg["saved_tensor_count"] = int(delta_info.get("saved_tensor_count", 0))
     student_cfg["auto_map"] = {
         "AutoConfig": "modeling_neuralops_bert.NeuralOpsBertConfig",
         "AutoModel": "modeling_neuralops_bert.NeuralOpsBertModel",
@@ -447,7 +466,27 @@ class NeuralOpsBertForSequenceClassification(BertForSequenceClassification):
 
     slug = attn_key.replace("_", "-")
     repo_id = f"tahamajs/bert-{slug}-sst2"
-    card_md = generate_bert_model_card_markdown(attn_key, result, repo_id)
+    card_md = generate_unified_model_card(
+        zoo_type="bert_attention",
+        mechanism_key=attn_key,
+        repo_id=repo_id,
+        base_model="google-bert/bert-base-uncased",
+        out_dir=out_dir,
+        metrics=result,
+        surgery_info={
+            "total_layers": num_layers,
+            "modified_layers": num_layers,
+            "pattern": "all",
+            "surgeried_layers": list(range(num_layers)),
+            "anchor_layers": [],
+            "modified_components": (
+                f"`{num_layers}/{num_layers}` encoder `bert.encoder.layer.{{i}}.attention` blocks + "
+                "`bert.pooler` + `classifier` head"
+            ),
+            "frozen_components": "Base `bert.embeddings.*` and untouched feed-forward blocks",
+        },
+        dataset="nyu-mll/glue",
+    )
     (out_dir / "README.md").write_text(card_md, encoding="utf-8")
 
     del student
@@ -471,7 +510,14 @@ def main() -> None:
     parser.add_argument("--metrics_log", default="results/bert_attention_zoo/metrics.jsonl")
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--single_key", default=None, help="Train only a single specified key")
-    parser.add_argument("--isolate_workers", type=int, default=1, help="Spawn isolated subprocess per key to protect CUDA context")
+    parser.add_argument(
+        "--isolate_workers",
+        "--isolated_workers",
+        dest="isolate_workers",
+        type=int,
+        default=1,
+        help="Spawn isolated subprocess per key to protect CUDA context",
+    )
     args = parser.parse_args()
 
     device = torch.device(args.device)
@@ -483,32 +529,88 @@ def main() -> None:
     out_base.mkdir(parents=True, exist_ok=True)
     Path(args.metrics_log).parent.mkdir(parents=True, exist_ok=True)
 
+    def _run_with_oom_retry(
+        attn_key: str,
+        cache: dict[str, Any],
+        val_dataset: TensorDataset,
+        tokenizer: Any,
+        ckpt_dir: Path,
+    ) -> dict[str, Any]:
+        curr_bs = max(1, int(args.batch_size))
+        curr_accum = max(1, int(args.grad_accum))
+
+        while True:
+            train_loader = build_cached_dataloader(cache, batch_size=curr_bs, is_cuda=(device.type == "cuda"))
+            val_loader = DataLoader(val_dataset, batch_size=curr_bs, shuffle=False, pin_memory=(device.type == "cuda"))
+            if device.type == "cuda":
+                torch.cuda.reset_peak_memory_stats()
+
+            is_oom = False
+            err_msg = ""
+            non_oom_exc: Exception | None = None
+            try:
+                return train_single_attention_cached(
+                    attn_key=attn_key,
+                    teacher_model_path=args.teacher_path,
+                    train_loader=train_loader,
+                    val_loader=val_loader,
+                    device=device,
+                    tokenizer=tokenizer,
+                    out_dir=ckpt_dir,
+                    train_secs=args.train_secs,
+                    batch_size=curr_bs,
+                    grad_accum=curr_accum,
+                )
+            except Exception as exc:
+                err_msg = str(exc)
+                if "out of memory" in err_msg.lower():
+                    is_oom = True
+                else:
+                    non_oom_exc = exc
+
+            # Cleanup outside except block so the failed traceback releases GPU references
+            del train_loader, val_loader
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
+            gc.collect()
+
+            if non_oom_exc is not None:
+                raise non_oom_exc
+
+            if is_oom and curr_bs > 1:
+                next_bs = max(1, curr_bs // 2)
+                scale = max(1, curr_bs // next_bs)
+                logger.warning(
+                    "[%s] OOM at batch_size=%d. Retrying with batch_size=%d, grad_accum=%d...",
+                    attn_key,
+                    curr_bs,
+                    next_bs,
+                    curr_accum * scale,
+                )
+                curr_bs = next_bs
+                curr_accum = curr_accum * scale
+                continue
+
+            return {
+                "attn_key": attn_key,
+                "status": "SKIPPED_OOM",
+                "error": err_msg,
+                "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+            }
+
     # If single_key is explicitly passed, run only that key directly in this process
     if args.single_key:
         from transformers import AutoTokenizer
         tokenizer = AutoTokenizer.from_pretrained(args.teacher_path, local_files_only=True)
         cache = torch.load(args.cache_path, map_location="cpu")
-        train_loader = build_cached_dataloader(cache, batch_size=args.batch_size, is_cuda=(device.type == "cuda"))
         import datasets
         raw_val = datasets.load_dataset("glue", "sst2", split="validation")
         val_enc = tokenizer(raw_val["sentence"], padding="max_length", truncation=True, max_length=128, return_tensors="pt")
         val_dataset = TensorDataset(val_enc["input_ids"], val_enc["attention_mask"], torch.tensor(raw_val["label"], dtype=torch.long))
-        val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, pin_memory=(device.type == "cuda"))
 
         ckpt_dir = out_base / args.single_key
         logger.info("[WORKER] Training single attention: %s", args.single_key)
-        res = train_single_attention_cached(
-            attn_key=args.single_key,
-            teacher_model_path=args.teacher_path,
-            train_loader=train_loader,
-            val_loader=val_loader,
-            device=device,
-            tokenizer=tokenizer,
-            out_dir=ckpt_dir,
-            train_secs=args.train_secs,
-            batch_size=args.batch_size,
-            grad_accum=args.grad_accum,
-        )
+        res = _run_with_oom_retry(args.single_key, cache, val_dataset, tokenizer, ckpt_dir)
         with open(args.metrics_log, "a", encoding="utf-8") as f:
             f.write(json.dumps(res) + "\n")
         return
@@ -576,29 +678,20 @@ def main() -> None:
             from transformers import AutoTokenizer
             tokenizer = AutoTokenizer.from_pretrained(args.teacher_path, local_files_only=True)
             cache = torch.load(args.cache_path, map_location="cpu")
-            train_loader = build_cached_dataloader(cache, batch_size=args.batch_size, is_cuda=(device.type == "cuda"))
             import datasets
             raw_val = datasets.load_dataset("glue", "sst2", split="validation")
             val_enc = tokenizer(raw_val["sentence"], padding="max_length", truncation=True, max_length=128, return_tensors="pt")
             val_dataset = TensorDataset(val_enc["input_ids"], val_enc["attention_mask"], torch.tensor(raw_val["label"], dtype=torch.long))
-            val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, pin_memory=(device.type == "cuda"))
 
             try:
-                res = train_single_attention_cached(
-                    attn_key=key,
-                    teacher_model_path=args.teacher_path,
-                    train_loader=train_loader,
-                    val_loader=val_loader,
-                    device=device,
-                    tokenizer=tokenizer,
-                    out_dir=ckpt_dir,
-                    train_secs=args.train_secs,
-                    batch_size=args.batch_size,
-                    grad_accum=args.grad_accum,
-                )
+                res = _run_with_oom_retry(key, cache, val_dataset, tokenizer, ckpt_dir)
             except Exception as e:
                 logger.error("[%s] Training exception: %s", key, e, exc_info=True)
                 res = {"attn_key": key, "status": "FAIL_TRAINING", "error": str(e), "timestamp": datetime.datetime.utcnow().isoformat()}
+
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
+            gc.collect()
 
             with open(args.metrics_log, "a", encoding="utf-8") as f:
                 f.write(json.dumps(res) + "\n")
