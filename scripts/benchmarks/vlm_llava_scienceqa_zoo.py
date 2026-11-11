@@ -667,9 +667,7 @@ def main() -> None:
     img_sz = int(getattr(vcfg, "image_size", 384) or 384)
     strategy = str(getattr(teacher.config, "vision_feature_select_strategy", "full"))
     expected_img_tokens = (img_sz // patch_sz) ** 2 + (0 if strategy == "full" else -1 if strategy == "default" else 0)
-    if getattr(teacher.config, "image_seq_length", None):
-        expected_img_tokens = int(teacher.config.image_seq_length)
-    logger.info("LLaVA vision token contract: image_token_index=%d, expected_img_tokens=%d", img_tok_id, expected_img_tokens)
+    logger.info("LLaVA vision token contract: image_token_index=%d, expected_img_tokens=%d (strategy=%s)", img_tok_id, expected_img_tokens, strategy)
 
     train_ex = prepare_scienceqa_batches(
         args.train_data, processor, max_samples=args.max_train_samples, image_token_id=img_tok_id, expected_img_tokens=expected_img_tokens

@@ -157,8 +157,17 @@ def load_tokenized_qwen_corpus(
         val_texts = [t for t in raw["validation"]["text"] if t.strip()]
 
     def text_to_chunks(texts: list[str], max_chunks: Optional[int] = None) -> torch.Tensor:
-        joined = "\n\n".join(texts)
-        tokens = tokenizer(joined, return_tensors="pt", add_special_tokens=False)["input_ids"].squeeze(0)
+        token_parts: list[torch.Tensor] = []
+        target_tokens = (max_chunks * seq_len) if max_chunks is not None else None
+        collected = 0
+        for start in range(0, len(texts), 512):
+            batch_txt = "\n\n".join(texts[start : start + 512])
+            ids = tokenizer(batch_txt, return_tensors="pt", add_special_tokens=False)["input_ids"].squeeze(0)
+            token_parts.append(ids)
+            collected += int(ids.numel())
+            if target_tokens is not None and collected >= target_tokens:
+                break
+        tokens = torch.cat(token_parts, dim=0) if token_parts else torch.empty(0, dtype=torch.long)
         n = (tokens.size(0) // seq_len) * seq_len
         chunks = tokens[:n].view(-1, seq_len)
         if max_chunks is not None and chunks.size(0) > max_chunks:
