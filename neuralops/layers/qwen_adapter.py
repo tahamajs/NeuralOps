@@ -213,13 +213,14 @@ class QwenAttentionAdapter(nn.Module):
         hidden_states: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
         position_ids: Optional[torch.LongTensor] = None,
+        past_key_value: Optional[Any] = None,
         past_key_values: Optional[Any] = None,
         output_attentions: bool = False,
         use_cache: bool = False,
         cache_position: Optional[torch.LongTensor] = None,
         position_embeddings: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
         **kwargs: Any,
-    ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
+    ) -> Tuple[torch.Tensor, Optional[torch.Tensor], Optional[Any]]:
         """
         Forward pass matching Hugging Face Qwen2Attention signature.
         Returns a 2-tuple: (hidden_states, attention_weights_or_None).
@@ -241,9 +242,10 @@ class QwenAttentionAdapter(nn.Module):
             call_kwargs["is_causal"] = True
             call_kwargs["causal"] = True
 
-        if past_key_values is not None:
-            call_kwargs["past_key_value"] = past_key_values
-            call_kwargs["past_key_values"] = past_key_values
+        kv_cache = past_key_value if past_key_value is not None else past_key_values
+        if kv_cache is not None:
+            call_kwargs["past_key_value"] = kv_cache
+            call_kwargs["past_key_values"] = kv_cache
             call_kwargs["use_cache"] = use_cache
 
         # Try forward pass through core module
@@ -277,8 +279,8 @@ class QwenAttentionAdapter(nn.Module):
         # Single-o_proj Contract: apply canonical output projection strictly once
         context = self.o_proj(context)
 
-        # Qwen2DecoderLayer contract: (hidden_states, attn_weights, present_key_value)
-        return (context, attn_weights, past_key_values)
+        # Qwen2DecoderLayer / LlamaDecoderLayer contract: (hidden_states, attn_weights, present_key_value)
+        return (context, attn_weights, kv_cache)
 
 
 __all__ = ["QwenAttentionAdapter"]

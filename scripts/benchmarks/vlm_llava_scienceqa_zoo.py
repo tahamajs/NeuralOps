@@ -445,13 +445,15 @@ def train_single_vlm_attention(
     logger.info("=" * 80)
 
     pad_id = processor.tokenizer.pad_token_id or 0
-    student = copy.deepcopy(teacher_vlm).float()
-    # Freeze vision tower & projector strictly
+    # Keep frozen vision_tower & projector in FP16 to save ~1 GB VRAM; train language_model in FP32 master weights
+    student = copy.deepcopy(teacher_vlm)
     for comp_name in ("vision_tower", "multi_modal_projector"):
         comp = getattr(student, comp_name, None)
         if comp is not None:
+            comp.half()
             for p in comp.parameters():
                 p.requires_grad = False
+    student.language_model = student.language_model.float()
 
     student.language_model = apply_qwen_attention_surgery(student.language_model, attn_key=attn_key, pattern=pattern)
     student = student.to(device)
@@ -697,6 +699,9 @@ def main() -> None:
         if key in passed:
             logger.info("[%d/%d] Skipping %s (already PASSED).", i, len(keys), key)
             continue
+        res = None
+        err_msg = None
+        is_oom = False
         try:
             res = train_single_vlm_attention(
                 attn_key=key,
@@ -716,11 +721,18 @@ def main() -> None:
                 hf_org=args.hf_org,
             )
         except Exception as e:
-            if "out of memory" in str(e).lower() and args.batch_size > 1:
-                logger.warning("[%s] OOM at bs=%d. Retrying at bs=%d...", key, args.batch_size, max(1, args.batch_size // 2))
-                if device.type == "cuda":
-                    torch.cuda.empty_cache()
-                gc.collect()
+            err_msg = str(e)
+            is_oom = "out of memory" in err_msg.lower()
+            if not is_oom:
+                logger.error("[%s] VLM training exception: %s", key, e, exc_info=True)
+
+        if res is None:
+            gc.collect()
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
+            if is_oom and args.batch_size > 1:
+                retry_bs = max(1, args.batch_size // 2)
+                logger.warning("[%s] OOM at bs=%d. Retrying at bs=%d...", key, args.batch_size, retry_bs)
                 try:
                     res = train_single_vlm_attention(
                         attn_key=key,
@@ -735,19 +747,18 @@ def main() -> None:
                         teacher_ppl=teacher_ppl,
                         pattern=args.surgery_pattern,
                         train_secs=args.train_secs,
-                        batch_size=max(1, args.batch_size // 2),
+                        batch_size=retry_bs,
                         grad_accum=args.grad_accum * 2,
                         hf_org=args.hf_org,
                     )
                 except Exception as e2:
                     logger.error("[%s] VLM OOM retry exception: %s", key, e2)
                     res = {"attn_key": key, "status": "SKIPPED_OOM", "error": str(e2), "timestamp": datetime.datetime.utcnow().isoformat() + "Z"}
+                gc.collect()
+                if device.type == "cuda":
+                    torch.cuda.empty_cache()
             else:
-                logger.error("[%s] VLM training exception: %s", key, e, exc_info=True)
-                res = {"attn_key": key, "status": "FAIL_TRAINING", "error": str(e), "timestamp": datetime.datetime.utcnow().isoformat() + "Z"}
-            if device.type == "cuda":
-                torch.cuda.empty_cache()
-            gc.collect()
+                res = {"attn_key": key, "status": "FAIL_TRAINING", "error": err_msg, "timestamp": datetime.datetime.utcnow().isoformat() + "Z"}
         with open(ledger, "a", encoding="utf-8") as f:
             f.write(json.dumps(res) + "\n")
 

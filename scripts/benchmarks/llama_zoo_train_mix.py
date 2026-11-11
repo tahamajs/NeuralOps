@@ -435,6 +435,9 @@ def main() -> None:
         if key in passed:
             logger.info("[%d/%d] Skipping %s (already PASSED).", i, len(keys), key)
             continue
+        res = None
+        err_msg = None
+        is_oom = False
         try:
             res = train_single_llama_attention(
                 attn_key=key,
@@ -451,12 +454,20 @@ def main() -> None:
                 hf_org=args.hf_org,
             )
         except Exception as e:
-            if "out of memory" in str(e).lower():
-                logger.warning("[%s] OOM at bs=%d. Retrying at bs=2...", key, args.batch_size)
+            err_msg = str(e)
+            is_oom = "out of memory" in err_msg.lower()
+            if not is_oom:
+                logger.error("[%s] LLaMA training exception: %s", key, e, exc_info=True)
+
+        if res is None:
+            gc.collect()
+            if device.type == "cuda":
                 torch.cuda.empty_cache()
-                gc.collect()
+            if is_oom and args.batch_size > 1:
+                retry_bs = max(1, args.batch_size // 2)
+                logger.warning("[%s] OOM at bs=%d. Retrying at bs=%d...", key, args.batch_size, retry_bs)
                 try:
-                    halved_loader = DataLoader(CausalTextDataset(train_chunks), batch_size=max(1, args.batch_size // 2), shuffle=True, drop_last=True)
+                    halved_loader = DataLoader(CausalTextDataset(train_chunks), batch_size=retry_bs, shuffle=True, drop_last=True)
                     res = train_single_llama_attention(
                         attn_key=key,
                         teacher_model=teacher,
@@ -472,13 +483,13 @@ def main() -> None:
                         hf_org=args.hf_org,
                     )
                 except Exception as e2:
+                    logger.error("[%s] LLaMA OOM retry exception: %s", key, e2)
                     res = {"attn_key": key, "status": "SKIPPED_OOM", "error": str(e2), "timestamp": datetime.datetime.utcnow().isoformat() + "Z"}
+                gc.collect()
+                if device.type == "cuda":
+                    torch.cuda.empty_cache()
             else:
-                logger.error("[%s] LLaMA training exception: %s", key, e, exc_info=True)
-                res = {"attn_key": key, "status": "FAIL_TRAINING", "error": str(e), "timestamp": datetime.datetime.utcnow().isoformat() + "Z"}
-            if device.type == "cuda":
-                torch.cuda.empty_cache()
-            gc.collect()
+                res = {"attn_key": key, "status": "FAIL_TRAINING", "error": err_msg, "timestamp": datetime.datetime.utcnow().isoformat() + "Z"}
         with open(ledger, "a", encoding="utf-8") as f:
             f.write(json.dumps(res) + "\n")
 
