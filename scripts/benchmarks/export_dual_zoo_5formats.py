@@ -1811,6 +1811,7 @@ def main(argv: list[str] | None = None) -> int:
             qwen_comp_jsonl=args.qwen_comp_jsonl,
             vlm_jsonl=args.vlm_jsonl,
             tinyllama_jsonl=args.tinyllama_jsonl,
+            llama_attn_jsonl=args.llama_attn_jsonl,
         )
     except (FileNotFoundError, FileExistsError, ValueError) as exc:
         LOG.error("Export configuration/input error: %s", exc)
@@ -1830,7 +1831,7 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(summary, indent=2))
     else:
         LOG.info(
-            "Exported %d records (qwen=%d, bert=%d, bert_attn=%d, qwen_comp=%d, vlm=%d, tinyllama=%d) "
+            "Exported %d records (qwen=%d, bert=%d, bert_attn=%d, qwen_comp=%d, vlm=%d, tinyllama=%d, llama=%d) "
             "to %s | statuses=%s | overview=%s",
             summary["total_records"],
             summary["qwen_records"],
@@ -1839,6 +1840,7 @@ def main(argv: list[str] | None = None) -> int:
             summary["qwen_comp_records"],
             summary["vlm_records"],
             summary["tinyllama_records"],
+            summary["llama_records"],
             summary["output_dir"],
             summary["status_counts"],
             summary["zoo_overview"],

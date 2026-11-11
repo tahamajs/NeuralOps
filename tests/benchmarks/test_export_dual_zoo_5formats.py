@@ -599,3 +599,163 @@ def test_symmetric_six_zoos_and_canonical_5formats(tmp_path: Path) -> None:
         "vlm_llava_scienceqa_zoo",
         "tinyllama_1.1b_zoo",
     }
+
+
+def test_llama_attention_zoo_ledger_and_bert_compressor_metrics_schema(tmp_path: Path) -> None:
+    """Validate --llama-attention-ledger flag, flexible BERT compressor metrics.jsonl, and pyarrow schema."""
+    import pandas as pd
+    import pyarrow.parquet as pq
+
+    qwen_ledger = _write_jsonl(
+        tmp_path / "qwen_attn" / "metrics.jsonl",
+        [
+            {
+                "model": "Qwen/Qwen2.5-0.5B",
+                "attn_key": "gated_delta_net",
+                "dataset": "wikitext-2",
+                "pattern": "all",
+                "ppl_before": 48.2,
+                "ppl_after": 19.5,
+                "ppl_delta": -28.7,
+                "train_secs": 120.5,
+                "status": "PASSED",
+            }
+        ],
+    )
+    # BERT compressor record without explicit 'rank', using 'param_reduction' and 'post_kd_acc'
+    bert_comp_ledger = _write_jsonl(
+        tmp_path / "bert_comp" / "metrics.jsonl",
+        [
+            {
+                "compressor": "a3_compressor",
+                "param_reduction": 2.502,
+                "orig_params": 8842752,
+                "comp_params": 3534336,
+                "pre_kd_acc": 85.3,
+                "post_kd_acc": 88.7,
+                "acc_gain": 3.4,
+                "train_secs": 45.2,
+                "status": "PASSED",
+            }
+        ],
+    )
+    bert_attn_ledger = _write_jsonl(
+        tmp_path / "bert_attn" / "metrics.jsonl",
+        [
+            {
+                "attn_key": "adaptive_span_attention",
+                "teacher_baseline_acc": 91.63,
+                "pre_kd_acc": 91.74,
+                "post_kd_acc": 91.06,
+                "acc_delta": -0.69,
+                "train_secs": 35.4,
+                "status": "PASSED",
+            }
+        ],
+    )
+    qwen_comp_ledger = _write_jsonl(
+        tmp_path / "qwen_comp" / "metrics.jsonl",
+        [
+            {
+                "compressor": "wanda_2_4",
+                "rank": 16,
+                "param_reduction": 1.65,
+                "ppl_before": 40.5,
+                "ppl_after": 18.7,
+                "status": "PASSED",
+            }
+        ],
+    )
+    vlm_ledger = _write_jsonl(
+        tmp_path / "vlm_llava" / "metrics.jsonl",
+        [
+            {
+                "attn_key": "retnet_attention",
+                "dataset": "derek-thomas/ScienceQA",
+                "acc_before": 32.0,
+                "acc_after": 69.8,
+                "train_secs": 210.0,
+                "status": "PASSED",
+            }
+        ],
+    )
+    # LLaMA attention zoo using --llama-attention-ledger
+    llama_ledger = _write_jsonl(
+        tmp_path / "llama_attn" / "metrics.jsonl",
+        [
+            {
+                "model": "TinyLlama/TinyLlama_v1.1",
+                "attn_key": "mamba2_attention",
+                "dataset": "wikitext-2",
+                "pattern": "every_other",
+                "teacher_ppl": 9.8,
+                "ppl_before": 35.1,
+                "ppl_after": 12.6,
+                "ppl_delta": -22.5,
+                "train_secs": 240.0,
+                "status": "PASSED",
+            }
+        ],
+    )
+
+    out_dir = tmp_path / "out_llama_and_bert_comp"
+    rc = exporter.main(
+        [
+            "--qwen-attn-ledger",
+            str(qwen_ledger),
+            "--bert-comp-ledger",
+            str(bert_comp_ledger),
+            "--bert-attn-ledger",
+            str(bert_attn_ledger),
+            "--qwen-comp-ledger",
+            str(qwen_comp_ledger),
+            "--vlm-ledger",
+            str(vlm_ledger),
+            "--llama-attention-ledger",
+            str(llama_ledger),
+            "--output-dir",
+            str(out_dir),
+            "--require-parquet",
+        ]
+    )
+    assert rc == exporter.EXIT_SUCCESS
+
+    # Verify zoo_overview contains llama_attention_zoo
+    overview_path = out_dir / "zoo_overview.json"
+    assert overview_path.exists()
+    overview = json.loads(overview_path.read_text(encoding="utf-8"))
+    assert overview["total_records"] == 6
+    assert set(overview["zoos_included"]) == {
+        "qwen_attention_zoo",
+        "bert_compressor_zoo",
+        "bert_attention_zoo",
+        "qwen_compressor_zoo",
+        "vlm_llava_scienceqa_zoo",
+        "llama_attention_zoo",
+    }
+    assert overview["zoos"]["llama_attention_zoo"]["passed_count"] == 1
+    assert overview["zoos"]["llama_attention_zoo"]["metrics_summary"]["post_ppl"]["best_value"] == 12.6
+
+    # Verify BERT compressor parsed rank 0, ratio 2.502, and accuracy 88.7
+    bert_comp_run = overview["zoos"]["bert_compressor_zoo"]
+    assert bert_comp_run["passed_count"] == 1
+    assert bert_comp_run["metrics_summary"]["compression_ratio"]["max"] == 2.502
+    assert bert_comp_run["metrics_summary"]["accuracy"]["best_value"] == 88.7
+
+    # Verify parquet schema integrity with pyarrow and pandas
+    parquet_path = out_dir / "results.parquet"
+    assert parquet_path.exists()
+    table = pq.read_table(parquet_path)
+    assert table.num_rows == 6
+    df = pd.read_parquet(parquet_path)
+    assert len(df) == 6
+    assert set(df["module"].tolist()) == {
+        "gated_delta_net",
+        "a3_compressor",
+        "adaptive_span_attention",
+        "wanda_2_4",
+        "retnet_attention",
+        "mamba2_attention",
+    }
+    # Ensure zero duplicates
+    assert len(df["run_id"].unique()) == 6
