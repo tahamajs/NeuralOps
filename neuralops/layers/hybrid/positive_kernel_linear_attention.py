@@ -539,25 +539,29 @@ class PositiveKernelLinearAttention(BaseAttention):
         B, H, N, F_dim = Q_feat.shape
         D = V.shape[-1]
         device = Q_feat.device
-        dtype = Q_feat.dtype
+        orig_dtype = Q_feat.dtype
 
-        state_kv = torch.zeros(B, H, F_dim, D, device=device, dtype=dtype)
-        state_k = torch.zeros(B, H, F_dim, device=device, dtype=dtype)
+        Q_f = Q_feat.float()
+        K_f = K_feat.float()
+        V_f = V.float()
+
+        state_kv = torch.zeros(B, H, F_dim, D, device=device, dtype=torch.float32)
+        state_k = torch.zeros(B, H, F_dim, device=device, dtype=torch.float32)
 
         if past_len > 0:
             for p_start in range(0, past_len, chunk_size):
                 p_end = min(p_start + chunk_size, past_len)
-                Kp = K_feat[:, :, p_start:p_end]
-                Vp = V[:, :, p_start:p_end]
+                Kp = K_f[:, :, p_start:p_end]
+                Vp = V_f[:, :, p_start:p_end]
                 state_kv = state_kv + torch.matmul(Kp.transpose(-2, -1), Vp)
                 state_k = state_k + Kp.sum(dim=2)
 
         outputs = []
         for start in range(0, N, chunk_size):
             end = min(start + chunk_size, N)
-            Qc = Q_feat[:, :, start:end]
-            Kc = K_feat[:, :, past_len + start : past_len + end]
-            Vc = V[:, :, past_len + start : past_len + end]
+            Qc = Q_f[:, :, start:end]
+            Kc = K_f[:, :, past_len + start : past_len + end]
+            Vc = V_f[:, :, past_len + start : past_len + end]
 
             intra_scores = torch.matmul(Qc, Kc.transpose(-2, -1)).tril()
             if start == 0 and past_len == 0:
@@ -570,7 +574,10 @@ class PositiveKernelLinearAttention(BaseAttention):
                     .unsqueeze(-1)
                     .clamp(min=1e-5)
                 )
-            outputs.append(num / den)
+            out_c = num / den
+            if orig_dtype == torch.float16:
+                out_c = torch.clamp(out_c, min=-65000.0, max=65000.0)
+            outputs.append(out_c.to(orig_dtype))
 
             if end < N:
                 state_kv = state_kv + torch.matmul(Kc.transpose(-2, -1), Vc)
