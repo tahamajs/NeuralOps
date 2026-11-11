@@ -200,22 +200,28 @@ class TwoStageDistillationEngine:
         stage2_frac: float = 0.70,
         lr_s1: float = 2.0e-4,
         lr_s2: float = 6.0e-5,
+        min_lr_s2: float = 1.0e-6,
         weight_decay: float = 0.01,
         grad_accum: int = 4,
         max_grad_norm: float = 1.0,
         topk: int = 64,
         device: Optional[torch.device] = None,
+        use_cosine_scheduler: bool = True,
+        margin_loss_weight: float = 0.5,
     ) -> None:
         self.train_secs = float(train_secs)
         self.stage1_frac = float(stage1_frac)
         self.stage2_frac = float(stage2_frac)
         self.lr_s1 = float(lr_s1)
         self.lr_s2 = float(lr_s2)
+        self.min_lr_s2 = float(min_lr_s2)
         self.weight_decay = float(weight_decay)
         self.grad_accum = max(1, int(grad_accum))
         self.max_grad_norm = float(max_grad_norm)
         self.topk = int(topk)
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.use_cosine_scheduler = bool(use_cosine_scheduler)
+        self.margin_loss_weight = float(margin_loss_weight)
 
     def run(
         self,
@@ -227,6 +233,8 @@ class TwoStageDistillationEngine:
         eval_fn: Optional[Callable[[nn.Module, DataLoader, torch.device], float]] = None,
         log_prefix: str = "",
         gradient_checkpointing: bool = False,
+        train_secs: Optional[float] = None,
+        letter_token_ids: Optional[List[int]] = None,
     ) -> Dict[str, Any]:
         """Execute the two-stage distillation procedure."""
         if teacher_cache is None and teacher_model is None:
@@ -243,9 +251,10 @@ class TwoStageDistillationEngine:
         pre_metric = evaluator(student, val_loader, dev)
         logger.info("%sPre-Distillation Metric: %.2f", log_prefix, pre_metric)
 
+        total_budget_secs = float(train_secs) if train_secs is not None else self.train_secs
         t_start = time.time()
-        t_s1_end = t_start + (self.train_secs * self.stage1_frac)
-        t_s2_end = t_start + self.train_secs
+        t_s1_end = t_start + (total_budget_secs * self.stage1_frac)
+        t_s2_end = t_start + total_budget_secs
 
         layer_indices: Optional[List[int]] = teacher_cache.get("layer_indices") if teacher_cache is not None else None
 
@@ -329,6 +338,7 @@ class TwoStageDistillationEngine:
         student.train()
         step_s2 = 0
         t0_s2 = time.time()
+        dur_s2_total = max(1e-5, t_s2_end - t0_s2)
 
         while time.time() < t_s2_end:
             for batch in train_loader:
@@ -367,24 +377,55 @@ class TwoStageDistillationEngine:
                     if lm_head is None and hasattr(student, "language_model"):
                         lm_head = getattr(student.language_model, "lm_head", None)
 
+                    # Compute auxiliary multiple-choice option loss & margin preservation if metadata present
+                    loss_choice = torch.tensor(0.0, device=dev)
+                    s_last = s_out.hidden_states[-1] if hasattr(s_out, "hidden_states") and s_out.hidden_states else None
+                    if lm_head is not None and s_last is not None and "answer_idx" in batch and "prompt_lens" in batch and self.margin_loss_weight > 0:
+                        ans_indices = batch["answer_idx"].to(dev, non_blocking=True)
+                        prompt_lens = batch["prompt_lens"].to(dev, non_blocking=True)
+                        num_choices_t = batch.get("num_choices", None)
+                        c_losses = []
+                        cand_ids = letter_token_ids
+                        for b_i in range(in_ids.size(0)):
+                            pos = int(prompt_lens[b_i].item()) - 1
+                            tgt = ans_indices[b_i]
+                            n_ch = int(num_choices_t[b_i].item()) if num_choices_t is not None else (len(cand_ids) if cand_ids else 0)
+                            if cand_ids is not None and 0 <= pos < s_last.size(1) and 0 <= tgt.item() < n_ch:
+                                sub_ids = [cid for cid in cand_ids[:n_ch] if 0 <= cid < lm_head.out_features]
+                                if len(sub_ids) == n_ch:
+                                    step_hidden = s_last[b_i : b_i + 1, pos : pos + 1, :]
+                                    full_logits = lm_head(step_hidden)
+                                    opt_logits = full_logits[0, 0, sub_ids].unsqueeze(0)
+                                    ce_c = F.cross_entropy(opt_logits, tgt.unsqueeze(0))
+                                    # Margin preservation: enforce positive logit gap to closest competitor
+                                    correct_val = opt_logits[0, tgt]
+                                    mask = torch.ones(n_ch, dtype=torch.bool, device=dev)
+                                    mask[tgt] = False
+                                    if mask.any():
+                                        max_other = opt_logits[0, mask].max()
+                                        margin_penalty = F.relu(1.0 - (correct_val - max_other))
+                                        ce_c = ce_c + 0.20 * margin_penalty
+                                    if torch.isfinite(ce_c):
+                                        c_losses.append(ce_c)
+                        if c_losses:
+                            loss_choice = torch.stack(c_losses).mean()
+
                     if lm_head is not None and "teacher_topk_vals" in batch and "teacher_topk_idx" in batch:
-                        s_last = s_out.hidden_states[-1]
                         s_logits = lm_head(s_last)
                         loss_kd = compute_topk_sparse_kd_loss_from_cache(
                             s_logits,
                             batch["teacher_topk_vals"].to(dev, non_blocking=True),
                             batch["teacher_topk_idx"].to(dev, non_blocking=True),
                         )
-                        loss = (loss_mse + 0.50 * loss_cos + 0.25 * loss_kd) / self.grad_accum
-                    elif lm_head is not None:
-                        s_last = s_out.hidden_states[-1]
+                        loss = (loss_mse + 0.50 * loss_cos + 0.25 * loss_kd + self.margin_loss_weight * loss_choice) / self.grad_accum
+                    elif lm_head is not None and s_last is not None:
                         logits_shift = lm_head(s_last[:, :-1, :]).contiguous()
                         labels_shift = in_ids[:, 1:].contiguous()
                         ce_loss = F.cross_entropy(logits_shift.view(-1, logits_shift.size(-1)), labels_shift.view(-1))
                         ce_term = ce_loss if torch.isfinite(ce_loss) else 0.0
-                        loss = (loss_mse + 0.50 * loss_cos + 0.25 * ce_term) / self.grad_accum
+                        loss = (loss_mse + 0.50 * loss_cos + 0.25 * ce_term + self.margin_loss_weight * loss_choice) / self.grad_accum
                     else:
-                        loss = (loss_mse + 0.50 * loss_cos) / self.grad_accum
+                        loss = (loss_mse + 0.50 * loss_cos + self.margin_loss_weight * loss_choice) / self.grad_accum
 
                 scaler2.scale(loss).backward()
                 step_s2 += 1
@@ -395,6 +436,11 @@ class TwoStageDistillationEngine:
                     scaler2.step(opt2)
                     scaler2.update()
                     opt2.zero_grad(set_to_none=True)
+                    if self.use_cosine_scheduler:
+                        progress = min(1.0, max(0.0, (time.time() - t0_s2) / dur_s2_total))
+                        cur_lr = self.min_lr_s2 + 0.5 * (self.lr_s2 - self.min_lr_s2) * (1.0 + math.cos(math.pi * progress))
+                        for pg in opt2.param_groups:
+                            pg["lr"] = cur_lr
 
         if step_s2 > 0 and step_s2 % self.grad_accum != 0:
             scaler2.unscale_(opt2)
@@ -402,8 +448,14 @@ class TwoStageDistillationEngine:
             scaler2.step(opt2)
             scaler2.update()
             opt2.zero_grad(set_to_none=True)
+            if self.use_cosine_scheduler:
+                progress = min(1.0, max(0.0, (time.time() - t0_s2) / dur_s2_total))
+                cur_lr = self.min_lr_s2 + 0.5 * (self.lr_s2 - self.min_lr_s2) * (1.0 + math.cos(math.pi * progress))
+                for pg in opt2.param_groups:
+                    pg["lr"] = cur_lr
 
         dur_s2 = time.time() - t0_s2
+        final_lr_s2 = float(opt2.param_groups[0]["lr"])
         del opt2, scaler2
         if dev.type == "cuda":
             torch.cuda.empty_cache()
@@ -436,6 +488,7 @@ class TwoStageDistillationEngine:
             "steps_s2": int(step_s2),
             "total_steps": int(step_s1 + step_s2),
             "peak_vram_mb": int(peak_vram),
+            "final_lr_s2": float(final_lr_s2),
         }
 
 
