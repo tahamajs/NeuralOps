@@ -385,6 +385,8 @@ filterwarnings = [
     "ignore:.*torch.jit.script_method.*:UserWarning",
     "ignore:.*torch.jit.script_method.*:DeprecationWarning",
     "ignore:.*torch.cuda.amp.autocast.*:FutureWarning",
+    "ignore:.*torch.cuda.amp.GradScaler.*:FutureWarning",
+    "ignore:.*CUDA is not available or torch_xla is imported.*:UserWarning",
     "ignore:.*pydantic.*:DeprecationWarning",
     "ignore:.*Support for class-based.*:DeprecationWarning",
     "ignore:.*neuralops.core.compression_engine has moved.*:DeprecationWarning",

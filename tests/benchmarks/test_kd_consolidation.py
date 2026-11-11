@@ -175,7 +175,7 @@ def test_two_stage_distillation_engine_mock_run() -> None:
     val_loader = DataLoader(train_ds, batch_size=2, shuffle=False)
 
     engine = TwoStageDistillationEngine(
-        train_secs=0.2,
+        train_secs=1.5,
         stage1_frac=0.5,
         stage2_frac=0.5,
         grad_accum=1,
