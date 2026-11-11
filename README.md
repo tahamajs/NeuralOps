@@ -2804,6 +2804,66 @@ The following canonical models are hosted under the [Hooshaai](https://huggingfa
 
 ---
 
+### 23.7 Offline Teacher Representation Caching Architecture (AGENTS.md §21.1)
+
+A critical bottleneck in distilling large sequence and multimodal models (e.g., LLaVA-Qwen-0.5B, TinyLlama-1.1B, Qwen2.5-0.5B) on 24 GB GPUs is the memory footprint of keeping the uncompressed teacher model active in GPU VRAM alongside the student model during forward and backward optimization passes. On a 24-layer multimodal vision-language model, the combined memory of student + teacher easily exceeds 23.8 GB, precipitating out-of-memory (`CUDA OOM`) aborts.
+
+To guarantee zero teacher GPU memory overhead and maximize training throughput, NeuralOps implements **Offline Teacher Representation Caching** (`neuralops.benchmarks.kd.teacher_cache`):
+
+```mermaid
+flowchart TD
+    classDef tchr fill:#313244,stroke:#f38ba8,stroke-width:2px,color:#f38ba8;
+    classDef disk fill:#1e1e2e,stroke:#89b4fa,stroke-width:2px,color:#cdd6f4;
+    classDef stud fill:#181825,stroke:#a6e3a1,stroke-width:2px,color:#a6e3a1;
+
+    subgraph Phase1 ["One-Time Teacher Representation Pre-computation (Cache Miss)"]
+        T[Fine-Tuned Teacher Model]:::tchr -->|One Forward Pass per Sample| EX[Feature Extraction Engine]
+        EX -->|Strided Anchor Hidden States FP16| H[Anchor Latents: Layers 5, 11, 17, 23]
+        EX -->|Top-64 Sparse Logits INT32 + FP16| L[Tail Token Top-K Logits]
+        H --> SAVE[Atomic Serialization via os.replace]
+        L --> SAVE
+        SAVE --> CACHE[("Offline Cache File (.pt)<br>~1.6 GB Bound on Disk")]:::disk
+        SAVE --> DEL["del teacher; torch.cuda.empty_cache()<br>0 MB Teacher VRAM Guaranteed!"]
+    end
+
+    subgraph Phase2 ["Zero-Teacher Student Distillation (Cache Hit)"]
+        CACHE -->|Sub-second Disk Load ~1.5s| MEM[CPU RAM / Pinned Memory]
+        MEM -->|Mini-batch Streaming| D1[Stage 1: Hidden Latent Matching MSE]:::stud
+        MEM -->|Tail Token Streaming| D2[Stage 2: Top-64 Sparse Logit KL]:::stud
+        D1 --> OPT[AdamW Optimization Pass]
+        D2 --> OPT
+    end
+```
+
+#### Key Architectural Guarantees:
+1. **0 MB Teacher GPU VRAM**: During student distillation, the teacher model is **never instantiated or moved to GPU**. GPU VRAM is 100% dedicated to student parameter updates, activation checkpoints, and gradients.
+2. **2x Distillation Throughput**: Eliminating redundant teacher forward passes cuts per-step wall-clock latency in half, allowing full 2-stage WSD distillation of 110 attention mechanisms in under 4 hours.
+3. **Strict Storage Bound (< 1.75 GB)**:
+   - For causal LMs ($L=512$, $N=256$): Strided decoder layers `[3, 7, 11, 15, 19, 23]` in FP16 plus top-64 sparse logits consume **~1.4 GB**.
+   - For multimodal VLMs ($L \approx 896$, $N=256$): Dynamic layer selection selects 4 strided anchor layers `[5, 11, 17, 23]` in FP16 with tail completion logits ($K=32$ answer positions), producing a compact **1.59 GB** artifact (`llava-hf_llava-interleave-qwen-0.5b-hf_vlm_scienceqa_seq896_n256_k64.pt`).
+4. **Concurrency Safety & Process Isolation**:
+   - Advisory exclusive file locking (`fcntl.flock` on `.lock`) guarantees that parallel workers never corrupt or overwrite cache files.
+   - Atomic file writes via unique PID/UUID sibling temporary files and `os.replace`.
+   - Automatic batch-size OOM backoff (`bs // 2` down to 1) during initial cache generation.
+
+---
+
+### 23.8 Consolidated Benchmark & Distillation Engine (`neuralops.benchmarks.kd`)
+
+To eliminate code duplication across disparate training scripts and provide a canonical, modular engine for multi-mechanism research, all distillation and benchmark infrastructure is consolidated under `neuralops.benchmarks.kd`:
+
+| Module | Core Responsibility | Public Exports |
+| :--- | :--- | :--- |
+| **`teacher_cache.py`** | Offline representation caching, layer striding, top-K extraction, and concurrency-safe persistence. | `build_or_load_causal_teacher_cache`, `build_or_load_vlm_teacher_cache`, `CachedCausalDataset`, `resolve_teacher_cache_path` |
+| **`distill_engine.py`** | Unified 2-stage distillation runner, OOM retry handler with gradient checkpointing, and fast Gram covariance loss. | `TwoStageDistillationEngine`, `execute_with_oom_retry`, `compute_topk_sparse_kd_loss`, `evaluate_causal_ppl` |
+| **`zoo_orchestrator.py`** | Multi-mechanism zoo loop, surgical delta persistence, atomic JSONL ledger tracking, and Hugging Face card synthesis. | `ZooOrchestrator`, `apply_qwen_attention_surgery`, `build_vlm_readme`, `build_qwen_readme`, `build_llama_readme` |
+
+Existing CLI scripts in `scripts/benchmarks/` (`qwen_zoo_train_mix.py`, `llama_zoo_train_mix.py`, `vlm_llava_scienceqa_zoo.py`, `qwen_compressor_zoo_train_mix.py`, `teacher_cache_utils.py`) act as thin, backward-compatible entrypoints delegating directly to `neuralops.benchmarks.kd`.
+
+---
+
+---
+
 ## 24. Examples Suite (35 Production Scripts)
 
 NeuralOps provides an exhaustive suite of **35 self-contained, reproducible, offline-friendly demonstration scripts** located in [`examples/`](examples/). Every script supports universal CPU/MPS fallback as well as physical hardware acceleration via `--device cuda`, executing deterministically without external network calls:

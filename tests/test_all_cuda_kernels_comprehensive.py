@@ -103,9 +103,9 @@ def test_paged_kv_evict_correctness():
     assert torch.allclose(k_out, k_in[idx])
 
 def test_unified_rope_offset_correctness():
-    x = torch.randn(2, 16, 64)
-    cos = torch.ones(2, 16, 16)
-    sin = torch.zeros(2, 16, 16)
+    x = torch.randn(2, 4, 16, 64)
+    cos = torch.ones(32, 16)
+    sin = torch.zeros(32, 16)
     out = ck.unified_rope_offset(x, cos, sin, rotary_dim=32)
     assert out.shape == x.shape
 
