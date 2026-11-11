@@ -2256,13 +2256,13 @@ def fused_svd_gemm_triton(
         except Exception:
             # allowed-swallow: best-effort-telemetry
             pass
-    V_mat = (V.t() if V.shape[-1] == x.shape[-1] else V).to(dtype=x.dtype)
-    U_mat = (U.t() if U.shape[-1] == V_mat.shape[1] else U).to(dtype=x.dtype)
+    V_mat = (V.t() if V.shape[-1] == x.shape[-1] else V).to(device=x.device, dtype=x.dtype)
+    U_mat = (U.t() if U.shape[-1] == V_mat.shape[1] else U).to(device=x.device, dtype=x.dtype)
     out = torch.matmul(torch.matmul(x, V_mat), U_mat)
     if bias is not None:
-        out = out + bias.to(dtype=x.dtype)
+        out = out + bias.to(device=x.device, dtype=x.dtype)
     if residual is not None:
-        out = out + residual.to(dtype=x.dtype)
+        out = out + residual.to(device=x.device, dtype=x.dtype)
     return out
 
 

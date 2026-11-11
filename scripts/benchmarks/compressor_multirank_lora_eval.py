@@ -63,7 +63,7 @@ logger = logging.getLogger("compressor_lora_eval")
 
 class SimpleLoRALinear(nn.Module):
     """Zero-overhead lightweight LoRA adapter for fast healing."""
-    def __init__(self, base_layer: nn.Module, r: int = 8, alpha: float = 16.0):
+    def __init__(self, base_layer: nn.Module, r: int = 8, alpha: float = 16.0, device: torch.device | None = None):
         super().__init__()
         self.base_layer = base_layer
         for p in self.base_layer.parameters():
@@ -80,9 +80,21 @@ class SimpleLoRALinear(nn.Module):
 
         self.r = r
         self.scaling = alpha / r
+
+        # Infer target device and dtype
+        p_ref = next(base_layer.parameters(), None)
+        b_ref = next(base_layer.buffers(), None)
+        ref = p_ref if p_ref is not None else b_ref
+        target_device = device if device is not None else (ref.device if ref is not None else None)
+        target_dtype = ref.dtype if (ref is not None and ref.is_floating_point()) else torch.float32
+
         if in_f and out_f:
-            self.lora_A = nn.Parameter(torch.randn(r, in_f) * (1.0 / math.sqrt(r)))
-            self.lora_B = nn.Parameter(torch.zeros(out_f, r))
+            self.lora_A = nn.Parameter(
+                torch.randn(r, in_f, device=target_device, dtype=target_dtype) * (1.0 / math.sqrt(r))
+            )
+            self.lora_B = nn.Parameter(
+                torch.zeros(out_f, r, device=target_device, dtype=target_dtype)
+            )
             self.has_lora = True
         else:
             self.has_lora = False
@@ -90,69 +102,134 @@ class SimpleLoRALinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         res = self.base_layer(x)
         if self.has_lora:
-            dtype = x.dtype
-            lora_out = F.linear(F.linear(x.to(self.lora_A.dtype), self.lora_A), self.lora_B) * self.scaling
-            res = res + lora_out.to(dtype)
+            # Guarantee adapter parameters match x's device and dtype
+            if self.lora_A.device != x.device or self.lora_A.dtype != x.dtype:
+                self.lora_A.data = self.lora_A.data.to(device=x.device, dtype=x.dtype)
+            if self.lora_B.device != x.device or self.lora_B.dtype != x.dtype:
+                self.lora_B.data = self.lora_B.data.to(device=x.device, dtype=x.dtype)
+            lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
+            res = res + lora_out
         return res
 
 
-def attach_lora_to_linear_layers(model: nn.Module, r: int = 8) -> int:
+def attach_lora_to_linear_layers(model: nn.Module, r: int = 8, device: torch.device | None = None) -> int:
     """Wraps linear attention/intermediate projection layers with LoRA."""
     lora_count = 0
     for name, module in list(model.named_modules()):
-        if isinstance(module, nn.Linear) and ("attention" in name or "intermediate" in name):
+        is_linear_like = (
+            isinstance(module, nn.Linear)
+            or hasattr(module, "in_features")
+            or "linear" in module.__class__.__name__.lower()
+        ) and not isinstance(module, SimpleLoRALinear)
+        if is_linear_like and ("attention" in name or "intermediate" in name):
             parent_name, child_name = name.rsplit(".", 1) if "." in name else ("", name)
             parent = model.get_submodule(parent_name) if parent_name else model
-            setattr(parent, child_name, SimpleLoRALinear(module, r=r))
+            lora_layer = SimpleLoRALinear(module, r=r, device=device)
+            if device is not None:
+                lora_layer = lora_layer.to(device)
+            setattr(parent, child_name, lora_layer)
             lora_count += 1
     return lora_count
 
 
-def ensure_all_tensors_on_device(model: nn.Module, device: torch.device) -> None:
-    """Recursively ensures all parameters, buffers, and unregistered tensors are on target device."""
+def ensure_all_tensors_on_device(model: nn.Module, device: torch.device) -> nn.Module:
+    """Recursively ensures all parameters, buffers, and unregistered adapter tensors are on target device."""
     model.to(device)
-    for m in model.modules():
-        for attr in ("_shared_V", "V", "U", "bias", "lora_A", "lora_B", "weight"):
-            if hasattr(m, attr):
-                val = getattr(m, attr)
+    for name, module in model.named_modules():
+        for p_name, param in list(module.named_parameters(recurse=False)):
+            if param is not None and param.device != device:
+                param.data = param.data.to(device)
+                if param.grad is not None:
+                    param.grad.data = param.grad.data.to(device)
+        for b_name, buf in list(module.named_buffers(recurse=False)):
+            if buf is not None and buf.device != device:
+                module.register_buffer(b_name, buf.to(device))
+        for attr in ("_shared_V", "V", "U", "bias", "lora_A", "lora_B", "weight", "adapter"):
+            if hasattr(module, attr):
+                val = getattr(module, attr)
                 if isinstance(val, torch.Tensor) and val.device != device:
-                    setattr(m, attr, val.to(device))
+                    if attr in module._buffers:
+                        module.register_buffer(attr, val.to(device))
+                    elif attr in module._parameters:
+                        val.data = val.data.to(device)
+                    else:
+                        setattr(module, attr, val.to(device))
                 elif isinstance(val, nn.Parameter) and val.data.device != device:
                     val.data = val.data.to(device)
+                    if val.grad is not None:
+                        val.grad.data = val.grad.data.to(device)
+        for attr, val in list(module.__dict__.items()):
+            if isinstance(val, torch.Tensor) and val.device != device:
+                if attr in module._buffers:
+                    module.register_buffer(attr, val.to(device))
+                elif attr in module._parameters:
+                    val.data = val.data.to(device)
+                else:
+                    setattr(module, attr, val.to(device))
+            elif isinstance(val, nn.Parameter) and val.data.device != device:
+                val.data = val.data.to(device)
+                if val.grad is not None:
+                    val.grad.data = val.grad.data.to(device)
+    return model
 
 
-def evaluate_sst2_accuracy(model: nn.Module, loader: DataLoader, device: torch.device) -> tuple[float, float]:
+def evaluate_sst2_accuracy(
+    model: nn.Module,
+    loader: DataLoader,
+    device: torch.device,
+    initial_batch_size: int = 128,
+) -> tuple[float, float]:
+    """Evaluates SST-2 accuracy with dynamic batch size backoff (128 -> 64 -> 32 -> 16) on CUDA OOM."""
     model.eval()
-    total_loss, correct, total = 0.0, 0, 0
+    dataset = loader.dataset if isinstance(loader, DataLoader) else loader
+    current_bs = getattr(loader, "batch_size", initial_batch_size) or initial_batch_size
     criterion = nn.CrossEntropyLoss()
 
-    with torch.no_grad():
-        for b_in, b_att, b_lbl in loader:
-            b_in = b_in.to(device, non_blocking=True)
-            b_att = b_att.to(device, non_blocking=True)
-            b_lbl = b_lbl.to(device, non_blocking=True)
+    batch_sizes = [current_bs]
+    for bs in (64, 32, 16):
+        if bs < current_bs:
+            batch_sizes.append(bs)
 
-            try:
-                with torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16):
-                    out = model(input_ids=b_in, attention_mask=b_att)
-                    logits = out.logits
-                    loss = criterion(logits, b_lbl)
-            except RuntimeError as exc:
-                if "out of memory" in str(exc).lower() and b_in.size(0) > 1:
-                    torch.cuda.empty_cache()
-                    half = b_in.size(0) // 2
+    for bs in batch_sizes:
+        if device.type == "cuda":
+            torch.cuda.empty_cache()
+            gc.collect()
+
+        cur_loader = DataLoader(dataset, batch_size=bs, shuffle=False, pin_memory=(device.type == "cuda"))
+        total_loss, correct, total = 0.0, 0, 0
+        oom_encountered = False
+
+        try:
+            with torch.no_grad():
+                for b_in, b_att, b_lbl in cur_loader:
+                    b_in = b_in.to(device, non_blocking=True)
+                    b_att = b_att.to(device, non_blocking=True)
+                    b_lbl = b_lbl.to(device, non_blocking=True)
+
                     with torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16):
-                        out1 = model(input_ids=b_in[:half], attention_mask=b_att[:half])
-                        out2 = model(input_ids=b_in[half:], attention_mask=b_att[half:])
-                        logits = torch.cat([out1.logits, out2.logits], dim=0)
+                        out = model(input_ids=b_in, attention_mask=b_att)
+                        logits = out.logits
                         loss = criterion(logits, b_lbl)
-                else:
-                    raise
 
-            total_loss += loss.item() * len(b_lbl)
-            preds = logits.argmax(dim=-1)
-            correct += (preds == b_lbl).sum().item()
-            total += len(b_lbl)
+                    total_loss += loss.item() * len(b_lbl)
+                    preds = logits.argmax(dim=-1)
+                    correct += (preds == b_lbl).sum().item()
+                    total += len(b_lbl)
+            break
+        except (torch.cuda.OutOfMemoryError, RuntimeError) as exc:
+            if "out of memory" in str(exc).lower() and bs > 16:
+                logger.warning(
+                    "CUDA OOM in SST-2 eval with batch_size=%d. Clearing cache and backing off to %d...",
+                    bs,
+                    bs // 2,
+                )
+                if device.type == "cuda":
+                    torch.cuda.empty_cache()
+                    gc.collect()
+                oom_encountered = True
+                continue
+            else:
+                raise
 
     acc = (correct / total) * 100.0 if total > 0 else 0.0
     avg_loss = total_loss / total if total > 0 else 0.0
@@ -167,31 +244,69 @@ def run_fast_lora_recovery(
     max_steps: int = 50,
     lr: float = 2.0e-4,
 ) -> tuple[float, float]:
-    """Runs 50 fast LoRA gradient steps to heal compression distortion."""
+    """Runs fast LoRA gradient steps to heal compression distortion with dynamic batch backoff (64 -> 32 -> 16)."""
     student.train()
+    ensure_all_tensors_on_device(student, device)
+
+    train_dataset = train_loader.dataset if isinstance(train_loader, DataLoader) else train_loader
+    initial_bs = getattr(train_loader, "batch_size", 64) or 64
+    batch_sizes = [initial_bs]
+    for bs in (32, 16):
+        if bs < initial_bs:
+            batch_sizes.append(bs)
+
     opt = torch.optim.AdamW([p for p in student.parameters() if p.requires_grad], lr=lr, weight_decay=0.01)
     scaler = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda"))
 
-    step = 0
-    t_end = time.time() + 45.0  # hard 45-second deadline
-    while step < max_steps and time.time() < t_end:
-        for batch in train_loader:
-            if step >= max_steps or time.time() >= t_end:
-                break
-            b_in, b_att, b_lbl = batch[0], batch[1], batch[2]
-            b_in = b_in.to(device, non_blocking=True)
-            b_att = b_att.to(device, non_blocking=True)
-            b_lbl = b_lbl.to(device, non_blocking=True)
+    for current_bs in batch_sizes:
+        if device.type == "cuda":
+            torch.cuda.empty_cache()
+            gc.collect()
 
-            with torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16):
-                out = student(input_ids=b_in, attention_mask=b_att)
-                loss = F.cross_entropy(out.logits, b_lbl)
+        cur_train_loader = DataLoader(
+            train_dataset,
+            batch_size=current_bs,
+            shuffle=True,
+            pin_memory=(device.type == "cuda"),
+        )
 
-            scaler.scale(loss).backward()
-            scaler.step(opt)
-            scaler.update()
-            opt.zero_grad(set_to_none=True)
-            step += 1
+        step = 0
+        t_end = time.time() + 45.0  # hard 45-second deadline
+
+        try:
+            while step < max_steps and time.time() < t_end:
+                for batch in cur_train_loader:
+                    if step >= max_steps or time.time() >= t_end:
+                        break
+                    b_in, b_att, b_lbl = batch[0], batch[1], batch[2]
+                    b_in = b_in.to(device, non_blocking=True)
+                    b_att = b_att.to(device, non_blocking=True)
+                    b_lbl = b_lbl.to(device, non_blocking=True)
+
+                    with torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16):
+                        out = student(input_ids=b_in, attention_mask=b_att)
+                        loss = F.cross_entropy(out.logits, b_lbl)
+
+                    scaler.scale(loss).backward()
+                    scaler.step(opt)
+                    scaler.update()
+                    opt.zero_grad(set_to_none=True)
+                    step += 1
+            break
+        except (torch.cuda.OutOfMemoryError, RuntimeError) as e:
+            if "out of memory" in str(e).lower() and current_bs > 16:
+                logger.warning(
+                    "CUDA OOM encountered during LoRA recovery with batch size %d. "
+                    "Clearing cache and backing off (64 -> 32 -> 16)...",
+                    current_bs,
+                )
+                opt.zero_grad(set_to_none=True)
+                if device.type == "cuda":
+                    torch.cuda.empty_cache()
+                    gc.collect()
+                continue
+            else:
+                raise e
 
     healed_acc, healed_loss = evaluate_sst2_accuracy(student, val_loader, device)
     return healed_acc, healed_loss
@@ -297,7 +412,7 @@ def main():
                 # Targeted LoRA recovery if accuracy dropped by >2.0%
                 if delta_zero < -2.0 and ratio > 1.10:
                     logger.info("[%s | rank=%d] Accuracy dropped >2.0%% (%+.2f%%). Triggering LoRA Healing...", key, k, delta_zero)
-                    lora_layers = attach_lora_to_linear_layers(student, r=8)
+                    lora_layers = attach_lora_to_linear_layers(student, r=8, device=device)
                     ensure_all_tensors_on_device(student, device)
 
                     healed_acc, healed_loss = run_fast_lora_recovery(

@@ -131,27 +131,27 @@ class MoDeGPTLowRankLinear(nn.Module):
         V = self._V()
         if V.device != x.device or V.dtype != x.dtype:
             V = V.to(device=x.device, dtype=x.dtype)
-        U = self.U.to(device=x.device, dtype=x.dtype) if (self.U.device != x.device or self.U.dtype != x.dtype) else self.U
-        b = (
-            self.bias.to(device=x.device, dtype=x.dtype)
-            if (self.bias is not None and (self.bias.device != x.device or self.bias.dtype != x.dtype))
-            else self.bias
-        )
+            if self._uses_shared_V:
+                self.register_buffer("_shared_V", V, persistent=True)
+            elif self.V is not None:
+                self.V.data = V
+        if self.U.device != x.device or self.U.dtype != x.dtype:
+            self.U.data = self.U.data.to(device=x.device, dtype=x.dtype)
+        U = self.U
+        if self.bias is not None and (self.bias.device != x.device or self.bias.dtype != x.dtype):
+            self.bias.data = self.bias.data.to(device=x.device, dtype=x.dtype)
+        b = self.bias
 
         has_lora = self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None
         a = None
         bb = None
         if has_lora:
-            a = (
-                self.lora_A.to(device=x.device, dtype=x.dtype)
-                if (self.lora_A.device != x.device or self.lora_A.dtype != x.dtype)
-                else self.lora_A
-            )
-            bb = (
-                self.lora_B.to(device=x.device, dtype=x.dtype)
-                if (self.lora_B.device != x.device or self.lora_B.dtype != x.dtype)
-                else self.lora_B
-            )
+            if self.lora_A.device != x.device or self.lora_A.dtype != x.dtype:
+                self.lora_A.data = self.lora_A.data.to(device=x.device, dtype=x.dtype)
+            if self.lora_B.device != x.device or self.lora_B.dtype != x.dtype:
+                self.lora_B.data = self.lora_B.data.to(device=x.device, dtype=x.dtype)
+            a = self.lora_A
+            bb = self.lora_B
 
         if x.is_cuda:
             # Level 1: Native CUDA C++ fused SVD projection

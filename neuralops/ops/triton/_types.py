@@ -468,15 +468,15 @@ def low_rank_pytorch_fallback(
     D_in = orig_shape[-1]
     x_2d = x.contiguous().view(-1, D_in).float()
 
-    V_mat = (V.t() if V.shape[-1] == D_in else V).float()
+    V_mat = (V.t() if V.shape[-1] == D_in else V).to(device=x.device).float()
     Rank = V_mat.shape[1]
-    U_mat = (U.t() if U.shape[-1] == Rank else U).float()
+    U_mat = (U.t() if U.shape[-1] == Rank else U).to(device=x.device).float()
     D_out = U_mat.shape[1]
 
     h = torch.matmul(x_2d, V_mat)
     y_2d = torch.matmul(h, U_mat)
     if bias is not None:
-        y_2d = y_2d + bias.float()
+        y_2d = y_2d + bias.to(device=x.device).float()
     out_shape = list(orig_shape[:-1]) + [D_out]
     return y_2d.to(x.dtype).view(*out_shape)
 

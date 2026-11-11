@@ -441,13 +441,13 @@ class CosformerAttention(BaseAttention):
             return None
         return (1.0 - am.to(dtype=dtype)) * _neg_inf(dtype)
 
-    def _local_attention(self, Q, K, V_local, padding_mask, seq_len, device, dtype):
+    def _local_attention(self, Q, K, V_local, padding_mask, seq_len, device, dtype, is_decoder: bool = True):
         B, H, L, d = Q.shape
-        neg_inf = _neg_inf(dtype)
+        neg_inf = -1e4 if dtype == torch.float16 else -1e9
 
         idx = torch.arange(L, device=device)
         window_bool = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs() <= self.window_size
-        if self.is_decoder:
+        if is_decoder:
             causal_bool = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
             window_bool = window_bool & causal_bool
 
@@ -480,7 +480,9 @@ class CosformerAttention(BaseAttention):
         attn = F.softmax(scores, dim=-1)
         return torch.matmul(attn, V_local)
 
-    def _forward_causal(self, Q_cos, Q_sin, K_cos, K_sin, V, padding_mask, B, H, d, N, device, dtype):
+    def _forward_causal(
+        self, Q_cos, Q_sin, K_cos, K_sin, V, padding_mask, B, H, d, N, device, dtype, is_decoder: bool = True
+    ):
         """
         O(N d^2) Chunked Causal Linear Attention for Cosformer.
         Avoids materializing O(N^2) attention matrices by decomposing:
@@ -505,7 +507,7 @@ class CosformerAttention(BaseAttention):
                     K_cos = K_cos * valid_k
                     K_sin = K_sin * valid_k
 
-            if not self.is_decoder:
+            if not is_decoder:
                 S_cos = torch.matmul(K_cos.transpose(-1, -2), V)
                 S_sin = torch.matmul(K_sin.transpose(-1, -2), V)
                 Z_cos = K_cos.sum(dim=-2, keepdim=True)
@@ -518,19 +520,6 @@ class CosformerAttention(BaseAttention):
                 denom_safe = safe_linear_attn_denominator(denom, eps=1e-5, floor_val=1e-4)
                 res = num / denom_safe
                 return torch.nan_to_num(res, nan=0.0, posinf=1e4, neginf=-1e4).to(dtype)
-
-            try:
-                from neuralops.ops.cuda.cosformer.cosformer_autograd import cosformer_linear_attention
-
-                out = cosformer_linear_attention(
-                    Q_cos,
-                    K_cos,
-                    V,
-                    is_causal=True,
-                )
-                return torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4).to(dtype)
-            except Exception:
-                pass
 
             chunk_size = 64
             num_chunks = (N + chunk_size - 1) // chunk_size
@@ -590,8 +579,9 @@ class CosformerAttention(BaseAttention):
     ):
         from neuralops.core.mask_utils import mask_kv_states, prepare_mask_and_positions
 
+        raw_mask = attention_mask if attention_mask is not None else kwargs.get("mask", kwargs.get("attention_mask"))
         valid_mask, derived_pos_ids, clean_hidden = prepare_mask_and_positions(
-            hidden_states, attention_mask=attention_mask, position_ids=position_ids
+            hidden_states, attention_mask=raw_mask, position_ids=position_ids
         )
 
         B, N, D = clean_hidden.shape
@@ -607,10 +597,17 @@ class CosformerAttention(BaseAttention):
         K_raw, V_global = mask_kv_states(K_raw, V_global, valid_mask)
         _, V_local = mask_kv_states(K_raw, V_local, valid_mask)
 
-        if self.num_kv_heads != self.num_heads:
-            K_raw = repeat_kv(K_raw, self.kv_repeat)
-            V_global = repeat_kv(V_global, self.kv_repeat)
-            V_local = repeat_kv(V_local, self.kv_repeat)
+        if K_raw.shape[1] != Q_raw.shape[1]:
+            if Q_raw.shape[1] % K_raw.shape[1] == 0:
+                rep = Q_raw.shape[1] // K_raw.shape[1]
+                K_raw = repeat_kv(K_raw, rep)
+                V_global = repeat_kv(V_global, rep)
+                V_local = repeat_kv(V_local, rep)
+            else:
+                rep = math.ceil(Q_raw.shape[1] / K_raw.shape[1])
+                K_raw = repeat_kv(K_raw, rep)[:, : Q_raw.shape[1], :, :]
+                V_global = repeat_kv(V_global, rep)[:, : Q_raw.shape[1], :, :]
+                V_local = repeat_kv(V_local, rep)[:, : Q_raw.shape[1], :, :]
 
         scale = 1.0 / math.sqrt(d)
         Q_scaled = torch.clamp(Q_raw * scale, min=-50.0, max=50.0)
@@ -630,10 +627,26 @@ class CosformerAttention(BaseAttention):
         K_sin = K_k * sin_w
 
         padding_mask = self._build_padding_mask(
-            attention_mask,
+            raw_mask,
             N,
             device,
             dtype=torch.float32,
+        )
+
+        is_causal_mask = False
+        if raw_mask is not None and raw_mask.dim() == 4 and raw_mask.shape[-1] > 1:
+            if raw_mask.dtype == torch.bool:
+                is_causal_mask = bool((~raw_mask[..., 0, -1]).any().item())
+            elif raw_mask.is_floating_point():
+                is_causal_mask = bool((raw_mask[..., 0, -1] < -1.0).any().item())
+
+        is_decoder = bool(
+            self.is_decoder
+            or getattr(self, "is_causal", False)
+            or kwargs.get("is_causal", False)
+            or kwargs.get("is_decoder", False)
+            or kwargs.get("causal", False)
+            or is_causal_mask
         )
 
         global_out = self._forward_causal(
@@ -649,6 +662,7 @@ class CosformerAttention(BaseAttention):
             N,
             device,
             torch.float32,
+            is_decoder=is_decoder,
         )
 
         if N <= 1024:
@@ -660,6 +674,7 @@ class CosformerAttention(BaseAttention):
                 N,
                 device,
                 torch.float32,
+                is_decoder=is_decoder,
             )
             local_out = torch.nan_to_num(local_out, nan=0.0, posinf=1e4, neginf=-1e4)
             context = local_out + self.fusion_scale.to(torch.float32) * global_out

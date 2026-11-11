@@ -428,18 +428,14 @@ def low_rank_pytorch_fallback(
     Pure PyTorch fallback for low-rank projection: y = (x @ V.T) @ U.T + bias.
     Handles flexible shape conventions for U and V.
     """
-    if V.shape[-1] == x.shape[-1]:
-        z = torch.matmul(x, V.transpose(-1, -2))
-    else:
-        z = torch.matmul(x, V)
+    V_eff = (V.transpose(-1, -2) if V.shape[-1] == x.shape[-1] else V).to(device=x.device, dtype=x.dtype)
+    z = torch.matmul(x, V_eff)
 
-    if U.shape[-1] == z.shape[-1]:
-        y = torch.matmul(z, U.transpose(-1, -2))
-    else:
-        y = torch.matmul(z, U)
+    U_eff = (U.transpose(-1, -2) if U.shape[-1] == z.shape[-1] else U).to(device=x.device, dtype=x.dtype)
+    y = torch.matmul(z, U_eff)
 
     if bias is not None:
-        y = y + bias
+        y = y + bias.to(device=x.device, dtype=x.dtype)
     return y
 
 
