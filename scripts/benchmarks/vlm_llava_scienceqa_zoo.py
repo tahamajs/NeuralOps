@@ -109,7 +109,16 @@ def prepare_scienceqa_batches(
     image_token_id: int = 151646,
     expected_img_tokens: int = 729,
 ) -> list[dict[str, Any]]:
-    """Pre-processes image+text ScienceQA pairs into compact CPU tensor examples."""
+    """Pre-processes image+text ScienceQA pairs into compact CPU tensor examples with /dev/shm cache."""
+    cache_file = Path(f"/dev/shm/scienceqa_{Path(data_dir).name}_n{max_samples}_img{expected_img_tokens}.pt")
+    if cache_file.exists():
+        try:
+            examples = torch.load(cache_file, map_location="cpu")
+            logger.info("Loaded %d cached ScienceQA examples from RAM: %s", len(examples), cache_file)
+            return examples
+        except Exception as e:
+            logger.warning("Failed reading ScienceQA RAM cache %s (%s); rebuilding...", cache_file, e)
+
     from datasets import load_from_disk
 
     ds = load_from_disk(data_dir)
@@ -158,6 +167,11 @@ def prepare_scienceqa_batches(
         )
 
     logger.info("Prepared %d multimodal ScienceQA examples from %s", len(examples), data_dir)
+    try:
+        torch.save(examples, cache_file)
+        logger.info("Saved ScienceQA RAM cache: %s", cache_file)
+    except Exception as e:
+        logger.debug("Could not write ScienceQA RAM cache: %s", e)
     return examples
 
 
@@ -543,7 +557,7 @@ def train_single_vlm_attention(
                 loss_mse = torch.stack([F.mse_loss(s, t) for s, t in zip(s_h, t_h)]).mean()
                 loss_cos = torch.stack([1.0 - F.cosine_similarity(s, t, dim=-1).mean() for s, t in zip(s_h, t_h)]).mean()
                 ce_term = s_out.loss if (s_out.loss is not None and torch.isfinite(s_out.loss)) else 0.0
-                loss = (loss_mse + 0.50 * loss_cos + 0.10 * ce_term) / grad_accum
+                loss = (loss_mse + 0.50 * loss_cos + 1.0 * ce_term) / grad_accum
 
             scaler2.scale(loss).backward()
             step_s2 += 1
@@ -640,8 +654,8 @@ def main() -> None:
     parser.add_argument("--train_secs", type=float, default=120.0)
     parser.add_argument("--batch_size", type=int, default=4)
     parser.add_argument("--grad_accum", type=int, default=4)
-    parser.add_argument("--max_train_samples", type=int, default=400)
-    parser.add_argument("--max_val_samples", type=int, default=160)
+    parser.add_argument("--max_train_samples", type=int, default=800)
+    parser.add_argument("--max_val_samples", type=int, default=200)
     parser.add_argument("--hf_org", default="tahamajs")
     parser.add_argument("--device", default="cuda")
     args = parser.parse_args()
@@ -761,6 +775,10 @@ def main() -> None:
                 res = {"attn_key": key, "status": "FAIL_TRAINING", "error": err_msg, "timestamp": datetime.datetime.utcnow().isoformat() + "Z"}
         with open(ledger, "a", encoding="utf-8") as f:
             f.write(json.dumps(res) + "\n")
+
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(0)
 
 
 if __name__ == "__main__":

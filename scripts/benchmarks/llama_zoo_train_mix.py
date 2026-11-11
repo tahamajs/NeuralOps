@@ -300,7 +300,11 @@ def train_single_llama_attention(
                 s_h, t_h = s_out.hidden_states[1:], t_out.hidden_states[1:]
                 loss_mse = torch.stack([F.mse_loss(s, t) for s, t in zip(s_h, t_h)]).mean()
                 loss_cos = torch.stack([1.0 - F.cosine_similarity(s, t, dim=-1).mean() for s, t in zip(s_h, t_h)]).mean()
-                loss = (loss_mse + 0.50 * loss_cos) / grad_accum
+                logits_shift = student.lm_head(s_out.hidden_states[-1][:, :-1, :]).contiguous()
+                labels_shift = in_ids[:, 1:].contiguous()
+                ce_loss = F.cross_entropy(logits_shift.view(-1, logits_shift.size(-1)), labels_shift.view(-1))
+                ce_term = ce_loss if torch.isfinite(ce_loss) else 0.0
+                loss = (loss_mse + 0.50 * loss_cos + 0.25 * ce_term) / grad_accum
             scaler2.scale(loss).backward()
             step_s2 += 1
             if step_s2 % grad_accum == 0:
