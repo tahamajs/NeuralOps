@@ -220,6 +220,8 @@ class ClusterAttention(BaseAttention):
             is_dec = bool(kwargs["is_decoder"])
         elif kwargs.get("is_causal") is not None:
             is_dec = bool(kwargs["is_causal"])
+        elif kwargs.get("causal") is not None:
+            is_dec = bool(kwargs["causal"])
         self.is_decoder: bool = bool(is_dec)
         self.is_causal: bool = bool(is_dec)
         self.is_nested_encoder: bool = bool(kwargs.get("is_nested_encoder", False))
@@ -666,11 +668,25 @@ class ClusterAttention(BaseAttention):
             if cos is not None and sin is not None:
                 Q, K = apply_rotary_pos_emb(Q, K, cos, sin, position_ids=pos_ids)
 
-        if self.kv_repeat > 1:
-            K = repeat_kv(K, self.kv_repeat)
-            V = repeat_kv(V, self.kv_repeat)
+        if K.shape[1] != Q.shape[1]:
+            if Q.shape[1] % K.shape[1] == 0:
+                rep = Q.shape[1] // K.shape[1]
+                K = repeat_kv(K, rep)
+                V = repeat_kv(V, rep)
+            else:
+                rep = math.ceil(Q.shape[1] / K.shape[1])
+                K = repeat_kv(K, rep)[:, : Q.shape[1], :, :]
+                V = repeat_kv(V, rep)[:, : Q.shape[1], :, :]
 
         scale = 1.0 / math.sqrt(int(Dh))
+
+        mask = attention_mask if attention_mask is not None else kwargs.get("mask", kwargs.get("attention_mask"))
+        is_causal_mask = False
+        if mask is not None and mask.dim() == 4 and mask.shape[-1] > 1:
+            if mask.dtype == torch.bool:
+                is_causal_mask = bool((~mask[..., 0, -1]).any().item())
+            elif mask.is_floating_point():
+                is_causal_mask = bool((mask[..., 0, -1] < -1.0).any().item())
 
         _cfg = self.config
         is_dec_cfg = False
@@ -697,13 +713,18 @@ class ClusterAttention(BaseAttention):
                 or any(model_type.startswith(p) for p in _decoder_prefixes)
             )
         is_decoder = bool(
-            self.is_decoder or is_dec_cfg or kwargs.get("is_causal", False) or kwargs.get("causal", False)
+            self.is_decoder
+            or getattr(self, "is_causal", False)
+            or is_dec_cfg
+            or kwargs.get("is_causal", False)
+            or kwargs.get("is_decoder", False)
+            or kwargs.get("causal", False)
+            or is_causal_mask
         )
 
         if is_cross_attention or is_decoder:
             # Always accumulate Q@K^T and softmax in FP32 to prevent FP16 AMP overflow on outlier activations.
             scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
-            mask = attention_mask if attention_mask is not None else kwargs.get("mask")
             invalid_mask = torch.zeros((B, 1, L, N_k), device=device, dtype=torch.bool)
             if mask is not None:
                 if mask.dim() == 4:

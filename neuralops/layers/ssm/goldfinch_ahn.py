@@ -68,7 +68,8 @@ class GatedRecurrentMemory(nn.Module):
         self.chunk_size = max(1, int(chunk_size))
         self.gate_proj = nn.Linear(d_model, d_model, bias=True)
         self.value_proj = nn.Linear(d_model, d_model, bias=True)
-        nn.init.constant_(self.gate_proj.bias, -1.0)
+        # Healthy range [-1.0, -0.5] for decay/recurrent gate bias to guarantee non-trivial gradient flow on step 1
+        nn.init.constant_(self.gate_proj.bias, -0.75)
         nn.init.zeros_(self.value_proj.bias)
 
     def forward(self, x: torch.Tensor, valid_mask: torch.Tensor | None = None) -> torch.Tensor:
@@ -148,7 +149,7 @@ class GoldFinchAHNBlock(BaseAttention):
         is_causal: bool = False,
         pretrained_attn: nn.Module | None = None,
         old_attn: nn.Module | None = None,
-        gate_init_bias: float = 1.8,
+        gate_init_bias: float = -0.5,
         comp_config: Any | None = None,
         **kwargs: Any,
     ) -> None:
@@ -429,6 +430,10 @@ class GoldFinchAHNBlock(BaseAttention):
         for m in (self.W_q, self.W_k, self.W_v, self.out_proj):
             if hasattr(m, "freeze_base_weights"):
                 m.freeze_base_weights()
+            elif hasattr(m, "weight") and isinstance(m.weight, nn.Parameter):
+                m.weight.requires_grad = False
+                if getattr(m, "bias", None) is not None and isinstance(m.bias, nn.Parameter):
+                    m.bias.requires_grad = False
         if self.freeze_base:
             for p in self.delta_mem.parameters():
                 p.requires_grad = False
@@ -437,7 +442,17 @@ class GoldFinchAHNBlock(BaseAttention):
         for m in (self.W_q, self.W_k, self.W_v, self.out_proj):
             if hasattr(m, "unfreeze_base_weights"):
                 m.unfreeze_base_weights()
+            elif hasattr(m, "weight") and isinstance(m.weight, nn.Parameter):
+                m.weight.requires_grad = True
+                if getattr(m, "bias", None) is not None and isinstance(m.bias, nn.Parameter):
+                    m.bias.requires_grad = True
         for p in self.delta_mem.parameters():
+            p.requires_grad = True
+        for p in self.gate.parameters():
+            p.requires_grad = True
+        if hasattr(self, "output_scale") and isinstance(self.output_scale, nn.Parameter):
+            self.output_scale.requires_grad = True
+        for p in self.parameters():
             p.requires_grad = True
 
     def copy_weights(self, src: Any) -> None:
@@ -601,7 +616,21 @@ class GoldFinchAHNBlock(BaseAttention):
             # allowed-swallow: best-effort-telemetry
             pass
 
-        self.unfreeze_base_weights()
+        if self.freeze_base:
+            self.freeze_base_weights()
+            for m in (self.W_q, self.W_k, self.W_v, self.out_proj):
+                if hasattr(m, "lora_A") and m.lora_A is not None:
+                    m.lora_A.requires_grad = True
+                if hasattr(m, "lora_B") and m.lora_B is not None:
+                    m.lora_B.requires_grad = True
+            for p in self.delta_mem.parameters():
+                p.requires_grad = True
+            for p in self.gate.parameters():
+                p.requires_grad = True
+            if hasattr(self, "output_scale") and isinstance(self.output_scale, nn.Parameter):
+                self.output_scale.requires_grad = True
+        else:
+            self.unfreeze_base_weights()
 
     @classmethod
     def from_distilbert_pretrained(cls, old_attn, model_config=None, **kwargs):

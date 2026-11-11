@@ -108,6 +108,19 @@ def attach_lora_to_linear_layers(model: nn.Module, r: int = 8) -> int:
     return lora_count
 
 
+def ensure_all_tensors_on_device(model: nn.Module, device: torch.device) -> None:
+    """Recursively ensures all parameters, buffers, and unregistered tensors are on target device."""
+    model.to(device)
+    for m in model.modules():
+        for attr in ("_shared_V", "V", "U", "bias", "lora_A", "lora_B", "weight"):
+            if hasattr(m, attr):
+                val = getattr(m, attr)
+                if isinstance(val, torch.Tensor) and val.device != device:
+                    setattr(m, attr, val.to(device))
+                elif isinstance(val, nn.Parameter) and val.data.device != device:
+                    val.data = val.data.to(device)
+
+
 def evaluate_sst2_accuracy(model: nn.Module, loader: DataLoader, device: torch.device) -> tuple[float, float]:
     model.eval()
     total_loss, correct, total = 0.0, 0, 0
@@ -119,10 +132,22 @@ def evaluate_sst2_accuracy(model: nn.Module, loader: DataLoader, device: torch.d
             b_att = b_att.to(device, non_blocking=True)
             b_lbl = b_lbl.to(device, non_blocking=True)
 
-            with torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16):
-                out = model(input_ids=b_in, attention_mask=b_att)
-                logits = out.logits
-                loss = criterion(logits, b_lbl)
+            try:
+                with torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16):
+                    out = model(input_ids=b_in, attention_mask=b_att)
+                    logits = out.logits
+                    loss = criterion(logits, b_lbl)
+            except RuntimeError as exc:
+                if "out of memory" in str(exc).lower() and b_in.size(0) > 1:
+                    torch.cuda.empty_cache()
+                    half = b_in.size(0) // 2
+                    with torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16):
+                        out1 = model(input_ids=b_in[:half], attention_mask=b_att[:half])
+                        out2 = model(input_ids=b_in[half:], attention_mask=b_att[half:])
+                        logits = torch.cat([out1.logits, out2.logits], dim=0)
+                        loss = criterion(logits, b_lbl)
+                else:
+                    raise
 
             total_loss += loss.item() * len(b_lbl)
             preds = logits.argmax(dim=-1)
@@ -241,7 +266,7 @@ def main():
                 student = copy.deepcopy(base_teacher)
                 cfg = {"compressors": [{"method": key, "rank": k, "force_rank": True, "use_strs": False}]}
                 student = compress_model(student, cfg)
-                student = student.to(device)
+                ensure_all_tensors_on_device(student, device)
 
                 comp_params = sum(p.numel() for p in student.parameters())
                 ratio = round(orig_params / max(comp_params, 1), 3)
@@ -273,7 +298,7 @@ def main():
                 if delta_zero < -2.0 and ratio > 1.10:
                     logger.info("[%s | rank=%d] Accuracy dropped >2.0%% (%+.2f%%). Triggering LoRA Healing...", key, k, delta_zero)
                     lora_layers = attach_lora_to_linear_layers(student, r=8)
-                    student = student.to(device)
+                    ensure_all_tensors_on_device(student, device)
 
                     healed_acc, healed_loss = run_fast_lora_recovery(
                         student=student,

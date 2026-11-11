@@ -314,7 +314,7 @@ def kernel_linear_attention(
     V: torch.Tensor,
     rff_proj: torch.Tensor,
     use_zero_sum: bool = True,
-    max_clamp: float = 11.0,
+    max_clamp: float = 10.0,
 ) -> torch.Tensor:
     """
     Non-causal global kernel linear attention (FAVOR+ style).
@@ -925,7 +925,7 @@ class SplitHeadHybridAttention(BaseAttention):
                 K_g_norm = K_g_norm - K_g_norm.mean(dim=2, keepdim=True)
 
             rff_proj_f = self.rff_proj.float()
-            max_clamp = 11.0
+            max_clamp = 10.0
             Q_proj = torch.einsum("bhnd,hdf->bhnf", Q_g_norm, rff_proj_f).clamp(max=max_clamp)
             K_proj = torch.einsum("bhnd,hdf->bhnf", K_g_norm, rff_proj_f).clamp(max=max_clamp)
             scale_rff = 1.0 / math.sqrt(self.rff_features)

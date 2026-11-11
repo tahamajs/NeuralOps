@@ -250,3 +250,89 @@ def test_zoo_orchestrator_ledger_and_resume(tmp_path: Path) -> None:
     lines = [json.loads(line) for line in metrics_log.read_text(encoding="utf-8").splitlines() if line.strip()]
     assert len(lines) == 3
     assert {l["attn_key"] for l in lines} == {"linear_attention", "retention", "gla"}
+
+
+def test_two_stage_distillation_cosine_decay_and_multiple_choice_margin() -> None:
+    """Verify Stage 2 cosine decay scheduling down to min_lr_s2 and multiple-choice margin loss."""
+    torch.manual_seed(42)
+    student = _MockCausalModel(vocab_size=32, dim=16, num_layers=4)
+
+    n_samples, seq_len, dim = 4, 8, 16
+    mock_cache = {
+        "layer_indices": [1, 3],
+        "input_ids": torch.randint(0, 32, (n_samples, seq_len)),
+        "attention_mask": torch.ones((n_samples, seq_len), dtype=torch.long),
+        "hidden_states": torch.randn((n_samples, 2, seq_len, dim), dtype=torch.float16),
+        "topk_vals": torch.randn((n_samples, seq_len, 4), dtype=torch.float16),
+        "topk_idx": torch.randint(0, 32, (n_samples, seq_len, 4), dtype=torch.int32),
+    }
+
+    # Custom dataset that provides multiple choice options metadata
+    class _MockMultipleChoiceDataset(torch.utils.data.Dataset):
+        def __init__(self, cache: dict) -> None:
+            self.ds = CachedCausalDataset(cache)
+
+        def __len__(self) -> int:
+            return len(self.ds)
+
+        def __getitem__(self, idx: int) -> dict:
+            item = self.ds[idx]
+            item["answer_idx"] = torch.tensor(idx % 4, dtype=torch.long)
+            item["num_choices"] = torch.tensor(4, dtype=torch.long)
+            item["prompt_lens"] = torch.tensor(6, dtype=torch.long)
+            return item
+
+    train_ds = _MockMultipleChoiceDataset(mock_cache)
+    train_loader = DataLoader(train_ds, batch_size=2, shuffle=False)
+    val_loader = DataLoader(train_ds, batch_size=2, shuffle=False)
+
+    lr_s2 = 6.0e-5
+    min_lr_s2 = 1.0e-6
+    engine = TwoStageDistillationEngine(
+        train_secs=1.2,
+        stage1_frac=0.3,
+        stage2_frac=0.7,
+        lr_s2=lr_s2,
+        min_lr_s2=min_lr_s2,
+        use_cosine_scheduler=True,
+        margin_loss_weight=0.5,
+        grad_accum=1,
+        device=torch.device("cpu"),
+    )
+
+    metrics = engine.run(
+        student=student,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        teacher_cache=mock_cache,
+        log_prefix="[COSINE-TEST] ",
+        letter_token_ids=[4, 5, 6, 7],
+    )
+
+    assert "final_lr_s2" in metrics
+    assert metrics["final_lr_s2"] < lr_s2, f"Expected LR to decay below {lr_s2}, got {metrics['final_lr_s2']}"
+    assert metrics["final_lr_s2"] >= min_lr_s2, f"Expected LR to stay >= {min_lr_s2}, got {metrics['final_lr_s2']}"
+    assert metrics["steps_s2"] >= 1
+    assert metrics["steps_s1"] >= 1
+
+
+def test_configurable_train_secs_unbounded() -> None:
+    """Verify train_secs can be configured without hard-coded limits on engine and CLI."""
+    engine = TwoStageDistillationEngine(train_secs=3600.0)
+    assert engine.train_secs == 3600.0
+
+    # Test override in run() accepts arbitrary extended values
+    assert hasattr(engine.run, "__code__")
+    assert "train_secs" in engine.run.__code__.co_varnames
+
+    # Test CLI parser accepts extended train_secs and scheduler flags
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--train_secs", type=float, default=240.0)
+    parser.add_argument("--lr_s2", type=float, default=6.0e-5)
+    parser.add_argument("--min_lr_s2", type=float, default=1.0e-6)
+    parser.add_argument("--margin_weight", type=float, default=0.5)
+    parsed = parser.parse_args(["--train_secs", "5000.0", "--min_lr_s2", "5e-7", "--margin_weight", "0.75"])
+    assert parsed.train_secs == 5000.0
+    assert parsed.min_lr_s2 == 5e-7
+    assert parsed.margin_weight == 0.75

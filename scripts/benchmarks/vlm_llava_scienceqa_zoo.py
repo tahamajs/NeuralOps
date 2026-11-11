@@ -306,12 +306,15 @@ def train_single_vlm_attention(
     teacher_acc: float,
     teacher_ppl: float,
     pattern: str = "hybrid_3_1",
-    train_secs: float = 120.0,
+    train_secs: float = 240.0,
     batch_size: int = 4,
     grad_accum: int = 4,
     hf_org: str = "tahamajs",
     gradient_checkpointing: bool = False,
     teacher_cache: Optional[dict[str, Any]] = None,
+    lr_s2: float = 6.0e-5,
+    min_lr_s2: float = 1.0e-6,
+    margin_weight: float = 1.0,
 ) -> dict[str, Any]:
     """Runs 2-stage multimodal hidden+logit distillation for one transplanted VLM attention."""
     logger.info("\n" + "=" * 80)
@@ -441,14 +444,22 @@ def train_single_vlm_attention(
         torch.cuda.empty_cache()
     gc.collect()
 
-    opt2 = torch.optim.AdamW([p for p in student.parameters() if p.requires_grad], lr=6.0e-5, weight_decay=0.01)
+    opt2 = torch.optim.AdamW([p for p in student.parameters() if p.requires_grad], lr=lr_s2, weight_decay=0.01)
     scaler2 = torch.cuda.amp.GradScaler(init_scale=1024.0, enabled=(device.type == "cuda"))
     step_s2 = 0
+    t0_s2 = time.time()
+    dur_s2_total = max(1e-5, t_s2_end - t0_s2)
+    letter_ids = [processor.tokenizer.encode(f" {ch}", add_special_tokens=False)[-1] for ch in OPTION_LETTERS]
 
     while time.time() < t_s2_end:
         for i in range(0, len(perm), batch_size):
             if time.time() >= t_s2_end:
                 break
+            progress = min(1.0, max(0.0, (time.time() - t0_s2) / dur_s2_total))
+            cur_lr = min_lr_s2 + 0.5 * (lr_s2 - min_lr_s2) * (1.0 + math.cos(math.pi * progress))
+            for pg in opt2.param_groups:
+                pg["lr"] = cur_lr
+
             b_indices = perm[i : i + batch_size]
             b_items = [train_examples[j] for j in b_indices]
             batch = _collate_vlm_batch(b_items, pad_id=pad_id, eval_prompt_only=False)
@@ -487,7 +498,38 @@ def train_single_vlm_attention(
                     loss_cos = torch.stack([1.0 - F.cosine_similarity(s, t, dim=-1).mean() for s, t in zip(s_h, t_h)]).mean()
                     loss_kl = torch.tensor(0.0, device=device)
                 ce_term = s_out.loss if (s_out.loss is not None and torch.isfinite(s_out.loss)) else 0.0
-                loss = (loss_mse + 0.50 * loss_cos + 1.0 * ce_term + 0.25 * loss_kl) / grad_accum
+
+                # Auxiliary multiple-choice choice cross-entropy and margin preserving loss
+                loss_choice = torch.tensor(0.0, device=device)
+                if hasattr(s_out, "logits") and s_out.logits is not None and "answer_idx" in batch and "prompt_lens" in batch and margin_weight > 0:
+                    choice_losses = []
+                    ans_indices = batch["answer_idx"].to(device, non_blocking=True)
+                    num_choices_t = batch.get("num_choices", None)
+                    prompt_lens_t = batch["prompt_lens"].to(device, non_blocking=True)
+                    for b_idx in range(len(b_items)):
+                        pos = int(prompt_lens_t[b_idx].item()) - 1
+                        n_ch = int(num_choices_t[b_idx].item()) if num_choices_t is not None else len(letter_ids)
+                        target_idx = ans_indices[b_idx]
+                        if 0 <= pos < s_out.logits.size(1) and 0 <= target_idx.item() < n_ch:
+                            c_ids = [cid for cid in letter_ids[:n_ch] if 0 <= cid < s_out.logits.size(-1)]
+                            if len(c_ids) == n_ch:
+                                cand_logits = s_out.logits[b_idx, pos, c_ids].unsqueeze(0).float()
+                                if torch.all(torch.isfinite(cand_logits)):
+                                    ce_c = F.cross_entropy(cand_logits, target_idx.unsqueeze(0))
+                                    # Margin preservation: enforce positive logit margin to closest competitor
+                                    correct_val = cand_logits[0, target_idx]
+                                    mask = torch.ones(n_ch, dtype=torch.bool, device=device)
+                                    mask[target_idx] = False
+                                    if mask.any():
+                                        max_other = cand_logits[0, mask].max()
+                                        margin_penalty = F.relu(1.0 - (correct_val - max_other))
+                                        ce_c = ce_c + 0.20 * margin_penalty
+                                    if torch.isfinite(ce_c):
+                                        choice_losses.append(ce_c)
+                    if choice_losses:
+                        loss_choice = torch.stack(choice_losses).mean()
+
+                loss = (loss_mse + 0.50 * loss_cos + 1.0 * ce_term + 0.25 * loss_kl + margin_weight * loss_choice) / grad_accum
 
             scaler2.scale(loss).backward()
             step_s2 += 1
@@ -497,6 +539,11 @@ def train_single_vlm_attention(
                 scaler2.step(opt2)
                 scaler2.update()
                 opt2.zero_grad(set_to_none=True)
+                # Cosine decay schedule down to min_lr_s2
+                progress = min(1.0, max(0.0, (time.time() - t0_s2) / dur_s2_total))
+                cur_lr = min_lr_s2 + 0.5 * (lr_s2 - min_lr_s2) * (1.0 + math.cos(math.pi * progress))
+                for pg in opt2.param_groups:
+                    pg["lr"] = cur_lr
 
     if step_s2 > 0 and step_s2 % grad_accum != 0:
         scaler2.unscale_(opt2)
@@ -504,6 +551,10 @@ def train_single_vlm_attention(
         scaler2.step(opt2)
         scaler2.update()
         opt2.zero_grad(set_to_none=True)
+        progress = min(1.0, max(0.0, (time.time() - t0_s2) / dur_s2_total))
+        cur_lr = min_lr_s2 + 0.5 * (lr_s2 - min_lr_s2) * (1.0 + math.cos(math.pi * progress))
+        for pg in opt2.param_groups:
+            pg["lr"] = cur_lr
 
     total_time = time.time() - t_start
     post_acc, post_ppl = evaluate_vlm_scienceqa(student, val_examples, processor, device, batch_size=batch_size)
@@ -656,7 +707,10 @@ def main() -> None:
     parser.add_argument("--out_dir", default="/home/tahamajlesi.ut/NeuralOps/results/vlm_llava_scienceqa_zoo")
     parser.add_argument("--metrics_log", default="/home/tahamajlesi.ut/NeuralOps/results/vlm_llava_scienceqa_zoo/metrics.jsonl")
     parser.add_argument("--surgery_pattern", choices=["all", "hybrid_3_1"], default="hybrid_3_1")
-    parser.add_argument("--train_secs", type=float, default=120.0)
+    parser.add_argument("--train_secs", type=float, default=240.0, help="Training duration budget in seconds without limits")
+    parser.add_argument("--lr_s2", type=float, default=6.0e-5, help="Stage 2 peak learning rate")
+    parser.add_argument("--min_lr_s2", type=float, default=1.0e-6, help="Stage 2 minimum cosine decay learning rate")
+    parser.add_argument("--margin_weight", type=float, default=1.0, help="Auxiliary multiple-choice margin cross-entropy loss weight")
     parser.add_argument("--batch_size", type=int, default=4)
     parser.add_argument("--grad_accum", type=int, default=4)
     parser.add_argument("--topk", type=int, default=64)
@@ -812,6 +866,9 @@ def main() -> None:
                     hf_org=args.hf_org,
                     gradient_checkpointing=curr_ckpt,
                     teacher_cache=teacher_cache,
+                    lr_s2=args.lr_s2,
+                    min_lr_s2=args.min_lr_s2,
+                    margin_weight=args.margin_weight,
                 )
                 break
             except Exception as e:

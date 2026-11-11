@@ -478,8 +478,8 @@ class HALOReGLAAttention(BaseAttention):
 
         with torch.amp.autocast(device_type=device.type, enabled=False):
             lin_scale = d**-0.25
-            q_lin = F.elu(q.float() * lin_scale) + 1.0
-            k_lin = F.elu(k_new.float() * lin_scale) + 1.0
+            q_lin = F.elu(torch.clamp(q.float() * lin_scale, max=10.0)) + 1.0
+            k_lin = F.elu(torch.clamp(k_new.float() * lin_scale, max=10.0)) + 1.0
             v_f = v_new.float()
 
             if valid_mask is not None:
@@ -501,6 +501,7 @@ class HALOReGLAAttention(BaseAttention):
                 num = torch.einsum("bhd,bhde->bhe", q_lin[:, :, 0], S_next)
                 den = torch.einsum("bhd,bhd->bh", q_lin[:, :, 0], Z_next).clamp(min=1e-4)
                 out = (num / den.unsqueeze(-1)).unsqueeze(2)
+                out = torch.nan_to_num(out, nan=0.0, posinf=32000.0, neginf=-32000.0).clamp(min=-32000.0, max=32000.0)
                 return out, (S_next, Z_next)
 
             pad_len = (chunk_size - (N_q % chunk_size)) % chunk_size
@@ -534,6 +535,7 @@ class HALOReGLAAttention(BaseAttention):
 
             denom = (den_inter + den_intra).clamp(min=1e-4)
             outs = ((num_inter + num_intra) / denom).reshape(B, H, num_chunks * chunk_size, d)[:, :, :N_q, :]
+            outs = torch.nan_to_num(outs, nan=0.0, posinf=32000.0, neginf=-32000.0).clamp(min=-32000.0, max=32000.0)
 
             S_final = S_state + kv_chunks.sum(dim=2)
             Z_final = Z_state + z_chunks.sum(dim=2)
@@ -549,8 +551,8 @@ class HALOReGLAAttention(BaseAttention):
         """Bidirectional linear attention: Q · (K^T V) strictly in FP32."""
         B, H, N, d = q.shape
         lin_scale = d**-0.25
-        q_lin = F.elu(q.float() * lin_scale) + 1.0
-        k_lin = F.elu(k.float() * lin_scale) + 1.0
+        q_lin = F.elu(torch.clamp(q.float() * lin_scale, max=10.0)) + 1.0
+        k_lin = F.elu(torch.clamp(k.float() * lin_scale, max=10.0)) + 1.0
         v_f = v.float()
 
         if valid_mask is not None:
@@ -562,7 +564,8 @@ class HALOReGLAAttention(BaseAttention):
         z = k_lin.sum(dim=2, keepdim=True)
         num = torch.matmul(q_lin, kv)
         den = torch.matmul(q_lin, z.transpose(-2, -1).contiguous()).clamp(min=1e-4)
-        return num / den
+        linear_out = num / den
+        return torch.nan_to_num(linear_out, nan=0.0, posinf=32000.0, neginf=-32000.0).clamp(min=-32000.0, max=32000.0)
 
     def forward(
         self,

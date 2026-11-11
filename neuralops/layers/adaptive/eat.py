@@ -112,11 +112,25 @@ class EATBlock(BaseAttention):
                 getattr(config, "num_kv_heads", None),
             )
         if cfg_kv is None:
-            cfg_kv = kwargs.get("num_kv_heads", None)
+            cfg_kv = kwargs.get("num_kv_heads", kwargs.get("num_key_value_heads", None))
+        if cfg_kv is None and source_attn is not None:
+            cfg_kv = getattr(
+                source_attn,
+                "num_key_value_heads",
+                getattr(source_attn, "num_kv_heads", None),
+            )
+            if cfg_kv is None:
+                for k_name in ("k_proj", "k_lin", "key"):
+                    mod = getattr(source_attn, k_name, None)
+                    if mod is not None and hasattr(mod, "weight") and getattr(mod.weight, "ndim", 0) == 2:
+                        hd_cand = getattr(source_attn, "head_dim", getattr(config, "head_dim", 0)) or (
+                            self.dim // max(1, self.num_heads)
+                        )
+                        if hd_cand > 0:
+                            cfg_kv = max(1, mod.weight.shape[0] // hd_cand)
+                            break
         if cfg_kv is None:
-            cfg_kv = max(1, self.num_heads // 4)
-        self.num_kv_heads = max(1, min(int(cfg_kv), self.num_heads))
-
+            cfg_kv = self.num_heads
         self.num_kv_heads = max(1, min(int(cfg_kv), self.num_heads))
         self.kv_repeat = max(1, self.num_heads // self.num_kv_heads)
 
@@ -520,6 +534,12 @@ class EATBlock(BaseAttention):
                 if w.shape != target.weight.shape and w.t().contiguous().shape == target.weight.shape:
                     w = w.t().contiguous()
 
+                if key in ("k", "v") and w.size(0) < target.weight.size(0) and target.weight.size(0) % w.size(0) == 0:
+                    exp_factor = target.weight.size(0) // w.size(0)
+                    w = w.repeat_interleave(exp_factor, dim=0)
+                    if b is not None and getattr(target, "bias", None) is not None and target.bias.numel() % b.numel() == 0:
+                        b = b.repeat_interleave(target.bias.numel() // b.numel())
+
                 out_d = min(target.weight.size(0), w.size(0))
                 in_d = min(target.weight.size(1), w.size(1))
                 target.weight.data.zero_()
@@ -615,12 +635,37 @@ class EATBlock(BaseAttention):
         present_key_value = (k, v) if (not is_cross and kwargs.get("use_cache", True)) else None
         kv_len = k.shape[-2]
 
-        if self.kv_repeat > 1:
-            k = repeat_kv(k, self.kv_repeat)
-            v = repeat_kv(v, self.kv_repeat)
+        if k.shape[1] != q.shape[1]:
+            if q.shape[1] % k.shape[1] == 0:
+                rep = q.shape[1] // k.shape[1]
+                k = repeat_kv(k, rep)
+                v = repeat_kv(v, rep)
+            else:
+                rep = math.ceil(q.shape[1] / k.shape[1])
+                k = repeat_kv(k, rep)[:, : q.shape[1], :, :]
+                v = repeat_kv(v, rep)[:, : q.shape[1], :, :]
 
-        eff_mask = encoder_attention_mask if is_cross else attention_mask
-        is_causal = bool(self.is_decoder and not is_cross and L > 1)
+        eff_mask = encoder_attention_mask if is_cross else (
+            attention_mask if attention_mask is not None else kwargs.get("mask", kwargs.get("attention_mask"))
+        )
+        is_causal_mask = False
+        if eff_mask is not None and eff_mask.dim() == 4 and eff_mask.shape[-1] > 1:
+            if eff_mask.dtype == torch.bool:
+                is_causal_mask = bool((~eff_mask[..., 0, -1]).any().item())
+            elif eff_mask.is_floating_point():
+                is_causal_mask = bool((eff_mask[..., 0, -1] < -1.0).any().item())
+        is_causal = bool(
+            (
+                self.is_decoder
+                or getattr(self, "is_causal", False)
+                or kwargs.get("is_causal", False)
+                or kwargs.get("is_decoder", False)
+                or kwargs.get("causal", False)
+                or is_causal_mask
+            )
+            and not is_cross
+            and L > 1
+        )
 
         attn_mask_combined: torch.Tensor | None = None
         if eff_mask is not None or is_causal:
@@ -680,10 +725,27 @@ class EATBlock(BaseAttention):
                 hm = hm.view(1, -1, 1, 1)
             elif hm.dim() == 2:
                 if hm.shape[-1] != self.num_heads:
-                    raise ValueError(f"head_mask 2D must be [B, H] with H={self.num_heads}, got {hm.shape}")
+                    if hm.shape[-1] > self.num_heads:
+                        hm = hm[:, : self.num_heads]
+                    else:
+                        pad = torch.ones(hm.shape[0], self.num_heads - hm.shape[-1], device=hm.device, dtype=hm.dtype)
+                        hm = torch.cat([hm, pad], dim=-1)
                 hm = hm.view(hm.shape[0], hm.shape[1], 1, 1)
             elif hm.dim() == 3:
                 hm = hm.unsqueeze(1)
+            elif hm.dim() == 4:
+                if hm.shape[1] != self.num_heads and hm.shape[1] != 1:
+                    if hm.shape[1] > self.num_heads:
+                        hm = hm[:, : self.num_heads]
+                    else:
+                        pad = torch.ones(
+                            hm.shape[0],
+                            self.num_heads - hm.shape[1],
+                            *hm.shape[2:],
+                            device=hm.device,
+                            dtype=hm.dtype,
+                        )
+                        hm = torch.cat([hm, pad], dim=1)
 
             if probs is not None:
                 probs = probs * hm

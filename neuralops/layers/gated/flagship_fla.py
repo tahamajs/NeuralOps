@@ -715,14 +715,18 @@ class DeltaProductAttention(BaseAttention):
 
             outs = []
             curr = S
+            scale_d = float(D) ** -0.5
             for c in range(num_chunks):
                 W_c = W_v[:, :, c] + torch.matmul(W_S[:, :, c], curr)
-                y_c = torch.matmul(q_blk[:, :, c], curr) + torch.matmul(qu_causal[:, :, c], W_c) + qk_bv[:, :, c]
+                y_intra = (torch.matmul(qu_causal[:, :, c], W_c) + qk_bv[:, :, c]) * scale_d
+                y_c = torch.matmul(q_blk[:, :, c], curr) + y_intra
                 curr = (
                     curr
                     + torch.matmul(u_hat[:, :, c].transpose(-1, -2), W_c)
                     + torch.matmul(k_blk[:, :, c].transpose(-1, -2), bv[:, :, c])
                 )
+                s_norm = torch.linalg.matrix_norm(curr, ord=2, keepdim=True)
+                curr = torch.where(s_norm > 1.0, curr / s_norm.clamp(min=1e-6), curr)
                 outs.append(y_c)
 
             y = torch.cat(outs, dim=2)
@@ -730,9 +734,8 @@ class DeltaProductAttention(BaseAttention):
             y = y[:, :, :L, :]
         present_state = curr
 
-        if q.dtype == torch.float16:
-            fmax = torch.finfo(q.dtype).max * 0.5
-            y = y.clamp(min=-fmax, max=fmax)
+        fmax = 32000.0 if q.dtype == torch.float16 else 65000.0
+        y = torch.nan_to_num(y, nan=0.0, posinf=fmax, neginf=-fmax).clamp(min=-fmax, max=fmax)
         y = y.to(q.dtype).transpose(1, 2).contiguous().view(B, L, H * D)
         present_kv = (present_state.to(q.dtype),) if use_cache else None
         if self.is_nested_encoder:
@@ -781,7 +784,11 @@ class DeltaProductAttention(BaseAttention):
         refl = (2.0 * bt / u_norm_sq) * torch.matmul(ut.transpose(-1, -2), u_S)
         S_reflected = curr - refl
         next_S = S_reflected + torch.matmul(kt.transpose(-1, -2), vt)
+        s_norm = torch.linalg.matrix_norm(next_S, ord=2, keepdim=True)
+        next_S = torch.where(s_norm > 1.0, next_S / s_norm.clamp(min=1e-6), next_S)
         yt = torch.matmul(qt, next_S)
+        fmax = 32000.0 if dtype == torch.float16 else 65000.0
+        yt = torch.nan_to_num(yt, nan=0.0, posinf=fmax, neginf=-fmax).clamp(min=-fmax, max=fmax)
 
         state["kv_state"] = next_S
         state["step_idx"] = step_idx + 1

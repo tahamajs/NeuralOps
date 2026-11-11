@@ -57,7 +57,14 @@ EXIT_USAGE_ERROR = 2
 EXIT_NUMERICAL_FAILURE = 4
 EXIT_OUTPUT_ERROR = 6
 
-_INDEX_FILENAMES = ("results.jsonl", "results.csv", "results.parquet", "zoo_overview.json")
+_INDEX_FILENAMES = (
+    "results.json",
+    "results.jsonl",
+    "results.csv",
+    "summary.md",
+    "results.parquet",
+    "zoo_overview.json",
+)
 
 
 def _validate_safe_segment(value: Any, field_name: str, *, allow_slashes: bool = False) -> str:
@@ -1167,7 +1174,7 @@ def _build_zoo_overview(
     }
 
 
-def _write_json_atomic(target_path: Path, payload: dict[str, Any]) -> Path:
+def _write_json_atomic(target_path: Path, payload: Any) -> Path:
     """Write JSON atomically using a unique temporary file and rename."""
     target_path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = target_path.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
@@ -1175,6 +1182,172 @@ def _write_json_atomic(target_path: Path, payload: dict[str, Any]) -> Path:
         json.dump(payload, fp, indent=2, default=str)
     tmp_path.replace(target_path)
     return target_path
+
+
+def _write_text_atomic(target_path: Path, content: str) -> Path:
+    """Write text atomically using a unique temporary file and rename."""
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = target_path.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    with tmp_path.open("w", encoding="utf-8") as fp:
+        fp.write(content)
+    tmp_path.replace(target_path)
+    return target_path
+
+
+def _generate_markdown_summary(
+    results: list[BenchmarkResult],
+    overview: dict[str, Any],
+    out_path: Path,
+) -> str:
+    """Generate publication-grade multi-zoo Markdown comparison card."""
+    lines: list[str] = [
+        "# NeuralOps Multi-Zoo Benchmark Summary Card\n",
+        f"- **Generated At**: `{overview.get('generated_at', '')}`",
+        f"- **Output Directory**: `{out_path}`",
+        f"- **Total Records**: {len(results)}",
+        "- **Status Counts**: "
+        + ", ".join(f"`{k}`: {v}" for k, v in sorted(overview.get("status_counts", {}).items())),
+        f"- **Verification Failures**: {overview.get('verification_failures', 0)}",
+        "",
+        "## 1. Cross-Zoo Performance Matrix\n",
+        "| Zoo Suite | Records | Passed | Failed | Skipped | Models | Datasets | Best Accuracy | Min Perplexity | Max Ratio | Max VRAM (MB) |",
+        "| :--- | :---: | :---: | :---: | :---: | :--- | :--- | :---: | :---: | :---: | :---: |",
+    ]
+
+    for suite, zinfo in overview.get("zoos", {}).items():
+        m_sum = zinfo.get("metrics_summary", {})
+        r_sum = zinfo.get("resources_summary", {})
+
+        best_acc_str = "N/A"
+        if "accuracy" in m_sum:
+            acc_val = m_sum["accuracy"].get("max")
+            acc_mod = m_sum["accuracy"].get("best_module", "")
+            best_acc_str = f"{acc_val:.2f}% (`{acc_mod}`)" if acc_val is not None else "N/A"
+
+        min_ppl_str = "N/A"
+        if "post_ppl" in m_sum:
+            ppl_val = m_sum["post_ppl"].get("min")
+            ppl_mod = m_sum["post_ppl"].get("best_module", "")
+            min_ppl_str = f"{ppl_val:.2f} (`{ppl_mod}`)" if ppl_val is not None else "N/A"
+
+        max_ratio_str = "N/A"
+        if "compression_ratio" in m_sum:
+            ratio_val = m_sum["compression_ratio"].get("max")
+            ratio_mod = m_sum["compression_ratio"].get("best_module", "")
+            max_ratio_str = f"{ratio_val:.2f}x (`{ratio_mod}`)" if ratio_val is not None else "N/A"
+
+        vram_str = f"{r_sum.get('max_peak_vram_mb', 0.0):.1f}" if r_sum.get("max_peak_vram_mb") else "N/A"
+        models_str = ", ".join(f"`{m}`" for m in zinfo.get("models", [])) or "unknown"
+        datasets_str = ", ".join(f"`{d}`" for d in zinfo.get("datasets", [])) or "unknown"
+
+        lines.append(
+            f"| `{suite}` | {zinfo.get('total_records', 0)} | {zinfo.get('passed_count', 0)} | "
+            f"{zinfo.get('failed_count', 0)} | {zinfo.get('skipped_count', 0)} | {models_str} | "
+            f"{datasets_str} | {best_acc_str} | {min_ppl_str} | {max_ratio_str} | {vram_str} |"
+        )
+
+    lines.extend([
+        "",
+        "## 2. Top-Performing Modules by Zoo\n",
+    ])
+
+    for suite, zinfo in overview.get("zoos", {}).items():
+        zoo_results = [r for r in results if r.benchmark_suite == suite]
+        passed_runs = [r for r in zoo_results if r.status == BenchmarkStatus.SUCCESS.value]
+        if not passed_runs:
+            continue
+
+        lines.append(f"### `{suite}`\n")
+        lines.append(
+            "| Rank / Module | Type | Model | Dataset | Pre Metric | Post Metric | Delta | Ratio | VRAM (MB) | Duration (s) |"
+        )
+        lines.append(
+            "| :--- | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |"
+        )
+
+        def _sort_key(res: BenchmarkResult) -> tuple[float, float]:
+            acc = (res.metrics or {}).get("accuracy")
+            ppl = (res.metrics or {}).get("post_ppl")
+            acc_val = (
+                float(acc)
+                if acc is not None and not isinstance(acc, bool) and math.isfinite(float(acc))
+                else -1e9
+            )
+            ppl_val = (
+                -float(ppl)
+                if ppl is not None and not isinstance(ppl, bool) and math.isfinite(float(ppl))
+                else -1e9
+            )
+            return (acc_val, ppl_val)
+
+        sorted_runs = sorted(passed_runs, key=_sort_key, reverse=True)[:10]
+        for res in sorted_runs:
+            mod_name = res.module.get("name", "") if isinstance(res.module, dict) else str(res.module)
+            mod_type = res.module.get("type", "") if isinstance(res.module, dict) else ""
+            rank_val = res.config.get("rank") if isinstance(res.config, dict) else None
+            label = f"`{mod_name}`" + (f" (r={rank_val})" if rank_val else "")
+
+            mdl_name = res.model.get("name", "") if isinstance(res.model, dict) else ""
+            ds_name = res.dataset.get("name", "") if isinstance(res.dataset, dict) else ""
+
+            m = res.metrics or {}
+            dm = res.delta_metrics or {}
+            bm = res.baseline_metrics or {}
+            r = res.resources or {}
+
+            if "accuracy" in m:
+                pre_m = (
+                    f"{bm.get('accuracy', bm.get('pre_acc', 'N/A'))}%"
+                    if "accuracy" in bm or "pre_acc" in bm
+                    else "N/A"
+                )
+                post_m = f"{m['accuracy']:.2f}%" if isinstance(m["accuracy"], (int, float)) else str(m["accuracy"])
+                delta_m = f"{dm.get('acc_delta', 'N/A')}"
+                if isinstance(dm.get("acc_delta"), (int, float)):
+                    delta_m = f"{dm['acc_delta']:+.2f}%"
+            elif "post_ppl" in m:
+                pre_m = f"{bm.get('ppl', 'N/A')}"
+                post_m = f"{m['post_ppl']:.2f}" if isinstance(m["post_ppl"], (int, float)) else str(m["post_ppl"])
+                delta_m = f"{dm.get('ppl_delta', 'N/A')}"
+                if isinstance(dm.get("ppl_delta"), (int, float)):
+                    delta_m = f"{dm['ppl_delta']:+.2f}"
+            else:
+                pre_m, post_m, delta_m = "N/A", "N/A", "N/A"
+
+            ratio_str = (
+                f"{m.get('compression_ratio'):.2f}x"
+                if isinstance(m.get("compression_ratio"), (int, float))
+                else "-"
+            )
+            vram_val = r.get("peak_vram_mb")
+            vram_str = f"{vram_val:.1f}" if isinstance(vram_val, (int, float)) else "-"
+            dur_val = r.get("duration_s")
+            dur_str = f"{dur_val:.1f}s" if isinstance(dur_val, (int, float)) else "-"
+
+            lines.append(
+                f"| {label} | `{mod_type}` | `{mdl_name}` | `{ds_name}` | {pre_m} | {post_m} | {delta_m} | {ratio_str} | {vram_str} | {dur_str} |"
+            )
+        lines.append("")
+
+    failed_skipped = [r for r in results if r.status != BenchmarkStatus.SUCCESS.value]
+    lines.append("## 3. Verification & Anomaly Diagnostics\n")
+    if not failed_skipped:
+        lines.append("All audited records completed with verified finite metrics and `status=success`.\n")
+    else:
+        lines.append(f"Recorded **{len(failed_skipped)}** non-success execution(s):\n")
+        lines.append("| Zoo Suite | Module | Status | Error Details |")
+        lines.append("| :--- | :--- | :---: | :--- |")
+        for r in failed_skipped[:25]:
+            m_name = r.module.get("name", "") if isinstance(r.module, dict) else str(r.module)
+            rk = r.config.get("rank") if isinstance(r.config, dict) else None
+            m_label = f"`{m_name}`" + (f" (r={rk})" if rk else "")
+            err_text = (r.error or "").replace("\n", " ")[:80]
+            lines.append(f"| `{r.benchmark_suite}` | {m_label} | **`{r.status}`** | {err_text or 'None recorded'} |")
+        if len(failed_skipped) > 25:
+            lines.append(f"| ... | *({len(failed_skipped) - 25} more omitted)* | ... | ... |")
+        lines.append("")
+
+    return "\n".join(lines)
 
 
 def export_dual_zoo_5formats(
@@ -1193,8 +1366,28 @@ def export_dual_zoo_5formats(
     qwen_comp_jsonl: Path | str | None = None,
     vlm_jsonl: Path | str | None = None,
     tinyllama_jsonl: Path | str | None = None,
+    *,
+    qwen_attn_ledger: Path | str | None = None,
+    bert_comp_ledger: Path | str | None = None,
+    bert_attn_ledger: Path | str | None = None,
+    qwen_comp_ledger: Path | str | None = None,
+    vlm_ledger: Path | str | None = None,
+    tinyllama_ledger: Path | str | None = None,
 ) -> dict[str, Any]:
     """Read zoo JSONL ledgers, map to BenchmarkResult, and export all 5 formats + zoo_overview.json."""
+    if qwen_jsonl is None and qwen_attn_ledger is not None:
+        qwen_jsonl = qwen_attn_ledger
+    if bert_jsonl is None and bert_comp_ledger is not None:
+        bert_jsonl = bert_comp_ledger
+    if bert_attn_jsonl is None and bert_attn_ledger is not None:
+        bert_attn_jsonl = bert_attn_ledger
+    if qwen_comp_jsonl is None and qwen_comp_ledger is not None:
+        qwen_comp_jsonl = qwen_comp_ledger
+    if vlm_jsonl is None and vlm_ledger is not None:
+        vlm_jsonl = vlm_ledger
+    if tinyllama_jsonl is None and tinyllama_ledger is not None:
+        tinyllama_jsonl = tinyllama_ledger
+
     if all(
         p is None
         for p in (
@@ -1207,8 +1400,9 @@ def export_dual_zoo_5formats(
         )
     ):
         raise ValueError(
-            "At least one zoo ledger flag ('--qwen-ledger', '--bert-ledger', '--bert-attn-ledger', "
-            "'--qwen-comp-ledger', '--vlm-ledger', or '--tinyllama-ledger') must be provided."
+            "At least one zoo ledger flag ('--bert-attn-ledger', '--bert-comp-ledger', "
+            "'--qwen-attn-ledger', '--qwen-comp-ledger', '--vlm-ledger', or '--tinyllama-ledger') "
+            "must be provided."
         )
 
     out_path = Path(output_dir)
@@ -1318,6 +1512,13 @@ def export_dual_zoo_5formats(
             if key in saved:
                 index_files[key] = str(saved[key])
 
+    # 1. Complete structured export: results.json
+    results_json_path = out_path / "results.json"
+    results_payload = [r.to_dict() for r in results]
+    _write_json_atomic(results_json_path, results_payload)
+    index_files["json"] = str(results_json_path)
+
+    # 2. Cross-zoo overview: zoo_overview.json
     overview_payload = _build_zoo_overview(
         results=results,
         source_ledgers=source_ledgers,
@@ -1328,6 +1529,16 @@ def export_dual_zoo_5formats(
         verification_failures=verification_failures,
     )
     overview_path = _write_json_atomic(out_path / "zoo_overview.json", overview_payload)
+
+    # 3. Publication-grade Markdown comparison card: summary.md
+    summary_md_path = out_path / "summary.md"
+    summary_md_content = _generate_markdown_summary(
+        results=results,
+        overview=overview_payload,
+        out_path=out_path,
+    )
+    _write_text_atomic(summary_md_path, summary_md_content)
+    index_files["summary_md"] = str(summary_md_path)
 
     status_counts = dict(Counter(r.status for r in results))
     return {
@@ -1342,6 +1553,8 @@ def export_dual_zoo_5formats(
         "zoo_counts": zoo_counts,
         "status_counts": status_counts,
         "verification_failures": verification_failures,
+        "results_json": str(results_json_path),
+        "summary_markdown": str(summary_md_path),
         "zoo_overview": str(overview_path),
         "index_files": index_files,
         "json_files": json_files,
@@ -1358,20 +1571,28 @@ def _build_parser() -> argparse.ArgumentParser:
         "--qwen_jsonl",
         "--qwen-ledger",
         "--qwen_ledger",
+        "--qwen-attn-ledger",
+        "--qwen_attn_ledger",
+        "--qwen-attn-jsonl",
+        "--qwen_attn_jsonl",
         dest="qwen_jsonl",
         type=Path,
         default=None,
-        help="Path to Qwen Attention Zoo metrics.jsonl",
+        help="Path to Qwen Attention Zoo metrics.jsonl (results/qwen_attention_zoo/metrics.jsonl)",
     )
     parser.add_argument(
         "--bert-jsonl",
         "--bert_jsonl",
         "--bert-ledger",
         "--bert_ledger",
+        "--bert-comp-ledger",
+        "--bert_comp_ledger",
+        "--bert-comp-jsonl",
+        "--bert_comp_jsonl",
         dest="bert_jsonl",
         type=Path,
         default=None,
-        help="Path to BERT Compressor Zoo multirank_lora_ledger.jsonl",
+        help="Path to BERT Compressor Zoo multirank_lora_ledger.jsonl (results/bert_compressor_zoo/multirank_lora_ledger.jsonl)",
     )
     parser.add_argument(
         "--bert-attn-ledger",

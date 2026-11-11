@@ -287,9 +287,10 @@ class DecayLinearAttention(BaseAttention):
         )
 
         self.lora_decay_gate = nn.Linear(self.dim, self.num_heads, bias=True)
-        self.lora_log_decay = nn.Parameter(torch.linspace(0.0, 3.0, self.num_heads))
+        # Healthy range [-1.0, -0.5] for decay gating logits to guarantee non-trivial gradient flow on step 1
+        self.lora_log_decay = nn.Parameter(torch.linspace(-0.25, 0.25, self.num_heads))
         nn.init.zeros_(self.lora_decay_gate.weight)
-        nn.init.zeros_(self.lora_decay_gate.bias)
+        nn.init.constant_(self.lora_decay_gate.bias, -0.75)
 
         self.rotary_emb = None
         self.comp_config: Any | None = comp_config
@@ -557,6 +558,46 @@ class DecayLinearAttention(BaseAttention):
 
                 if self.freeze_base:
                     target_mod.freeze_base_weights()
+
+        if self.freeze_base:
+            for mod in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
+                if hasattr(mod, "lora_A") and mod.lora_A is not None:
+                    mod.lora_A.requires_grad = True
+                if hasattr(mod, "lora_B") and mod.lora_B is not None:
+                    mod.lora_B.requires_grad = True
+            for p in self.lora_decay_gate.parameters():
+                p.requires_grad = True
+            self.lora_log_decay.requires_grad = True
+        else:
+            self.unfreeze_base_weights()
+
+    def freeze_base_weights(self) -> None:
+        """Freeze base projection weights while keeping LoRA and decay gate active."""
+        for m in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
+            if hasattr(m, "freeze_base_weights"):
+                m.freeze_base_weights()
+            elif hasattr(m, "weight") and isinstance(m.weight, nn.Parameter):
+                m.weight.requires_grad = False
+                if getattr(m, "bias", None) is not None and isinstance(m.bias, nn.Parameter):
+                    m.bias.requires_grad = False
+        for p in self.lora_decay_gate.parameters():
+            p.requires_grad = True
+        self.lora_log_decay.requires_grad = True
+
+    def unfreeze_base_weights(self) -> None:
+        """Unfreeze all base projection weights and parameters for full training."""
+        for m in (self.q_proj, self.k_proj, self.v_proj, self.out_proj):
+            if hasattr(m, "unfreeze_base_weights"):
+                m.unfreeze_base_weights()
+            elif hasattr(m, "weight") and isinstance(m.weight, nn.Parameter):
+                m.weight.requires_grad = True
+                if getattr(m, "bias", None) is not None and isinstance(m.bias, nn.Parameter):
+                    m.bias.requires_grad = True
+        for p in self.lora_decay_gate.parameters():
+            p.requires_grad = True
+        self.lora_log_decay.requires_grad = True
+        for p in self.parameters():
+            p.requires_grad = True
 
     def _decay_scan_linear(
         self,

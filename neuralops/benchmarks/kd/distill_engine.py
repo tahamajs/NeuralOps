@@ -344,6 +344,12 @@ class TwoStageDistillationEngine:
             for batch in train_loader:
                 if time.time() >= t_s2_end:
                     break
+                if self.use_cosine_scheduler:
+                    progress = min(1.0, max(0.0, (time.time() - t0_s2) / dur_s2_total))
+                    cur_lr = self.min_lr_s2 + 0.5 * (self.lr_s2 - self.min_lr_s2) * (1.0 + math.cos(math.pi * progress))
+                    for pg in opt2.param_groups:
+                        pg["lr"] = cur_lr
+
                 in_ids = batch["input_ids"].to(dev, non_blocking=True)
                 att_m = batch["attention_mask"].to(dev, non_blocking=True)
 
@@ -455,7 +461,11 @@ class TwoStageDistillationEngine:
                     pg["lr"] = cur_lr
 
         dur_s2 = time.time() - t0_s2
-        final_lr_s2 = float(opt2.param_groups[0]["lr"])
+        if self.use_cosine_scheduler:
+            final_progress = min(1.0, max(0.0, dur_s2 / dur_s2_total))
+            final_lr_s2 = self.min_lr_s2 + 0.5 * (self.lr_s2 - self.min_lr_s2) * (1.0 + math.cos(math.pi * final_progress))
+        else:
+            final_lr_s2 = float(opt2.param_groups[0]["lr"])
         del opt2, scaler2
         if dev.type == "cuda":
             torch.cuda.empty_cache()

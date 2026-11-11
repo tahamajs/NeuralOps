@@ -427,3 +427,175 @@ def test_no_ledgers_raises_usage_error(tmp_path: Path) -> None:
     """Invoking with no ledger flags fails closed with EXIT_USAGE_ERROR."""
     rc = exporter.main(["--output-dir", str(tmp_path / "empty_out")])
     assert rc == exporter.EXIT_USAGE_ERROR
+
+
+def test_symmetric_six_zoos_and_canonical_5formats(tmp_path: Path) -> None:
+    """Validate --bert-attn-ledger, --bert-comp-ledger, --qwen-attn-ledger, --qwen-comp-ledger,
+    --vlm-ledger, and --tinyllama-ledger flags produce all 5 canonical formats."""
+    qwen_ledger = _write_jsonl(
+        tmp_path / "qwen_attn" / "metrics.jsonl",
+        [
+            {
+                "model": "Qwen/Qwen2.5-0.5B",
+                "attn_key": "qwen_attention_mod",
+                "dataset": "wikitext-2",
+                "ppl_before": 45.0,
+                "ppl_after": 20.0,
+                "train_secs": 100.0,
+                "status": "PASSED",
+            }
+        ],
+    )
+    bert_comp_ledger = _write_jsonl(
+        tmp_path / "bert_comp" / "multirank_lora_ledger.jsonl",
+        [
+            {
+                "compressor": "hnc_svd",
+                "rank": 32,
+                "ratio": 2.5,
+                "orig_params": 1000000,
+                "comp_params": 400000,
+                "zero_shot_acc": 70.0,
+                "healed_acc": 90.0,
+                "lora_healed": True,
+                "duration_s": 50.0,
+                "status": "PASSED",
+            }
+        ],
+    )
+    bert_attn_ledger = _write_jsonl(
+        tmp_path / "bert_attn" / "metrics.jsonl",
+        [
+            {
+                "attn_key": "primal_attention",
+                "acc_before": 32.5,
+                "acc_after": 64.38,
+                "acc_delta": 31.88,
+                "train_secs": 120.0,
+                "status": "PASSED",
+            }
+        ],
+    )
+    qwen_comp_ledger = _write_jsonl(
+        tmp_path / "qwen_comp" / "metrics.jsonl",
+        [
+            {
+                "compressor": "magnitude_pruning",
+                "rank": 16,
+                "param_reduction": 1.5,
+                "ppl_before": 40.0,
+                "ppl_after": 22.0,
+                "train_secs": 80.0,
+                "status": "PASSED",
+            }
+        ],
+    )
+    vlm_ledger = _write_jsonl(
+        tmp_path / "vlm_llava" / "metrics.jsonl",
+        [
+            {
+                "attn_key": "padre_attention",
+                "dataset": "derek-thomas/ScienceQA",
+                "acc_before": 43.12,
+                "acc_after": 65.62,
+                "acc_delta": 22.5,
+                "train_secs": 150.0,
+                "status": "PASSED",
+            }
+        ],
+    )
+    tinyllama_ledger = _write_jsonl(
+        tmp_path / "tinyllama" / "metrics.jsonl",
+        [
+            {
+                "attn_key": "retnet_linear",
+                "ppl_before": 30.0,
+                "ppl_after": 15.0,
+                "train_secs": 110.0,
+                "status": "PASSED",
+            }
+        ],
+    )
+
+    out_dir = tmp_path / "canonical_5formats_test"
+    rc = exporter.main(
+        [
+            "--qwen-attn-ledger",
+            str(qwen_ledger),
+            "--bert-comp-ledger",
+            str(bert_comp_ledger),
+            "--bert-attn-ledger",
+            str(bert_attn_ledger),
+            "--qwen-comp-ledger",
+            str(qwen_comp_ledger),
+            "--vlm-ledger",
+            str(vlm_ledger),
+            "--tinyllama-ledger",
+            str(tinyllama_ledger),
+            "--output-dir",
+            str(out_dir),
+            "--require-parquet",
+        ]
+    )
+    assert rc == exporter.EXIT_SUCCESS
+
+    # 1. results.json (complete structured export)
+    results_json_path = out_dir / "results.json"
+    assert results_json_path.exists()
+    results_data = json.loads(results_json_path.read_text(encoding="utf-8"))
+    assert isinstance(results_data, list)
+    assert len(results_data) == 6
+    for r in results_data:
+        assert "run_id" in r
+        assert "metrics" in r
+        assert r["status"] == "success"
+
+    # 2. results.jsonl (streaming ledger)
+    results_jsonl_path = out_dir / "results.jsonl"
+    assert results_jsonl_path.exists()
+    jsonl_lines = [line for line in results_jsonl_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert len(jsonl_lines) == 6
+
+    # 3. results.csv (tabular export)
+    results_csv_path = out_dir / "results.csv"
+    assert results_csv_path.exists()
+    with results_csv_path.open("r", encoding="utf-8") as fp:
+        csv_rows = list(csv.DictReader(fp))
+    assert len(csv_rows) == 6
+    assert {row["module"] for row in csv_rows} == {
+        "qwen_attention_mod",
+        "hnc_svd",
+        "primal_attention",
+        "magnitude_pruning",
+        "padre_attention",
+        "retnet_linear",
+    }
+
+    # 4. summary.md (publication-grade Markdown comparison card)
+    summary_md_path = out_dir / "summary.md"
+    assert summary_md_path.exists()
+    md_text = summary_md_path.read_text(encoding="utf-8")
+    assert "# NeuralOps Multi-Zoo Benchmark Summary Card" in md_text
+    assert "## 1. Cross-Zoo Performance Matrix" in md_text
+    assert "## 2. Top-Performing Modules by Zoo" in md_text
+    assert "primal_attention" in md_text
+    assert "padre_attention" in md_text
+
+    # 5. results.parquet (compressed columnar storage via pyarrow)
+    results_parquet_path = out_dir / "results.parquet"
+    assert results_parquet_path.exists()
+    assert results_parquet_path.stat().st_size > 0
+
+    # Also check zoo_overview.json
+    overview_path = out_dir / "zoo_overview.json"
+    assert overview_path.exists()
+    overview = json.loads(overview_path.read_text(encoding="utf-8"))
+    assert overview["total_records"] == 6
+    assert set(overview["zoos_included"]) == {
+        "qwen_attention_zoo",
+        "bert_compressor_zoo",
+        "bert_attention_zoo",
+        "qwen_compressor_zoo",
+        "vlm_llava_scienceqa_zoo",
+        "tinyllama_1.1b_zoo",
+    }

@@ -304,10 +304,11 @@ class StableKernelFeatureMap(nn.Module):
         with torch.autocast(device_type=x.device.type, enabled=False):
             x_scaled = x.float() * (self.head_dim**-0.25)
             proj = self.proj.float() / math.sqrt(self.head_dim)
-            phi = torch.matmul(x_scaled, proj)
+            phi = torch.matmul(x_scaled, proj).clamp(max=10.0)
             norm_sq = (x_scaled * x_scaled).sum(dim=-1, keepdim=True) * 0.5
             diff = torch.clamp(phi - norm_sq, min=-30.0, max=10.0)
-            return (self.scale * torch.exp(diff)).to(x.dtype)
+            feat = self.scale * torch.exp(diff)
+            return _clamp_to_dtype(feat, x.dtype)
 
 
 class GatingModule(nn.Module):
@@ -762,23 +763,23 @@ class GatedHybridKernelAttention(BaseAttention):
                 pass
 
         chunk_size = 64
-        state_kv = torch.zeros(B, H, F_dim, D, device=Q_feat.device, dtype=Q_feat.dtype)
-        state_k = torch.zeros(B, H, F_dim, device=Q_feat.device, dtype=Q_feat.dtype)
+        state_kv = torch.zeros(B, H, F_dim, D, device=Q_feat.device, dtype=torch.float32)
+        state_k = torch.zeros(B, H, F_dim, device=Q_feat.device, dtype=torch.float32)
 
         if past_len > 0:
             for p_start in range(0, past_len, chunk_size):
                 p_end = min(p_start + chunk_size, past_len)
-                Kp = K_feat[:, :, p_start:p_end]
-                Vp = V_f[:, :, p_start:p_end]
+                Kp = K_feat[:, :, p_start:p_end].float()
+                Vp = V_f[:, :, p_start:p_end].float()
                 state_kv = state_kv + torch.matmul(Kp.transpose(-2, -1), Vp)
                 state_k = state_k + Kp.sum(dim=2)
 
         outs = []
         for start in range(0, N, chunk_size):
             end = min(start + chunk_size, N)
-            Qc = Q_feat[:, :, start:end]
-            Kc = K_feat[:, :, past_len + start : past_len + end]
-            Vc = V_f[:, :, past_len + start : past_len + end]
+            Qc = Q_feat[:, :, start:end].float()
+            Kc = K_feat[:, :, past_len + start : past_len + end].float()
+            Vc = V_f[:, :, past_len + start : past_len + end].float()
 
             intra_scores = torch.matmul(Qc, Kc.transpose(-2, -1)).tril()
             if start == 0 and past_len == 0:
@@ -791,7 +792,7 @@ class GatedHybridKernelAttention(BaseAttention):
                     .unsqueeze(-1)
                     .clamp(min=1e-4)
                 )
-            outs.append(num / den)
+            outs.append(torch.clamp(num / den, min=-65000.0, max=65000.0))
 
             if end < N:
                 state_kv = state_kv + torch.matmul(Kc.transpose(-2, -1), Vc)
