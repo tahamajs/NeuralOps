@@ -81,7 +81,7 @@ def build_cached_dataloader(cache: dict[str, Any], batch_size: int, is_cuda: boo
         batch_size=batch_size,
         shuffle=True,
         pin_memory=is_cuda,
-        drop_last=True,
+        drop_last=(len(dataset) >= batch_size),
     )
 
 
@@ -212,8 +212,19 @@ def train_single_attention_cached(
                     logger.info("[%s] [Stage 1 Step %d] Alignment Loss: %.4f",
                                 attn_key, step_s1, float(loss.item() * grad_accum))
 
+    if step_s1 > 0 and step_s1 % grad_accum != 0:
+        scaler.unscale_(opt1)
+        torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
+        scaler.step(opt1)
+        scaler.update()
+        opt1.zero_grad(set_to_none=True)
+
     dur_s1 = time.time() - t0_s1
     logger.info("[%s] Stage 1 Complete: %d steps in %.1fs", attn_key, step_s1, dur_s1)
+
+    del opt1
+    if device.type == "cuda":
+        torch.cuda.empty_cache()
 
     # Stage 2: End-to-End Unfrozen Distillation + Task Head Fine-tuning (50% of budget)
     for p in student.parameters():
@@ -277,6 +288,14 @@ def train_single_attention_cached(
                 logger.info("[%s] [Stage 2 Step %d] Distillation Loss: %.4f (KL=%.4f, CE=%.4f, Hid=%.4f)",
                             attn_key, step_s2, float(total_loss.item() * grad_accum), float(loss_kl.item()), float(loss_ce.item()), float(loss_hid.item()))
 
+    if step_s2 > 0 and step_s2 % grad_accum != 0:
+        scaler.unscale_(opt2)
+        torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
+        scaler.step(opt2)
+        scaler.update()
+        opt2.zero_grad(set_to_none=True)
+
+    del opt2
     dur_s2 = time.time() - t0_s2
     total_time = time.time() - t_start
 

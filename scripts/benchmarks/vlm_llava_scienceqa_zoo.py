@@ -31,7 +31,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -48,11 +48,19 @@ if str(REPO_ROOT) not in sys.path:
 if str(Path(__file__).resolve().parent) not in sys.path:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from qwen_zoo_train_mix import (
-    _extract_attention_metadata,
+from neuralops.benchmarks.kd import (
     apply_qwen_attention_surgery,
+    build_vlm_readme,
+    extract_attention_metadata,
 )
-from neuralops.hub.model_card import generate_unified_model_card
+from neuralops.benchmarks.kd.teacher_cache import (
+    build_or_load_vlm_teacher_cache,
+    compute_topk_sparse_kd_loss_from_cache,
+    enable_student_gradient_checkpointing,
+    resolve_teacher_cache_path,
+)
+
+_extract_attention_metadata = extract_attention_metadata
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("vlm_scienceqa_zoo")
@@ -270,62 +278,25 @@ def evaluate_vlm_scienceqa(
     return acc, ppl
 
 
-def build_vlm_readme(
-    attn_key: str,
-    result: dict[str, Any],
-    teacher_acc: float,
-    teacher_ppl: float,
-    out_dir: Path,
-    meta: dict[str, Any],
-) -> str:
-    """Generates a complete Hugging Face VLM Model Card via the unified NeuralOps generator."""
-    slug = attn_key.replace("_", "-")
-    repo_slug = f"llava-qwen-0.5b-{slug}-scienceqa"
-    repo_id = f"{result.get('hf_org', 'tahamajs')}/{repo_slug}"
-    pattern = str(result.get("pattern", "hybrid_3_1"))
-    total_layers = int(result.get("total_layers", 24))
-    surgeried_layers = result.get("surgeried_layers") or (
-        [i for i in range(total_layers) if i % 4 != 3] if pattern == "hybrid_3_1" else list(range(total_layers))
-    )
-    anchor_layers = result.get("anchor_layers") or [i for i in range(total_layers) if i not in set(surgeried_layers)]
-
-    merged_metrics = dict(result)
-    merged_metrics["teacher_acc"] = teacher_acc
-    if math.isfinite(teacher_ppl):
-        merged_metrics["teacher_ppl"] = teacher_ppl
-
-    surgery_info = {
-        "pattern": pattern,
-        "total_layers": total_layers,
-        "modified_layers": len(surgeried_layers),
-        "surgeried_layers": surgeried_layers,
-        "anchor_layers": anchor_layers,
-        "modified_components": (
-            f"`{len(surgeried_layers)}/{total_layers}` decoder `language_model.model.layers.{{i}}.self_attn` "
-            "+ trained decoder `layernorm`s"
-        ),
-        "frozen_components": (
-            f"Frozen SigLIP `vision_tower.*` (27 layers), `multi_modal_projector.*`, "
-            f"`{len(anchor_layers)}` quadratic anchor layers `{anchor_layers}`, decoder MLPs & embeddings"
-        ),
-        **({k: v for k, v in meta.items() if k in ("class_name", "family", "module_path", "docstring")}),
-    }
-
-    return generate_unified_model_card(
-        zoo_type="llava_vlm",
-        mechanism_key=attn_key,
-        repo_id=repo_id,
-        base_model="llava-hf/llava-interleave-qwen-0.5b-hf",
-        out_dir=out_dir,
-        metrics=merged_metrics,
-        surgery_info=surgery_info,
-        dataset="derek-thomas/ScienceQA",
-    )
+def _collate_vlm_cached_hiddens(
+    teacher_cache: dict[str, Any],
+    ex_indices: list[int],
+    max_len: int,
+) -> torch.Tensor:
+    """Pad variable-length cached VLM teacher hidden states to [B, K_layers, max_len, D]."""
+    sample_h = teacher_cache["hidden_states"][ex_indices[0]]
+    k_layers, _, hidden_dim = sample_h.shape
+    out = torch.zeros((len(ex_indices), k_layers, max_len, hidden_dim), dtype=sample_h.dtype)
+    for b_i, ex_idx in enumerate(ex_indices):
+        h_ex = teacher_cache["hidden_states"][ex_idx]
+        cur_len = min(int(h_ex.size(1)), max_len)
+        out[b_i, :, :cur_len, :] = h_ex[:, :cur_len, :]
+    return out
 
 
 def train_single_vlm_attention(
     attn_key: str,
-    teacher_vlm: nn.Module,
+    teacher_vlm: Optional[nn.Module],
     train_examples: list[dict[str, Any]],
     val_examples: list[dict[str, Any]],
     processor: Any,
@@ -339,15 +310,31 @@ def train_single_vlm_attention(
     batch_size: int = 4,
     grad_accum: int = 4,
     hf_org: str = "tahamajs",
+    gradient_checkpointing: bool = False,
+    teacher_cache: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     """Runs 2-stage multimodal hidden+logit distillation for one transplanted VLM attention."""
     logger.info("\n" + "=" * 80)
     logger.info("[VLM START] Distilling %s on ScienceQA (%ds, bs=%d, pattern=%s)", attn_key, int(train_secs), batch_size, pattern)
     logger.info("=" * 80)
 
+    if teacher_cache is None and teacher_vlm is None:
+        raise ValueError("Either teacher_cache or teacher_vlm must be provided.")
+
+    if device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(device)
+
     pad_id = processor.tokenizer.pad_token_id or 0
     # Keep frozen vision_tower & projector in FP16 to save ~1 GB VRAM; train language_model in FP32 master weights
-    student = copy.deepcopy(teacher_vlm)
+    if teacher_vlm is not None:
+        student = copy.deepcopy(teacher_vlm)
+    else:
+        from transformers import LlavaForConditionalGeneration
+        student = LlavaForConditionalGeneration.from_pretrained(
+            model_id,
+            torch_dtype=torch.float32,
+            local_files_only=True,
+        )
     for comp_name in ("vision_tower", "multi_modal_projector"):
         comp = getattr(student, comp_name, None)
         if comp is not None:
@@ -378,6 +365,9 @@ def train_single_vlm_attention(
     pre_acc, pre_ppl = evaluate_vlm_scienceqa(student, val_examples, processor, device, batch_size=batch_size)
     logger.info("[%s] Pre-KD ScienceQA Acc=%.2f%% | Answer PPL=%.2f", attn_key, pre_acc, pre_ppl)
 
+    if gradient_checkpointing:
+        enable_student_gradient_checkpointing(student, log_prefix=f"[{attn_key}] ")
+
     for name, p in student.named_parameters():
         if name.startswith(("vision_tower.", "multi_modal_projector.")):
             p.requires_grad = False
@@ -397,27 +387,37 @@ def train_single_vlm_attention(
     scaler1 = torch.cuda.amp.GradScaler(init_scale=1024.0, enabled=(device.type == "cuda"))
     student.train()
     step_s1 = 0
-    perm = torch.randperm(len(train_examples)).tolist()
+    num_cached = len(teacher_cache["hidden_states"]) if teacher_cache is not None else len(train_examples)
+    layer_indices: Optional[list[int]] = teacher_cache["layer_indices"] if teacher_cache is not None else None
+    perm = torch.randperm(num_cached).tolist()
 
     while time.time() < t_s1_end:
         for i in range(0, len(perm), batch_size):
             if time.time() >= t_s1_end:
                 break
-            b_items = [train_examples[j] for j in perm[i : i + batch_size]]
+            b_indices = perm[i : i + batch_size]
+            b_items = [train_examples[j] for j in b_indices]
             batch = _collate_vlm_batch(b_items, pad_id=pad_id, eval_prompt_only=False)
             in_ids = batch["input_ids"].to(device, non_blocking=True)
             att_m = batch["attention_mask"].to(device, non_blocking=True)
             px = batch["pixel_values"].to(device, dtype=torch.float16 if device.type == "cuda" else torch.float32, non_blocking=True)
 
             with torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16):
-                with torch.no_grad():
-                    t_out = teacher_vlm(input_ids=in_ids, attention_mask=att_m, pixel_values=px, output_hidden_states=True, use_cache=False)
                 s_out = student(input_ids=in_ids, attention_mask=att_m, pixel_values=px, output_hidden_states=True, use_cache=False)
-
-                s_h = s_out.hidden_states[1:]
-                t_h = t_out.hidden_states[1:]
-                loss_mse = torch.stack([F.mse_loss(s, t) for s, t in zip(s_h, t_h)]).mean()
-                loss_cos = torch.stack([1.0 - F.cosine_similarity(s, t, dim=-1).mean() for s, t in zip(s_h, t_h)]).mean()
+                if teacher_cache is not None and layer_indices is not None:
+                    t_h_b = _collate_vlm_cached_hiddens(teacher_cache, b_indices, max_len=in_ids.size(1)).to(device, non_blocking=True)
+                    valid_tok = att_m.bool()
+                    s_h = [s_out.hidden_states[idx + 1] for idx in layer_indices]
+                    loss_mse = torch.stack([F.mse_loss(sh[valid_tok].float(), t_h_b[:, j][valid_tok].float()) for j, sh in enumerate(s_h)]).mean()
+                    loss_cos = torch.stack([1.0 - F.cosine_similarity(sh[valid_tok].float(), t_h_b[:, j][valid_tok].float(), dim=-1).mean() for j, sh in enumerate(s_h)]).mean()
+                else:
+                    assert teacher_vlm is not None
+                    with torch.no_grad():
+                        t_out = teacher_vlm(input_ids=in_ids, attention_mask=att_m, pixel_values=px, output_hidden_states=True, use_cache=False)
+                    s_h = s_out.hidden_states[1:]
+                    t_h = t_out.hidden_states[1:]
+                    loss_mse = torch.stack([F.mse_loss(s, t) for s, t in zip(s_h, t_h)]).mean()
+                    loss_cos = torch.stack([1.0 - F.cosine_similarity(s, t, dim=-1).mean() for s, t in zip(s_h, t_h)]).mean()
                 loss = (loss_mse + 0.25 * loss_cos) / grad_accum
 
             scaler1.scale(loss).backward()
@@ -449,7 +449,8 @@ def train_single_vlm_attention(
         for i in range(0, len(perm), batch_size):
             if time.time() >= t_s2_end:
                 break
-            b_items = [train_examples[j] for j in perm[i : i + batch_size]]
+            b_indices = perm[i : i + batch_size]
+            b_items = [train_examples[j] for j in b_indices]
             batch = _collate_vlm_batch(b_items, pad_id=pad_id, eval_prompt_only=False)
             in_ids = batch["input_ids"].to(device, non_blocking=True)
             att_m = batch["attention_mask"].to(device, non_blocking=True)
@@ -457,16 +458,36 @@ def train_single_vlm_attention(
             px = batch["pixel_values"].to(device, dtype=torch.float16 if device.type == "cuda" else torch.float32, non_blocking=True)
 
             with torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16):
-                with torch.no_grad():
-                    t_out = teacher_vlm(input_ids=in_ids, attention_mask=att_m, pixel_values=px, output_hidden_states=True, use_cache=False)
                 s_out = student(input_ids=in_ids, attention_mask=att_m, pixel_values=px, labels=lbls, output_hidden_states=True, use_cache=False)
-
-                s_h = s_out.hidden_states[1:]
-                t_h = t_out.hidden_states[1:]
-                loss_mse = torch.stack([F.mse_loss(s, t) for s, t in zip(s_h, t_h)]).mean()
-                loss_cos = torch.stack([1.0 - F.cosine_similarity(s, t, dim=-1).mean() for s, t in zip(s_h, t_h)]).mean()
+                if teacher_cache is not None and layer_indices is not None:
+                    t_h_b = _collate_vlm_cached_hiddens(teacher_cache, b_indices, max_len=in_ids.size(1)).to(device, non_blocking=True)
+                    valid_tok = att_m.bool()
+                    s_h = [s_out.hidden_states[idx + 1] for idx in layer_indices]
+                    loss_mse = torch.stack([F.mse_loss(sh[valid_tok].float(), t_h_b[:, j][valid_tok].float()) for j, sh in enumerate(s_h)]).mean()
+                    loss_cos = torch.stack([1.0 - F.cosine_similarity(sh[valid_tok].float(), t_h_b[:, j][valid_tok].float(), dim=-1).mean() for j, sh in enumerate(s_h)]).mean()
+                    kl_terms = []
+                    for b_i, ex_idx in enumerate(b_indices):
+                        t_start_tok = int(teacher_cache["tail_start"][ex_idx])
+                        t_end_tok = int(teacher_cache["seq_lens"][ex_idx])
+                        if t_end_tok > t_start_tok and hasattr(s_out, "logits") and s_out.logits is not None:
+                            s_tail = s_out.logits[b_i, t_start_tok:t_end_tok, :]
+                            t_vals = teacher_cache["tail_topk_vals"][ex_idx].to(device, non_blocking=True)
+                            t_idx = teacher_cache["tail_topk_idx"][ex_idx].to(device, non_blocking=True)
+                            kl_b = compute_topk_sparse_kd_loss_from_cache(s_tail.unsqueeze(0), t_vals.unsqueeze(0), t_idx.unsqueeze(0))
+                            if torch.isfinite(kl_b):
+                                kl_terms.append(kl_b)
+                    loss_kl = torch.stack(kl_terms).mean() if kl_terms else torch.tensor(0.0, device=device)
+                else:
+                    assert teacher_vlm is not None
+                    with torch.no_grad():
+                        t_out = teacher_vlm(input_ids=in_ids, attention_mask=att_m, pixel_values=px, output_hidden_states=True, use_cache=False)
+                    s_h = s_out.hidden_states[1:]
+                    t_h = t_out.hidden_states[1:]
+                    loss_mse = torch.stack([F.mse_loss(s, t) for s, t in zip(s_h, t_h)]).mean()
+                    loss_cos = torch.stack([1.0 - F.cosine_similarity(s, t, dim=-1).mean() for s, t in zip(s_h, t_h)]).mean()
+                    loss_kl = torch.tensor(0.0, device=device)
                 ce_term = s_out.loss if (s_out.loss is not None and torch.isfinite(s_out.loss)) else 0.0
-                loss = (loss_mse + 0.50 * loss_cos + 1.0 * ce_term) / grad_accum
+                loss = (loss_mse + 0.50 * loss_cos + 1.0 * ce_term + 0.25 * loss_kl) / grad_accum
 
             scaler2.scale(loss).backward()
             step_s2 += 1
@@ -525,28 +546,27 @@ def train_single_vlm_attention(
     processor.save_pretrained(str(out_dir))
 
     # Filter strictly to surgeried decoder self_attn prefixes + trained layernorms (exclude frozen vision_tower & anchor layers)
-    attn_state = {
-        k: (v.detach().cpu().half() if v.is_floating_point() else v.detach().cpu()).clone().contiguous()
-        for k, v in student.state_dict().items()
-        if not k.startswith(("vision_tower.", "multi_modal_projector."))
-        and not (any(k.startswith(ap) for ap in anchor_attn_prefixes) and k not in trained_param_names)
-        and (
-            any(k.startswith(sp) for sp in surgeried_attn_prefixes)
-            or (k in trained_param_names and "layernorm" in k.lower())
-        )
-    }
-
+    saved_tensor_count = 0
     saved_via_helper = False
     try:
         from neuralops.models.surgical_io import save_surgical_delta
-        save_surgical_delta(
+        delta_info = save_surgical_delta(
             student,
             out_dir,
             base_model_id="llava-hf/llava-interleave-qwen-0.5b-hf",
             surgeried_prefixes=[p.rstrip(".") for p in surgeried_attn_prefixes],
             trained_param_names=sorted(trained_param_names),
             anchor_prefixes=[p.rstrip(".") for p in anchor_attn_prefixes],
-            operations=[{"op": "replace_attention", "attn_key": attn_key, "pattern": pattern}],
+            operations=[
+                {
+                    "op": "replace_attention",
+                    "component_type": "attention",
+                    "operator_key": attn_key,
+                    "attn_key": attn_key,
+                    "pattern": pattern,
+                    "target_modules": [p.rstrip(".") for p in surgeried_attn_prefixes],
+                }
+            ],
             metadata={
                 "zoo_type": "llava_vlm",
                 "attention_type": attn_key,
@@ -555,14 +575,28 @@ def train_single_vlm_attention(
                 "surgeried_layers": surgeried_indices,
                 "anchor_layers": anchor_indices,
             },
+            half_precision=True,
+            remove_full_weights=True,
         )
+        saved_tensor_count = int(delta_info.get("saved_tensor_count", 0))
         saved_via_helper = True
     except (ImportError, TypeError, AttributeError):
         pass
 
     if not saved_via_helper:
+        attn_state = {
+            k: (v.detach().cpu().half() if v.is_floating_point() else v.detach().cpu()).clone().contiguous()
+            for k, v in student.state_dict().items()
+            if not k.startswith(("vision_tower.", "multi_modal_projector."))
+            and not (any(k.startswith(ap) for ap in anchor_attn_prefixes) and k not in trained_param_names)
+            and (
+                any(k.startswith(sp) for sp in surgeried_attn_prefixes)
+                or (k in trained_param_names and "layernorm" in k.lower())
+            )
+        }
         from safetensors.torch import save_file
         save_file(attn_state, str(out_dir / "attention_weights.safetensors"))
+        saved_tensor_count = len(attn_state)
         manifest = {
             "schema_version": "neuralops.surgery/v2",
             "zoo_type": "llava_vlm",
@@ -578,7 +612,7 @@ def train_single_vlm_attention(
             "metadata": {"attention_type": attn_key, "pattern": pattern},
             "weights_file": "attention_weights.safetensors",
             "weights_format": "attention_only_fp16",
-            "saved_tensor_count": len(attn_state),
+            "saved_tensor_count": saved_tensor_count,
             "saved_tensor_keys": sorted(attn_state.keys()),
         }
         (out_dir / "surgical_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
@@ -597,7 +631,7 @@ def train_single_vlm_attention(
     cfg["surgeried_layers"] = surgeried_indices
     cfg["anchor_layers"] = anchor_indices
     cfg["weights_format"] = "attention_only_fp16"
-    cfg["saved_tensor_count"] = len(attn_state)
+    cfg["saved_tensor_count"] = saved_tensor_count
     (out_dir / "config.json").write_text(json.dumps(cfg, indent=2), encoding="utf-8")
     (out_dir / "training_metrics.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
 
@@ -625,9 +659,29 @@ def main() -> None:
     parser.add_argument("--train_secs", type=float, default=120.0)
     parser.add_argument("--batch_size", type=int, default=4)
     parser.add_argument("--grad_accum", type=int, default=4)
+    parser.add_argument("--topk", type=int, default=64)
     parser.add_argument("--max_train_samples", type=int, default=800)
     parser.add_argument("--max_val_samples", type=int, default=200)
     parser.add_argument("--hf_org", default="tahamajs")
+    parser.add_argument(
+        "--gradient_checkpointing",
+        nargs="?",
+        const=1,
+        default=0,
+        type=int,
+        help="Enable gradient checkpointing on student decoder blocks (0/1)",
+    )
+    parser.add_argument(
+        "--teacher_cache_path",
+        default="auto",
+        help="Offline teacher representation cache path ('auto' or 'none' to disable)",
+    )
+    parser.add_argument(
+        "--max_cache_samples",
+        type=int,
+        default=256,
+        help="Maximum training examples stored in offline VLM teacher cache",
+    )
     parser.add_argument("--device", default="cuda")
     args = parser.parse_args()
 
@@ -635,35 +689,6 @@ def main() -> None:
     if args.device == "cuda" and not torch.cuda.is_available():
         logger.error("--device cuda requested but CUDA unavailable.")
         sys.exit(3)
-
-    from transformers import AutoProcessor, LlavaForConditionalGeneration
-
-    processor = AutoProcessor.from_pretrained(args.model, local_files_only=True)
-    teacher = LlavaForConditionalGeneration.from_pretrained(
-        args.model,
-        torch_dtype=torch.float16 if device.type == "cuda" else torch.float32,
-        local_files_only=True,
-    ).to(device)
-    teacher.eval()
-    for p in teacher.parameters():
-        p.requires_grad = False
-
-    img_tok_id = int(getattr(teacher.config, "image_token_index", 151646))
-    vcfg = getattr(teacher.config, "vision_config", None)
-    patch_sz = int(getattr(vcfg, "patch_size", 14) or 14)
-    img_sz = int(getattr(vcfg, "image_size", 384) or 384)
-    strategy = str(getattr(teacher.config, "vision_feature_select_strategy", "full"))
-    expected_img_tokens = (img_sz // patch_sz) ** 2 + (0 if strategy == "full" else -1 if strategy == "default" else 0)
-    logger.info("LLaVA vision token contract: image_token_index=%d, expected_img_tokens=%d (strategy=%s)", img_tok_id, expected_img_tokens, strategy)
-
-    train_ex = prepare_scienceqa_batches(
-        args.train_data, processor, max_samples=args.max_train_samples, image_token_id=img_tok_id, expected_img_tokens=expected_img_tokens
-    )
-    val_ex = prepare_scienceqa_batches(
-        args.val_data, processor, max_samples=args.max_val_samples, image_token_id=img_tok_id, expected_img_tokens=expected_img_tokens
-    )
-    teacher_acc, teacher_ppl = evaluate_vlm_scienceqa(teacher, val_ex, processor, device, batch_size=args.batch_size)
-    logger.info("Uncompressed VLM Teacher Baseline: ScienceQA Acc=%.2f%% | Answer PPL=%.2f", teacher_acc, teacher_ppl)
 
     keys = [args.attn_key] if args.attn_key else json.loads(Path(args.keys_json).read_text(encoding="utf-8"))
     passed: set[str] = set()
@@ -680,70 +705,150 @@ def main() -> None:
                     pass
 
     out_base = Path(args.out_dir)
+    out_base.mkdir(parents=True, exist_ok=True)
+    pending = [k for k in keys if k not in passed]
+    if not pending:
+        logger.info("All %d VLM keys already PASSED. Exiting cleanly.", len(keys))
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(0)
+
+    from transformers import AutoConfig, AutoProcessor, LlavaForConditionalGeneration
+
+    processor = AutoProcessor.from_pretrained(args.model, local_files_only=True)
+    model_cfg = AutoConfig.from_pretrained(args.model, local_files_only=True)
+
+    img_tok_id = int(getattr(model_cfg, "image_token_index", 151646))
+    vcfg = getattr(model_cfg, "vision_config", None)
+    patch_sz = int(getattr(vcfg, "patch_size", 14) or 14)
+    img_sz = int(getattr(vcfg, "image_size", 384) or 384)
+    strategy = str(getattr(model_cfg, "vision_feature_select_strategy", "full"))
+    expected_img_tokens = (img_sz // patch_sz) ** 2 + (0 if strategy == "full" else -1 if strategy == "default" else 0)
+    logger.info("LLaVA vision token contract: image_token_index=%d, expected_img_tokens=%d (strategy=%s)", img_tok_id, expected_img_tokens, strategy)
+
+    train_ex = prepare_scienceqa_batches(
+        args.train_data, processor, max_samples=args.max_train_samples, image_token_id=img_tok_id, expected_img_tokens=expected_img_tokens
+    )
+    val_ex = prepare_scienceqa_batches(
+        args.val_data, processor, max_samples=args.max_val_samples, image_token_id=img_tok_id, expected_img_tokens=expected_img_tokens
+    )
+
+    cache_path = resolve_teacher_cache_path(
+        args.teacher_cache_path,
+        out_dir=out_base,
+        model_id="llava-hf/llava-interleave-qwen-0.5b-hf",
+        tag="vlm_scienceqa",
+        seq_len=896,
+        max_cache_samples=args.max_cache_samples,
+        topk=args.topk,
+    )
+
+    def _load_vlm_teacher() -> nn.Module:
+        t = LlavaForConditionalGeneration.from_pretrained(
+            args.model,
+            torch_dtype=torch.float16 if device.type == "cuda" else torch.float32,
+            local_files_only=True,
+        ).to(device)
+        t.eval()
+        for p in t.parameters():
+            p.requires_grad = False
+        return t
+
+    teacher: Optional[nn.Module] = None
+    teacher_cache: Optional[dict[str, Any]] = None
+    if cache_path is not None:
+        teacher_cache = build_or_load_vlm_teacher_cache(
+            cache_path,
+            model_id=args.model,
+            normalized_model_id="llava-hf/llava-interleave-qwen-0.5b-hf",
+            train_examples=train_ex,
+            val_examples=val_ex,
+            processor=processor,
+            device=device,
+            load_teacher_fn=_load_vlm_teacher,
+            evaluate_vlm_fn=evaluate_vlm_scienceqa,
+            collate_fn=_collate_vlm_batch,
+            max_cache_samples=args.max_cache_samples,
+            topk=args.topk,
+            batch_size=args.batch_size,
+        )
+        teacher_acc = float(teacher_cache["teacher_acc"])
+        teacher_ppl = float(teacher_cache["teacher_ppl"])
+    else:
+        teacher = _load_vlm_teacher()
+        teacher_acc, teacher_ppl = evaluate_vlm_scienceqa(teacher, val_ex, processor, device, batch_size=args.batch_size)
+
+    logger.info("Uncompressed VLM Teacher Baseline: ScienceQA Acc=%.2f%% | Answer PPL=%.2f", teacher_acc, teacher_ppl)
+
     for i, key in enumerate(keys, 1):
         if key in passed:
             logger.info("[%d/%d] Skipping %s (already PASSED).", i, len(keys), key)
             continue
-        res = None
-        err_msg = None
-        is_oom = False
-        try:
-            res = train_single_vlm_attention(
-                attn_key=key,
-                teacher_vlm=teacher,
-                train_examples=train_ex,
-                val_examples=val_ex,
-                processor=processor,
-                device=device,
-                out_dir=out_base / key,
-                model_id=args.model,
-                teacher_acc=teacher_acc,
-                teacher_ppl=teacher_ppl,
-                pattern=args.surgery_pattern,
-                train_secs=args.train_secs,
-                batch_size=args.batch_size,
-                grad_accum=args.grad_accum,
-                hf_org=args.hf_org,
-            )
-        except Exception as e:
-            err_msg = str(e)
-            is_oom = "out of memory" in err_msg.lower()
-            if not is_oom:
-                logger.error("[%s] VLM training exception: %s", key, e, exc_info=True)
 
-        if res is None:
+        curr_bs = max(1, int(args.batch_size))
+        curr_accum = max(1, int(args.grad_accum))
+        curr_ckpt = bool(args.gradient_checkpointing)
+        res: dict[str, Any] = {}
+
+        while True:
+            is_oom = False
+            err_msg = ""
+            try:
+                res = train_single_vlm_attention(
+                    attn_key=key,
+                    teacher_vlm=teacher,
+                    train_examples=train_ex,
+                    val_examples=val_ex,
+                    processor=processor,
+                    device=device,
+                    out_dir=out_base / key,
+                    model_id=args.model,
+                    teacher_acc=teacher_acc,
+                    teacher_ppl=teacher_ppl,
+                    pattern=args.surgery_pattern,
+                    train_secs=args.train_secs,
+                    batch_size=curr_bs,
+                    grad_accum=curr_accum,
+                    hf_org=args.hf_org,
+                    gradient_checkpointing=curr_ckpt,
+                    teacher_cache=teacher_cache,
+                )
+                break
+            except Exception as e:
+                err_msg = str(e)
+                if "out of memory" in err_msg.lower():
+                    is_oom = True
+                else:
+                    logger.error("[%s] VLM training exception: %s", key, e, exc_info=True)
+
             gc.collect()
             if device.type == "cuda":
                 torch.cuda.empty_cache()
-            if is_oom and args.batch_size > 1:
-                retry_bs = max(1, args.batch_size // 2)
-                logger.warning("[%s] OOM at bs=%d. Retrying at bs=%d...", key, args.batch_size, retry_bs)
-                try:
-                    res = train_single_vlm_attention(
-                        attn_key=key,
-                        teacher_vlm=teacher,
-                        train_examples=train_ex,
-                        val_examples=val_ex,
-                        processor=processor,
-                        device=device,
-                        out_dir=out_base / key,
-                        model_id=args.model,
-                        teacher_acc=teacher_acc,
-                        teacher_ppl=teacher_ppl,
-                        pattern=args.surgery_pattern,
-                        train_secs=args.train_secs,
-                        batch_size=retry_bs,
-                        grad_accum=args.grad_accum * 2,
-                        hf_org=args.hf_org,
-                    )
-                except Exception as e2:
-                    logger.error("[%s] VLM OOM retry exception: %s", key, e2)
-                    res = {"attn_key": key, "status": "SKIPPED_OOM", "error": str(e2), "timestamp": datetime.datetime.utcnow().isoformat() + "Z"}
-                gc.collect()
-                if device.type == "cuda":
-                    torch.cuda.empty_cache()
+
+            if is_oom and (curr_bs > 1 or not curr_ckpt):
+                if not curr_ckpt:
+                    curr_ckpt = True
+                if curr_bs > 1:
+                    next_bs = max(1, curr_bs // 2)
+                    scale = max(1, curr_bs // next_bs)
+                    curr_bs = next_bs
+                    curr_accum = curr_accum * scale
+                logger.warning(
+                    "[%s] OOM encountered. Retrying at batch_size=%d, grad_accum=%d, gradient_checkpointing=%s...",
+                    key,
+                    curr_bs,
+                    curr_accum,
+                    curr_ckpt,
+                )
+                continue
+
+            if is_oom:
+                logger.error("[%s] OOM retry exhausted at bs=%d: %s", key, curr_bs, err_msg)
+                res = {"attn_key": key, "status": "SKIPPED_OOM", "error": err_msg, "timestamp": datetime.datetime.utcnow().isoformat() + "Z"}
             else:
                 res = {"attn_key": key, "status": "FAIL_TRAINING", "error": err_msg, "timestamp": datetime.datetime.utcnow().isoformat() + "Z"}
+            break
+
         with open(ledger, "a", encoding="utf-8") as f:
             f.write(json.dumps(res) + "\n")
 

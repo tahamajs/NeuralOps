@@ -290,7 +290,7 @@ def main() -> None:
                 has_comp_kw = any(term in k.lower() for term in delta_keywords)
                 is_modified_val = (
                     not is_new_or_reshaped
-                    and (v_cpu.dtype != base_v.dtype or not torch.equal(v_cpu.float(), base_v.float()))
+                    and (v_cpu.dtype != base_v.dtype or not torch.equal(v_cpu, base_v))
                 )
                 if is_head or is_new_or_reshaped or has_comp_kw or is_modified_val:
                     delta_state[k] = (v_cpu.half() if v_cpu.is_floating_point() else v_cpu).clone().contiguous()

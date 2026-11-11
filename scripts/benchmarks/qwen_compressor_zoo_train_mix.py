@@ -26,7 +26,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import torch
 import torch.nn as nn
@@ -52,10 +52,18 @@ from neuralops.core.registry import COMPRESSOR_REGISTRY, create_compressor
 from neuralops.hub.model_card import generate_unified_model_card, normalize_base_model_id
 from neuralops.hub.uploader import AsyncHFHubUploader
 from neuralops.models.surgical_io import extract_surgical_manifest
-from scripts.benchmarks.qwen_zoo_train_mix import (
-    _build_cache_wikitext,
+from neuralops.benchmarks.kd import (
+    StratifiedQwenDataset,
     compute_topk_sparse_kd_loss,
     evaluate_causal_ppl,
+    load_tokenized_qwen_corpus,
+)
+from neuralops.benchmarks.kd.teacher_cache import (
+    CachedCausalDataset,
+    build_or_load_causal_teacher_cache,
+    compute_topk_sparse_kd_loss_from_cache,
+    enable_student_gradient_checkpointing,
+    resolve_teacher_cache_path,
 )
 
 
@@ -212,7 +220,7 @@ def _build_qwen_comp_readme(
 
 def train_single_qwen_compressor(
     comp_key: str,
-    teacher_model: nn.Module,
+    teacher_model: Optional[nn.Module],
     train_loader: DataLoader,
     val_loader: DataLoader,
     device: torch.device,
@@ -224,12 +232,17 @@ def train_single_qwen_compressor(
     topk: int = 64,
     rank: int = 128,
     grad_accum: int = 8,
+    gradient_checkpointing: bool = False,
+    teacher_cache: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     """Apply `comp_key` compression on CPU FP32, then heal on GPU using AMP + Top-K Sparse KD."""
     t_start = time.time()
     logger.info("\n" + "=" * 80)
     logger.info("[START] Distilling Qwen Compressor: %s (%.1fs, rank=%d)", comp_key, train_secs, rank)
     logger.info("=" * 80)
+
+    if teacher_cache is None and teacher_model is None:
+        raise ValueError("Either teacher_cache or teacher_model must be provided.")
 
     if device.type == "cuda":
         torch.cuda.reset_peak_memory_stats(device)
@@ -242,7 +255,11 @@ def train_single_qwen_compressor(
         local_files_only=True,
     )
     orig_params = sum(p.numel() for p in student.parameters())
-    teacher_shapes = {k: tuple(v.shape) for k, v in teacher_model.state_dict().items()}
+    base_shapes = {k: tuple(v.shape) for k, v in student.state_dict().items()}
+    base_fp16_sd = {
+        k: (v.detach().cpu().half() if v.is_floating_point() else v.detach().cpu())
+        for k, v in student.state_dict().items()
+    }
 
     try:
         cfg = {"compressors": [{"method": comp_key, "rank": rank, "force_rank": True, "use_strs": False}]}
@@ -254,22 +271,23 @@ def train_single_qwen_compressor(
             res = inst.compress()
             student = res[0] if isinstance(res, tuple) else res
 
-    # Identify strictly compressed/modified prefixes by comparing post-compression state vs base teacher
+    # Identify strictly compressed/modified prefixes by comparing post-compression state vs base snapshot.
     compressed_prefix_set: set[str] = set()
-    teacher_sd = teacher_model.state_dict()
     for k, v in student.state_dict().items():
         k_lower = k.lower()
-        t_v = teacher_sd.get(k)
-        is_changed = (
-            t_v is None
-            or tuple(v.shape) != teacher_shapes.get(k)
-            or v.dtype != t_v.dtype
-            or any(term in k_lower for term in _DELTA_KEYWORDS)
-            or not torch.equal(v.detach().cpu().float(), t_v.detach().cpu().float())
-        )
+        t_v = base_fp16_sd.get(k)
+        if t_v is None or tuple(v.shape) != base_shapes.get(k):
+            is_changed = True
+        elif any(term in k_lower for term in _DELTA_KEYWORDS):
+            is_changed = True
+        elif v.is_floating_point() and t_v.is_floating_point():
+            is_changed = not torch.equal(v.detach().cpu().half(), t_v)
+        else:
+            is_changed = v.dtype != t_v.dtype or not torch.equal(v.detach().cpu(), t_v)
         if is_changed and "." in k:
             compressed_prefix_set.add(k.rsplit(".", 1)[0] + ".")
     compressed_prefixes = tuple(sorted(compressed_prefix_set))
+    del base_fp16_sd, base_shapes
 
     # Normalize any compressed float16 buffers back to FP32 if trainable so GradScaler works safely
     for p in student.parameters():
@@ -288,6 +306,9 @@ def train_single_qwen_compressor(
     pre_ppl = evaluate_causal_ppl(student, val_loader, device)
     logger.info("[%s] Pre-KD WikiText-2 PPL: %.2f", comp_key, pre_ppl)
 
+    if gradient_checkpointing:
+        enable_student_gradient_checkpointing(student, log_prefix=f"[{comp_key}] ")
+
     t_train_start = time.time()
     t_s1_deadline = t_train_start + (train_secs * 0.30)
     t_s2_deadline = t_train_start + train_secs
@@ -296,20 +317,24 @@ def train_single_qwen_compressor(
 
     # Stage 1: Frozen Layer Alignment (compressed/attn/ln parameters)
     trainable_s1 = []
+    trained_param_names: set[str] = set()
     for name, p in student.named_parameters():
         is_target = any(k in name.lower() for k in ("compress", "svd", "factor", "lora", "u_proj", "v_proj", "self_attn", "layernorm"))
         p.requires_grad = bool(is_target and p.is_floating_point())
         if p.requires_grad:
             trainable_s1.append(p)
+            trained_param_names.add(name)
     if not trainable_s1:
-        for p in student.parameters():
+        for name, p in student.named_parameters():
             if p.is_floating_point():
                 p.requires_grad = True
                 trainable_s1.append(p)
+                trained_param_names.add(name)
 
     opt1 = torch.optim.AdamW(trainable_s1, lr=8.0e-4, weight_decay=0.01)
     student.train()
     step_s1 = 0
+    layer_indices: Optional[list[int]] = teacher_cache["layer_indices"] if teacher_cache is not None else None
 
     while time.time() < t_s1_deadline:
         for batch in train_loader:
@@ -318,11 +343,17 @@ def train_single_qwen_compressor(
             in_ids = batch["input_ids"].to(device, non_blocking=True)
             att_m = batch["attention_mask"].to(device, non_blocking=True)
             with torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16):
-                with torch.no_grad():
-                    t_out = teacher_model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True, use_cache=False)
                 s_out = student(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True, use_cache=False)
-                s_h = s_out.hidden_states[1:]
-                t_h = t_out.hidden_states[1:]
+                if "teacher_hidden_states" in batch and layer_indices is not None:
+                    t_h_b = batch["teacher_hidden_states"].to(device, non_blocking=True)
+                    s_h = [s_out.hidden_states[idx + 1] for idx in layer_indices]
+                    t_h = [t_h_b[:, j, :, :] for j in range(len(layer_indices))]
+                else:
+                    assert teacher_model is not None
+                    with torch.no_grad():
+                        t_out = teacher_model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True, use_cache=False)
+                    s_h = s_out.hidden_states[1:]
+                    t_h = t_out.hidden_states[1:]
                 loss_mse = torch.stack([F.mse_loss(sh.float(), th.float()) for sh, th in zip(s_h, t_h)]).mean()
                 loss = loss_mse / grad_accum
             if torch.isfinite(loss):
@@ -346,7 +377,6 @@ def train_single_qwen_compressor(
     # Stage 2: End-to-End Compressed/Decoder Healing (Top-K Sparse Logit KD + Causal LM CE)
     # Keep untouched embed_tokens & lm_head frozen unless compressed to avoid bloat & train/save mismatch
     trainable_s2 = []
-    trained_param_names: set[str] = set()
     for name, p in student.named_parameters():
         in_compressed = any(name.startswith(pref) for pref in compressed_prefixes)
         is_decoder_target = (".self_attn." in name or ".mlp." in name or "layernorm" in name.lower()) and not name.startswith(("model.embed_tokens.", "lm_head."))
@@ -374,10 +404,16 @@ def train_single_qwen_compressor(
             att_m = batch["attention_mask"].to(device, non_blocking=True)
             lbls = batch["labels"].to(device, non_blocking=True)
             with torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16):
-                with torch.no_grad():
-                    t_out = teacher_model(input_ids=in_ids, attention_mask=att_m, use_cache=False)
                 s_out = student(input_ids=in_ids, attention_mask=att_m, labels=lbls, use_cache=False)
-                loss_sparse = compute_topk_sparse_kd_loss(s_out.logits.float(), t_out.logits.float(), topk=topk)
+                if "teacher_topk_vals" in batch and "teacher_topk_idx" in batch:
+                    t_vals = batch["teacher_topk_vals"].to(device, non_blocking=True)
+                    t_idx = batch["teacher_topk_idx"].to(device, non_blocking=True)
+                    loss_sparse = compute_topk_sparse_kd_loss_from_cache(s_out.logits, t_vals, t_idx)
+                else:
+                    assert teacher_model is not None
+                    with torch.no_grad():
+                        t_out = teacher_model(input_ids=in_ids, attention_mask=att_m, use_cache=False)
+                    loss_sparse = compute_topk_sparse_kd_loss(s_out.logits.float(), t_out.logits.float(), topk=topk)
                 loss_ce = s_out.loss.float() if s_out.loss is not None else torch.tensor(0.0, device=device)
                 loss = (0.50 * loss_sparse + 0.50 * loss_ce) / grad_accum
             if torch.isfinite(loss):
@@ -444,6 +480,7 @@ def train_single_qwen_compressor(
         cfg_out["_name_or_path"] = _normalize_base_model_id(model_name)
         cfg_out["base_model_name_or_path"] = _normalize_base_model_id(model_name)
         cfg_out["license"] = "mit"
+        cfg_out["compression_method"] = comp_key
         cfg_out["compressor_key"] = comp_key
         cfg_out["compression_rank"] = rank
         cfg_out["compression_ratio"] = round(param_reduction, 3)
@@ -497,6 +534,25 @@ def main() -> None:
     parser.add_argument("--hf_org", default="tahamajs")
     parser.add_argument("--hf_upload", type=int, default=0)
     parser.add_argument("--keep_local_weights", type=int, default=0)
+    parser.add_argument(
+        "--gradient_checkpointing",
+        nargs="?",
+        const=1,
+        default=0,
+        type=int,
+        help="Enable gradient checkpointing on student decoder blocks (0/1)",
+    )
+    parser.add_argument(
+        "--teacher_cache_path",
+        default="auto",
+        help="Offline teacher representation cache path ('auto' or 'none' to disable)",
+    )
+    parser.add_argument(
+        "--max_cache_samples",
+        type=int,
+        default=256,
+        help="Maximum training chunks/samples stored in offline teacher cache",
+    )
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     args = parser.parse_args()
 
@@ -548,79 +604,86 @@ def main() -> None:
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    teacher = AutoModelForCausalLM.from_pretrained(
-        args.model,
-        torch_dtype=torch.float16 if device.type == "cuda" else torch.float32,
-        local_files_only=True,
-    ).to(device)
-    teacher.eval()
-    for p in teacher.parameters():
-        p.requires_grad = False
+    train_chunks, val_chunks = load_tokenized_qwen_corpus(
+        tokenizer,
+        dataset_name=args.dataset,
+        seq_len=args.seq_len,
+        cache_path_override=f"/tmp/wikitext_qwen_comp_seq{args.seq_len}.pt",
+    )
+    val_ds = StratifiedQwenDataset(val_chunks)
 
-    train_ds, val_ds = _build_cache_wikitext(args.dataset, tokenizer, args.seq_len, cache_dir="/tmp")
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, pin_memory=(device.type == "cuda"))
-    val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, pin_memory=(device.type == "cuda"))
+    norm_model_id = _normalize_base_model_id(args.model)
+    cache_path = resolve_teacher_cache_path(
+        args.teacher_cache_path,
+        out_dir=out_base,
+        model_id=norm_model_id,
+        tag="qwen_causal",
+        seq_len=args.seq_len,
+        max_cache_samples=args.max_cache_samples,
+        topk=args.topk,
+    )
+
+    def _load_qwen_teacher() -> nn.Module:
+        t = AutoModelForCausalLM.from_pretrained(
+            args.model,
+            torch_dtype=torch.float16 if device.type == "cuda" else torch.float32,
+            local_files_only=True,
+        ).to(device)
+        t.eval()
+        for p in t.parameters():
+            p.requires_grad = False
+        return t
+
+    teacher: Optional[nn.Module] = None
+    teacher_cache: Optional[dict[str, Any]] = None
+    if cache_path is not None:
+        teacher_cache = build_or_load_causal_teacher_cache(
+            cache_path,
+            model_id=args.model,
+            normalized_model_id=norm_model_id,
+            train_chunks=train_chunks,
+            val_chunks=val_chunks,
+            device=device,
+            load_teacher_fn=_load_qwen_teacher,
+            evaluate_ppl_fn=evaluate_causal_ppl,
+            seq_len=args.seq_len,
+            max_cache_samples=args.max_cache_samples,
+            topk=args.topk,
+            batch_size=args.batch_size,
+            val_batch_size=args.batch_size,
+        )
+        train_ds: Any = CachedCausalDataset(teacher_cache)
+    else:
+        teacher = _load_qwen_teacher()
+        train_ds = StratifiedQwenDataset(train_chunks)
 
     for i, comp_key in enumerate(pending_keys):
         logger.info("\n[%d/%d] Processing Qwen Compressor: %s", i + 1, len(pending_keys), comp_key)
         ckpt_dir = out_base / comp_key
         repo_id = f"{args.hf_org}/qwen-2.5-0.5b-comp-{comp_key.replace('_', '-')}-wikitext2"
 
-        oom_retry = False
+        curr_bs = max(1, int(args.batch_size))
+        curr_accum = max(1, int(args.grad_accum))
+        curr_ckpt = bool(args.gradient_checkpointing)
         res: dict[str, Any] | None = None
-        try:
-            res = train_single_qwen_compressor(
-                comp_key=comp_key,
-                teacher_model=teacher,
-                train_loader=train_loader,
-                val_loader=val_loader,
-                device=device,
-                tokenizer=tokenizer,
-                out_dir=ckpt_dir,
-                model_name=args.model,
-                repo_id=repo_id,
-                train_secs=args.train_secs,
-                topk=args.topk,
-                rank=args.rank,
-                grad_accum=args.grad_accum,
-            )
-        except RuntimeError as e:
-            if "out of memory" in str(e).lower() and args.batch_size > 1:
-                oom_retry = True
-                logger.warning("[%s] CUDA OOM at bs=%d -> freeing & retrying bs=%d", comp_key, args.batch_size, max(1, args.batch_size // 2))
-            else:
-                logger.error("[%s] Runtime failure: %s", comp_key, e, exc_info=True)
-                res = {
-                    "model": _normalize_base_model_id(args.model),
-                    "compressor": comp_key,
-                    "status": "FAIL_TRAINING",
-                    "error": str(e)[:240],
-                    "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
-                }
-        except Exception as e:
-            logger.error("[%s] Training failed: %s", comp_key, e, exc_info=True)
-            res = {
-                "model": _normalize_base_model_id(args.model),
-                "compressor": comp_key,
-                "status": "FAIL_TRAINING",
-                "error": str(e)[:240],
-                "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
-            }
 
-        if oom_retry:
-            if device.type == "cuda":
-                torch.cuda.empty_cache()
-            gc.collect()
-            low_bs = max(1, args.batch_size // 2)
-            low_accum = args.grad_accum * max(1, args.batch_size // low_bs)
-            low_train_loader = DataLoader(train_ds, batch_size=low_bs, shuffle=True, pin_memory=(device.type == "cuda"))
-            low_val_loader = DataLoader(val_ds, batch_size=low_bs, shuffle=False, pin_memory=(device.type == "cuda"))
+        while True:
+            curr_train_loader = DataLoader(
+                train_ds,
+                batch_size=curr_bs,
+                shuffle=True,
+                drop_last=(len(train_ds) >= curr_bs),
+                pin_memory=False,
+            )
+            curr_val_loader = DataLoader(val_ds, batch_size=curr_bs, shuffle=False, pin_memory=(device.type == "cuda"))
+            is_oom = False
+            err_msg = ""
             try:
                 res = train_single_qwen_compressor(
                     comp_key=comp_key,
                     teacher_model=teacher,
-                    train_loader=low_train_loader,
-                    val_loader=low_val_loader,
+                    train_loader=curr_train_loader,
+                    val_loader=curr_val_loader,
                     device=device,
                     tokenizer=tokenizer,
                     out_dir=ckpt_dir,
@@ -629,17 +692,58 @@ def main() -> None:
                     train_secs=args.train_secs,
                     topk=args.topk,
                     rank=args.rank,
-                    grad_accum=low_accum,
+                    grad_accum=curr_accum,
+                    gradient_checkpointing=curr_ckpt,
+                    teacher_cache=teacher_cache,
                 )
-            except Exception as e2:
-                logger.error("[%s] OOM retry also failed: %s", comp_key, e2)
+                break
+            except Exception as e:
+                err_msg = str(e)
+                if "out of memory" in err_msg.lower():
+                    is_oom = True
+                else:
+                    logger.error("[%s] Training failed: %s", comp_key, e, exc_info=True)
+
+            del curr_train_loader, curr_val_loader
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
+            gc.collect()
+
+            if is_oom and (curr_bs > 1 or not curr_ckpt):
+                if not curr_ckpt:
+                    curr_ckpt = True
+                if curr_bs > 1:
+                    next_bs = max(1, curr_bs // 2)
+                    scale = max(1, curr_bs // next_bs)
+                    curr_bs = next_bs
+                    curr_accum = curr_accum * scale
+                logger.warning(
+                    "[%s] CUDA OOM -> retrying at batch_size=%d, grad_accum=%d, gradient_checkpointing=%s",
+                    comp_key,
+                    curr_bs,
+                    curr_accum,
+                    curr_ckpt,
+                )
+                continue
+
+            if is_oom:
+                logger.error("[%s] OOM retry exhausted at bs=%d: %s", comp_key, curr_bs, err_msg)
                 res = {
                     "model": _normalize_base_model_id(args.model),
                     "compressor": comp_key,
                     "status": "SKIPPED_OOM",
-                    "error": str(e2)[:240],
+                    "error": err_msg[:240],
                     "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
                 }
+            else:
+                res = {
+                    "model": _normalize_base_model_id(args.model),
+                    "compressor": comp_key,
+                    "status": "FAIL_TRAINING",
+                    "error": err_msg[:240],
+                    "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+                }
+            break
 
         if res is not None:
             with open(metrics_file, "a", encoding="utf-8") as f:

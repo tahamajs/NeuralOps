@@ -29,7 +29,7 @@ import os
 import sys
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
@@ -47,72 +47,32 @@ if str(REPO_ROOT) not in sys.path:
 if str(Path(__file__).resolve().parent) not in sys.path:
     sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from qwen_zoo_train_mix import (
+from neuralops.benchmarks.kd import (
     CausalTextDataset,
-    _build_cache_wikitext,
-    _extract_attention_metadata,
     apply_qwen_attention_surgery,
+    build_cache_wikitext,
+    build_llama_readme,
     evaluate_causal_ppl,
+    extract_attention_metadata,
 )
-from neuralops.hub.model_card import generate_unified_model_card
+from neuralops.benchmarks.kd.teacher_cache import (
+    CachedCausalDataset,
+    build_or_load_causal_teacher_cache,
+    enable_student_gradient_checkpointing,
+    resolve_teacher_cache_path,
+    try_load_causal_teacher_cache,
+)
+
+_build_cache_wikitext = build_cache_wikitext
+_extract_attention_metadata = extract_attention_metadata
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("llama_zoo_distill")
 
 
-def build_llama_readme(
-    attn_key: str,
-    result: dict[str, Any],
-    teacher_ppl: float,
-    out_dir: Path,
-    meta: dict[str, Any],
-) -> str:
-    """Generates a complete TinyLlama-1.1B Hugging Face Model Card via the unified NeuralOps generator."""
-    slug = attn_key.replace("_", "-")
-    repo_id = f"{result.get('hf_org', 'tahamajs')}/tinyllama-1.1b-{slug}-wikitext2"
-    pattern = str(result.get("pattern", "hybrid_3_1"))
-    total_layers = int(result.get("total_layers", 22))
-    surgeried_layers = result.get("surgeried_layers") or (
-        [i for i in range(total_layers) if i % 4 != 3] if pattern == "hybrid_3_1" else list(range(total_layers))
-    )
-    anchor_layers = result.get("anchor_layers") or [i for i in range(total_layers) if i not in set(surgeried_layers)]
-
-    merged_metrics = dict(result)
-    if math.isfinite(teacher_ppl):
-        merged_metrics["teacher_ppl"] = teacher_ppl
-
-    surgery_info = {
-        "pattern": pattern,
-        "total_layers": total_layers,
-        "modified_layers": len(surgeried_layers),
-        "surgeried_layers": surgeried_layers,
-        "anchor_layers": anchor_layers,
-        "modified_components": (
-            f"`{len(surgeried_layers)}/{total_layers}` decoder `model.layers.{{i}}.self_attn` "
-            "+ trained decoder `layernorm`s"
-        ),
-        "frozen_components": (
-            f"`{len(anchor_layers)}` quadratic anchor layers `{anchor_layers}`, "
-            "decoder MLPs (`mlp.*`), `embed_tokens`, and `lm_head`"
-        ),
-        **({k: v for k, v in meta.items() if k in ("class_name", "family", "module_path", "docstring")}),
-    }
-
-    return generate_unified_model_card(
-        zoo_type="tinyllama",
-        mechanism_key=attn_key,
-        repo_id=repo_id,
-        base_model="TinyLlama/TinyLlama_v1.1",
-        out_dir=out_dir,
-        metrics=merged_metrics,
-        surgery_info=surgery_info,
-        dataset="Salesforce/wikitext",
-    )
-
-
 def train_single_llama_attention(
     attn_key: str,
-    teacher_model: nn.Module,
+    teacher_model: Optional[nn.Module],
     train_loader: DataLoader,
     val_loader: DataLoader,
     device: torch.device,
@@ -123,13 +83,30 @@ def train_single_llama_attention(
     train_secs: float = 150.0,
     grad_accum: int = 8,
     hf_org: str = "tahamajs",
+    model_name: str = "/home/tahamajlesi.ut/NeuralOps/models/tinyllama_1.1b",
+    gradient_checkpointing: bool = False,
+    teacher_cache: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     """Runs 2-stage hidden representation distillation for TinyLlama-1.1B."""
     logger.info("\n" + "=" * 80)
     logger.info("[LLAMA START] Distilling %s on TinyLlama-1.1B (%ds, pattern=%s)", attn_key, int(train_secs), pattern)
     logger.info("=" * 80)
 
-    student = copy.deepcopy(teacher_model).float()
+    if teacher_cache is None and teacher_model is None:
+        raise ValueError("Either teacher_cache or teacher_model must be provided.")
+
+    if device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(device)
+
+    if teacher_model is not None:
+        student = copy.deepcopy(teacher_model).float()
+    else:
+        from transformers import AutoModelForCausalLM
+        student = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            torch_dtype=torch.float32,
+            local_files_only=True,
+        )
     student = apply_qwen_attention_surgery(student, attn_key=attn_key, pattern=pattern)
     student = student.to(device)
 
@@ -148,6 +125,9 @@ def train_single_llama_attention(
     pre_ppl = evaluate_causal_ppl(student, val_loader, device)
     logger.info("[%s] Pre-KD WikiText-2 PPL=%.2f", attn_key, pre_ppl)
 
+    if gradient_checkpointing:
+        enable_student_gradient_checkpointing(student, log_prefix=f"[{attn_key}] ")
+
     for name, p in student.named_parameters():
         if any(name.startswith(pref) for pref in surgeried_attn_prefixes):
             p.requires_grad = True
@@ -165,6 +145,7 @@ def train_single_llama_attention(
     scaler1 = torch.cuda.amp.GradScaler(init_scale=1024.0, enabled=(device.type == "cuda"))
     student.train()
     step_s1 = 0
+    layer_indices: Optional[list[int]] = teacher_cache["layer_indices"] if teacher_cache is not None else None
 
     while time.time() < t_s1_end:
         for batch in train_loader:
@@ -173,10 +154,16 @@ def train_single_llama_attention(
             in_ids = batch["input_ids"].to(device, non_blocking=True)
             att_m = batch["attention_mask"].to(device, non_blocking=True)
             with torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16):
-                with torch.no_grad():
-                    t_out = teacher_model.model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True, use_cache=False)
                 s_out = student.model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True, use_cache=False)
-                s_h, t_h = s_out.hidden_states[1:], t_out.hidden_states[1:]
+                if "teacher_hidden_states" in batch and layer_indices is not None:
+                    t_h_b = batch["teacher_hidden_states"].to(device, non_blocking=True)
+                    s_h = [s_out.hidden_states[idx + 1] for idx in layer_indices]
+                    t_h = [t_h_b[:, j, :, :] for j in range(len(layer_indices))]
+                else:
+                    assert teacher_model is not None
+                    with torch.no_grad():
+                        t_out = teacher_model.model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True, use_cache=False)
+                    s_h, t_h = s_out.hidden_states[1:], t_out.hidden_states[1:]
                 loss_mse = torch.stack([F.mse_loss(s, t) for s, t in zip(s_h, t_h)]).mean()
                 loss_cos = torch.stack([1.0 - F.cosine_similarity(s, t, dim=-1).mean() for s, t in zip(s_h, t_h)]).mean()
                 loss = (loss_mse + 0.25 * loss_cos) / grad_accum
@@ -212,10 +199,16 @@ def train_single_llama_attention(
             in_ids = batch["input_ids"].to(device, non_blocking=True)
             att_m = batch["attention_mask"].to(device, non_blocking=True)
             with torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16):
-                with torch.no_grad():
-                    t_out = teacher_model.model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True, use_cache=False)
                 s_out = student.model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True, use_cache=False)
-                s_h, t_h = s_out.hidden_states[1:], t_out.hidden_states[1:]
+                if "teacher_hidden_states" in batch and layer_indices is not None:
+                    t_h_b = batch["teacher_hidden_states"].to(device, non_blocking=True)
+                    s_h = [s_out.hidden_states[idx + 1] for idx in layer_indices]
+                    t_h = [t_h_b[:, j, :, :] for j in range(len(layer_indices))]
+                else:
+                    assert teacher_model is not None
+                    with torch.no_grad():
+                        t_out = teacher_model.model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True, use_cache=False)
+                    s_h, t_h = s_out.hidden_states[1:], t_out.hidden_states[1:]
                 loss_mse = torch.stack([F.mse_loss(s, t) for s, t in zip(s_h, t_h)]).mean()
                 loss_cos = torch.stack([1.0 - F.cosine_similarity(s, t, dim=-1).mean() for s, t in zip(s_h, t_h)]).mean()
                 logits_shift = student.lm_head(s_out.hidden_states[-1][:, :-1, :]).contiguous()
@@ -270,27 +263,27 @@ def train_single_llama_attention(
     tokenizer.save_pretrained(str(out_dir))
 
     # Filter strictly to surgeried decoder self_attn prefixes + trained layernorms (exclude frozen anchor layers)
-    attn_state = {
-        k: (v.detach().cpu().half() if v.is_floating_point() else v.detach().cpu()).clone().contiguous()
-        for k, v in student.state_dict().items()
-        if not (any(k.startswith(ap) for ap in anchor_attn_prefixes) and k not in trained_param_names)
-        and (
-            any(k.startswith(sp) for sp in surgeried_attn_prefixes)
-            or (k in trained_param_names and "layernorm" in k.lower())
-        )
-    }
-
+    saved_tensor_count = 0
     saved_via_helper = False
     try:
         from neuralops.models.surgical_io import save_surgical_delta
-        save_surgical_delta(
+        delta_info = save_surgical_delta(
             student,
             out_dir,
             base_model_id="TinyLlama/TinyLlama_v1.1",
             surgeried_prefixes=[p.rstrip(".") for p in surgeried_attn_prefixes],
             trained_param_names=sorted(trained_param_names),
             anchor_prefixes=[p.rstrip(".") for p in anchor_attn_prefixes],
-            operations=[{"op": "replace_attention", "attn_key": attn_key, "pattern": pattern}],
+            operations=[
+                {
+                    "op": "replace_attention",
+                    "component_type": "attention",
+                    "operator_key": attn_key,
+                    "attn_key": attn_key,
+                    "pattern": pattern,
+                    "target_modules": [p.rstrip(".") for p in surgeried_attn_prefixes],
+                }
+            ],
             metadata={
                 "zoo_type": "tinyllama",
                 "attention_type": attn_key,
@@ -299,14 +292,27 @@ def train_single_llama_attention(
                 "surgeried_layers": surgeried_indices,
                 "anchor_layers": anchor_indices,
             },
+            half_precision=True,
+            remove_full_weights=True,
         )
+        saved_tensor_count = int(delta_info.get("saved_tensor_count", 0))
         saved_via_helper = True
     except (ImportError, TypeError, AttributeError):
         pass
 
     if not saved_via_helper:
+        attn_state = {
+            k: (v.detach().cpu().half() if v.is_floating_point() else v.detach().cpu()).clone().contiguous()
+            for k, v in student.state_dict().items()
+            if not (any(k.startswith(ap) for ap in anchor_attn_prefixes) and k not in trained_param_names)
+            and (
+                any(k.startswith(sp) for sp in surgeried_attn_prefixes)
+                or (k in trained_param_names and "layernorm" in k.lower())
+            )
+        }
         from safetensors.torch import save_file
         save_file(attn_state, str(out_dir / "attention_weights.safetensors"))
+        saved_tensor_count = len(attn_state)
         manifest = {
             "schema_version": "neuralops.surgery/v2",
             "zoo_type": "tinyllama",
@@ -322,7 +328,7 @@ def train_single_llama_attention(
             "metadata": {"attention_type": attn_key, "pattern": pattern},
             "weights_file": "attention_weights.safetensors",
             "weights_format": "attention_only_fp16",
-            "saved_tensor_count": len(attn_state),
+            "saved_tensor_count": saved_tensor_count,
             "saved_tensor_keys": sorted(attn_state.keys()),
         }
         (out_dir / "surgical_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
@@ -341,7 +347,7 @@ def train_single_llama_attention(
     cfg["surgeried_layers"] = surgeried_indices
     cfg["anchor_layers"] = anchor_indices
     cfg["weights_format"] = "attention_only_fp16"
-    cfg["saved_tensor_count"] = len(attn_state)
+    cfg["saved_tensor_count"] = saved_tensor_count
     (out_dir / "config.json").write_text(json.dumps(cfg, indent=2), encoding="utf-8")
     (out_dir / "training_metrics.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
 
@@ -366,9 +372,29 @@ def main() -> None:
     parser.add_argument("--batch_size", type=int, default=4)
     parser.add_argument("--grad_accum", type=int, default=8)
     parser.add_argument("--train_secs", type=float, default=150.0)
+    parser.add_argument("--topk", type=int, default=64)
     parser.add_argument("--out_dir", default="/home/tahamajlesi.ut/NeuralOps/results/tinyllama_1.1b_zoo")
     parser.add_argument("--metrics_log", default="/home/tahamajlesi.ut/NeuralOps/results/tinyllama_1.1b_zoo/metrics.jsonl")
     parser.add_argument("--hf_org", default="tahamajs")
+    parser.add_argument(
+        "--gradient_checkpointing",
+        nargs="?",
+        const=1,
+        default=0,
+        type=int,
+        help="Enable gradient checkpointing on student decoder blocks (0/1)",
+    )
+    parser.add_argument(
+        "--teacher_cache_path",
+        default="auto",
+        help="Offline teacher representation cache path ('auto' or 'none' to disable)",
+    )
+    parser.add_argument(
+        "--max_cache_samples",
+        type=int,
+        default=256,
+        help="Maximum training chunks/samples stored in offline teacher cache",
+    )
     parser.add_argument("--device", default="cuda")
     args = parser.parse_args()
 
@@ -376,28 +402,6 @@ def main() -> None:
     if args.device == "cuda" and not torch.cuda.is_available():
         logger.error("--device cuda requested but CUDA unavailable.")
         sys.exit(3)
-
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-
-    tokenizer = AutoTokenizer.from_pretrained(args.model, local_files_only=True)
-    if tokenizer.pad_token_id is None:
-        tokenizer.pad_token = tokenizer.eos_token
-
-    teacher = AutoModelForCausalLM.from_pretrained(
-        args.model,
-        torch_dtype=torch.float16 if device.type == "cuda" else torch.float32,
-        local_files_only=True,
-    ).to(device)
-    teacher.eval()
-    for p in teacher.parameters():
-        p.requires_grad = False
-
-    train_chunks, val_chunks = _build_cache_wikitext(tokenizer, seq_len=args.seq_len, cache_path="/dev/shm/wikitext_tinyllama_seq512.pt")
-    train_loader = DataLoader(CausalTextDataset(train_chunks), batch_size=args.batch_size, shuffle=True, drop_last=True, pin_memory=(device.type == "cuda"))
-    val_loader = DataLoader(CausalTextDataset(val_chunks), batch_size=4, shuffle=False, pin_memory=(device.type == "cuda"))
-
-    teacher_ppl = evaluate_causal_ppl(teacher, val_loader, device)
-    logger.info("TinyLlama-1.1B Teacher Baseline WikiText-2 PPL=%.2f", teacher_ppl)
 
     keys = [args.attn_key] if args.attn_key else json.loads(Path(args.keys_json).read_text(encoding="utf-8"))
     passed: set[str] = set()
@@ -414,65 +418,145 @@ def main() -> None:
                     pass
 
     out_base = Path(args.out_dir)
+    out_base.mkdir(parents=True, exist_ok=True)
+    pending = [k for k in keys if k not in passed]
+    if not pending:
+        logger.info("All %d TinyLlama keys already PASSED. Exiting cleanly.", len(keys))
+        return
+
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(args.model, local_files_only=True)
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    tok_cache = "/dev/shm/wikitext_tinyllama_seq512.pt" if args.seq_len == 512 else f"/dev/shm/wikitext_tinyllama_seq{args.seq_len}.pt"
+    train_chunks, val_chunks = _build_cache_wikitext(tokenizer, seq_len=args.seq_len, cache_path=tok_cache)
+    val_loader = DataLoader(CausalTextDataset(val_chunks), batch_size=4, shuffle=False, pin_memory=(device.type == "cuda"))
+
+    cache_path = resolve_teacher_cache_path(
+        args.teacher_cache_path,
+        out_dir=out_base,
+        model_id="TinyLlama/TinyLlama_v1.1",
+        tag="tinyllama_causal",
+        seq_len=args.seq_len,
+        max_cache_samples=args.max_cache_samples,
+        topk=args.topk,
+    )
+
+    def _load_llama_teacher() -> nn.Module:
+        t = AutoModelForCausalLM.from_pretrained(
+            args.model,
+            torch_dtype=torch.float16 if device.type == "cuda" else torch.float32,
+            local_files_only=True,
+        ).to(device)
+        t.eval()
+        for p in t.parameters():
+            p.requires_grad = False
+        return t
+
+    teacher: Optional[nn.Module] = None
+    teacher_cache: Optional[dict[str, Any]] = None
+    if cache_path is not None:
+        teacher_cache = build_or_load_causal_teacher_cache(
+            cache_path,
+            model_id=args.model,
+            normalized_model_id="TinyLlama/TinyLlama_v1.1",
+            train_chunks=train_chunks,
+            val_chunks=val_chunks,
+            device=device,
+            load_teacher_fn=_load_llama_teacher,
+            evaluate_ppl_fn=evaluate_causal_ppl,
+            seq_len=args.seq_len,
+            max_cache_samples=args.max_cache_samples,
+            topk=args.topk,
+            batch_size=args.batch_size,
+            val_batch_size=4,
+        )
+        teacher_ppl = float(teacher_cache["teacher_ppl"])
+        train_ds: Any = CachedCausalDataset(teacher_cache)
+    else:
+        teacher = _load_llama_teacher()
+        teacher_ppl = evaluate_causal_ppl(teacher, val_loader, device)
+        train_ds = CausalTextDataset(train_chunks)
+
+    logger.info("TinyLlama-1.1B Teacher Baseline WikiText-2 PPL=%.2f", teacher_ppl)
+
     for i, key in enumerate(keys, 1):
         if key in passed:
             logger.info("[%d/%d] Skipping %s (already PASSED).", i, len(keys), key)
             continue
-        res = None
-        err_msg = None
-        is_oom = False
-        try:
-            res = train_single_llama_attention(
-                attn_key=key,
-                teacher_model=teacher,
-                train_loader=train_loader,
-                val_loader=val_loader,
-                device=device,
-                tokenizer=tokenizer,
-                out_dir=out_base / key,
-                teacher_ppl=teacher_ppl,
-                pattern=args.surgery_pattern,
-                train_secs=args.train_secs,
-                grad_accum=args.grad_accum,
-                hf_org=args.hf_org,
-            )
-        except Exception as e:
-            err_msg = str(e)
-            is_oom = "out of memory" in err_msg.lower()
-            if not is_oom:
-                logger.error("[%s] LLaMA training exception: %s", key, e, exc_info=True)
 
-        if res is None:
+        curr_bs = max(1, int(args.batch_size))
+        curr_accum = max(1, int(args.grad_accum))
+        curr_ckpt = bool(args.gradient_checkpointing)
+        res: dict[str, Any] = {}
+
+        while True:
+            curr_loader = DataLoader(
+                train_ds,
+                batch_size=curr_bs,
+                shuffle=True,
+                drop_last=(len(train_ds) >= curr_bs),
+                pin_memory=False,
+            )
+            is_oom = False
+            err_msg = ""
+            try:
+                res = train_single_llama_attention(
+                    attn_key=key,
+                    teacher_model=teacher,
+                    train_loader=curr_loader,
+                    val_loader=val_loader,
+                    device=device,
+                    tokenizer=tokenizer,
+                    out_dir=out_base / key,
+                    teacher_ppl=teacher_ppl,
+                    pattern=args.surgery_pattern,
+                    train_secs=args.train_secs,
+                    grad_accum=curr_accum,
+                    hf_org=args.hf_org,
+                    model_name=args.model,
+                    gradient_checkpointing=curr_ckpt,
+                    teacher_cache=teacher_cache,
+                )
+                break
+            except Exception as e:
+                err_msg = str(e)
+                if "out of memory" in err_msg.lower():
+                    is_oom = True
+                else:
+                    logger.error("[%s] LLaMA training exception: %s", key, e, exc_info=True)
+
+            del curr_loader
             gc.collect()
             if device.type == "cuda":
                 torch.cuda.empty_cache()
-            if is_oom and args.batch_size > 1:
-                retry_bs = max(1, args.batch_size // 2)
-                logger.warning("[%s] OOM at bs=%d. Retrying at bs=%d...", key, args.batch_size, retry_bs)
-                try:
-                    halved_loader = DataLoader(CausalTextDataset(train_chunks), batch_size=retry_bs, shuffle=True, drop_last=True)
-                    res = train_single_llama_attention(
-                        attn_key=key,
-                        teacher_model=teacher,
-                        train_loader=halved_loader,
-                        val_loader=val_loader,
-                        device=device,
-                        tokenizer=tokenizer,
-                        out_dir=out_base / key,
-                        teacher_ppl=teacher_ppl,
-                        pattern=args.surgery_pattern,
-                        train_secs=args.train_secs,
-                        grad_accum=args.grad_accum * 2,
-                        hf_org=args.hf_org,
-                    )
-                except Exception as e2:
-                    logger.error("[%s] LLaMA OOM retry exception: %s", key, e2)
-                    res = {"attn_key": key, "status": "SKIPPED_OOM", "error": str(e2), "timestamp": datetime.datetime.utcnow().isoformat() + "Z"}
-                gc.collect()
-                if device.type == "cuda":
-                    torch.cuda.empty_cache()
+
+            if is_oom and (curr_bs > 1 or not curr_ckpt):
+                if not curr_ckpt:
+                    curr_ckpt = True
+                if curr_bs > 1:
+                    next_bs = max(1, curr_bs // 2)
+                    scale = max(1, curr_bs // next_bs)
+                    curr_bs = next_bs
+                    curr_accum = curr_accum * scale
+                logger.warning(
+                    "[%s] OOM encountered. Retrying at batch_size=%d, grad_accum=%d, gradient_checkpointing=%s...",
+                    key,
+                    curr_bs,
+                    curr_accum,
+                    curr_ckpt,
+                )
+                continue
+
+            if is_oom:
+                logger.error("[%s] OOM retry exhausted at bs=%d: %s", key, curr_bs, err_msg)
+                res = {"attn_key": key, "status": "SKIPPED_OOM", "error": err_msg, "timestamp": datetime.datetime.utcnow().isoformat() + "Z"}
             else:
                 res = {"attn_key": key, "status": "FAIL_TRAINING", "error": err_msg, "timestamp": datetime.datetime.utcnow().isoformat() + "Z"}
+            break
+
         with open(ledger, "a", encoding="utf-8") as f:
             f.write(json.dumps(res) + "\n")
 

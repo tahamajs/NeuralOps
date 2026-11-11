@@ -5,25 +5,32 @@
 # LICENSE file in the root directory of this source tree.
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Canonical 5-format benchmark ledger exporter for the Dual Zoo pipelines.
+"""Canonical 5-format benchmark ledger exporter for the NeuralOps Multi-Zoo pipelines.
 
-Reads:
-  1. Qwen Attention Zoo JSONL (`metrics.jsonl`)
-  2. BERT Compressor Zoo JSONL (`multirank_lora_ledger.jsonl`)
+Reads up to 6 zoo JSONL ledgers:
+  1. Qwen Attention Zoo (`results/qwen_attention_zoo/metrics.jsonl`)
+  2. BERT Compressor Zoo (`results/bert_compressor_zoo/multirank_lora_ledger.jsonl`)
+  3. BERT Attention Zoo (`results/bert_attention_zoo/metrics.jsonl`)
+  4. Qwen Compressor Zoo (`results/qwen_compressor_zoo/metrics.jsonl`)
+  5. VLM LLaVA ScienceQA Zoo (`results/vlm_llava_scienceqa_zoo/metrics.jsonl`)
+  6. TinyLlama 1.1B Zoo (`results/tinyllama_1.1b_zoo/metrics.jsonl`)
 
 Maps every verified entry into canonical `BenchmarkResult` records with exact
 recorded hardware, metrics, deltas, timestamps, and fail-closed statuses, then
 exports all 5 canonical formats via `save_all_formats` (JSON, JSONL, CSV,
-Markdown, and Parquet).
+Markdown, and Parquet) alongside an aggregated `zoo_overview.json`.
 """
 
 from __future__ import annotations
 
 import argparse
 from collections import Counter
+from dataclasses import dataclass
+from datetime import datetime, timezone
 import json
 import logging
 import math
+import os
 from pathlib import Path
 import sys
 from typing import Any
@@ -50,7 +57,7 @@ EXIT_USAGE_ERROR = 2
 EXIT_NUMERICAL_FAILURE = 4
 EXIT_OUTPUT_ERROR = 6
 
-_INDEX_FILENAMES = ("results.jsonl", "results.csv", "results.parquet")
+_INDEX_FILENAMES = ("results.jsonl", "results.csv", "results.parquet", "zoo_overview.json")
 
 
 def _validate_safe_segment(value: Any, field_name: str, *, allow_slashes: bool = False) -> str:
@@ -60,8 +67,13 @@ def _validate_safe_segment(value: Any, field_name: str, *, allow_slashes: bool =
         raise ValueError(f"Missing required field '{field_name}'.")
     if "\x00" in text or ".." in Path(text).parts:
         raise ValueError(f"Unsafe path segment in field '{field_name}': {text!r}")
-    if not allow_slashes and ("/" in text or "\\" in text or Path(text).is_absolute()):
+    if "\\" in text or Path(text).is_absolute():
         raise ValueError(f"Unsafe path separator in field '{field_name}': {text!r}")
+    if not allow_slashes:
+        if "/" in text:
+            raise ValueError(f"Unsafe path separator in field '{field_name}': {text!r}")
+    elif text.startswith("/") or text.endswith("/") or "//" in text:
+        raise ValueError(f"Unsafe slash placement in field '{field_name}': {text!r}")
     return text
 
 
@@ -569,6 +581,433 @@ def map_bert_compressor_record(
     )
 
 
+def _extract_first_finite_float(
+    record: dict[str, Any],
+    keys: tuple[str, ...],
+    numeric_errors: list[str],
+) -> float | None:
+    """Extract the first non-None finite float from candidate keys."""
+    for key in keys:
+        if key in record and record[key] is not None:
+            return _extract_finite_float(record, key, numeric_errors)
+    return None
+
+
+@dataclass(frozen=True)
+class _ZooMapperSpec:
+    """Declarative mapping specification for a Zoo JSONL ledger."""
+
+    zoo_name: str
+    run_prefix: str
+    module_keys: tuple[str, ...]
+    module_field_label: str
+    module_type: str
+    registry: str
+    default_model: str
+    model_family: str
+    default_dataset: str
+    default_task: str
+    training_type: str
+    require_any_metric: tuple[str, ...]
+    allow_dataset_slashes: bool = False
+    extract_compression: bool = False
+    dataset_split: str | None = None
+
+
+_BERT_ATTN_SPEC = _ZooMapperSpec(
+    zoo_name="bert_attention_zoo",
+    run_prefix="bert_attention",
+    module_keys=("attn_key", "module"),
+    module_field_label="attn_key",
+    module_type="attention",
+    registry="attention",
+    default_model="bert-base-uncased",
+    model_family="bert",
+    default_dataset="sst2",
+    default_task="classification",
+    training_type="distillation",
+    require_any_metric=("post_ppl", "accuracy"),
+)
+
+_QWEN_COMP_SPEC = _ZooMapperSpec(
+    zoo_name="qwen_compressor_zoo",
+    run_prefix="qwen_compressor",
+    module_keys=("compressor", "comp_key", "module"),
+    module_field_label="compressor",
+    module_type="compressor",
+    registry="compressor",
+    default_model="Qwen/Qwen2.5-0.5B",
+    model_family="qwen",
+    default_dataset="wikitext-2-raw-v1",
+    default_task="causal_lm",
+    training_type="compression_distillation",
+    require_any_metric=("post_ppl", "accuracy"),
+    extract_compression=True,
+)
+
+_VLM_SPEC = _ZooMapperSpec(
+    zoo_name="vlm_llava_scienceqa_zoo",
+    run_prefix="vlm_attention",
+    module_keys=("attn_key", "module"),
+    module_field_label="attn_key",
+    module_type="attention",
+    registry="attention",
+    default_model="llava-hf/llava-interleave-qwen-0.5b-hf",
+    model_family="vlm",
+    default_dataset="derek-thomas/ScienceQA",
+    default_task="vqa_multimodal",
+    training_type="distillation",
+    require_any_metric=("accuracy", "post_ppl"),
+    allow_dataset_slashes=True,
+)
+
+_TINYLLAMA_SPEC = _ZooMapperSpec(
+    zoo_name="tinyllama_1.1b_zoo",
+    run_prefix="tinyllama_attention",
+    module_keys=("attn_key", "module"),
+    module_field_label="attn_key",
+    module_type="attention",
+    registry="attention",
+    default_model="TinyLlama/TinyLlama_v1.1",
+    model_family="llama",
+    default_dataset="wikitext-2",
+    default_task="causal_lm",
+    training_type="distillation",
+    require_any_metric=("post_ppl", "accuracy"),
+)
+
+
+def _map_zoo_distillation_record(
+    record: dict[str, Any],
+    line_no: int,
+    spec: _ZooMapperSpec,
+    default_model: str | None = None,
+    default_dataset: str | None = None,
+    default_device: str | None = None,
+) -> BenchmarkResult:
+    """Map one attention/compressor zoo JSONL record strictly into BenchmarkResult."""
+    raw_mod_key = next((record.get(k) for k in spec.module_keys if record.get(k) is not None), None)
+    mod_key = _validate_safe_segment(raw_mod_key, spec.module_field_label)
+    model_name = _validate_safe_segment(
+        record.get("model") or default_model or spec.default_model,
+        "model",
+        allow_slashes=True,
+    )
+
+    inferred_dataset = record.get("dataset") or default_dataset
+    inferred_task = spec.default_task
+    if not inferred_dataset:
+        if (
+            spec.zoo_name == "bert_attention_zoo"
+            and any(record.get(k) is not None for k in ("ppl_after", "post_kd_ppl", "ppl_before", "pre_kd_ppl"))
+            and record.get("teacher_baseline_acc") is None
+        ):
+            inferred_dataset = "wikitext-2"
+            inferred_task = "masked_lm"
+        else:
+            inferred_dataset = spec.default_dataset
+
+    dataset_name = _validate_safe_segment(
+        inferred_dataset,
+        "dataset",
+        allow_slashes=spec.allow_dataset_slashes,
+    )
+
+    numeric_errors: list[str] = []
+    status, warnings = _normalize_zoo_status(record.get("status"))
+
+    ppl_before = _extract_first_finite_float(record, ("ppl_before", "pre_kd_ppl"), numeric_errors)
+    ppl_after = _extract_first_finite_float(record, ("ppl_after", "post_kd_ppl"), numeric_errors)
+    ppl_delta = _extract_finite_float(record, "ppl_delta", numeric_errors)
+
+    acc_before = _extract_first_finite_float(record, ("acc_before", "pre_kd_acc"), numeric_errors)
+    acc_after = _extract_first_finite_float(
+        record,
+        ("acc_after", "post_kd_acc", "sst2_accuracy", "accuracy", "post_kd_sst2_acc"),
+        numeric_errors,
+    )
+    acc_delta = _extract_first_finite_float(record, ("acc_delta", "acc_gain"), numeric_errors)
+    post_kd_sst2_acc = (
+        _extract_finite_float(record, "post_kd_sst2_acc", numeric_errors)
+        if record.get("post_kd_acc") is not None and record.get("post_kd_sst2_acc") is not None
+        else None
+    )
+
+    loss_val = _extract_first_finite_float(record, ("post_kd_loss", "loss"), numeric_errors)
+    teacher_acc = _extract_first_finite_float(
+        record,
+        ("teacher_acc", "teacher_baseline_acc", "teacher_sst2_acc"),
+        numeric_errors,
+    )
+    teacher_ppl = _extract_finite_float(record, "teacher_ppl", numeric_errors)
+
+    train_secs = _extract_first_finite_float(record, ("train_secs", "duration_s", "eval_time"), numeric_errors)
+    tokens_per_sec = _extract_finite_float(record, "tokens_per_sec", numeric_errors)
+    steps_s1 = _extract_int(record, "steps_s1", numeric_errors)
+    steps_s2 = _extract_int(record, "steps_s2", numeric_errors)
+    total_steps = _extract_int(record, "total_steps", numeric_errors)
+    exit_code = _extract_int(record, "exit_code", numeric_errors)
+
+    rank: int | None = None
+    ratio: float | None = None
+    sparsity_pct: float | None = None
+    orig_params: int | None = None
+    comp_params: int | None = None
+    if spec.extract_compression:
+        rank = _extract_int(record, "rank", numeric_errors)
+        if rank is not None and rank < 0:
+            numeric_errors.append(f"Field 'rank' must be non-negative, got {rank}.")
+            rank = None
+        ratio = _extract_first_finite_float(
+            record,
+            ("param_reduction", "ratio", "compression_ratio"),
+            numeric_errors,
+        )
+        sparsity_pct = _extract_finite_float(record, "sparsity_pct", numeric_errors)
+        orig_params = _extract_int(record, "orig_params", numeric_errors)
+        comp_params = _extract_int(record, "comp_params", numeric_errors)
+
+    environment, hardware_usage, device_type, resources = _build_environment_and_hardware(
+        record=record,
+        default_device=default_device,
+        numeric_errors=numeric_errors,
+    )
+
+    if train_secs is not None:
+        resources["duration_s"] = train_secs
+        resources["train_duration_s"] = train_secs
+    if steps_s1 is not None:
+        resources["steps_s1"] = steps_s1
+    if steps_s2 is not None:
+        resources["steps_s2"] = steps_s2
+    if total_steps is not None:
+        resources["total_steps"] = total_steps
+    if exit_code is not None:
+        resources["exit_code"] = exit_code
+
+    metrics: dict[str, Any] = {}
+    baseline_metrics: dict[str, Any] = {}
+    delta_metrics: dict[str, Any] = {}
+
+    if ppl_before is not None:
+        metrics["pre_ppl"] = ppl_before
+        baseline_metrics["ppl"] = ppl_before
+    if ppl_after is not None:
+        metrics["post_ppl"] = ppl_after
+    if ppl_delta is not None:
+        metrics["ppl_delta"] = ppl_delta
+        delta_metrics["ppl_delta"] = ppl_delta
+    elif ppl_before is not None and ppl_after is not None:
+        computed_ppl_delta = round(ppl_after - ppl_before, 4)
+        metrics["ppl_delta"] = computed_ppl_delta
+        delta_metrics["ppl_delta"] = computed_ppl_delta
+
+    if acc_before is not None:
+        metrics["pre_acc"] = acc_before
+        baseline_metrics["pre_acc"] = acc_before
+    if acc_after is not None:
+        metrics["accuracy"] = acc_after
+    if post_kd_sst2_acc is not None:
+        metrics["sst2_accuracy"] = post_kd_sst2_acc
+    if acc_delta is not None:
+        metrics["acc_delta"] = acc_delta
+        delta_metrics["acc_delta"] = acc_delta
+    elif acc_before is not None and acc_after is not None:
+        computed_acc_delta = round(acc_after - acc_before, 4)
+        metrics["acc_delta"] = computed_acc_delta
+        delta_metrics["acc_delta"] = computed_acc_delta
+
+    if loss_val is not None:
+        metrics["loss"] = loss_val
+    if tokens_per_sec is not None:
+        metrics["tokens_per_sec"] = tokens_per_sec
+    if teacher_acc is not None:
+        baseline_metrics["accuracy"] = teacher_acc
+    if teacher_ppl is not None:
+        baseline_metrics["teacher_ppl"] = teacher_ppl
+
+    if ratio is not None:
+        metrics["compression_ratio"] = ratio
+    if sparsity_pct is not None:
+        metrics["sparsity_pct"] = sparsity_pct
+    if orig_params is not None:
+        baseline_metrics["orig_params"] = orig_params
+
+    params_reduction_pct = 0.0
+    if orig_params is not None and comp_params is not None and orig_params > 0:
+        params_reduction_pct = round((1.0 - (comp_params / orig_params)) * 100.0, 4)
+
+    baseline_comparison = BaselineComparison(
+        baseline_accuracy=baseline_metrics.get("accuracy"),
+        accuracy_drop=delta_metrics.get("acc_delta"),
+        compression_ratio=ratio if ratio is not None else 1.0,
+        params_reduction_pct=params_reduction_pct,
+    )
+
+    required_error: str | None = None
+    if status == BenchmarkStatus.SUCCESS:
+        if not any(k in metrics for k in spec.require_any_metric):
+            expected = " or ".join(f"'{k}'" for k in spec.require_any_metric)
+            required_error = f"Missing required metric ({expected}) for PASSED {spec.zoo_name} record."
+        elif spec.extract_compression and ratio is not None and ratio <= 0.0:
+            required_error = f"Non-positive compression ratio ({ratio}) for PASSED {spec.zoo_name} record."
+
+    final_status, error_msg = _finalize_status_and_errors(status, numeric_errors, record, required_error)
+
+    config_rank = rank if rank is not None else 0
+    config: dict[str, Any] = {"zoo": spec.zoo_name, "rank": config_rank}
+    for cfg_key in (
+        "pattern",
+        "seq_len",
+        "batch_size",
+        "grad_accum",
+        "topk",
+        "train_secs",
+        "total_layers",
+        "surgeried_layers",
+        "anchor_layers",
+        "hf_org",
+    ):
+        if cfg_key in record and record[cfg_key] is not None:
+            config[cfg_key] = record[cfg_key]
+
+    module_dict: dict[str, Any] = {
+        "name": mod_key,
+        "type": spec.module_type,
+        "module_type": spec.module_type,
+        "registry": spec.registry,
+    }
+    if rank is not None:
+        module_dict["rank"] = rank
+
+    model_dict: dict[str, Any] = {"name": model_name, "family": spec.model_family}
+    if orig_params is not None:
+        model_dict["num_params"] = orig_params
+    if comp_params is not None:
+        model_dict["num_params_after"] = comp_params
+
+    dataset_dict: dict[str, Any] = {"name": dataset_name, "task": inferred_task}
+    if spec.dataset_split:
+        dataset_dict["split"] = spec.dataset_split
+
+    pattern = record.get("pattern")
+    ts_token = str(record.get("timestamp") or record.get("timestamp_end") or f"line_{line_no}")
+    rank_token = f"|rank{rank}" if rank is not None else ""
+    identity_seed = f"{mod_key}|{model_name}|{dataset_name}{rank_token}|{pattern or ''}|{ts_token}|{line_no}"
+    run_name = f"{spec.run_prefix}_{mod_key}" if rank is None else f"{spec.run_prefix}_{mod_key}_r{rank}"
+    run_meta, meta_extra = _build_run_metadata(
+        record=record,
+        zoo_name=spec.zoo_name,
+        run_name=run_name,
+        identity_seed=identity_seed,
+        duration_s=train_secs,
+        warnings=warnings,
+    )
+
+    metadata: dict[str, Any] = {
+        "zoo": spec.zoo_name,
+        "source_line": line_no,
+        "raw_status": str(record.get("status", "")),
+        **meta_extra,
+    }
+    if exit_code is not None:
+        metadata["exit_code"] = exit_code
+
+    return BenchmarkResult(
+        run_metadata=run_meta,
+        module=module_dict,
+        model=model_dict,
+        dataset=dataset_dict,
+        config=config,
+        environment=environment,
+        hardware_usage=hardware_usage,
+        metrics=metrics,
+        baseline_comparison=baseline_comparison,
+        baseline_metrics=baseline_metrics,
+        delta_metrics=delta_metrics,
+        resources=resources,
+        status=final_status.value,
+        error=error_msg,
+        warnings=warnings,
+        training_type=spec.training_type,
+        benchmark_suite=spec.zoo_name,
+        device_type=device_type,
+        metadata=metadata,
+    )
+
+
+def map_bert_attention_record(
+    record: dict[str, Any],
+    line_no: int,
+    default_model: str | None = None,
+    default_dataset: str | None = None,
+    default_device: str | None = None,
+) -> BenchmarkResult:
+    """Map one BERT Attention Zoo `metrics.jsonl` entry to `BenchmarkResult`."""
+    return _map_zoo_distillation_record(
+        record=record,
+        line_no=line_no,
+        spec=_BERT_ATTN_SPEC,
+        default_model=default_model,
+        default_dataset=default_dataset,
+        default_device=default_device,
+    )
+
+
+def map_qwen_compressor_record(
+    record: dict[str, Any],
+    line_no: int,
+    default_model: str | None = None,
+    default_dataset: str | None = None,
+    default_device: str | None = None,
+) -> BenchmarkResult:
+    """Map one Qwen Compressor Zoo `metrics.jsonl` entry to `BenchmarkResult`."""
+    return _map_zoo_distillation_record(
+        record=record,
+        line_no=line_no,
+        spec=_QWEN_COMP_SPEC,
+        default_model=default_model,
+        default_dataset=default_dataset,
+        default_device=default_device,
+    )
+
+
+def map_vlm_attention_record(
+    record: dict[str, Any],
+    line_no: int,
+    default_model: str | None = None,
+    default_dataset: str | None = None,
+    default_device: str | None = None,
+) -> BenchmarkResult:
+    """Map one VLM LLaVA ScienceQA Zoo `metrics.jsonl` entry to `BenchmarkResult`."""
+    return _map_zoo_distillation_record(
+        record=record,
+        line_no=line_no,
+        spec=_VLM_SPEC,
+        default_model=default_model,
+        default_dataset=default_dataset,
+        default_device=default_device,
+    )
+
+
+def map_tinyllama_attention_record(
+    record: dict[str, Any],
+    line_no: int,
+    default_model: str | None = None,
+    default_dataset: str | None = None,
+    default_device: str | None = None,
+) -> BenchmarkResult:
+    """Map one TinyLlama 1.1B Zoo `metrics.jsonl` entry to `BenchmarkResult`."""
+    return _map_zoo_distillation_record(
+        record=record,
+        line_no=line_no,
+        spec=_TINYLLAMA_SPEC,
+        default_model=default_model,
+        default_dataset=default_dataset,
+        default_device=default_device,
+    )
+
+
 def _read_jsonl_records(jsonl_path: Path) -> list[tuple[int, dict[str, Any]]]:
     """Read and strictly validate every non-empty line in a JSONL ledger."""
     if not jsonl_path.exists() or not jsonl_path.is_file():
@@ -590,6 +1029,154 @@ def _read_jsonl_records(jsonl_path: Path) -> list[tuple[int, dict[str, Any]]]:
     return entries
 
 
+def _summarize_finite_metric(
+    passed_results: list[BenchmarkResult],
+    metric_key: str,
+    *,
+    best_mode: str | None = None,
+) -> dict[str, Any] | None:
+    """Compute min/max/mean over finite recorded values without fabricating defaults."""
+    pairs: list[tuple[str, float]] = []
+    for r in passed_results:
+        raw = (r.metrics or {}).get(metric_key)
+        if raw is None or isinstance(raw, bool):
+            continue
+        try:
+            val = float(raw)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(val):
+            mod_name = r.module.get("name", "") if isinstance(r.module, dict) else str(r.module)
+            pairs.append((mod_name, val))
+    if not pairs:
+        return None
+    vals = [v for _, v in pairs]
+    summary: dict[str, Any] = {
+        "count": len(vals),
+        "min": round(min(vals), 4),
+        "max": round(max(vals), 4),
+        "mean": round(sum(vals) / len(vals), 4),
+    }
+    if best_mode == "max":
+        best_mod, best_val = max(pairs, key=lambda item: item[1])
+        summary["best_module"] = best_mod
+        summary["best_value"] = round(best_val, 4)
+    elif best_mode == "min":
+        best_mod, best_val = min(pairs, key=lambda item: item[1])
+        summary["best_module"] = best_mod
+        summary["best_value"] = round(best_val, 4)
+    return summary
+
+
+def _build_zoo_overview(
+    results: list[BenchmarkResult],
+    source_ledgers: dict[str, Path],
+    out_path: Path,
+    index_files: dict[str, str],
+    json_files: list[str],
+    markdown_files: list[str],
+    verification_failures: int,
+) -> dict[str, Any]:
+    """Build a fail-closed cross-zoo overview grounded strictly in exported records."""
+    grouped: dict[str, list[BenchmarkResult]] = {}
+    for res in results:
+        grouped.setdefault(res.benchmark_suite, []).append(res)
+
+    failed_statuses = {
+        BenchmarkStatus.FAILED.value,
+        BenchmarkStatus.FAIL_NUMERICS.value,
+        BenchmarkStatus.HARDWARE_ERROR.value,
+        BenchmarkStatus.DEPENDENCY_ERROR.value,
+        BenchmarkStatus.TIMEOUT.value,
+    }
+
+    zoos_section: dict[str, Any] = {}
+    for suite, zoo_results in grouped.items():
+        zoo_statuses = dict(Counter(r.status for r in zoo_results))
+        passed_results = [r for r in zoo_results if r.status == BenchmarkStatus.SUCCESS.value]
+
+        metrics_summary: dict[str, Any] = {}
+        for key, mode in (
+            ("accuracy", "max"),
+            ("post_ppl", "min"),
+            ("compression_ratio", "max"),
+            ("tokens_per_sec", "max"),
+        ):
+            m_sum = _summarize_finite_metric(passed_results, key, best_mode=mode)
+            if m_sum is not None:
+                metrics_summary[key] = m_sum
+
+        vram_vals = [
+            float(r.resources["peak_vram_mb"])
+            for r in zoo_results
+            if isinstance(r.resources, dict)
+            and r.resources.get("peak_vram_mb") is not None
+            and not isinstance(r.resources.get("peak_vram_mb"), bool)
+            and math.isfinite(float(r.resources["peak_vram_mb"]))
+        ]
+        dur_vals = [
+            float(r.resources["duration_s"])
+            for r in zoo_results
+            if isinstance(r.resources, dict)
+            and r.resources.get("duration_s") is not None
+            and not isinstance(r.resources.get("duration_s"), bool)
+            and math.isfinite(float(r.resources["duration_s"]))
+        ]
+        resources_summary: dict[str, Any] = {}
+        if vram_vals:
+            resources_summary["max_peak_vram_mb"] = round(max(vram_vals), 2)
+        if dur_vals:
+            resources_summary["total_duration_s"] = round(sum(dur_vals), 2)
+
+        zoo_entry: dict[str, Any] = {
+            "total_records": len(zoo_results),
+            "passed_count": zoo_statuses.get(BenchmarkStatus.SUCCESS.value, 0),
+            "failed_count": sum(zoo_statuses.get(st, 0) for st in failed_statuses),
+            "skipped_count": zoo_statuses.get(BenchmarkStatus.SKIPPED.value, 0),
+            "status_counts": zoo_statuses,
+            "unique_modules": len(
+                {r.module.get("name", "") for r in zoo_results if isinstance(r.module, dict) and r.module.get("name")}
+            ),
+            "models": sorted(
+                {r.model.get("name", "") for r in zoo_results if isinstance(r.model, dict) and r.model.get("name")}
+            ),
+            "datasets": sorted(
+                {r.dataset.get("name", "") for r in zoo_results if isinstance(r.dataset, dict) and r.dataset.get("name")}
+            ),
+            "metrics_summary": metrics_summary,
+            "resources_summary": resources_summary,
+        }
+        if suite in source_ledgers:
+            zoo_entry["source_ledger"] = str(source_ledgers[suite])
+        zoos_section[suite] = zoo_entry
+
+    return {
+        "schema_version": "1.0",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "output_dir": str(out_path),
+        "total_records": len(results),
+        "zoos_included": list(grouped.keys()),
+        "status_counts": dict(Counter(r.status for r in results)),
+        "verification_failures": verification_failures,
+        "zoos": zoos_section,
+        "index_files": index_files,
+        "artifact_counts": {
+            "json": len(json_files),
+            "markdown": len(markdown_files),
+        },
+    }
+
+
+def _write_json_atomic(target_path: Path, payload: dict[str, Any]) -> Path:
+    """Write JSON atomically using a unique temporary file and rename."""
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = target_path.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    with tmp_path.open("w", encoding="utf-8") as fp:
+        json.dump(payload, fp, indent=2, default=str)
+    tmp_path.replace(target_path)
+    return target_path
+
+
 def export_dual_zoo_5formats(
     output_dir: Path | str,
     qwen_jsonl: Path | str | None = None,
@@ -602,10 +1189,27 @@ def export_dual_zoo_5formats(
     require_parquet: bool = True,
     overwrite: bool = False,
     strict: bool = False,
+    bert_attn_jsonl: Path | str | None = None,
+    qwen_comp_jsonl: Path | str | None = None,
+    vlm_jsonl: Path | str | None = None,
+    tinyllama_jsonl: Path | str | None = None,
 ) -> dict[str, Any]:
-    """Read dual-zoo JSONL ledgers, map to BenchmarkResult, and export all 5 formats."""
-    if qwen_jsonl is None and bert_jsonl is None:
-        raise ValueError("At least one of '--qwen-jsonl' or '--bert-jsonl' must be provided.")
+    """Read zoo JSONL ledgers, map to BenchmarkResult, and export all 5 formats + zoo_overview.json."""
+    if all(
+        p is None
+        for p in (
+            qwen_jsonl,
+            bert_jsonl,
+            bert_attn_jsonl,
+            qwen_comp_jsonl,
+            vlm_jsonl,
+            tinyllama_jsonl,
+        )
+    ):
+        raise ValueError(
+            "At least one zoo ledger flag ('--qwen-ledger', '--bert-ledger', '--bert-attn-ledger', "
+            "'--qwen-comp-ledger', '--vlm-ledger', or '--tinyllama-ledger') must be provided."
+        )
 
     out_path = Path(output_dir)
     out_path.mkdir(parents=True, exist_ok=True)
@@ -621,11 +1225,14 @@ def export_dual_zoo_5formats(
             idx_path.unlink()
 
     results: list[BenchmarkResult] = []
-    qwen_count = 0
-    bert_count = 0
+    source_ledgers: dict[str, Path] = {}
+    zoo_counts: dict[str, int] = {}
 
     if qwen_jsonl is not None:
-        for line_no, rec in _read_jsonl_records(Path(qwen_jsonl)):
+        qwen_path = Path(qwen_jsonl)
+        source_ledgers["qwen_attention_zoo"] = qwen_path
+        count = 0
+        for line_no, rec in _read_jsonl_records(qwen_path):
             results.append(
                 map_qwen_attention_record(
                     rec,
@@ -635,10 +1242,14 @@ def export_dual_zoo_5formats(
                     default_device=default_device,
                 )
             )
-            qwen_count += 1
+            count += 1
+        zoo_counts["qwen_attention_zoo"] = count
 
     if bert_jsonl is not None:
-        for line_no, rec in _read_jsonl_records(Path(bert_jsonl)):
+        bert_path = Path(bert_jsonl)
+        source_ledgers["bert_compressor_zoo"] = bert_path
+        count = 0
+        for line_no, rec in _read_jsonl_records(bert_path):
             results.append(
                 map_bert_compressor_record(
                     rec,
@@ -648,7 +1259,33 @@ def export_dual_zoo_5formats(
                     default_device=default_device,
                 )
             )
-            bert_count += 1
+            count += 1
+        zoo_counts["bert_compressor_zoo"] = count
+
+    optional_specs = (
+        ("bert_attention_zoo", bert_attn_jsonl, map_bert_attention_record, None, None),
+        ("qwen_compressor_zoo", qwen_comp_jsonl, map_qwen_compressor_record, qwen_model, qwen_dataset),
+        ("vlm_llava_scienceqa_zoo", vlm_jsonl, map_vlm_attention_record, None, None),
+        ("tinyllama_1.1b_zoo", tinyllama_jsonl, map_tinyllama_attention_record, None, None),
+    )
+    for suite_name, ledger_arg, mapper_fn, d_model, d_dataset in optional_specs:
+        if ledger_arg is None:
+            continue
+        ledger_path = Path(ledger_arg)
+        source_ledgers[suite_name] = ledger_path
+        count = 0
+        for line_no, rec in _read_jsonl_records(ledger_path):
+            results.append(
+                mapper_fn(
+                    rec,
+                    line_no=line_no,
+                    default_model=d_model,
+                    default_dataset=d_dataset,
+                    default_device=default_device,
+                )
+            )
+            count += 1
+        zoo_counts[suite_name] = count
 
     if not results:
         raise ValueError("Input JSONL ledger(s) contained zero records.")
@@ -681,14 +1318,31 @@ def export_dual_zoo_5formats(
             if key in saved:
                 index_files[key] = str(saved[key])
 
+    overview_payload = _build_zoo_overview(
+        results=results,
+        source_ledgers=source_ledgers,
+        out_path=out_path,
+        index_files=index_files,
+        json_files=json_files,
+        markdown_files=markdown_files,
+        verification_failures=verification_failures,
+    )
+    overview_path = _write_json_atomic(out_path / "zoo_overview.json", overview_payload)
+
     status_counts = dict(Counter(r.status for r in results))
     return {
         "output_dir": str(out_path),
         "total_records": len(results),
-        "qwen_records": qwen_count,
-        "bert_records": bert_count,
+        "qwen_records": zoo_counts.get("qwen_attention_zoo", 0),
+        "bert_records": zoo_counts.get("bert_compressor_zoo", 0),
+        "bert_attn_records": zoo_counts.get("bert_attention_zoo", 0),
+        "qwen_comp_records": zoo_counts.get("qwen_compressor_zoo", 0),
+        "vlm_records": zoo_counts.get("vlm_llava_scienceqa_zoo", 0),
+        "tinyllama_records": zoo_counts.get("tinyllama_1.1b_zoo", 0),
+        "zoo_counts": zoo_counts,
         "status_counts": status_counts,
         "verification_failures": verification_failures,
+        "zoo_overview": str(overview_path),
         "index_files": index_files,
         "json_files": json_files,
         "markdown_files": markdown_files,
@@ -697,7 +1351,7 @@ def export_dual_zoo_5formats(
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Export Qwen Attention Zoo and BERT Compressor Zoo JSONL ledgers into 5 canonical formats."
+        description="Export up to 6 NeuralOps Zoo JSONL ledgers into 5 canonical formats and zoo_overview.json."
     )
     parser.add_argument(
         "--qwen-jsonl",
@@ -718,6 +1372,46 @@ def _build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=None,
         help="Path to BERT Compressor Zoo multirank_lora_ledger.jsonl",
+    )
+    parser.add_argument(
+        "--bert-attn-ledger",
+        "--bert_attn_ledger",
+        "--bert-attn-jsonl",
+        "--bert_attn_jsonl",
+        dest="bert_attn_jsonl",
+        type=Path,
+        default=None,
+        help="Path to BERT Attention Zoo metrics.jsonl (results/bert_attention_zoo/metrics.jsonl)",
+    )
+    parser.add_argument(
+        "--qwen-comp-ledger",
+        "--qwen_comp_ledger",
+        "--qwen-comp-jsonl",
+        "--qwen_comp_jsonl",
+        dest="qwen_comp_jsonl",
+        type=Path,
+        default=None,
+        help="Path to Qwen Compressor Zoo metrics.jsonl (results/qwen_compressor_zoo/metrics.jsonl)",
+    )
+    parser.add_argument(
+        "--vlm-ledger",
+        "--vlm_ledger",
+        "--vlm-jsonl",
+        "--vlm_jsonl",
+        dest="vlm_jsonl",
+        type=Path,
+        default=None,
+        help="Path to VLM LLaVA ScienceQA Zoo metrics.jsonl (results/vlm_llava_scienceqa_zoo/metrics.jsonl)",
+    )
+    parser.add_argument(
+        "--tinyllama-ledger",
+        "--tinyllama_ledger",
+        "--tinyllama-jsonl",
+        "--tinyllama_jsonl",
+        dest="tinyllama_jsonl",
+        type=Path,
+        default=None,
+        help="Path to TinyLlama 1.1B Zoo metrics.jsonl (results/tinyllama_1.1b_zoo/metrics.jsonl)",
     )
     parser.add_argument(
         "-o",
@@ -762,7 +1456,7 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="Replace existing rolling index files (results.jsonl/csv/parquet) in output_dir.",
+        help="Replace existing rolling index files (results.jsonl/csv/parquet) and zoo_overview.json in output_dir.",
     )
     parser.add_argument(
         "--strict",
@@ -799,6 +1493,10 @@ def main(argv: list[str] | None = None) -> int:
             require_parquet=args.require_parquet,
             overwrite=args.overwrite,
             strict=args.strict,
+            bert_attn_jsonl=args.bert_attn_jsonl,
+            qwen_comp_jsonl=args.qwen_comp_jsonl,
+            vlm_jsonl=args.vlm_jsonl,
+            tinyllama_jsonl=args.tinyllama_jsonl,
         )
     except (FileNotFoundError, FileExistsError, ValueError) as exc:
         LOG.error("Export configuration/input error: %s", exc)
@@ -818,12 +1516,18 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(summary, indent=2))
     else:
         LOG.info(
-            "Exported %d records (qwen=%d, bert=%d) to %s | statuses=%s",
+            "Exported %d records (qwen=%d, bert=%d, bert_attn=%d, qwen_comp=%d, vlm=%d, tinyllama=%d) "
+            "to %s | statuses=%s | overview=%s",
             summary["total_records"],
             summary["qwen_records"],
             summary["bert_records"],
+            summary["bert_attn_records"],
+            summary["qwen_comp_records"],
+            summary["vlm_records"],
+            summary["tinyllama_records"],
             summary["output_dir"],
             summary["status_counts"],
+            summary["zoo_overview"],
         )
     return EXIT_SUCCESS
 

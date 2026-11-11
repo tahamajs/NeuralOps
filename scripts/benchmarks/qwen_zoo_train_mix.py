@@ -62,491 +62,63 @@ from neuralops.core.registry import ATTENTION_REGISTRY, create_attention, get_mo
 from neuralops.hub.uploader import AsyncHFHubUploader
 from neuralops.layers.qwen_adapter import QwenAttentionAdapter
 
+try:
+    from scripts.benchmarks.teacher_cache_utils import (
+        CachedCausalDataset,
+        build_or_load_causal_teacher_cache,
+        enable_student_gradient_checkpointing,
+        resolve_teacher_cache_path,
+        try_load_causal_teacher_cache,
+    )
+except ImportError:
+    from teacher_cache_utils import (
+        CachedCausalDataset,
+        build_or_load_causal_teacher_cache,
+        enable_student_gradient_checkpointing,
+        resolve_teacher_cache_path,
+        try_load_causal_teacher_cache,
+    )
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("qwen_zoo_train")
 
+from neuralops.benchmarks.kd import (
+    CausalTextDataset,
+    StratifiedQwenDataset,
+    apply_qwen_attention_surgery,
+    build_cache_wikitext,
+    build_qwen_readme,
+    collect_artifact_sizes,
+    compute_topk_sparse_kd_loss,
+    evaluate_causal_ppl,
+    evaluate_sst2_accuracy,
+    extract_attention_metadata,
+    fast_gram_covariance_loss,
+    format_size,
+    load_tokenized_qwen_corpus,
+    normalize_base_model_id,
+    summarize_attention_doc,
+)
 
-def fast_gram_covariance_loss(s_hidden: torch.Tensor, t_hidden: torch.Tensor) -> torch.Tensor:
-    """
-    Fast Tensor-Core Subspace Covariance matching avoiding SVD stalls.
-    Computes normalized Gram matrix Frobenius distance.
-    """
-    s_flat = s_hidden.view(-1, s_hidden.size(-1)).float()
-    t_flat = t_hidden.view(-1, t_hidden.size(-1)).float()
-
-    s_norm = torch.norm(s_flat, p="fro").clamp(min=1e-6)
-    t_norm = torch.norm(t_flat, p="fro").clamp(min=1e-6)
-
-    s_gram = torch.matmul(s_flat.t(), s_flat) / s_norm
-    t_gram = torch.matmul(t_flat.t(), t_flat) / t_norm
-
-    return F.mse_loss(s_gram, t_gram)
-
-
-def compute_topk_sparse_kd_loss(
-    student_logits: torch.Tensor,
-    teacher_logits: torch.Tensor,
-    topk: int = 64,
-    temperature: float = 2.0,
-) -> torch.Tensor:
-    """
-    Top-K Sparse Logit KD avoiding dense [B, L, 151936] logit allocations.
-    Selects top-K teacher tokens and gathers student logits strictly at those positions.
-    """
-    tau = temperature
-    t_topk_vals, t_topk_idx = torch.topk(teacher_logits, k=topk, dim=-1)
-    s_topk_vals = torch.gather(student_logits, dim=-1, index=t_topk_idx)
-
-    p_s = F.log_softmax(s_topk_vals / tau, dim=-1)
-    p_t = F.softmax(t_topk_vals / tau, dim=-1)
-
-    return F.kl_div(p_s, p_t, reduction="batchmean") * (tau * tau)
-
-
-class StratifiedQwenDataset(Dataset):
-    """Contiguous token chunk dataset for causal language modeling."""
-
-    def __init__(self, token_chunks: torch.Tensor) -> None:
-        self.chunks = token_chunks
-
-    def __len__(self) -> int:
-        return self.chunks.size(0)
-
-    def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
-        ids = self.chunks[idx].clone()
-        labels = ids.clone()
-        attn_mask = torch.ones_like(ids, dtype=torch.long)
-        return {
-            "input_ids": ids,
-            "attention_mask": attn_mask,
-            "labels": labels,
-        }
-
-
-CausalTextDataset = StratifiedQwenDataset
-
-
-def load_tokenized_qwen_corpus(
-    tokenizer: Any,
-    dataset_name: str = "wikitext-2-raw-v1",
-    seq_len: int = 512,
-    max_train_samples: int = 4000,
-    cache_path_override: Optional[str] = None,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """Tokenizes corpus into contiguous chunks of length seq_len with RAM caching."""
-    cache_path = Path(cache_path_override) if cache_path_override else Path(f"/dev/shm/wikitext_qwen_seq{seq_len}.pt")
-    if cache_path.exists():
-        try:
-            logger.info("Loading pre-tokenized corpus from RAM cache: %s", cache_path)
-            data = torch.load(cache_path, map_location="cpu")
-            return data["train_chunks"], data["val_chunks"]
-        except Exception as e:
-            logger.warning("RAM cache load failed (%s); re-tokenizing...", e)
-
-    from datasets import load_dataset
-
-    logger.info("Loading %s dataset...", dataset_name)
-    if "wikitext" in dataset_name:
-        raw = load_dataset("wikitext", dataset_name)
-        train_texts = [t for t in raw["train"]["text"] if t.strip()]
-        val_texts = [t for t in raw["validation"]["text"] if t.strip()]
-    else:
-        # Fallback to local or wikitext
-        raw = load_dataset("wikitext", "wikitext-2-raw-v1")
-        train_texts = [t for t in raw["train"]["text"] if t.strip()]
-        val_texts = [t for t in raw["validation"]["text"] if t.strip()]
-
-    def text_to_chunks(texts: list[str], max_chunks: Optional[int] = None) -> torch.Tensor:
-        token_parts: list[torch.Tensor] = []
-        target_tokens = (max_chunks * seq_len) if max_chunks is not None else None
-        collected = 0
-        for start in range(0, len(texts), 512):
-            batch_txt = "\n\n".join(texts[start : start + 512])
-            ids = tokenizer(batch_txt, return_tensors="pt", add_special_tokens=False)["input_ids"].squeeze(0)
-            token_parts.append(ids)
-            collected += int(ids.numel())
-            if target_tokens is not None and collected >= target_tokens:
-                break
-        tokens = torch.cat(token_parts, dim=0) if token_parts else torch.empty(0, dtype=torch.long)
-        n = (tokens.size(0) // seq_len) * seq_len
-        chunks = tokens[:n].view(-1, seq_len)
-        if max_chunks is not None and chunks.size(0) > max_chunks:
-            chunks = chunks[:max_chunks]
-        return chunks
-
-    train_chunks = text_to_chunks(train_texts, max_train_samples)
-    val_chunks = text_to_chunks(val_texts, 500)
-
-    try:
-        torch.save({"train_chunks": train_chunks, "val_chunks": val_chunks}, cache_path)
-        logger.info("Cached tokenized corpus to RAM: %s", cache_path)
-    except Exception as e:
-        logger.debug("Failed to write RAM cache: %s", e)
-
-    logger.info(
-        "Corpus tokenized: %d train chunks, %d validation chunks (seq_len=%d)",
-        train_chunks.size(0),
-        val_chunks.size(0),
-        seq_len,
-    )
-    return train_chunks, val_chunks
-
-
-def _build_cache_wikitext(
-    tokenizer: Any,
-    seq_len: int = 512,
-    cache_path: str = "/dev/shm/wikitext_tinyllama_seq512.pt",
-    max_train_samples: int = 4000,
-) -> tuple[torch.Tensor, torch.Tensor]:
-    """Build or load cached WikiText-2 token chunks for a tokenizer-specific cache path."""
-    return load_tokenized_qwen_corpus(
-        tokenizer=tokenizer,
-        dataset_name="wikitext-2-raw-v1",
-        seq_len=seq_len,
-        max_train_samples=max_train_samples,
-        cache_path_override=cache_path,
-    )
-
-
-def evaluate_causal_ppl(
-    model: nn.Module,
-    val_loader: DataLoader,
-    device: torch.device,
-    max_batches: int = 15,
-) -> float:
-    """Computes Causal LM Perplexity with micro-chunked evaluation to prevent 152k vocab OOM."""
-    model.eval()
-    total_loss = 0.0
-    total_tokens = 0
-
-    with torch.no_grad():
-        for i, batch in enumerate(val_loader):
-            if i >= max_batches:
-                break
-            in_ids = batch["input_ids"].to(device, non_blocking=True)
-            att_m = batch["attention_mask"].to(device, non_blocking=True)
-            lbls = batch["labels"].to(device, non_blocking=True)
-
-            with torch.cuda.amp.autocast(dtype=torch.float16 if device.type == "cuda" else torch.bfloat16):
-                h = getattr(model, "model", model)(input_ids=in_ids, attention_mask=att_m, use_cache=False).last_hidden_state
-                seq_len = in_ids.size(1) - 1
-                targets = lbls[:, 1:].contiguous()
-                h_causal = h[:, :seq_len, :]
-
-                chunk_sz = 64
-                for c in range(0, seq_len, chunk_sz):
-                    h_c = h_causal[:, c : c + chunk_sz, :]
-                    tgt_c = targets[:, c : c + chunk_sz]
-                    logits_c = getattr(model, "lm_head", None)
-                    if logits_c is not None:
-                        logits = logits_c(h_c)
-                        loss_c = F.cross_entropy(logits.reshape(-1, logits.size(-1)), tgt_c.reshape(-1), reduction="sum")
-                        if torch.isfinite(loss_c):
-                            total_loss += loss_c.item()
-                            total_tokens += tgt_c.numel()
-
-    if total_tokens == 0:
-        return float("inf")
-
-    avg_loss = total_loss / total_tokens
-    return math.exp(min(avg_loss, 20.0))
-
-
-def evaluate_sst2_accuracy(
-    model: nn.Module,
-    tokenizer: Any,
-    device: torch.device,
-    max_samples: int = 200,
-) -> float:
-    """Evaluates binary sentiment classification on SST-2 validation split."""
-    from datasets import load_dataset
-
-    try:
-        sst2 = load_dataset("glue", "sst2", split="validation")
-    except Exception as e:
-        logger.debug("SST-2 evaluation skipped: %s", e)
-        return 0.0
-
-    model.eval()
-    correct = 0
-    total = 0
-
-    # Token IDs for 'negative' (0) and 'positive' (1)
-    pos_id = tokenizer.encode(" positive", add_special_tokens=False)[0]
-    neg_id = tokenizer.encode(" negative", add_special_tokens=False)[0]
-
-    with torch.no_grad():
-        for i, item in enumerate(sst2):
-            if i >= max_samples:
-                break
-            prompt = f"Sentence: {item['sentence']}\nSentiment:"
-            enc = tokenizer(prompt, return_tensors="pt")
-            in_ids = enc["input_ids"].to(device)
-
-            with torch.cuda.amp.autocast(dtype=torch.float16 if device.type == "cuda" else torch.bfloat16):
-                out = model(input_ids=in_ids)
-                last_logits = out.logits[:, -1, :]
-                pred_label = 1 if last_logits[0, pos_id] > last_logits[0, neg_id] else 0
-
-            if pred_label == item["label"]:
-                correct += 1
-            total += 1
-
-    return (correct / max(total, 1)) * 100.0
-
-
-def apply_qwen_attention_surgery(
-    model: nn.Module,
-    attn_key: str,
-    pattern: str = "all",
-) -> nn.Module:
-    """
-    Transplants NeuralOps attention mechanism into Qwen decoder layers.
-
-    Patterns:
-      - 'all': replace all attention layers
-      - 'hybrid_3_1': replace 3 subquadratic layers per 1 full quadratic layer
-    """
-    hidden_size = model.config.hidden_size
-    num_heads = model.config.num_attention_heads
-    num_kv_heads = getattr(model.config, "num_key_value_heads", num_heads)
-    head_dim = getattr(model.config, "head_dim", hidden_size // num_heads)
-
-    # Locate transformer layers
-    layers = getattr(getattr(model, "model", model), "layers", None)
-    if layers is None:
-        raise ValueError("Cannot locate transformer layers in Qwen model architecture.")
-
-    num_layers = len(layers)
-    transplanted_count = 0
-
-    for idx, layer in enumerate(layers):
-        # Check hybrid pattern condition
-        if pattern == "hybrid_3_1" and (idx % 4 == 3):
-            # Retain full quadratic / sliding-window attention on every 4th layer
-            continue
-
-        orig_attn = getattr(layer, "self_attn", None)
-        if orig_attn is None:
-            continue
-
-        # Instantiate target attention from ATTENTION_REGISTRY via normalized factory
-        if attn_key in ATTENTION_REGISTRY:
-            try:
-                core_attn = create_attention(
-                    attn_key,
-                    dim=hidden_size,
-                    num_heads=num_heads,
-                    config=model.config,
-                    is_causal=True,
-                    layer_idx=idx,
-                )
-            except TypeError:
-                try:
-                    core_attn = create_attention(
-                        attn_key,
-                        dim=hidden_size,
-                        num_heads=num_heads,
-                        config=model.config,
-                        is_causal=True,
-                    )
-                except TypeError:
-                    core_attn = create_attention(
-                        attn_key,
-                        dim=hidden_size,
-                        num_heads=num_heads,
-                        config=model.config,
-                    )
-        else:
-            raise KeyError(f"Attention key '{attn_key}' not found in ATTENTION_REGISTRY.")
-
-        # Wrap in QwenAttentionAdapter with Single-o_proj Contract & GQA expansion
-        adapter = QwenAttentionAdapter(
-            core_attention=core_attn,
-            embed_dim=hidden_size,
-            num_heads=num_heads,
-            num_kv_heads=num_kv_heads,
-            head_dim=head_dim,
-            inherit_weights_from=orig_attn,
-            is_causal=True,
-            bypass_internal_out_proj=True,
-        )
-
-        layer.self_attn = adapter
-        transplanted_count += 1
-
-    logger.info(
-        "Surgery complete: transplanted %d/%d layers with %s (pattern=%s)",
-        transplanted_count,
-        num_layers,
-        attn_key,
-        pattern,
-    )
-    return model
-
-
-def _normalize_base_model_id(model_name: str) -> str:
-    """Normalize local model cache paths (e.g. /dev/shm/Qwen2.5-0.5B) to canonical HF Hub IDs."""
-    cleaned = model_name.strip()
-    if "qwen2.5-0.5b" in cleaned.lower():
-        return "Qwen/Qwen2.5-0.5B"
-    if cleaned.startswith("/") or os.path.exists(cleaned):
-        tail = Path(cleaned.rstrip("/")).name
-        if tail.lower().startswith("qwen"):
-            return f"Qwen/{tail}"
-        return tail
-    return cleaned
-
-
-def _summarize_attention_doc(attn_key: str) -> str:
-    """Return a cleaned single-line summary from the registered attention class docstring."""
-    cls = ATTENTION_REGISTRY.get(attn_key) if attn_key in ATTENTION_REGISTRY else None
-    raw_doc = inspect.getdoc(cls) if cls is not None else ""
-    if not raw_doc:
-        return f"Specialized attention mechanism `{attn_key}` from the NeuralOps ATTENTION_REGISTRY."
-    for marker in (
-        "Attributes:",
-        "Args:",
-        "Parameters:",
-        "Returns:",
-        "Raises:",
-        "Example:",
-        "Examples:",
-        "Note:",
-        "Notes:",
-    ):
-        idx = raw_doc.find(marker)
-        if idx != -1:
-            raw_doc = raw_doc[:idx]
-    summary = " ".join(raw_doc.split()).strip()
-    return summary or f"Specialized attention mechanism `{attn_key}` from the NeuralOps ATTENTION_REGISTRY."
-
-
-def _format_size(num_bytes: int) -> str:
-    """Format byte count into human-readable MB/KB string."""
-    if num_bytes >= 1024 * 1024:
-        return f"{num_bytes / (1024 * 1024):.2f} MB"
-    if num_bytes >= 1024:
-        return f"{num_bytes / 1024:.1f} KB"
-    return f"{num_bytes} B"
+# Backward-compatible aliases
+_build_cache_wikitext = build_cache_wikitext
+_normalize_base_model_id = normalize_base_model_id
+_summarize_attention_doc = summarize_attention_doc
+_format_size = format_size
+_extract_attention_metadata = extract_attention_metadata
+_collect_artifact_sizes = collect_artifact_sizes
 
 
 def _file_size_str(file_path: Path) -> str:
     """Return human-readable size string for a path on disk, or 'N/A' if missing."""
     if file_path.is_file():
-        return _format_size(file_path.stat().st_size)
+        return format_size(file_path.stat().st_size)
     return "N/A"
-
-
-def _extract_attention_metadata() -> dict[str, dict[str, str]]:
-    """Extract class name, family, module path, and docstring for all registered attentions."""
-    repo_root = Path(__file__).resolve().parents[2]
-    meta: dict[str, dict[str, str]] = {}
-    for key, cls in ATTENTION_REGISTRY.items():
-        try:
-            src_path = Path(inspect.getfile(cls)).resolve()
-            rel_path = str(src_path.relative_to(repo_root))
-            family = src_path.parent.name
-        except Exception:
-            rel_path = "neuralops/layers/"
-            family = "attention"
-        meta[key] = {
-            "class_name": getattr(cls, "__name__", key),
-            "family": family,
-            "module_path": rel_path,
-            "docstring": _summarize_attention_doc(key),
-        }
-    return meta
-
-
-def _collect_artifact_sizes(out_dir: Optional[Path]) -> tuple[list[tuple[str, str]], str]:
-    """Collect saved checkpoint artifact sizes and compute total weight footprint."""
-    if out_dir is None or not out_dir.exists():
-        return [], "N/A"
-    candidates = (
-        "model.safetensors",
-        "pytorch_model.bin",
-        "attention_weights.safetensors",
-        "config.json",
-        "tokenizer.json",
-        "training_metrics.json",
-    )
-    rows: list[tuple[str, str]] = []
-    weight_bytes = 0
-    for fname in candidates:
-        fpath = out_dir / fname
-        if fpath.is_file():
-            sz = fpath.stat().st_size
-            rows.append((fname, _format_size(sz)))
-            if fname.endswith((".safetensors", ".bin")):
-                weight_bytes += sz
-    total_badge = _format_size(weight_bytes).replace(" ", "_") if weight_bytes > 0 else "FP16"
-    return rows, total_badge
-
-
-def build_qwen_readme(
-    attn_key: str,
-    result: dict[str, Any],
-    out_dir: Optional[Path] = None,
-    base_model: str = "Qwen/Qwen2.5-0.5B",
-    repo_id: Optional[str] = None,
-    num_layers: int = 24,
-    dur_s1: Optional[float] = None,
-    dur_s2: Optional[float] = None,
-    seq_len: int = 512,
-    grad_accum: int = 4,
-    topk: int = 64,
-) -> str:
-    """Generate a unified, honest Hugging Face model card README.md for distilled Qwen checkpoints."""
-    from neuralops.hub import generate_unified_model_card
-
-    base_id = _normalize_base_model_id(base_model)
-    attn_slug = attn_key.replace("_", "-")
-    target_repo = repo_id or f"tahamajs/qwen-2.5-0.5b-{attn_slug}-wikitext2"
-    pattern = str(result.get("pattern", "hybrid_3_1"))
-    if pattern == "hybrid_3_1":
-        anchor_layers = [i for i in range(num_layers) if i % 4 == 3]
-    else:
-        anchor_layers = []
-    surgeried_layers = [i for i in range(num_layers) if i not in set(anchor_layers)]
-
-    meta = _extract_attention_metadata().get(attn_key, {})
-    merged = dict(result)
-    if dur_s1 is not None:
-        merged["dur_s1"] = round(float(dur_s1), 1)
-    if dur_s2 is not None:
-        merged["dur_s2"] = round(float(dur_s2), 1)
-
-    return generate_unified_model_card(
-        zoo_type="qwen_attention",
-        mechanism_key=attn_key,
-        repo_id=target_repo,
-        base_model=base_id,
-        out_dir=out_dir,
-        metrics=merged,
-        surgery_info={
-            "total_layers": num_layers,
-            "modified_layers": len(surgeried_layers),
-            "pattern": pattern,
-            "surgeried_layers": surgeried_layers,
-            "anchor_layers": anchor_layers,
-            "modified_components": (
-                f"`{len(surgeried_layers)}/{num_layers}` decoder `model.layers.{{i}}.self_attn` "
-                "+ trained decoder `layernorm`s"
-            ),
-            "frozen_components": (
-                f"`{len(anchor_layers)}` quadratic anchor layers `{anchor_layers}`, "
-                "decoder MLPs (`mlp.*`), `embed_tokens`, and `lm_head`"
-            ),
-            **({k: v for k, v in meta.items() if k in ("class_name", "family", "module_path", "docstring")}),
-        },
-        dataset="Salesforce/wikitext",
-    )
 
 
 def train_single_qwen_attention(
     attn_key: str,
-    teacher_model: nn.Module,
+    teacher_model: Optional[nn.Module],
     train_loader: DataLoader,
     val_loader: DataLoader,
     device: torch.device,
@@ -561,14 +133,21 @@ def train_single_qwen_attention(
     grad_accum: int = 4,
     hf_org: str = "tahamajs",
     gradient_checkpointing: bool = False,
+    teacher_cache: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     """Train one transplanted attention mechanism on Qwen with strict budget."""
     logger.info("\n" + "=" * 80)
     logger.info("[START] Distilling Qwen Attention Module: %s (%ds, pattern=%s)", attn_key, int(train_secs), pattern)
     logger.info("=" * 80)
 
-    # 1. Surgery with weight inheritance (FP32 master weights for AMP stability)
-    student = copy.deepcopy(teacher_model).float()
+    if teacher_cache is None and teacher_model is None:
+        raise ValueError("Either teacher_cache or teacher_model must be provided.")
+
+    # 1. Surgery with weight inheritance (FP32 master weights on CPU first -> 0 MB teacher GPU VRAM)
+    if teacher_model is not None:
+        student = copy.deepcopy(teacher_model).float()
+    else:
+        student = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.float32)
     student = apply_qwen_attention_surgery(student, attn_key=attn_key, pattern=pattern)
     student = student.to(device)
 
@@ -576,19 +155,8 @@ def train_single_qwen_attention(
     pre_ppl = evaluate_causal_ppl(student, val_loader, device)
     logger.info("[%s] Pre-KD WikiText-2 Perplexity: PPL=%.2f", attn_key, pre_ppl)
 
-    if gradient_checkpointing and hasattr(student, "gradient_checkpointing_enable"):
-        try:
-            if hasattr(student, "config"):
-                student.config.use_cache = False
-            try:
-                student.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
-            except TypeError:
-                student.gradient_checkpointing_enable()
-            if hasattr(student, "enable_input_require_grads"):
-                student.enable_input_require_grads()
-            logger.info("[%s] Gradient checkpointing enabled on student decoder blocks.", attn_key)
-        except Exception as ckpt_exc:
-            logger.warning("[%s] gradient_checkpointing_enable failed (%s); continuing without.", attn_key, ckpt_exc)
+    if gradient_checkpointing:
+        enable_student_gradient_checkpointing(student, log_prefix=f"[{attn_key}] ")
 
     # Timer starts STRICTLY AFTER Stage 0 evaluation finish
     t_train_start = time.time()
@@ -616,6 +184,8 @@ def train_single_qwen_attention(
     step_s1 = 0
     t0_s1 = time.time()
 
+    layer_indices: Optional[list[int]] = teacher_cache["layer_indices"] if teacher_cache is not None else None
+
     while time.time() < t_s1_deadline:
         for batch in train_loader:
             if time.time() >= t_s1_deadline:
@@ -623,14 +193,19 @@ def train_single_qwen_attention(
             in_ids = batch["input_ids"].to(device, non_blocking=True)
             att_m = batch["attention_mask"].to(device, non_blocking=True)
 
-            with torch.cuda.amp.autocast(dtype=torch.float16 if device.type == "cuda" else torch.bfloat16):
+            with torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16 if device.type == "cuda" else torch.bfloat16):
                 # Bypass lm_head during Stage 1 by calling student.model directly
-                with torch.no_grad():
-                    t_out = teacher_model.model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
                 s_out = student.model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
-
-                s_hiddens = s_out.hidden_states[1:]
-                t_hiddens = t_out.hidden_states[1:]
+                if "teacher_hidden_states" in batch and layer_indices is not None:
+                    t_h_b = batch["teacher_hidden_states"].to(device, non_blocking=True)
+                    s_hiddens = [s_out.hidden_states[idx + 1] for idx in layer_indices]
+                    t_hiddens = [t_h_b[:, j, :, :] for j in range(len(layer_indices))]
+                else:
+                    assert teacher_model is not None
+                    with torch.no_grad():
+                        t_out = teacher_model.model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
+                    s_hiddens = s_out.hidden_states[1:]
+                    t_hiddens = t_out.hidden_states[1:]
                 layer_mses = [F.mse_loss(s, t) for s, t in zip(s_hiddens, t_hiddens)]
                 layer_cos = [1.0 - F.cosine_similarity(s, t, dim=-1).mean() for s, t in zip(s_hiddens, t_hiddens)]
                 loss_mse = torch.stack(layer_mses).mean()
@@ -683,13 +258,18 @@ def train_single_qwen_attention(
             in_ids = batch["input_ids"].to(device, non_blocking=True)
             att_m = batch["attention_mask"].to(device, non_blocking=True)
 
-            with torch.cuda.amp.autocast(dtype=torch.float16 if device.type == "cuda" else torch.bfloat16):
-                with torch.no_grad():
-                    t_out = teacher_model.model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
+            with torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16 if device.type == "cuda" else torch.bfloat16):
                 s_out = student.model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
-
-                s_hiddens = s_out.hidden_states[1:]
-                t_hiddens = t_out.hidden_states[1:]
+                if "teacher_hidden_states" in batch and layer_indices is not None:
+                    t_h_b = batch["teacher_hidden_states"].to(device, non_blocking=True)
+                    s_hiddens = [s_out.hidden_states[idx + 1] for idx in layer_indices]
+                    t_hiddens = [t_h_b[:, j, :, :] for j in range(len(layer_indices))]
+                else:
+                    assert teacher_model is not None
+                    with torch.no_grad():
+                        t_out = teacher_model.model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
+                    s_hiddens = s_out.hidden_states[1:]
+                    t_hiddens = t_out.hidden_states[1:]
                 layer_mses = [F.mse_loss(s, t) for s, t in zip(s_hiddens, t_hiddens)]
                 layer_cos = [1.0 - F.cosine_similarity(s, t, dim=-1).mean() for s, t in zip(s_hiddens, t_hiddens)]
                 loss_mse = torch.stack(layer_mses).mean()
@@ -835,6 +415,17 @@ def main() -> None:
         type=int,
         help="Enable gradient checkpointing on student decoder blocks (0/1)",
     )
+    parser.add_argument(
+        "--teacher_cache_path",
+        default="auto",
+        help="Offline teacher representation cache path ('auto' or 'none' to disable)",
+    )
+    parser.add_argument(
+        "--max_cache_samples",
+        type=int,
+        default=256,
+        help="Maximum training chunks/samples stored in offline teacher cache",
+    )
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     args = parser.parse_args()
 
@@ -856,17 +447,75 @@ def main() -> None:
     logger.info("Loaded %d keys for Qwen distillation (%s)", len(keys), args.model)
 
     tokenizer = AutoTokenizer.from_pretrained(args.model)
-    teacher = AutoModelForCausalLM.from_pretrained(
-        args.model,
-        torch_dtype=torch.float16 if device.type == "cuda" else torch.float32,
-    ).to(device)
-    teacher.eval()
-
     train_tokens, val_tokens = load_tokenized_qwen_corpus(tokenizer, args.dataset, args.seq_len)
-    train_dataset = StratifiedQwenDataset(train_tokens)
+
+    norm_model_id = _normalize_base_model_id(args.model)
+    cache_path = resolve_teacher_cache_path(
+        args.teacher_cache_path,
+        out_dir=out_base,
+        model_id=norm_model_id,
+        tag="qwen_causal",
+        seq_len=args.seq_len,
+        max_cache_samples=args.max_cache_samples,
+        topk=args.topk,
+    )
+    n_cache_samples = min(int(train_tokens.size(0)), max(1, int(args.max_cache_samples))) if train_tokens.dim() == 2 else 0
+    teacher: Optional[nn.Module] = None
+    teacher_cache: Optional[dict[str, Any]] = None
+
+    if cache_path is not None and n_cache_samples > 0:
+        teacher_cache = try_load_causal_teacher_cache(
+            cache_path,
+            model_id=norm_model_id,
+            seq_len=args.seq_len,
+            num_samples=n_cache_samples,
+            topk=args.topk,
+        )
+
+    if teacher_cache is None:
+        loaded_teacher = AutoModelForCausalLM.from_pretrained(
+            args.model,
+            torch_dtype=torch.float16 if device.type == "cuda" else torch.float32,
+        ).to(device)
+        loaded_teacher.eval()
+        for p in loaded_teacher.parameters():
+            p.requires_grad = False
+
+        if cache_path is not None and n_cache_samples > 0 and hasattr(loaded_teacher, "config"):
+            teacher_cache = build_or_load_causal_teacher_cache(
+                cache_path,
+                model_id=args.model,
+                normalized_model_id=norm_model_id,
+                train_chunks=train_tokens,
+                val_chunks=val_tokens,
+                device=device,
+                load_teacher_fn=lambda: loaded_teacher,
+                evaluate_ppl_fn=evaluate_causal_ppl,
+                seq_len=args.seq_len,
+                max_cache_samples=args.max_cache_samples,
+                topk=args.topk,
+                batch_size=args.batch_size,
+                teacher_model=loaded_teacher,
+            )
+            del loaded_teacher
+            gc.collect()
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
+        else:
+            teacher = loaded_teacher
+
+    if teacher_cache is not None:
+        train_dataset: Dataset = CachedCausalDataset(teacher_cache)
+    else:
+        train_dataset = StratifiedQwenDataset(train_tokens)
     val_dataset = StratifiedQwenDataset(val_tokens)
 
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=args.batch_size,
+        shuffle=True,
+        drop_last=(len(train_dataset) >= args.batch_size),
+    )
     val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
 
     uploader: Optional[AsyncHFHubUploader] = None
@@ -922,7 +571,12 @@ def main() -> None:
             curr_train_loader = (
                 train_loader
                 if curr_bs == args.batch_size
-                else DataLoader(train_dataset, batch_size=curr_bs, shuffle=True, drop_last=True)
+                else DataLoader(
+                    train_dataset,
+                    batch_size=curr_bs,
+                    shuffle=True,
+                    drop_last=(len(train_dataset) >= curr_bs),
+                )
             )
             curr_val_loader = (
                 val_loader
@@ -950,6 +604,7 @@ def main() -> None:
                     grad_accum=curr_accum,
                     hf_org=args.hf_org,
                     gradient_checkpointing=curr_ckpt,
+                    teacher_cache=teacher_cache,
                 )
                 break
             except Exception as e:
