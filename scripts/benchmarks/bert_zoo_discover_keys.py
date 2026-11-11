@@ -111,7 +111,7 @@ def main() -> None:
         err = probe_attention(key, device)
         if err is None:
             valid_keys.append(key)
-            logger.info(f"  OK")
+            logger.info("  OK")
         else:
             first_line = err.strip().splitlines()[-1]
             logger.warning(f"  SKIP: {first_line}")

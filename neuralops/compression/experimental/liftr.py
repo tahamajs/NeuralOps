@@ -457,8 +457,8 @@ class LIFTRCompressor(BaseCompressor):
         # Pattern 1: Transformer encoder/decoder intermediate + output layers
         for layer in model.modules():
             if hasattr(layer, "intermediate") and hasattr(layer, "output"):
-                inter = getattr(layer, "intermediate")
-                out_mod = getattr(layer, "output")
+                inter = layer.intermediate
+                out_mod = layer.output
                 if (
                     hasattr(inter, "dense")
                     and hasattr(out_mod, "dense")
