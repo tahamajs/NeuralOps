@@ -20,7 +20,7 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 
 def test_registry():
     assert "eat" in ATTENTION_REGISTRY.list_available()
-    assert "eat_attention" in ATTENTION_REGISTRY.keys()
+    assert ATTENTION_REGISTRY.get("eat_attention") is not None
     assert issubclass(ATTENTION_REGISTRY.get("eat"), EATBlock)
 
 
