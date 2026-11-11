@@ -720,7 +720,8 @@ class XAttention(BaseAttention):
             k_blk_has_valid = (k_blk_counts > 0).view(B, 1, 1, num_k_blocks)
 
             coarse_scores = torch.matmul(Q_blocks * scale, K_blocks.transpose(-1, -2).contiguous())
-            coarse_scores = coarse_scores.masked_fill(~k_blk_has_valid, -1e9)
+            neg_inf_coarse = -1e4 if coarse_scores.dtype == torch.float16 else -1e9
+            coarse_scores = coarse_scores.masked_fill(~k_blk_has_valid, neg_inf_coarse)
 
             if self.is_decoder:
                 q_pos_max = past_len + torch.clamp(
@@ -733,7 +734,7 @@ class XAttention(BaseAttention):
                 k_blk = torch.arange(num_k_blocks, device=device).unsqueeze(0)
                 causal_blk = (k_blk <= q_blk_max).unsqueeze(0).unsqueeze(0)
                 diag_blk = ((k_blk >= q_blk_min) & (k_blk <= q_blk_max)).unsqueeze(0).unsqueeze(0)
-                coarse_scores = coarse_scores.masked_fill(~causal_blk, -1e9)
+                coarse_scores = coarse_scores.masked_fill(~causal_blk, neg_inf_coarse)
             else:
                 causal_blk = None
                 diag_blk = None
@@ -826,7 +827,8 @@ class XAttention(BaseAttention):
                     attn_valid = attn_valid & valid_m.unsqueeze(1).unsqueeze(2)
 
             row_has_valid = attn_valid.any(dim=-1, keepdim=True)
-            scores = scores.masked_fill(~attn_valid, -1e9)
+            neg_inf_scores = -1e4 if scores.dtype == torch.float16 else -1e9
+            scores = scores.masked_fill(~attn_valid, neg_inf_scores)
             attn = F.softmax(scores, dim=-1)
             attn = attn * row_has_valid.to(attn.dtype)
             attn = self.dropout(attn)
