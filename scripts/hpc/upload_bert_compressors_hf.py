@@ -45,6 +45,8 @@ def _resolve_repo_id(target_dir: Path, hf_org: str) -> str:
         return f"{hf_org}/qwen-2.5-0.5b-comp-{slug}-wikitext2"
     if "qwen" in parent_name:
         return f"{hf_org}/qwen-2.5-0.5b-{slug}-wikitext2"
+    if "bert_attention" in parent_name:
+        return f"{hf_org}/bert-{slug}-sst2"
     return f"{hf_org}/bert-comp-{slug}-sst2"
 
 
@@ -69,8 +71,12 @@ def upload_compressed_dir(target_dir: Path, hf_org: str, cleanup_after: bool = T
         api.create_repo(repo_id=repo_id, repo_type="model", exist_ok=True, private=False)
 
         ignore_pats = ["upload_success.json", "upload_error.json", "*.tmp"]
-        is_attention_zoo = any(tag in target_dir.parent.name for tag in ("qwen", "vlm", "llava", "tinyllama", "llama"))
-        if is_attention_zoo and (target_dir / "attention_weights.safetensors").exists():
+        is_attention_zoo = any(
+            tag in target_dir.parent.name for tag in ("bert_attention", "qwen", "vlm", "llava", "tinyllama", "llama")
+        )
+        if (is_attention_zoo or "bert_compressor_zoo_hf" in target_dir.parent.name) and (
+            target_dir / "attention_weights.safetensors"
+        ).exists():
             ignore_pats.extend(["pytorch_model.bin", "model.safetensors"])
             for heavy_name in ("pytorch_model.bin", "model.safetensors"):
                 heavy_path = target_dir / heavy_name
@@ -118,7 +124,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Upload BERT-Compressor, LLaVA-VLM & TinyLlama Zoos to HF Hub.")
     parser.add_argument(
         "--watch_dir",
-        default="/home/tahamajlesi.ut/NeuralOps/results/bert_compressor_zoo_hf,/home/tahamajlesi.ut/NeuralOps/results/qwen_attention_zoo,/home/tahamajlesi.ut/NeuralOps/results/qwen_compressor_zoo,/home/tahamajlesi.ut/NeuralOps/results/vlm_llava_scienceqa_zoo,/home/tahamajlesi.ut/NeuralOps/results/tinyllama_1.1b_zoo",
+        default="/home/tahamajlesi.ut/NeuralOps/results/bert_attention_zoo,/home/tahamajlesi.ut/NeuralOps/results/bert_compressor_zoo_hf,/home/tahamajlesi.ut/NeuralOps/results/qwen_attention_zoo,/home/tahamajlesi.ut/NeuralOps/results/qwen_compressor_zoo,/home/tahamajlesi.ut/NeuralOps/results/vlm_llava_scienceqa_zoo,/home/tahamajlesi.ut/NeuralOps/results/tinyllama_1.1b_zoo",
     )
     parser.add_argument("--hf_org", default="tahamajs")
     parser.add_argument("--cleanup", type=int, default=1)
