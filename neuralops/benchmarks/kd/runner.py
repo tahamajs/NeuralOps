@@ -27,7 +27,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from datasets import load_dataset
-from torch.amp import GradScaler, autocast
+try:
+    from torch.cuda.amp import GradScaler, autocast
+except ImportError:
+    from torch.amp import GradScaler, autocast
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, DataCollatorWithPadding
