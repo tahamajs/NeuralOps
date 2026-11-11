@@ -433,8 +433,11 @@ def map_bert_compressor_record(
     default_dataset: str = "sst2",
     default_device: str | None = None,
 ) -> BenchmarkResult:
-    """Map one BERT Compressor Zoo `multirank_lora_ledger.jsonl` entry to `BenchmarkResult`."""
-    comp_key = _validate_safe_segment(record.get("compressor"), "compressor")
+    """Map one BERT Compressor Zoo (`multirank_lora_ledger.jsonl` or `metrics.jsonl`) entry to `BenchmarkResult`."""
+    comp_key = _validate_safe_segment(
+        record.get("compressor") or record.get("comp_key") or record.get("module"),
+        "compressor",
+    )
     model_name = _validate_safe_segment(record.get("model") or default_model, "model", allow_slashes=True)
     dataset_name = _validate_safe_segment(record.get("dataset") or default_dataset, "dataset")
 
@@ -442,23 +445,40 @@ def map_bert_compressor_record(
     status, warnings = _normalize_zoo_status(record.get("status"))
 
     rank = _extract_int(record, "rank", numeric_errors)
-    if rank is None or rank < 0:
-        raise ValueError(f"Missing or invalid 'rank' in BERT compressor record at line {line_no}.")
+    if rank is not None and rank < 0:
+        numeric_errors.append(f"Field 'rank' must be non-negative, got {rank}.")
+        rank = None
+    effective_rank = rank if rank is not None else 0
 
-    ratio = _extract_finite_float(record, "ratio", numeric_errors)
+    ratio = _extract_first_finite_float(
+        record,
+        ("ratio", "param_reduction", "compression_ratio", "effective_ratio"),
+        numeric_errors,
+    )
     orig_params = _extract_int(record, "orig_params", numeric_errors)
     comp_params = _extract_int(record, "comp_params", numeric_errors)
-    zero_shot_acc = _extract_finite_float(record, "zero_shot_acc", numeric_errors)
-    zero_shot_loss = _extract_finite_float(record, "zero_shot_loss", numeric_errors)
-    delta_zero = _extract_finite_float(record, "delta_zero", numeric_errors)
-    healed_acc = _extract_finite_float(record, "healed_acc", numeric_errors)
-    healed_loss = _extract_finite_float(record, "healed_loss", numeric_errors)
-    delta_healed = _extract_finite_float(record, "delta_healed", numeric_errors)
-    duration_s = _extract_finite_float(record, "duration_s", numeric_errors)
-    if duration_s is None:
-        duration_s = _extract_finite_float(record, "eval_time", numeric_errors)
-    if duration_s is None:
-        duration_s = _extract_finite_float(record, "train_secs", numeric_errors)
+    zero_shot_acc = _extract_first_finite_float(record, ("zero_shot_acc", "pre_kd_acc", "acc_before"), numeric_errors)
+    zero_shot_loss = _extract_first_finite_float(record, ("zero_shot_loss", "pre_kd_loss", "loss_before"), numeric_errors)
+    delta_zero = _extract_first_finite_float(record, ("delta_zero", "zero_delta"), numeric_errors)
+    healed_acc = _extract_first_finite_float(
+        record,
+        ("healed_acc", "post_kd_acc", "acc_after", "accuracy", "sst2_accuracy"),
+        numeric_errors,
+    )
+    healed_loss = _extract_first_finite_float(
+        record,
+        ("healed_loss", "post_kd_loss", "loss_after", "loss"),
+        numeric_errors,
+    )
+    delta_healed = _extract_first_finite_float(record, ("delta_healed", "acc_gain", "acc_delta"), numeric_errors)
+    ppl_before = _extract_first_finite_float(record, ("ppl_before", "pre_kd_ppl"), numeric_errors)
+    ppl_after = _extract_first_finite_float(record, ("ppl_after", "post_kd_ppl"), numeric_errors)
+    ppl_delta = _extract_first_finite_float(record, ("ppl_delta", "ppl_gain"), numeric_errors)
+    duration_s = _extract_first_finite_float(
+        record,
+        ("duration_s", "eval_time", "train_secs"),
+        numeric_errors,
+    )
 
     lora_healed = record.get("lora_healed")
     if lora_healed is not None and not isinstance(lora_healed, bool):
@@ -484,6 +504,12 @@ def map_bert_compressor_record(
         metrics["healed_loss"] = healed_loss
     if ratio is not None:
         metrics["compression_ratio"] = ratio
+    if ppl_before is not None:
+        metrics["pre_ppl"] = ppl_before
+    if ppl_after is not None:
+        metrics["post_ppl"] = ppl_after
+    if ppl_delta is not None:
+        metrics["ppl_delta"] = ppl_delta
 
     # Populate canonical accuracy/loss fields consumed by saver.py indices.
     if lora_healed and healed_acc is not None:
@@ -492,7 +518,9 @@ def map_bert_compressor_record(
             metrics["loss"] = healed_loss
     elif healed_acc is not None:
         metrics["accuracy"] = healed_acc
-        if zero_shot_loss is not None:
+        if healed_loss is not None:
+            metrics["loss"] = healed_loss
+        elif zero_shot_loss is not None:
             metrics["loss"] = zero_shot_loss
     elif zero_shot_acc is not None:
         metrics["accuracy"] = zero_shot_acc
@@ -506,12 +534,16 @@ def map_bert_compressor_record(
         teacher_acc = _extract_finite_float(record, "teacher_acc", numeric_errors)
         if teacher_acc is not None:
             baseline_metrics["accuracy"] = teacher_acc
+    if ppl_before is not None:
+        baseline_metrics["ppl"] = ppl_before
 
     delta_metrics: dict[str, Any] = {}
     if delta_zero is not None:
         delta_metrics["delta_zero"] = delta_zero
     if delta_healed is not None:
         delta_metrics["delta_healed"] = delta_healed
+    if ppl_delta is not None:
+        delta_metrics["ppl_delta"] = ppl_delta
 
     params_reduction_pct = 0.0
     if orig_params is not None and comp_params is not None and orig_params > 0:
@@ -526,14 +558,14 @@ def map_bert_compressor_record(
 
     required_error = None
     if status == BenchmarkStatus.SUCCESS:
-        if "accuracy" not in metrics:
-            required_error = "Missing required accuracy metric ('zero_shot_acc'/'healed_acc') for PASSED record."
+        if "accuracy" not in metrics and "post_ppl" not in metrics:
+            required_error = "Missing required accuracy or perplexity metric for PASSED compressor record."
         elif ratio is None or ratio <= 0.0:
             required_error = "Missing or non-positive 'ratio' metric for PASSED compressor record."
 
     final_status, error_msg = _finalize_status_and_errors(status, numeric_errors, record, required_error)
 
-    config: dict[str, Any] = {"zoo": "bert_compressor_zoo", "rank": rank}
+    config: dict[str, Any] = {"zoo": "bert_compressor_zoo", "rank": effective_rank}
     if lora_healed is not None:
         config["lora_healed"] = lora_healed
 
@@ -544,11 +576,11 @@ def map_bert_compressor_record(
         model_dict["num_params_after"] = comp_params
 
     ts_token = str(record.get("timestamp") or record.get("timestamp_end") or f"line_{line_no}")
-    identity_seed = f"{comp_key}|{model_name}|{dataset_name}|rank{rank}|{ts_token}|{line_no}"
+    identity_seed = f"{comp_key}|{model_name}|{dataset_name}|rank{effective_rank}|{ts_token}|{line_no}"
     run_meta, meta_extra = _build_run_metadata(
         record=record,
         zoo_name="bert_compressor_zoo",
-        run_name=f"bert_compressor_{comp_key}_r{rank}",
+        run_name=f"bert_compressor_{comp_key}_r{effective_rank}",
         identity_seed=identity_seed,
         duration_s=duration_s,
         warnings=warnings,
@@ -561,7 +593,7 @@ def map_bert_compressor_record(
             "type": "compressor",
             "module_type": "compressor",
             "registry": "compressor",
-            "rank": rank,
+            "rank": effective_rank,
         },
         model=model_dict,
         dataset={"name": dataset_name, "task": "classification", "split": "validation"},
@@ -671,6 +703,21 @@ _VLM_SPEC = _ZooMapperSpec(
 _TINYLLAMA_SPEC = _ZooMapperSpec(
     zoo_name="tinyllama_1.1b_zoo",
     run_prefix="tinyllama_attention",
+    module_keys=("attn_key", "module"),
+    module_field_label="attn_key",
+    module_type="attention",
+    registry="attention",
+    default_model="TinyLlama/TinyLlama_v1.1",
+    model_family="llama",
+    default_dataset="wikitext-2",
+    default_task="causal_lm",
+    training_type="distillation",
+    require_any_metric=("post_ppl", "accuracy"),
+)
+
+_LLAMA_ATTN_SPEC = _ZooMapperSpec(
+    zoo_name="llama_attention_zoo",
+    run_prefix="llama_attention",
     module_keys=("attn_key", "module"),
     module_field_label="attn_key",
     module_type="attention",
@@ -1009,6 +1056,24 @@ def map_tinyllama_attention_record(
         record=record,
         line_no=line_no,
         spec=_TINYLLAMA_SPEC,
+        default_model=default_model,
+        default_dataset=default_dataset,
+        default_device=default_device,
+    )
+
+
+def map_llama_attention_record(
+    record: dict[str, Any],
+    line_no: int,
+    default_model: str | None = None,
+    default_dataset: str | None = None,
+    default_device: str | None = None,
+) -> BenchmarkResult:
+    """Map one LLaMA Attention Zoo `metrics.jsonl` entry to `BenchmarkResult`."""
+    return _map_zoo_distillation_record(
+        record=record,
+        line_no=line_no,
+        spec=_LLAMA_ATTN_SPEC,
         default_model=default_model,
         default_dataset=default_dataset,
         default_device=default_device,
@@ -1366,6 +1431,7 @@ def export_dual_zoo_5formats(
     qwen_comp_jsonl: Path | str | None = None,
     vlm_jsonl: Path | str | None = None,
     tinyllama_jsonl: Path | str | None = None,
+    llama_attn_jsonl: Path | str | None = None,
     *,
     qwen_attn_ledger: Path | str | None = None,
     bert_comp_ledger: Path | str | None = None,
@@ -1373,6 +1439,8 @@ def export_dual_zoo_5formats(
     qwen_comp_ledger: Path | str | None = None,
     vlm_ledger: Path | str | None = None,
     tinyllama_ledger: Path | str | None = None,
+    llama_attn_ledger: Path | str | None = None,
+    llama_attention_ledger: Path | str | None = None,
 ) -> dict[str, Any]:
     """Read zoo JSONL ledgers, map to BenchmarkResult, and export all 5 formats + zoo_overview.json."""
     if qwen_jsonl is None and qwen_attn_ledger is not None:
@@ -1387,6 +1455,10 @@ def export_dual_zoo_5formats(
         vlm_jsonl = vlm_ledger
     if tinyllama_jsonl is None and tinyllama_ledger is not None:
         tinyllama_jsonl = tinyllama_ledger
+    if llama_attn_jsonl is None and llama_attn_ledger is not None:
+        llama_attn_jsonl = llama_attn_ledger
+    if llama_attn_jsonl is None and llama_attention_ledger is not None:
+        llama_attn_jsonl = llama_attention_ledger
 
     if all(
         p is None
@@ -1397,12 +1469,13 @@ def export_dual_zoo_5formats(
             qwen_comp_jsonl,
             vlm_jsonl,
             tinyllama_jsonl,
+            llama_attn_jsonl,
         )
     ):
         raise ValueError(
             "At least one zoo ledger flag ('--bert-attn-ledger', '--bert-comp-ledger', "
-            "'--qwen-attn-ledger', '--qwen-comp-ledger', '--vlm-ledger', or '--tinyllama-ledger') "
-            "must be provided."
+            "'--qwen-attn-ledger', '--qwen-comp-ledger', '--vlm-ledger', '--llama-attention-ledger', "
+            "or '--tinyllama-ledger') must be provided."
         )
 
     out_path = Path(output_dir)
@@ -1461,6 +1534,7 @@ def export_dual_zoo_5formats(
         ("qwen_compressor_zoo", qwen_comp_jsonl, map_qwen_compressor_record, qwen_model, qwen_dataset),
         ("vlm_llava_scienceqa_zoo", vlm_jsonl, map_vlm_attention_record, None, None),
         ("tinyllama_1.1b_zoo", tinyllama_jsonl, map_tinyllama_attention_record, None, None),
+        ("llama_attention_zoo", llama_attn_jsonl, map_llama_attention_record, None, None),
     )
     for suite_name, ledger_arg, mapper_fn, d_model, d_dataset in optional_specs:
         if ledger_arg is None:
@@ -1550,6 +1624,7 @@ def export_dual_zoo_5formats(
         "qwen_comp_records": zoo_counts.get("qwen_compressor_zoo", 0),
         "vlm_records": zoo_counts.get("vlm_llava_scienceqa_zoo", 0),
         "tinyllama_records": zoo_counts.get("tinyllama_1.1b_zoo", 0),
+        "llama_records": zoo_counts.get("llama_attention_zoo", 0),
         "zoo_counts": zoo_counts,
         "status_counts": status_counts,
         "verification_failures": verification_failures,
@@ -1633,6 +1708,24 @@ def _build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=None,
         help="Path to TinyLlama 1.1B Zoo metrics.jsonl (results/tinyllama_1.1b_zoo/metrics.jsonl)",
+    )
+    parser.add_argument(
+        "--llama-attention-ledger",
+        "--llama_attention_ledger",
+        "--llama-attn-ledger",
+        "--llama_attn_ledger",
+        "--llama-ledger",
+        "--llama_ledger",
+        "--llama-attention-jsonl",
+        "--llama_attention_jsonl",
+        "--llama-attn-jsonl",
+        "--llama_attn_jsonl",
+        "--llama-jsonl",
+        "--llama_jsonl",
+        dest="llama_attn_jsonl",
+        type=Path,
+        default=None,
+        help="Path to LLaMA Attention Zoo metrics.jsonl (results/llama_attention_zoo/metrics.jsonl)",
     )
     parser.add_argument(
         "-o",
