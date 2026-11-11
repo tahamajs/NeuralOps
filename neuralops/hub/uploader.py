@@ -8,9 +8,10 @@
 """
 Asynchronous Hugging Face Hub Uploader with Automated Disk Quota Protection.
 
-Uploads trained BERT attention model checkpoints to the Hugging Face Hub in
-a non-blocking background thread pool, confirms remote commit integrity, and
-automatically deletes heavy local weight files (.safetensors / pytorch_model.bin)
+Uploads trained NeuralOps model checkpoints across all zoos (BERT Attention/Compressor,
+Qwen2.5, TinyLlama, LLaVA VLM) to the Hugging Face Hub (org: tahamajs) in a non-blocking
+background thread pool, confirms remote commit integrity, and automatically deletes
+weight files (attention_weights.safetensors / pytorch_model.bin / model.safetensors)
 to maintain local disk usage under quota constraints.
 """
 from __future__ import annotations
@@ -27,13 +28,11 @@ logger = logging.getLogger(__name__)
 
 
 class AsyncHFHubUploader:
-    """
-    Non-blocking background uploader daemon for Hugging Face Hub.
-    """
+    """Non-blocking background uploader daemon for Hugging Face Hub."""
 
     def __init__(
         self,
-        hf_org: str = "Hooshaai",
+        hf_org: str = "tahamajs",
         max_workers: int = 2,
         cleanup_weights: bool = True,
         token: Optional[str] = None,
@@ -41,17 +40,70 @@ class AsyncHFHubUploader:
         self.hf_org = hf_org
         self.max_workers = max_workers
         self.cleanup_weights = cleanup_weights
-        self.token = token or os.environ.get("HF_TOKEN")
+        resolved_token = token or os.environ.get("HF_TOKEN")
+        if not resolved_token:
+            token_path = Path.home() / ".cache" / "huggingface" / "token"
+            if token_path.exists():
+                resolved_token = token_path.read_text(encoding="utf-8").strip()
+        self.token = resolved_token
         self.executor = concurrent.futures.ThreadPoolExecutor(
             max_workers=max_workers, thread_name_prefix="hf_upload"
         )
         self.futures: list[concurrent.futures.Future[Any]] = []
+
+    def resolve_repo_id(
+        self,
+        key: str,
+        staging_dir: Path,
+        zoo_type: Optional[str] = None,
+        repo_id: Optional[str] = None,
+    ) -> str:
+        """Resolve canonical Hugging Face repository ID for any NeuralOps zoo."""
+        if repo_id:
+            return repo_id
+
+        slug = key.replace("_", "-")
+        parent_hint = staging_dir.parent.name.lower() if staging_dir.parent else ""
+        zoo_hint = (zoo_type or "").lower()
+        combined_hint = f"{zoo_hint} {parent_hint}".strip()
+
+        cfg_dict: dict[str, Any] = {}
+        cfg_file = staging_dir / "config.json"
+        if cfg_file.exists():
+            try:
+                cfg_dict = json.loads(cfg_file.read_text(encoding="utf-8"))
+            except Exception:
+                cfg_dict = {}
+
+        model_type = str(cfg_dict.get("model_type") or "").lower()
+        is_comp = bool(
+            cfg_dict.get("compression_method")
+            or cfg_dict.get("compressor_key")
+            or "comp" in combined_hint
+        )
+
+        if "vlm" in combined_hint or "llava" in combined_hint or model_type == "llava":
+            return f"{self.hf_org}/llava-qwen-0.5b-{slug}-scienceqa"
+        if "tinyllama" in combined_hint or "llama" in combined_hint or model_type == "llama":
+            return f"{self.hf_org}/tinyllama-1.1b-{slug}-wikitext2"
+        if "qwen" in combined_hint or model_type == "qwen2":
+            if is_comp:
+                return f"{self.hf_org}/qwen-2.5-0.5b-comp-{slug}-wikitext2"
+            return f"{self.hf_org}/qwen-2.5-0.5b-{slug}-wikitext2"
+        if is_comp:
+            return f"{self.hf_org}/bert-comp-{slug}-sst2"
+        if "wiki" in parent_hint and "sst2" not in parent_hint:
+            return f"{self.hf_org}/bert-{slug}-wiki"
+        return f"{self.hf_org}/bert-{slug}-sst2"
 
     def submit_upload(
         self,
         attn_key: str,
         staging_dir: str | Path,
         metrics: dict[str, Any],
+        *,
+        repo_id: Optional[str] = None,
+        zoo_type: Optional[str] = None,
     ) -> concurrent.futures.Future[Any]:
         """Submit a completed checkpoint folder for background upload and cleanup."""
         path = Path(staging_dir)
@@ -60,6 +112,8 @@ class AsyncHFHubUploader:
             attn_key,
             path,
             metrics,
+            repo_id,
+            zoo_type,
         )
         self.futures.append(future)
         return future
@@ -69,17 +123,27 @@ class AsyncHFHubUploader:
         attn_key: str,
         staging_dir: Path,
         metrics: dict[str, Any],
+        explicit_repo_id: Optional[str] = None,
+        zoo_type: Optional[str] = None,
     ) -> dict[str, Any]:
         """Background worker uploading directory and deleting heavy weights."""
         if not self.token:
             err_msg = "HF_TOKEN is unset — skipping remote upload. Weights preserved."
             logger.warning("[%s] %s", attn_key, err_msg)
             err_file = staging_dir / "upload_error.json"
-            err_file.write_text(json.dumps({"error": err_msg, "timestamp": datetime.datetime.utcnow().isoformat()}))
+            err_file.write_text(
+                json.dumps(
+                    {
+                        "error": err_msg,
+                        "timestamp": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    }
+                ),
+                encoding="utf-8",
+            )
             return {"status": "SKIPPED_NO_TOKEN", "error": err_msg}
 
         slug = attn_key.replace("_", "-")
-        repo_id = f"{self.hf_org}/bert-{slug}-wiki"
+        repo_id = self.resolve_repo_id(attn_key, staging_dir, zoo_type=zoo_type, repo_id=explicit_repo_id)
         logger.info("[%s] Beginning background upload to Hugging Face Hub (%s)...", attn_key, repo_id)
 
         try:
@@ -90,19 +154,30 @@ class AsyncHFHubUploader:
             # 1. Ensure remote repository exists
             api.create_repo(repo_id=repo_id, repo_type="model", exist_ok=True, private=False)
 
-            # 2. Upload entire folder to Hugging Face Hub
-            commit_message = (
-                f"Distill bert-{slug} on WikiText-2 "
-                f"(PPL_after={metrics.get('post_kd_ppl', metrics.get('ppl_after', 0.0)):.2f})"
-            )
+            # 2. Strip legacy full weights before upload if surgical delta safetensors exists
+            ignore_patterns = ["upload_success.json", "upload_error.json", "*.tmp"]
+            if (staging_dir / "attention_weights.safetensors").exists():
+                ignore_patterns.extend(["pytorch_model.bin", "model.safetensors", "surgical_model_state.pt", "optimizer.pt"])
+
+            ppl_val = metrics.get("post_kd_ppl", metrics.get("ppl_after"))
+            acc_val = metrics.get("post_kd_acc", metrics.get("acc_after", metrics.get("healed_acc")))
+            stat_parts = []
+            if isinstance(acc_val, (int, float)):
+                stat_parts.append(f"acc={acc_val:.2f}%")
+            if isinstance(ppl_val, (int, float)):
+                stat_parts.append(f"ppl={ppl_val:.2f}")
+            stat_summary = f" ({', '.join(stat_parts)})" if stat_parts else ""
+            commit_message = f"Upload {slug} checkpoint -> {repo_id}{stat_summary}"
+
             commit_info = api.upload_folder(
                 folder_path=str(staging_dir),
                 repo_id=repo_id,
                 repo_type="model",
+                ignore_patterns=ignore_patterns,
                 commit_message=commit_message,
             )
 
-            commit_hash = getattr(commit_info, "commit_id", "verified")
+            commit_hash = getattr(commit_info, "commit_id", getattr(commit_info, "oid", "verified"))
             logger.info("[%s] Upload successful! Remote commit: %s", attn_key, commit_hash)
 
             # 3. Write success confirmation record
@@ -110,17 +185,23 @@ class AsyncHFHubUploader:
                 "status": "UPLOAD_SUCCESS",
                 "repo_id": repo_id,
                 "commit_hash": str(commit_hash),
-                "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "metrics": {
-                    "ppl_after": metrics.get("post_kd_ppl", metrics.get("ppl_after", 0.0)),
-                    "acc_after": metrics.get("post_kd_acc", metrics.get("acc_after", 0.0)),
+                    "ppl_after": ppl_val,
+                    "acc_after": acc_val,
                 },
             }
-            (staging_dir / "upload_success.json").write_text(json.dumps(success_record, indent=2))
+            (staging_dir / "upload_success.json").write_text(json.dumps(success_record, indent=2), encoding="utf-8")
 
-            # 4. Atomic Disk Quota Protection: Delete heavy model weights
+            # 4. Atomic Disk Quota Protection: Delete local weight files after confirmed upload
             if self.cleanup_weights:
-                for weight_name in ["model.safetensors", "pytorch_model.bin", "optimizer.pt"]:
+                for weight_name in (
+                    "attention_weights.safetensors",
+                    "pytorch_model.bin",
+                    "model.safetensors",
+                    "surgical_model_state.pt",
+                    "optimizer.pt",
+                ):
                     w_path = staging_dir / weight_name
                     if w_path.exists():
                         size_mb = w_path.stat().st_size / (1024 * 1024)
@@ -139,9 +220,9 @@ class AsyncHFHubUploader:
             err_record = {
                 "status": "UPLOAD_FAILED",
                 "error": str(e),
-                "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             }
-            (staging_dir / "upload_error.json").write_text(json.dumps(err_record, indent=2))
+            (staging_dir / "upload_error.json").write_text(json.dumps(err_record, indent=2), encoding="utf-8")
             return err_record
 
     def wait_all(self, timeout: Optional[float] = None) -> list[dict[str, Any]]:

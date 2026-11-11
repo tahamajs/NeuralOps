@@ -8,9 +8,8 @@
 """
 NeuralOps Hugging Face Hub Integration Package.
 
-Provides high-level APIs to download, inspect, and fine-tune pretrained
-BERT models equipped with NeuralOps attention mechanisms directly from
-the Hugging Face Hub (org: Hooshaai).
+Provides high-level APIs to download, reconstruct, inspect, and upload
+surgeried and compressed models hosted on the Hugging Face Hub (org: tahamajs).
 """
 from __future__ import annotations
 
@@ -24,9 +23,25 @@ from neuralops.hub.compressor_zoo import (
     list_pretrained_compressed_bert_models,
     load_pretrained_compressed_bert,
 )
+from neuralops.hub.model_card import (
+    audit_artifacts_on_disk,
+    generate_unified_model_card,
+)
+from neuralops.hub.surgery_loader import (
+    apply_decoder_attention_surgery,
+    load_surgeried_model,
+    normalize_base_model_id,
+)
 from neuralops.hub.uploader import AsyncHFHubUploader
+from neuralops.models.surgical_io import save_surgical_delta
 
 __all__ = [
+    "load_surgeried_model",
+    "apply_decoder_attention_surgery",
+    "normalize_base_model_id",
+    "save_surgical_delta",
+    "generate_unified_model_card",
+    "audit_artifacts_on_disk",
     "load_pretrained_bert",
     "list_pretrained_bert_models",
     "generate_bert_model_card_markdown",

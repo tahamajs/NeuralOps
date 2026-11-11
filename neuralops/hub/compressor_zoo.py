@@ -9,7 +9,7 @@
 Pretrained BERT & Generative Compressor Zoo API.
 
 Allows users to load, list, and fine-tune any of the compressed and distilled
-transformer models hosted on the Hugging Face Hub (org: Hooshaai).
+transformer models hosted on the Hugging Face Hub (org: tahamajs).
 """
 from __future__ import annotations
 
@@ -46,6 +46,8 @@ def generate_compressor_model_card_markdown(
     throughput = metrics.get("tokens_per_sec", 0.0)
     peak_vram = metrics.get("peak_vram_mb", 0)
     steps = metrics.get("total_steps", metrics.get("steps_completed", 0))
+    train_secs = metrics.get("train_secs", metrics.get("elapsed_secs", None))
+    duration_str = f"{float(train_secs):.1f}s" if train_secs is not None else "Measured on RTX 3090"
 
     # Downstream task metrics if available (e.g. GLUE SST-2)
     teacher_sst2 = metrics.get("teacher_sst2_acc", 92.43)
@@ -112,7 +114,7 @@ The model achieves **{param_reduction:.2f}x parameter reduction ({reduction_pct:
 {sst2_section}
 ### Hardware & Training Telemetry
 - **Distillation Hardware:** NVIDIA RTX 3090 24GB (Sharif HPC Cluster)
-- **Training Duration:** `300.0s (5.0 minutes)`
+- **Training Duration:** `{duration_str}`
 - **Steps Completed:** `{steps}`
 - **Throughput:** `{throughput:.1f} tokens/sec`
 - **Peak GPU VRAM:** `{peak_vram} MB`
@@ -165,7 +167,7 @@ for res in results:
 
 def list_pretrained_compressed_bert_models(
     metrics_path: Optional[str] = None,
-    hf_org: str = "Hooshaai",
+    hf_org: str = "tahamajs",
 ) -> list[dict[str, Any]]:
     """
     Returns the list of available pretrained compressed BERT models,
@@ -184,7 +186,7 @@ def list_pretrained_compressed_bert_models(
                         comp = record.get("compressor") or record.get("compressor_key")
                         if comp:
                             slug = comp.replace("_", "-")
-                            record["repo_id"] = f"{hf_org}/bert-comp-{slug}-wiki"
+                            record["repo_id"] = f"{hf_org}/bert-comp-{slug}-sst2"
                             models.append(record)
                     except Exception:
                         continue
@@ -196,7 +198,7 @@ def list_pretrained_compressed_bert_models(
                 slug = k.replace("_", "-")
                 models.append({
                     "compressor": k,
-                    "repo_id": f"{hf_org}/bert-comp-{slug}-wiki",
+                    "repo_id": f"{hf_org}/bert-comp-{slug}-sst2",
                     "status": "REGISTERED",
                 })
         except Exception:
@@ -207,9 +209,9 @@ def list_pretrained_compressed_bert_models(
 
 def load_pretrained_compressed_bert(
     compressor_type: str,
-    task: str = "masked-lm",
+    task: Optional[str] = None,
     num_labels: int = 2,
-    hf_org: str = "Hooshaai",
+    hf_org: str = "tahamajs",
     device: str = "auto",
     **kwargs: Any,
 ) -> Tuple[nn.Module, Any]:
@@ -217,49 +219,21 @@ def load_pretrained_compressed_bert(
     Downloads and instantiates a pretrained, compressed and KD-distilled BERT model
     directly from Hugging Face Hub.
 
-    Supported tasks:
-      - "masked-lm": AutoModelForMaskedLM
+    Supported tasks (auto-detected from config.json when ``task=None``):
       - "sequence-classification": AutoModelForSequenceClassification
+      - "masked-lm": AutoModelForMaskedLM
       - "token-classification": AutoModelForTokenClassification
       - "feature-extraction": AutoModel
     """
-    from transformers import AutoTokenizer
+    from neuralops.hub.surgery_loader import load_surgeried_model
 
     slug = compressor_type.replace("_", "-")
-    repo_id = f"{hf_org}/bert-comp-{slug}-wiki"
-
-    # Select model class based on task
-    if task == "masked-lm":
-        from transformers import AutoModelForMaskedLM as ModelClass
-    elif task == "sequence-classification":
-        from transformers import AutoModelForSequenceClassification as ModelClass
-        kwargs["num_labels"] = num_labels
-    elif task == "token-classification":
-        from transformers import AutoModelForTokenClassification as ModelClass
-        kwargs["num_labels"] = num_labels
-    else:
-        from transformers import AutoModel as ModelClass
-
-    logger.info("Loading pretrained compressed %s from %s...", task, repo_id)
-    tokenizer = AutoTokenizer.from_pretrained(repo_id)
-
-    try:
-        model = ModelClass.from_pretrained(repo_id, trust_remote_code=True, **kwargs)
-    except Exception as e:
-        logger.warning(
-            "Remote hub download failed (%s). Falling back to local compression on bert-base-uncased.", e
-        )
-        model = ModelClass.from_pretrained("bert-base-uncased", **kwargs)
-        from neuralops.core.registry import create_compressor
-        comp = create_compressor(compressor_type, model=model, rank=128)
-        if hasattr(comp, "compress"):
-            res = comp.compress()
-            model = res[0] if isinstance(res, tuple) else res
-
-    if device == "auto":
-        dev = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    else:
-        dev = torch.device(device)
-
-    model = model.to(dev)
-    return model, tokenizer
+    repo_id = f"{hf_org}/bert-comp-{slug}-sst2"
+    logger.info("Loading pretrained compressed %s from %s...", task or "auto", repo_id)
+    return load_surgeried_model(
+        repo_id=repo_id,
+        device=device,
+        task=task,
+        num_labels=num_labels,
+        **kwargs,
+    )
