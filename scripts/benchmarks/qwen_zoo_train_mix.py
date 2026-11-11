@@ -611,7 +611,7 @@ def train_single_qwen_attention(
             trained_param_names.add(name)
 
     opt1 = torch.optim.AdamW([p for p in student.parameters() if p.requires_grad], lr=2.0e-4, weight_decay=0.01)
-    scaler1 = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda"))
+    scaler1 = torch.cuda.amp.GradScaler(init_scale=1024.0, enabled=(device.type == "cuda"))
     student.train()
     step_s1 = 0
     t0_s1 = time.time()
@@ -670,7 +670,7 @@ def train_single_qwen_attention(
         lr=6.0e-5,
         weight_decay=0.01,
     )
-    scaler2 = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda"))
+    scaler2 = torch.cuda.amp.GradScaler(init_scale=1024.0, enabled=(device.type == "cuda"))
 
     student.train()
     step_s2 = 0

@@ -162,7 +162,7 @@ def train_single_llama_attention(
     t_s2_end = t_start + train_secs
 
     opt1 = torch.optim.AdamW([p for p in student.parameters() if p.requires_grad], lr=2.0e-4, weight_decay=0.01)
-    scaler1 = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda"))
+    scaler1 = torch.cuda.amp.GradScaler(init_scale=1024.0, enabled=(device.type == "cuda"))
     student.train()
     step_s1 = 0
 
@@ -202,7 +202,7 @@ def train_single_llama_attention(
     gc.collect()
 
     opt2 = torch.optim.AdamW([p for p in student.parameters() if p.requires_grad], lr=6.0e-5, weight_decay=0.01)
-    scaler2 = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda"))
+    scaler2 = torch.cuda.amp.GradScaler(init_scale=1024.0, enabled=(device.type == "cuda"))
     step_s2 = 0
 
     while time.time() < t_s2_end:

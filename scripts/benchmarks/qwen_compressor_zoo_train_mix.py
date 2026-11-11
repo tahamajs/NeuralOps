@@ -292,7 +292,7 @@ def train_single_qwen_compressor(
     t_s1_deadline = t_train_start + (train_secs * 0.30)
     t_s2_deadline = t_train_start + train_secs
 
-    scaler = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda"))
+    scaler = torch.cuda.amp.GradScaler(init_scale=1024.0, enabled=(device.type == "cuda"))
 
     # Stage 1: Frozen Layer Alignment (compressed/attn/ln parameters)
     trainable_s1 = []
