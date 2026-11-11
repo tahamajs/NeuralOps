@@ -328,6 +328,10 @@ class GDN2Attention(BaseAttention):
             nn.init.zeros_(self.z_proj.weight)
             nn.init.constant_(self.z_proj.bias, 2.0)
 
+        source_attn = kwargs.get("pretrained_attn") or kwargs.get("old_attn")
+        if source_attn is not None:
+            self.copy_weights(source_attn)
+
     def copy_weights(self, src: Any) -> None:
         _copy_attention_weights(self, src)
 
@@ -571,6 +575,10 @@ class DeltaProductAttention(BaseAttention):
 
         with torch.no_grad():
             nn.init.constant_(self.beta_proj.bias, -2.0)
+
+        source_attn = kwargs.get("pretrained_attn") or kwargs.get("old_attn")
+        if source_attn is not None:
+            self.copy_weights(source_attn)
 
     def copy_weights(self, src: Any) -> None:
         _copy_attention_weights(self, src)
@@ -855,6 +863,10 @@ class PreconditionedGDNAttention(BaseAttention):
             nn.init.constant_(self.alpha_proj.bias, 2.5)
             nn.init.constant_(self.beta_proj.bias, 1.0)
             nn.init.ones_(self.curvature_diag)
+
+        source_attn = kwargs.get("pretrained_attn") or kwargs.get("old_attn")
+        if source_attn is not None:
+            self.copy_weights(source_attn)
 
     def copy_weights(self, src: Any) -> None:
         _copy_attention_weights(self, src)

@@ -82,6 +82,29 @@ class Snapshot:
             self._temp_dir = None
             self.disk_path = None
 
+    @classmethod
+    def capture(
+        cls,
+        model: nn.Module,
+        state_paths: Optional[List[str]] = None,
+        capture_rng: bool = False,
+        spill_to_disk: bool = False,
+        disk_dir: Optional[str] = None,
+    ) -> Snapshot:
+        """Capture a snapshot using the module capture function."""
+        return capture(
+            model=model,
+            state_paths=state_paths,
+            capture_rng=capture_rng,
+            spill_to_disk=spill_to_disk,
+            disk_dir=disk_dir,
+        )
+
+    def restore(self, model: nn.Module) -> nn.Module:
+        """Restore model using this snapshot."""
+        restore(model, self)
+        return model
+
 
 def capture(
     model: nn.Module,

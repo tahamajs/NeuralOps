@@ -49,6 +49,17 @@ def fast_gram_covariance_loss(s_hidden: torch.Tensor, t_hidden: torch.Tensor) ->
     return F.mse_loss(g_s, g_t)
 
 
+def _forward_hidden(mod: nn.Module, in_ids: torch.Tensor, att_m: Optional[torch.Tensor] = None) -> Any:
+    """Invokes module forward pass requesting hidden states while cleanly handling use_cache and masks."""
+    kwargs: Dict[str, Any] = {"output_hidden_states": True}
+    if att_m is not None:
+        kwargs["attention_mask"] = att_m
+    try:
+        return mod(input_ids=in_ids, use_cache=False, **kwargs)
+    except TypeError:
+        return mod(input_ids=in_ids, **kwargs)
+
+
 def compute_topk_sparse_kd_loss(
     student_logits: torch.Tensor,
     teacher_logits: torch.Tensor,
@@ -168,9 +179,16 @@ def evaluate_sst2_accuracy(
             prompt = f"Sentence: {item['sentence']}\nSentiment:"
             enc = tokenizer(prompt, return_tensors="pt")
             in_ids = enc["input_ids"].to(device)
+            att_m = enc["attention_mask"].to(device) if "attention_mask" in enc else None
 
             with (torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16) if device.type == "cuda" else contextlib.nullcontext()):
-                out = model(input_ids=in_ids)
+                fwd_kwargs: dict[str, Any] = {}
+                if att_m is not None:
+                    fwd_kwargs["attention_mask"] = att_m
+                try:
+                    out = model(input_ids=in_ids, use_cache=False, **fwd_kwargs)
+                except TypeError:
+                    out = model(input_ids=in_ids, **fwd_kwargs)
                 last_logits = out.logits[:, -1, :]
                 pred_label = 1 if last_logits[0, pos_id] > last_logits[0, neg_id] else 0
 
@@ -281,10 +299,8 @@ class TwoStageDistillationEngine:
 
                 with (torch.cuda.amp.autocast(enabled=(dev.type == "cuda"), dtype=torch.float16) if dev.type == "cuda" else contextlib.nullcontext()):
                     core = getattr(student, "model", getattr(student, "language_model", student))
-                    if hasattr(core, "model") and hasattr(core.model, "layers"):
-                        s_out = core.model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
-                    else:
-                        s_out = core(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
+                    target_s = core.model if (hasattr(core, "model") and hasattr(core.model, "layers")) else core
+                    s_out = _forward_hidden(target_s, in_ids, att_m)
 
                     if "teacher_hidden_states" in batch and layer_indices is not None:
                         t_h_b = batch["teacher_hidden_states"].to(dev, non_blocking=True)
@@ -294,10 +310,8 @@ class TwoStageDistillationEngine:
                         assert teacher_model is not None
                         with torch.no_grad():
                             t_core = getattr(teacher_model, "model", getattr(teacher_model, "language_model", teacher_model))
-                            if hasattr(t_core, "model") and hasattr(t_core.model, "layers"):
-                                t_out = t_core.model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
-                            else:
-                                t_out = t_core(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
+                            target_t = t_core.model if (hasattr(t_core, "model") and hasattr(t_core.model, "layers")) else t_core
+                            t_out = _forward_hidden(target_t, in_ids, att_m)
                         s_h = s_out.hidden_states[1:]
                         t_h = t_out.hidden_states[1:]
 
@@ -355,10 +369,8 @@ class TwoStageDistillationEngine:
 
                 with (torch.cuda.amp.autocast(enabled=(dev.type == "cuda"), dtype=torch.float16) if dev.type == "cuda" else contextlib.nullcontext()):
                     core = getattr(student, "model", getattr(student, "language_model", student))
-                    if hasattr(core, "model") and hasattr(core.model, "layers"):
-                        s_out = core.model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
-                    else:
-                        s_out = core(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
+                    target_s = core.model if (hasattr(core, "model") and hasattr(core.model, "layers")) else core
+                    s_out = _forward_hidden(target_s, in_ids, att_m)
 
                     if "teacher_hidden_states" in batch and layer_indices is not None:
                         t_h_b = batch["teacher_hidden_states"].to(dev, non_blocking=True)
@@ -368,10 +380,8 @@ class TwoStageDistillationEngine:
                         assert teacher_model is not None
                         with torch.no_grad():
                             t_core = getattr(teacher_model, "model", getattr(teacher_model, "language_model", teacher_model))
-                            if hasattr(t_core, "model") and hasattr(t_core.model, "layers"):
-                                t_out = t_core.model(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
-                            else:
-                                t_out = t_core(input_ids=in_ids, attention_mask=att_m, output_hidden_states=True)
+                            target_t = t_core.model if (hasattr(t_core, "model") and hasattr(t_core.model, "layers")) else t_core
+                            t_out = _forward_hidden(target_t, in_ids, att_m)
                         s_h = s_out.hidden_states[1:]
                         t_h = t_out.hidden_states[1:]
 
