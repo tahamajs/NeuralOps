@@ -29,8 +29,10 @@ import json
 import logging
 import math
 import os
+import shutil
 import sys
 import time
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -59,6 +61,20 @@ from neuralops.core.compression_pipeline import compress_model
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("compressor_lora_eval")
+
+
+def append_ledger_record_atomic(dest_path: Path | str, record: dict[str, Any]) -> None:
+    """Atomically append a record to a JSONL ledger via a .tmp file and POSIX rename."""
+    dest = Path(dest_path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = dest.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    if dest.exists():
+        shutil.copyfile(dest, tmp_path)
+    with tmp_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, default=str) + "\n")
+        f.flush()
+        os.fsync(f.fileno())
+    tmp_path.replace(dest)
 
 
 class SimpleLoRALinear(nn.Module):
@@ -429,8 +445,7 @@ def main():
                     logger.info("[%s | rank=%d] LoRA Healing Complete: %.2f%% -> %.2f%% (Teacher Parity: %+.2f%%)",
                                 key, k, zero_acc, healed_acc, record["delta_healed"])
 
-                with open(ledger_path, "a", encoding="utf-8") as f:
-                    f.write(json.dumps(record) + "\n")
+                append_ledger_record_atomic(ledger_path, record)
 
             except Exception as e:
                 logger.warning("[%s | rank=%d] Compression skipped or failed: %s", key, k, str(e)[:120])
@@ -441,8 +456,7 @@ def main():
                     "error": str(e)[:150],
                     "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
                 }
-                with open(ledger_path, "a", encoding="utf-8") as f:
-                    f.write(json.dumps(fail_rec) + "\n")
+                append_ledger_record_atomic(ledger_path, fail_rec)
             finally:
                 if 'student' in locals():
                     del student

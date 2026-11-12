@@ -759,3 +759,121 @@ def test_llama_attention_zoo_ledger_and_bert_compressor_metrics_schema(tmp_path:
     }
     # Ensure zero duplicates
     assert len(df["run_id"].unique()) == 6
+
+
+def test_parquet_schema_sanitization_and_nan_fallback(tmp_path: Path) -> None:
+    """Validate sanitize_record_for_parquet and columnar pyarrow schema sanitization."""
+    import numpy as np
+    import pandas as pd
+    import pyarrow.parquet as pq
+
+    # 1. Direct unit test of sanitize_record_for_parquet
+    raw_mixed = {
+        "accuracy": "N/A",
+        "perplexity": 18.5,
+        "effective_ratio": None,
+        "compression_ratio": "invalid_num",
+        "vram_peak_mb": 4096,
+        "status": "PASSED",
+        "module": "test_layer",
+    }
+    sanitized = exporter.sanitize_record_for_parquet(raw_mixed)
+    assert np.isnan(sanitized["accuracy"])
+    assert sanitized["perplexity"] == 18.5
+    assert np.isnan(sanitized["effective_ratio"])
+    assert np.isnan(sanitized["compression_ratio"])
+    assert sanitized["vram_peak_mb"] == 4096.0
+    assert sanitized["status"] == "PASSED"
+    assert sanitized["module"] == "test_layer"
+
+    # 2. End-to-end integration test with mixed/missing metrics across zoo records
+    qwen_ledger = _write_jsonl(
+        tmp_path / "qwen_attn" / "metrics.jsonl",
+        [
+            {
+                "model": "Qwen/Qwen2.5-0.5B",
+                "attn_key": "gated_delta_net",
+                "dataset": "wikitext-2",
+                "ppl_before": 45.0,
+                "ppl_after": 18.2,
+                "status": "PASSED",
+                "timestamp": "2026-11-12T00:00:00Z",
+            },
+            {
+                "model": "Qwen/Qwen2.5-0.5B",
+                "attn_key": "failed_net",
+                "dataset": "wikitext-2",
+                "status": "FAIL_TRAINING",
+                "error": "NaN loss encountered",
+                "timestamp": "2026-11-12T00:01:00Z",
+            },
+        ],
+    )
+    bert_comp_ledger = _write_jsonl(
+        tmp_path / "bert_comp" / "metrics.jsonl",
+        [
+            {
+                "compressor": "hnc_svd",
+                "rank": 64,
+                "ratio": 2.4,
+                "orig_params": 109483778,
+                "comp_params": 45618240,
+                "zero_shot_acc": 72.1,
+                "healed_acc": 90.4,
+                "lora_healed": True,
+                "status": "PASSED",
+                "timestamp": "2026-11-12T00:02:00Z",
+            },
+        ],
+    )
+
+    out_dir = tmp_path / "sanitized_parquet_export"
+    rc = exporter.main(
+        [
+            "--qwen-ledger",
+            str(qwen_ledger),
+            "--bert-ledger",
+            str(bert_comp_ledger),
+            "--output-dir",
+            str(out_dir),
+            "--require-parquet",
+        ]
+    )
+    assert rc == exporter.EXIT_SUCCESS
+
+    parquet_path = out_dir / "results.parquet"
+    assert parquet_path.exists()
+
+    # pyarrow read must succeed with zero ArrowTypeError
+    table = pq.read_table(parquet_path)
+    assert table.num_rows == 3
+
+    df = pd.read_parquet(parquet_path)
+    assert len(df) == 3
+
+    # Check that accuracy, perplexity, effective_ratio are all strictly numeric float columns
+    for col in ("accuracy", "perplexity", "effective_ratio"):
+        assert col in df.columns, f"Expected column '{col}' in parquet dataframe"
+        assert pd.api.types.is_float_dtype(df[col]), f"Column '{col}' must be float dtype, got {df[col].dtype}"
+
+    # Verify that failed run has NaN for accuracy and perplexity rather than string 'N/A' or crashing
+    failed_row = df[df["module"] == "failed_net"].iloc[0]
+    assert np.isnan(failed_row["accuracy"]) or failed_row["accuracy"] == 0.0
+
+
+def test_atomic_ledger_writes(tmp_path: Path) -> None:
+    """Validate atomic ledger writes via .tmp file and POSIX rename."""
+    ledger_path = tmp_path / "sub_ledger" / "metrics.jsonl"
+    rec1 = {"attn_key": "kda_attn", "status": "PASSED", "post_ppl": 15.2}
+    rec2 = {"attn_key": "flash_linear", "status": "PASSED", "post_ppl": 14.8}
+
+    dest = exporter.append_ledger_record_atomic(ledger_path, rec1)
+    assert dest.exists()
+    lines = dest.read_text(encoding="utf-8").strip().splitlines()
+    assert len(lines) == 1
+    assert json.loads(lines[0])["attn_key"] == "kda_attn"
+
+    dest = exporter.append_ledger_record_atomic(ledger_path, rec2)
+    lines = dest.read_text(encoding="utf-8").strip().splitlines()
+    assert len(lines) == 2
+    assert json.loads(lines[1])["attn_key"] == "flash_linear"

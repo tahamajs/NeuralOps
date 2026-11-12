@@ -29,8 +29,10 @@ import json
 import logging
 import math
 import os
+import shutil
 import sys
 import time
+import uuid
 
 os.environ["HF_HUB_OFFLINE"] = "1"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
@@ -63,6 +65,28 @@ from neuralops.layers.bert_adapter import BertAttentionAdapter
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("bert_zoo_train")
+
+
+def append_ledger_record_atomic(dest_path: Path | str, record: dict[str, Any]) -> None:
+    """Atomically append a record to a JSONL ledger via a .tmp file and POSIX rename."""
+    dest = Path(dest_path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = dest.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    if dest.exists():
+        shutil.copyfile(dest, tmp_path)
+    with tmp_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, default=str) + "\n")
+        f.flush()
+        os.fsync(f.fileno())
+    tmp_path.replace(dest)
+
+
+def _atomic_write_text(dest_path: Path, content: str) -> None:
+    """Atomically write text content to a destination file via a .tmp file and POSIX rename."""
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = dest_path.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    tmp_path.write_text(content, encoding="utf-8")
+    tmp_path.replace(dest_path)
 
 MASK_PROB = 0.15
 EMBED_DIM = 768
@@ -328,7 +352,7 @@ def write_self_contained_hf_checkpoint(
             "AutoConfig": "modeling_neuralops_bert.NeuralOpsBertConfig",
             "AutoModelForMaskedLM": "modeling_neuralops_bert.NeuralOpsBertForMaskedLM",
         }
-        cfg_file.write_text(json.dumps(cfg_dict, indent=2), encoding="utf-8")
+        _atomic_write_text(cfg_file, json.dumps(cfg_dict, indent=2))
 
     # 3. Write lightweight self-contained modeling file
     modeling_py = f"""# Self-contained HuggingFace Hub loading shim for NeuralOps BERT ({attn_key})
@@ -347,16 +371,16 @@ class NeuralOpsBertForMaskedLM(BertForMaskedLM):
         except Exception:
             pass
 """
-    (out_dir / "modeling_neuralops_bert.py").write_text(modeling_py, encoding="utf-8")
+    _atomic_write_text(out_dir / "modeling_neuralops_bert.py", modeling_py)
 
     # 4. Write training metrics
-    (out_dir / "training_metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
+    _atomic_write_text(out_dir / "training_metrics.json", json.dumps(metrics, indent=2))
 
     # 5. Write Model Card README.md
     slug = attn_key.replace("_", "-")
     repo_id = f"Hooshaai/bert-{slug}-wiki"
     card_md = generate_bert_model_card_markdown(attn_key, metrics, repo_id)
-    (out_dir / "README.md").write_text(card_md, encoding="utf-8")
+    _atomic_write_text(out_dir / "README.md", card_md)
 
 
 def train_single_attention(
@@ -393,8 +417,8 @@ def train_single_attention(
         from neuralops.core._attention_surgery import calibrate_surgically_replaced_model
         sample_batch = next(iter(train_loader))
         calib_inputs = {
-            "input_ids": sample_batch["input_ids"][:8].to(device),
-            "attention_mask": sample_batch["attention_mask"][:8].to(device),
+            "input_ids": sample_batch["input_ids"][:8].to(device, non_blocking=True),
+            "attention_mask": sample_batch["attention_mask"][:8].to(device, non_blocking=True),
         }
         student = calibrate_surgically_replaced_model(
             orig_model=teacher_model,
@@ -683,7 +707,7 @@ def main() -> None:
                 gc.collect()
                 try:
                     retry_bs = max(args.batch_size // 2, 16)
-                    halved_loader = DataLoader(train_dataset, batch_size=retry_bs, shuffle=True, drop_last=True)
+                    halved_loader = DataLoader(train_dataset, batch_size=retry_bs, shuffle=True, pin_memory=True, drop_last=True)
                     res = train_single_attention(
                         attn_key=key,
                         teacher_model=teacher,
@@ -703,9 +727,8 @@ def main() -> None:
                 logger.error("[%s] Training exception: %s", key, e, exc_info=True)
                 res = {"attn_key": key, "status": "FAIL_TRAINING", "error": str(e), "timestamp": datetime.datetime.utcnow().isoformat()}
 
-        # Append to append-only JSONL ledger
-        with open(args.metrics_log, "a", encoding="utf-8") as f:
-            f.write(json.dumps(res) + "\n")
+        # Append to append-only JSONL ledger (atomic POSIX rename)
+        append_ledger_record_atomic(args.metrics_log, res)
 
         # Submit to background uploader
         if uploader is not None and res.get("status") == "PASSED":

@@ -36,8 +36,10 @@ import json
 import logging
 import math
 import os
+import shutil
 import sys
 import time
+import uuid
 from pathlib import Path
 from typing import Any, Optional
 
@@ -81,6 +83,28 @@ except ImportError:
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("qwen_zoo_train")
+
+
+def append_ledger_record_atomic(dest_path: Path | str, record: dict[str, Any]) -> None:
+    """Atomically append a record to a JSONL ledger via a .tmp file and POSIX rename."""
+    dest = Path(dest_path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = dest.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    if dest.exists():
+        shutil.copyfile(dest, tmp_path)
+    with tmp_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, default=str) + "\n")
+        f.flush()
+        os.fsync(f.fileno())
+    tmp_path.replace(dest)
+
+
+def _atomic_write_text(dest_path: Path, content: str) -> None:
+    """Atomically write text content to a destination file via a .tmp file and POSIX rename."""
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = dest_path.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    tmp_path.write_text(content, encoding="utf-8")
+    tmp_path.replace(dest_path)
 
 from neuralops.benchmarks.kd import (
     CausalTextDataset,
@@ -363,8 +387,8 @@ def train_single_qwen_attention(
     qwen_cfg["attention_type"] = attn_key
     qwen_cfg["weights_format"] = "attention_only_fp16"
     qwen_cfg["saved_tensor_count"] = int(delta_info.get("saved_tensor_count", 0))
-    (out_dir / "config.json").write_text(json.dumps(qwen_cfg, indent=2), encoding="utf-8")
-    (out_dir / "training_metrics.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    _atomic_write_text(out_dir / "config.json", json.dumps(qwen_cfg, indent=2))
+    _atomic_write_text(out_dir / "training_metrics.json", json.dumps(result, indent=2))
 
     # Model Card
     card_md = build_qwen_readme(
@@ -380,7 +404,7 @@ def train_single_qwen_attention(
         grad_accum=grad_accum,
         topk=topk,
     )
-    (out_dir / "README.md").write_text(card_md, encoding="utf-8")
+    _atomic_write_text(out_dir / "README.md", card_md)
 
     del student
     if device.type == "cuda":
@@ -656,8 +680,7 @@ def main() -> None:
                 }
             break
 
-        with open(args.metrics_log, "a", encoding="utf-8") as f:
-            f.write(json.dumps(res) + "\n")
+        append_ledger_record_atomic(args.metrics_log, res)
 
         if uploader is not None and res.get("status") == "PASSED":
             uploader.submit_upload(key, ckpt_dir, res)

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **In-Memory Fast Deep-Copy Runner for TinyLlama:** Implemented in-memory snapshot state copying avoiding full filesystem serialization round-trips during repeated evaluation and surgery passes.
+- **Six-Zoo Canonical 5-Format Persistence Engine:** Full run specification and telemetry persistence across JSON, JSONL, CSV, Markdown, and Parquet with strict columnar schema sanitization and atomic temporary-file writes.
+- **Asynchronous Background Hugging Face Uploader:** Decoupled cluster upload daemon (`bert_zoo_upload_hf.py`) featuring exponential retry backoff with jitter on HTTP 429 rate limits, and post-upload checkpoint quota management.
+- **PyTorch Version-Tolerant `GradScaler` Wrapper:** Automatic compatibility shim supporting both legacy `torch.cuda.amp.GradScaler` and modern `torch.amp.GradScaler` across PyTorch versions.
+
 ## [2.1.0] - 2026-11-08
 
 ### Breaking Changes

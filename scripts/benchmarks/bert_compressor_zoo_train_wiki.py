@@ -27,8 +27,10 @@ import json
 import logging
 import math
 import os
+import shutil
 import sys
 import time
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -56,6 +58,28 @@ from neuralops.hub.uploader import AsyncHFHubUploader
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("bert_compressor_zoo_train")
+
+
+def append_ledger_record_atomic(dest_path: Path | str, record: dict[str, Any]) -> None:
+    """Atomically append a record to a JSONL ledger via a .tmp file and POSIX rename."""
+    dest = Path(dest_path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = dest.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    if dest.exists():
+        shutil.copyfile(dest, tmp_path)
+    with tmp_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, default=str) + "\n")
+        f.flush()
+        os.fsync(f.fileno())
+    tmp_path.replace(dest)
+
+
+def _atomic_write_text(dest_path: Path, content: str) -> None:
+    """Atomically write text content to a destination file via a .tmp file and POSIX rename."""
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = dest_path.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    tmp_path.write_text(content, encoding="utf-8")
+    tmp_path.replace(dest_path)
 
 MASK_PROB = 0.15
 
@@ -196,9 +220,9 @@ def write_self_contained_comp_checkpoint(student_model: nn.Module, tokenizer: An
         cfg_dict = json.loads(cfg_file.read_text(encoding="utf-8"))
         cfg_dict["neuralops_compressor_engine"] = comp_key
         cfg_dict["neuralops_param_reduction"] = metrics.get("param_reduction", 1.0)
-        cfg_file.write_text(json.dumps(cfg_dict, indent=2), encoding="utf-8")
+        _atomic_write_text(cfg_file, json.dumps(cfg_dict, indent=2))
 
-    (out_dir / "training_metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
+    _atomic_write_text(out_dir / "training_metrics.json", json.dumps(metrics, indent=2))
 
     # Publication-Grade Model Card
     from neuralops.hub.compressor_zoo import generate_compressor_model_card_markdown
@@ -209,7 +233,7 @@ def write_self_contained_comp_checkpoint(student_model: nn.Module, tokenizer: An
         repo_id=repo_id,
         base_model="bert-base-uncased",
     )
-    (out_dir / "README.md").write_text(card_md, encoding="utf-8")
+    _atomic_write_text(out_dir / "README.md", card_md)
 
 
 def train_single_compressor(
@@ -460,8 +484,8 @@ def main() -> None:
     train_ds = InMemoryWikiTextDataset(train_chunks, tokenizer, is_eval=False)
     val_ds = InMemoryWikiTextDataset(val_chunks, tokenizer, is_eval=True)
 
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, pin_memory=(device.type == "cuda"))
-    val_loader = DataLoader(val_ds, batch_size=64, shuffle=False, pin_memory=(device.type == "cuda"))
+    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, pin_memory=True)
+    val_loader = DataLoader(val_ds, batch_size=64, shuffle=False, pin_memory=True)
 
     for i, comp_key in enumerate(comp_keys):
         logger.info("\n[%d/%d] Processing Compressor: %s", i + 1, len(comp_keys), comp_key)
@@ -491,8 +515,7 @@ def main() -> None:
                 grad_accum=args.grad_accum,
                 rank=args.rank,
             )
-            with open(metrics_file, "a") as f:
-                f.write(json.dumps(res) + "\n")
+            append_ledger_record_atomic(metrics_file, res)
 
             if args.hf_upload and uploader:
                 uploader.submit_upload(
@@ -508,8 +531,7 @@ def main() -> None:
                 "error": str(e),
                 "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
             }
-            with open(metrics_file, "a") as f:
-                f.write(json.dumps(fail_record) + "\n")
+            append_ledger_record_atomic(metrics_file, fail_record)
 
     if uploader:
         logger.info("Waiting for all background HuggingFace uploads to finish...")
