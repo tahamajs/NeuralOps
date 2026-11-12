@@ -32,9 +32,12 @@ import logging
 import math
 import os
 from pathlib import Path
+import shutil
 import sys
 from typing import Any
 import uuid
+
+import numpy as np
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
@@ -1259,6 +1262,70 @@ def _write_text_atomic(target_path: Path, content: str) -> Path:
     return target_path
 
 
+def append_ledger_record_atomic(ledger_path: Path | str, record: dict[str, Any]) -> Path:
+    """Atomically append a record to a JSONL ledger via a .tmp file and POSIX rename."""
+    dest = Path(ledger_path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = dest.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    if dest.exists():
+        shutil.copyfile(dest, tmp_path)
+    with tmp_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, default=str) + "\n")
+        f.flush()
+        os.fsync(f.fileno())
+    tmp_path.replace(dest)
+    return dest
+
+
+def sanitize_record_for_parquet(record: dict[str, Any]) -> dict[str, Any]:
+    """Sanitize all numerical fields to strictly typed floats with np.nan fallback to prevent pyarrow ArrowTypeError."""
+    clean: dict[str, Any] = {}
+    numerical_keys = {
+        "accuracy",
+        "perplexity",
+        "effective_ratio",
+        "compression_ratio",
+        "ratio",
+        "param_reduction",
+        "vram_peak_mb",
+        "peak_vram_mb",
+        "duration_s",
+        "train_secs",
+        "pre_ppl",
+        "post_ppl",
+        "ppl_before",
+        "ppl_after",
+        "ppl_delta",
+        "acc_before",
+        "acc_after",
+        "acc_delta",
+        "zero_shot_acc",
+        "healed_acc",
+        "teacher_acc",
+        "zero_shot_loss",
+        "healed_loss",
+        "post_kd_loss",
+        "loss",
+        "tokens_per_sec",
+        "recovery_pct",
+        "kd_gain",
+        "rank",
+    }
+    for k, v in record.items():
+        if k in numerical_keys or any(nk in k.lower() for nk in ("acc", "ppl", "ratio", "loss", "vram", "duration")):
+            if v is None or v == "N/A" or v == "":
+                clean[k] = np.nan
+            else:
+                try:
+                    val = float(v)
+                    clean[k] = val if math.isfinite(val) else np.nan
+                except (ValueError, TypeError):
+                    clean[k] = np.nan
+        else:
+            clean[k] = str(v) if v is not None else ""
+    return clean
+
+
 def _generate_markdown_summary(
     results: list[BenchmarkResult],
     overview: dict[str, Any],
@@ -1585,6 +1652,39 @@ def export_dual_zoo_5formats(
         for key in ("jsonl", "csv", "parquet"):
             if key in saved:
                 index_files[key] = str(saved[key])
+
+    # Columnar Parquet schema sanitization & atomic POSIX rewrite
+    parquet_path = out_path / "results.parquet"
+    if parquet_path.exists():
+        try:
+            import pandas as pd
+            df_pq = pd.read_parquet(parquet_path)
+            if "perplexity" not in df_pq.columns and "post_ppl" in df_pq.columns:
+                df_pq["perplexity"] = df_pq["post_ppl"]
+            if "effective_ratio" not in df_pq.columns:
+                ratios = []
+                for res in results:
+                    ratio_val = (res.metrics or {}).get("compression_ratio") or (
+                        res.baseline_comparison.compression_ratio if res.baseline_comparison else None
+                    )
+                    try:
+                        ratios.append(float(ratio_val) if ratio_val is not None else np.nan)
+                    except (ValueError, TypeError):
+                        ratios.append(np.nan)
+                df_pq["effective_ratio"] = ratios
+
+            for col in ("accuracy", "perplexity", "effective_ratio", "compression_ratio", "vram_peak_mb"):
+                if col in df_pq.columns:
+                    df_pq[col] = pd.to_numeric(df_pq[col], errors="coerce").fillna(np.nan)
+
+            tmp_pq = parquet_path.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+            df_pq.to_parquet(tmp_pq, index=False)
+            tmp_pq.replace(parquet_path)
+            index_files["parquet"] = str(parquet_path)
+        except Exception as e:
+            if require_parquet:
+                raise RuntimeError(f"Parquet export failed: {e}") from e
+            LOG.warning("Parquet sanitization warning: %s", e)
 
     # 1. Complete structured export: results.json
     results_json_path = out_path / "results.json"
