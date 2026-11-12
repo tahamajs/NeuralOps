@@ -380,7 +380,7 @@ class LandmarkLocalAttention(BaseAttention):
 
         N_pad = q_p.shape[2]
         num_blocks = N_pad // W
-        scale = 1.0 / math.sqrt(d)
+        scale = 1.0 / math.sqrt(max(int(d), 1))
 
         q_b = q_p.view(B, H, num_blocks, W, d)
         k_b = k_p.view(B, H, num_blocks, W, d)
@@ -429,7 +429,7 @@ class LandmarkLocalAttention(BaseAttention):
         B, H, N_q, d = q.shape
         N_k = k.shape[2]
         W = max(1, int(self.local_window_size))
-        scale = 1.0 / math.sqrt(d)
+        scale = 1.0 / math.sqrt(max(int(d), 1))
         device = q.device
 
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale

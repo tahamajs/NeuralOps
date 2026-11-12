@@ -476,7 +476,7 @@ class LoRAAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        scale = 1.0 / math.sqrt(int(d))
+        scale = 1.0 / math.sqrt(max(int(d), 1))
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         mask = attention_mask if attention_mask is not None else kwargs.get("mask")

@@ -541,7 +541,7 @@ class SVDLinearAttention(BaseAttention):
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         is_causal = self.is_decoder and not is_cross
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
 
         use_full_attention = (
             self.rank is None

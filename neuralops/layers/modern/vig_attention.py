@@ -633,7 +633,7 @@ class ViGAttention(BaseAttention):
 
         mask_val = _safe_mask_value(dtype)
 
-        scale = 1.0 / math.sqrt(Dh)
+        scale = 1.0 / math.sqrt(max(int(Dh), 1))
         if N > 64:
             chunk_size = 64
             graph_chunks = []

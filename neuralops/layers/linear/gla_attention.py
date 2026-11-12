@@ -91,7 +91,7 @@ class GLAttention(BaseAttention):
         self.num_heads = num_heads
         self.head_dim = head_dim
         self.all_head_size = num_heads * head_dim
-        self.scale = 1.0 / math.sqrt(head_dim)
+        self.scale = 1.0 / math.sqrt(max(int(head_dim), 1))
 
         self.gate_rank = gate_rank
         self.gate_tau = gate_tau

@@ -672,7 +672,7 @@ class SALTAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        scale = 1.0 / math.sqrt(int(Dh))
+        scale = 1.0 / math.sqrt(max(int(Dh), 1))
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is None and head_mask is None and not output_attentions:
             try:

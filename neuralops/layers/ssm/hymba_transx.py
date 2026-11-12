@@ -635,7 +635,7 @@ class HymbaTransXBlock(BaseAttention):
             k2_cat = repeat_kv(k2_cat, self.kv_repeat)
             v_cat = repeat_kv(v_cat, self.kv_repeat)
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         eff_mask = encoder_attention_mask if encoder_hidden_states is not None else attention_mask
         valid_mask = self._prepare_valid_mask(eff_mask, B, N_kv, device)
         lam = torch.sigmoid(self.diff_lambda)

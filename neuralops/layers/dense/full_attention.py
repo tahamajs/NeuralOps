@@ -397,7 +397,7 @@ class FullAttention(BaseAttention):
 
         if use_sdpa:
             dispatched = False
-            scale_val = 1.0 / math.sqrt(int(d))
+            scale_val = 1.0 / math.sqrt(max(int(d), 1))
             is_causal_sdpa = bool(is_decoder and mask is None and N_q == N_k)
             if Q.is_cuda and not self.training and mask is None and d in (32, 64, 128, 256):
                 # Level 1: Native CUDA flash_gqa kernel with XOR-bank swizzled SRAM
@@ -457,7 +457,7 @@ class FullAttention(BaseAttention):
                     use_sdpa = False
 
         if not use_sdpa:
-            scale = 1.0 / math.sqrt(int(d))
+            scale = 1.0 / math.sqrt(max(int(d), 1))
             scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
 
             if mask is not None:

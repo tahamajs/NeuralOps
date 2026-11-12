@@ -935,7 +935,7 @@ class FusedSVDKernelAttention(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         causal_flag = bool(kwargs.get("is_causal", getattr(self, "is_decoder", False) or getattr(self, "is_causal", False)))
 
         if not output_attentions and head_mask is None:

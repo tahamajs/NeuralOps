@@ -485,7 +485,7 @@ class DynamicConvAttention(BaseAttention):
         k = self.k_proj(kv_input).view(B, N_kv, H, d).transpose(1, 2)
         v = self.v_proj(kv_input).view(B, N_kv, H, d).transpose(1, 2)
 
-        scale = 1.0 / math.sqrt(d)
+        scale = 1.0 / math.sqrt(max(int(d), 1))
         scores = torch.matmul(q, k.transpose(-2, -1)) * scale
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is not None:

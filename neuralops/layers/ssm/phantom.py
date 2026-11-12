@@ -188,7 +188,7 @@ def lsh_attention(
 ) -> torch.Tensor:
     B, H, N_q, D = Q.shape
     _, _, N_k, _ = K.shape
-    scale = 1.0 / math.sqrt(int(D))
+    scale = 1.0 / math.sqrt(max(int(D), 1))
 
     if (rounds <= 1 or N_q <= 128) and token_valid is None and dropout is None:
         if is_causal and past_len == 0 and N_q == N_k:

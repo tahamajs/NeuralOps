@@ -392,7 +392,7 @@ class PrimalAttention(BaseAttention):
             K = repeat_kv(K, num_reps)
             V = repeat_kv(V, num_reps)
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         is_causal = bool(self.is_decoder or kwargs.get("is_causal", False) or kwargs.get("causal", False))
 
         if is_causal:

@@ -288,7 +288,7 @@ class HybridAttention(BaseAttention):
             except Exception as e:
                 logger.debug("SDPA fast path failed: %s; falling back to manual.", e)
 
-        scale = 1.0 / math.sqrt(Dh)
+        scale = 1.0 / math.sqrt(max(int(Dh), 1))
         chunk_size = 64
         outputs = []
         for start in range(0, N, chunk_size):

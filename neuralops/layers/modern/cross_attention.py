@@ -119,7 +119,7 @@ class CrossAttention(BaseAttention):
         self.all_head_size = self.num_heads * self.head_dim
         self.kv_head_size = self.num_kv_heads * self.head_dim
         self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
-        self.scale = 1.0 / math.sqrt(self.head_dim)
+        self.scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         self.dropout_p = float(dropout)
         self.dropout = nn.Dropout(self.dropout_p)
 

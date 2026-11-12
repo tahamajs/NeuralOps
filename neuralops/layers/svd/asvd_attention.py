@@ -755,7 +755,7 @@ class ASVDAttention(BaseAttention):
             k = repeat_kv(k, H // kv_H)
             v = repeat_kv(v, H // kv_H)
 
-        scale: float = 1.0 / math.sqrt(d)
+        scale: float = 1.0 / math.sqrt(max(int(d), 1))
         scores: torch.Tensor = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
         if getattr(self, "is_decoder", False):

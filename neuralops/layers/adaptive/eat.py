@@ -688,7 +688,7 @@ class EATBlock(BaseAttention):
                 else:
                     attn_mask_combined = causal
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         mask_val = _safe_mask_value(dtype_in)
         probs, _sdpa_out = None, None
 

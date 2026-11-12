@@ -162,7 +162,7 @@ def _local_window_attention(
     B, h, N, d = Q.shape
     N_k = K.shape[2]
     radius = window // 2
-    scale = 1.0 / math.sqrt(int(d))
+    scale = 1.0 / math.sqrt(max(int(d), 1))
 
     if (
         Q.is_cuda

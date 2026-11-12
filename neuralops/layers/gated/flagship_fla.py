@@ -13,6 +13,7 @@ Fast linear attention combining causal cumulative summation with hardware-effici
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 import torch
@@ -24,6 +25,8 @@ from neuralops.core.base import BaseAttention
 from neuralops.core.common import _cfg_get, repeat_kv
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.ops.triton.fused_norm_linear import fused_rmsnorm_gate
+
+logger = logging.getLogger(__name__)
 
 
 def gdn2_recurrent_step(
@@ -234,8 +237,8 @@ def _copy_attention_weights(module: nn.Module, src: Any) -> bool:
                 w, b = adapter.get_weight_bias(src, k)
                 if w is not None:
                     extracted[k] = (w.clone(), b.clone() if b is not None else None)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("UniversalAdapter extraction fallback: %s", e)
 
     target_map = {
         "q": getattr(module, "q_proj", None),
@@ -437,8 +440,8 @@ class GDN2Attention(BaseAttention):
                     return y, None
                 y_gated = fused_rmsnorm_gate(y, z, self.norm_weight, eps=1e-5, activation="silu")
                 return self.out_proj(y_gated), None
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("chunk_gdn2 fastpath failed, falling back to gdn2_chunk_scan: %s", e)
 
         y, next_state = gdn2_chunk_scan(
             q,
@@ -666,9 +669,8 @@ class DeltaProductAttention(BaseAttention):
                 if self.is_nested_encoder:
                     return y, None
                 return self.out_proj(y), None
-            except Exception:
-                # allowed-swallow: best-effort-telemetry
-                pass
+            except Exception as e:
+                logger.debug("CUDA parallel_path_attn failed, falling back to sequential PyTorch: %s", e)
 
         beta = beta_raw.transpose(1, 2)
         S = (
@@ -961,9 +963,8 @@ class PreconditionedGDNAttention(BaseAttention):
                     return y, None
                 out = self.out_proj(y)
                 return out, None
-            except Exception:
-                # allowed-swallow: best-effort-telemetry
-                pass
+            except Exception as e:
+                logger.debug("CUDA chunk_gdn failed, falling back to sequential PyTorch: %s", e)
 
         S = (
             torch.zeros((B, H, D, D), device=q.device, dtype=torch.float32)

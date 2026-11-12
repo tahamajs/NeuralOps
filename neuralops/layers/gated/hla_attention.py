@@ -665,7 +665,7 @@ class HLAAttention(BaseAttention):
             k = repeat_kv(k, self.num_key_value_groups)
             v = repeat_kv(v, self.num_key_value_groups)
 
-        scale = 1.0 / math.sqrt(Dh)
+        scale = 1.0 / math.sqrt(max(int(Dh), 1))
         q = F.elu(q.float() * scale) + 1.0
         k = F.elu(k.float()) + 1.0
 
@@ -793,7 +793,7 @@ class HLAAttention(BaseAttention):
             k = repeat_kv(k, self.num_key_value_groups)
             v = repeat_kv(v, self.num_key_value_groups)
 
-        scale = 1.0 / math.sqrt(Dh)
+        scale = 1.0 / math.sqrt(max(int(Dh), 1))
         q_act = F.elu(q.float() * scale) + 1.0
         k_act = F.elu(k.float()) + 1.0
 

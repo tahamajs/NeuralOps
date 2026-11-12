@@ -622,7 +622,7 @@ class DecayLinearAttention(BaseAttention):
         )
 
         with amp_ctx:
-            q_f = q.float() * (1.0 / math.sqrt(int(d)))
+            q_f = q.float() * (1.0 / math.sqrt(max(int(d), 1)))
             k_f = k.float()
             v_f = v.float()
             lambdas_f = lambdas.float().clamp(min=0.01, max=0.999)

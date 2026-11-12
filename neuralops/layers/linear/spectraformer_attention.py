@@ -474,7 +474,7 @@ class SpectraformerAttention(BaseAttention):
             else:
                 self.R = R
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         Q_proj = torch.nan_to_num(
             (F.elu(torch.matmul(q, R)) + 1.0) * scale,
             nan=0.0,

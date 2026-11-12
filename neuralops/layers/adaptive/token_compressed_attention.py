@@ -551,7 +551,7 @@ class TokenCompressedAttention(BaseAttention):
                 L_s = min(64, L)
                 q_s = q[:, :H_s, :L_s, :].float()
                 k_s = k[:, :H_s, :, :].float()
-                scale = 1.0 / math.sqrt(self.head_dim)
+                scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
                 attn = torch.matmul(q_s, k_s.transpose(-2, -1)) * scale
 
                 if self.is_decoder:
@@ -796,7 +796,7 @@ class TokenCompressedAttention(BaseAttention):
 
         N_k = k_use.shape[-2]
 
-        scale = 1.0 / math.sqrt(Dh)
+        scale = 1.0 / math.sqrt(max(int(Dh), 1))
         scores = torch.matmul(q.float(), k_use.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder and top_idx is not None:

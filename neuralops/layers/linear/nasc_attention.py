@@ -404,7 +404,7 @@ class NASCAttention(BaseAttention):
 
     def _local_window_attention(self, Q, K, V, valid_mask, is_causal):
         B, H, L, d = Q.shape
-        scale = 1.0 / math.sqrt(d)
+        scale = 1.0 / math.sqrt(max(int(d), 1))
         chunk_size = 64
         outputs = []
 
@@ -459,7 +459,7 @@ class NASCAttention(BaseAttention):
 
         Q_mean = Qb.mean(dim=3)
         K_mean = Kb.mean(dim=3)
-        scale = 1.0 / math.sqrt(d)
+        scale = 1.0 / math.sqrt(max(int(d), 1))
         blk_scores = torch.matmul(Q_mean.float(), K_mean.float().transpose(-2, -1).contiguous()) * scale
 
         if is_causal:
@@ -647,7 +647,7 @@ class NASCAttention(BaseAttention):
                     can_sdpa = False
 
             if not can_sdpa:
-                scale = 1.0 / math.sqrt(d)
+                scale = 1.0 / math.sqrt(max(int(d), 1))
                 hm = None
                 if head_mask is not None:
                     if head_mask.dim() == 1:

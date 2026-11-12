@@ -66,7 +66,7 @@ class XAttentionScorer:
             K_sample = K[:, :, ::stride, :].float()
             N_s = Q_sample.size(2)
 
-            scale = 1.0 / math.sqrt(int(D))
+            scale = 1.0 / math.sqrt(max(int(D), 1))
             attn_sample = torch.matmul(Q_sample, K_sample.transpose(-2, -1).contiguous()) * scale
 
             b_s = max(1, block_size // stride)
@@ -196,7 +196,7 @@ class DualStageStripeAttention(nn.Module):
         bs = self.cfg.block_size
         nb = (N + bs - 1) // bs
         top_k = self.cfg.top_k_blocks
-        scale = 1.0 / math.sqrt(int(D))
+        scale = 1.0 / math.sqrt(max(int(D), 1))
 
         with torch.amp.autocast(device_type=Q.device.type, enabled=False):
             Q_f = Q.float()
@@ -580,7 +580,7 @@ class NEXUSAttention(BaseAttention):
             K = K.float()
             V = V.float()
 
-            scale = 1.0 / math.sqrt(D)
+            scale = 1.0 / math.sqrt(max(int(D), 1))
             m = min(num_landmarks, N)
 
             if N <= chunk_size:
@@ -953,7 +953,7 @@ class NEXUSAttention(BaseAttention):
                 context = context * token_valid.unsqueeze(1).unsqueeze(-1).to(context.dtype)
 
         elif is_cross or (self.cfg.sparse_min_seq_len >= N) or (self.dss_attn is None):
-            scale = 1.0 / math.sqrt(D)
+            scale = 1.0 / math.sqrt(max(int(D), 1))
             with torch.amp.autocast(device_type=device.type, enabled=False):
                 scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 

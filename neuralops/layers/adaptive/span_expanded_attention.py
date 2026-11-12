@@ -658,7 +658,7 @@ class SpanExpandedAttention(BaseAttention):
                 # allowed-swallow: best-effort-telemetry
                 pass
 
-        scale = 1.0 / math.sqrt(int(Dh))
+        scale = 1.0 / math.sqrt(max(int(Dh), 1))
         scores = torch.matmul(q.float(), attn_k_exp.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder:

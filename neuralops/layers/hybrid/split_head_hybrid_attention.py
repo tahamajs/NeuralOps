@@ -265,7 +265,7 @@ def local_window_attention(
             # allowed-swallow: best-effort-telemetry
             pass
 
-    scale = (1.0 / math.sqrt(int(D))) / max(1e-4, float(softpick_temperature))
+    scale = (1.0 / math.sqrt(max(int(D), 1))) / max(1e-4, float(softpick_temperature))
     chunk_size = 64
     mask_val = -10000.0
     outputs = []

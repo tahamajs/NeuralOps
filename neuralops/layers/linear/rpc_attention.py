@@ -193,13 +193,13 @@ class RPCAttention(BaseAttention):
 
         seed = int(kwargs.get("sketch_seed", 0xC0FFEE))
         gen = torch.Generator(device="cpu").manual_seed(seed)
-        std = 1.0 / math.sqrt(self.head_dim)
+        std = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         proj_q = torch.randn(self.num_heads, self.head_dim, self.sketch_rank, generator=gen) * std
         proj_k = torch.randn(self.num_heads, self.head_dim, self.sketch_rank, generator=gen) * std
         self.register_buffer("proj_q", proj_q.float(), persistent=False)
         self.register_buffer("proj_k", proj_k.float(), persistent=False)
 
-        default_scale = 1.0 / math.sqrt(self.head_dim)
+        default_scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         self.sketch_scale = float(
             kwargs.get(
                 "sketch_scale",

@@ -622,7 +622,7 @@ class SqueezingHeadsDistiller(BaseAttention):
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         token_valid = self._prepare_valid_mask(eff_mask, B, N_kv, device)
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
 
         use_sdpa = not output_attentions and head_mask is None and not self.training
 

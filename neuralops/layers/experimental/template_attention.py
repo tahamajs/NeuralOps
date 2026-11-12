@@ -437,7 +437,7 @@ class YourCustomAttention(BaseAttention):
             k = repeat_kv(k, self.num_key_value_groups)
             v = repeat_kv(v, self.num_key_value_groups)
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
 
         eff_mask = encoder_attention_mask if encoder_attention_mask is not None else attention_mask
         if eff_mask is None:

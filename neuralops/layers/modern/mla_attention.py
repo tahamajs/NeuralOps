@@ -607,7 +607,7 @@ class MLAAttention(BaseAttention):
         # compute attention directly in latent KV space without materializing uncompressed K/V in DRAM.
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         is_causal = bool(self.is_decoder and not is_cross and N > 1)
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
 
         if (
             eff_mask is None
@@ -680,7 +680,7 @@ class MLAAttention(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         is_causal = bool(self.is_decoder and not is_cross and N > 1)
 

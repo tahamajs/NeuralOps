@@ -866,7 +866,7 @@ class MoEDeltaKVPagedAttention(BaseAttention):
         if use_paged:
             context, attn_probs = self._paged_moe_attention(q, k_hat, v_hat, valid_mask)
         else:
-            scale = 1.0 / math.sqrt(d)
+            scale = 1.0 / math.sqrt(max(int(d), 1))
             with torch.amp.autocast(device_type=device.type, enabled=False):
                 scores = torch.matmul(q.float(), k_hat.float().transpose(-2, -1).contiguous()) * scale
 
@@ -961,7 +961,7 @@ class MoEDeltaKVPagedAttention(BaseAttention):
             k_exp = k
             v_exp = v
 
-        scale = 1.0 / math.sqrt(d)
+        scale = 1.0 / math.sqrt(max(int(d), 1))
         scores = torch.matmul(q.float(), k_exp.float().transpose(-2, -1)) * scale
         scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
         probs = F.softmax(scores, dim=-1).to(x.dtype)

@@ -382,7 +382,7 @@ class SpectraV2Attention(BaseAttention):
             K = repeat_kv(K, repeats)
             V = repeat_kv(V, repeats)
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
 
         _is_causal = getattr(self, "is_decoder", False) and not is_cross and N > 1
 

@@ -672,7 +672,7 @@ class LinformerAttention(BaseAttention):
             K_proj = torch.matmul(E_act.to(k.dtype), k)
             V_proj = torch.matmul(F_act.to(v.dtype), v)
 
-        scale = 1.0 / math.sqrt(d)
+        scale = 1.0 / math.sqrt(max(int(d), 1))
         scores = torch.matmul(q.float(), K_proj.transpose(-2, -1).contiguous().float()) * scale
 
         if self.is_decoder:

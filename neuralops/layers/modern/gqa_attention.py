@@ -621,7 +621,7 @@ class GroupedQueryAttention(BaseAttention):
         )
 
         if use_sdpa:
-            scale_val = 1.0 / math.sqrt(int(d))
+            scale_val = 1.0 / math.sqrt(max(int(d), 1))
             dispatched = False
             if Q.is_cuda and not self.training and d in (32, 64, 128, 256):
                 # Level 1: Native CUDA flash_gqa kernel with XOR-bank swizzled SRAM (direct KV broadcast, no DRAM expansion)
@@ -665,7 +665,7 @@ class GroupedQueryAttention(BaseAttention):
         if not use_sdpa:
             K_full = repeat_kv(K, self.kv_repeat) if self.kv_repeat > 1 else K
             V_full = repeat_kv(V, self.kv_repeat) if self.kv_repeat > 1 else V
-            scale = 1.0 / math.sqrt(int(d))
+            scale = 1.0 / math.sqrt(max(int(d), 1))
             scores = torch.matmul(Q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale
 
             if is_causal:

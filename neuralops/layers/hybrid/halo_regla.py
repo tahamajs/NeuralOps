@@ -651,7 +651,7 @@ class HALOReGLAAttention(BaseAttention):
                 else:
                     valid_kv_bool = valid_kv_new[:, :N_kv]
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
 
         with torch.amp.autocast(device_type=device.type, enabled=False):
             K_dense_f = K_full_dense.to(dtype=torch.float32)

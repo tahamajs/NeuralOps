@@ -1070,7 +1070,7 @@ class SVDLinearAttention(BaseAttention):
                 # allowed-swallow: best-effort-telemetry
                 pass
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         scores = torch.matmul(q.float(), k.float().transpose(-1, -2).contiguous()) * scale
 
         if is_causal_attn:
@@ -1404,7 +1404,7 @@ class SVDLinearAttention(BaseAttention):
                 v_all = repeat_kv(v_all, self.kv_repeat)
 
         if self.mode == "exact":
-            scale = 1.0 / math.sqrt(self.head_dim)
+            scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
             scores = torch.matmul(q.float(), k_all.float().transpose(-1, -2).contiguous()) * scale
             scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
             probs = F.softmax(scores, dim=-1).to(q.dtype)

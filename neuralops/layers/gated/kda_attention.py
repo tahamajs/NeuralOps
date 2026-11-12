@@ -924,7 +924,7 @@ class KDAAttention(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        scale = 1.0 / math.sqrt(Dh)
+        scale = 1.0 / math.sqrt(max(int(Dh), 1))
         q_act = F.elu(q.float() * scale) + 1.0
         k_act = F.elu(k.float()) + 1.0
 

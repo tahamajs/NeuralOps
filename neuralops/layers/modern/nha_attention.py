@@ -439,7 +439,7 @@ class NativeHybridAttention(BaseAttention):
         Q_f = Q.float()
         K_f = K.float()
         V_f = V.float()
-        scale = 1.0 / math.sqrt(d)
+        scale = 1.0 / math.sqrt(max(int(d), 1))
         mask_val = torch.finfo(torch.float32).min
 
         with torch.amp.autocast(device_type=device.type, enabled=False):

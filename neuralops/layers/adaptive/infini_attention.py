@@ -618,7 +618,7 @@ class Jamba2Block(BaseAttention):
         else:
             k_exp, v_exp = k, v
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         is_causal = bool(self.is_decoder and L > 1)
         mask_val = _safe_mask_value(target_dtype)
 

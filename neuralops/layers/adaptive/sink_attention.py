@@ -642,7 +642,7 @@ class SinkAttention(BaseAttention):
                 return out, None, updated_cache
             return out, None
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         scores = torch.matmul(q.float(), k_att.float().transpose(-2, -1).contiguous()) * scale
 
         if self.is_decoder:

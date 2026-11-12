@@ -618,7 +618,7 @@ class NativeSparseAttention(BaseAttention):
             V = repeat_kv(V, self.kv_repeat).contiguous()
 
         compute_dtype = Q.dtype
-        scale = 1.0 / math.sqrt(d)
+        scale = 1.0 / math.sqrt(max(int(d), 1))
         if (
             (2 * self.window_size + 1) >= L
             and attention_mask is None

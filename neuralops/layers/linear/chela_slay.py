@@ -1026,7 +1026,7 @@ class ChelaSlayAttention(BaseAttention):
 
         if dense_out is None:
             dense_scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * (
-                1.0 / math.sqrt(self.head_dim)
+                1.0 / math.sqrt(max(int(self.head_dim), 1))
             )
 
             if can_causal:

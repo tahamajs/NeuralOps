@@ -798,7 +798,7 @@ class CompressedDistilBertAttention(BaseAttention):
                 context = None
 
         if context is None:
-            scale = 1.0 / math.sqrt(self.head_dim)
+            scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
             scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
 
             if mask is not None:
@@ -982,7 +982,7 @@ def compressed_mha_fn(
 ) -> torch.Tensor:
     head_dim = query.shape[-1]
     if scale is None:
-        scale = 1.0 / math.sqrt(head_dim)
+        scale = 1.0 / math.sqrt(max(int(head_dim), 1))
     scores = torch.matmul(query, key.transpose(-2, -1).contiguous()) * scale
     if attention_mask is not None:
         if attention_mask.dim() == 4:

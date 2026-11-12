@@ -473,7 +473,7 @@ class MoBAAttention(BaseAttention):
             V = repeat_kv(V, self.kv_repeat)
 
         is_causal = bool(self.is_decoder and not is_cross and L > 1)
-        scale = 1.0 / math.sqrt(d)
+        scale = 1.0 / math.sqrt(max(int(d), 1))
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
 

@@ -73,8 +73,8 @@ class MinimalMoEFallback(nn.Module):
                     for i in range(2, len(self.experts)):
                         out_c = out_c + w_c[..., i : i + 1] * self.experts[i](x_c)
                     return out_c
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("CUDA samba_moe kernel failed, falling back: %s", e)
             if x_c.is_cuda and len(self.experts) > 0:
                 try:
                     from neuralops.ops.triton.sparse_attn import fused_topk_sparse_route_and_combine_triton
@@ -84,8 +84,8 @@ class MinimalMoEFallback(nn.Module):
                     return fused_topk_sparse_route_and_combine_triton(
                         stacked, l_c, top_k=min(2, self.n_experts)
                     )
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("Triton samba_moe kernel failed, falling back: %s", e)
             out_c = torch.zeros_like(x_c)
             for i, exp in enumerate(self.experts):
                 out_c = out_c + w_c[..., i : i + 1] * exp(x_c)

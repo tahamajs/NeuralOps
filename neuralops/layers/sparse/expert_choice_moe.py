@@ -613,7 +613,7 @@ class ExpertChoiceMoEAttention(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
 
         if not output_attentions and attention_mask is None and encoder_attention_mask is None and head_mask is None:
             try:

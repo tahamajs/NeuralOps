@@ -208,7 +208,7 @@ def _local_window_attention_v2(
     B, H, N, D = Q.shape
     N_k = K.shape[2]
     radius = window // 2
-    scale = 1.0 / math.sqrt(int(D))
+    scale = 1.0 / math.sqrt(max(int(D), 1))
 
     if Q.is_cuda and token_valid is None and past_len == 0 and N == N_k and D <= 256:
         try:

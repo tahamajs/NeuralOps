@@ -564,7 +564,7 @@ class TLinFormerAttention(BaseAttention):
         q_mask = valid.unsqueeze(1).unsqueeze(-1)
         key_mask = valid.unsqueeze(1).unsqueeze(2)
 
-        scale = 1.0 / math.sqrt(Dh)
+        scale = 1.0 / math.sqrt(max(int(Dh), 1))
 
         if self.is_decoder:
             if past_key_value is not None:

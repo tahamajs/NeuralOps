@@ -583,7 +583,7 @@ class MultiQueryAttention(BaseAttention):
         attn_weights: torch.Tensor | None = None
 
         if use_sdpa:
-            scale_val = 1.0 / math.sqrt(d)
+            scale_val = 1.0 / math.sqrt(max(int(d), 1))
             dispatched = False
             if q.is_cuda and not self.training and d in (32, 64, 128, 256):
                 # Level 1: Native CUDA flash_gqa kernel with XOR-bank swizzled SRAM & warp KV broadcast
@@ -642,7 +642,7 @@ class MultiQueryAttention(BaseAttention):
                     use_sdpa = False
 
         if not use_sdpa:
-            scale = 1.0 / math.sqrt(d)
+            scale = 1.0 / math.sqrt(max(int(d), 1))
             if self.num_kv_heads == 1:
                 k_eff, v_eff = k, v
             elif self.kv_repeat > 1:

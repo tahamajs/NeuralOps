@@ -424,7 +424,7 @@ class SAMBAM3Block(BaseAttention):
         past_len: int = 0,
     ) -> torch.Tensor:
         B, H, L, d = q.shape
-        scale = 1.0 / math.sqrt(d)
+        scale = 1.0 / math.sqrt(max(int(d), 1))
 
         if q.is_cuda and past_len == 0 and attention_mask is None and head_mask is None and d <= 64:
             try:
@@ -688,7 +688,7 @@ class SAMBAM3Block(BaseAttention):
             next_past_k = k_cat
             next_past_v = v_cat
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         scores = torch.matmul(q.float(), k_exp.float().transpose(-1, -2)) * scale
         probs = F.softmax(scores, dim=-1).to(dtype)
         attn_out = torch.matmul(probs, v_exp).transpose(1, 2).contiguous().view(B, 1, self.q_head_size)

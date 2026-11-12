@@ -534,7 +534,7 @@ class QCQAAttention(BaseAttention):
             V_mixed = torch.einsum("bqk,bkjd->bqjd", w_head, V_perm)
 
         q_heads = q.permute(0, 2, 1, 3).contiguous()
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
 
         causal_mask = None
         if self.is_decoder and not is_cross:

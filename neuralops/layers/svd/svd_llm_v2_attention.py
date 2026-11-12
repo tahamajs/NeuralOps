@@ -592,7 +592,7 @@ class SVDLLMV2Attention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         if eff_mask is None and head_mask is None and not output_attentions:
             try:

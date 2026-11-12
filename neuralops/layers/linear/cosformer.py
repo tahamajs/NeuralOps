@@ -475,7 +475,7 @@ class CosformerAttention(BaseAttention):
                 is_causal=False,
             )
 
-        scale = 1.0 / math.sqrt(d)
+        scale = 1.0 / math.sqrt(max(int(d), 1))
         scores = torch.matmul(Q, K.transpose(-1, -2)) * scale + additive_mask
         attn = F.softmax(scores, dim=-1)
         return torch.matmul(attn, V_local)
@@ -609,7 +609,7 @@ class CosformerAttention(BaseAttention):
                 V_global = repeat_kv(V_global, rep)[:, : Q_raw.shape[1], :, :]
                 V_local = repeat_kv(V_local, rep)[:, : Q_raw.shape[1], :, :]
 
-        scale = 1.0 / math.sqrt(d)
+        scale = 1.0 / math.sqrt(max(int(d), 1))
         Q_scaled = torch.clamp(Q_raw * scale, min=-50.0, max=50.0)
         K_clamped = torch.clamp(K_raw, min=-50.0, max=50.0)
 
@@ -723,7 +723,7 @@ class CosformerAttention(BaseAttention):
             v_global = repeat_kv(v_global, self.kv_repeat)
             v_local = repeat_kv(v_local, self.kv_repeat)
 
-        scale = 1.0 / math.sqrt(d)
+        scale = 1.0 / math.sqrt(max(int(d), 1))
         q_scaled = torch.clamp(q_raw * scale, min=-50.0, max=50.0)
         k_clamped = torch.clamp(k_raw, min=-50.0, max=50.0)
 

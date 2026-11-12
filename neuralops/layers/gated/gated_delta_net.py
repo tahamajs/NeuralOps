@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import contextlib
 import logging
+import math
 from typing import Any
 
 from neuralops.core.attention_utils import LoRALinear, apply_rotary_pos_emb

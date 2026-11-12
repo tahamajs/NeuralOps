@@ -586,7 +586,7 @@ class FUSIONATTN(BaseAttention):
     ) -> torch.Tensor:
         """Compute differentiable content-aware + learned block gate logits [B, H, n_q, n_k]."""
         B, H, _, D = q_cent.shape
-        raw_affinity = torch.matmul(q_cent.float(), k_cent.float().transpose(-2, -1)) * (1.0 / math.sqrt(int(D)))
+        raw_affinity = torch.matmul(q_cent.float(), k_cent.float().transpose(-2, -1)) * (1.0 / math.sqrt(max(int(D), 1)))
         gate_dtype = self.lora_attn_gate[0].weight.dtype
         q_f = q_cent.to(gate_dtype)
         k_f = k_cent.to(gate_dtype)
@@ -611,7 +611,7 @@ class FUSIONATTN(BaseAttention):
     ) -> tuple[torch.Tensor, torch.Tensor | None]:
         B, H, N, D = q.shape
         N_kv = k.shape[2]
-        scale = 1.0 / math.sqrt(int(D))
+        scale = 1.0 / math.sqrt(max(int(D), 1))
 
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
@@ -773,7 +773,7 @@ class FUSIONATTN(BaseAttention):
         else:
             valid_sel = None
 
-        scale = 1.0 / math.sqrt(int(D))
+        scale = 1.0 / math.sqrt(max(int(D), 1))
         scores_tok = torch.matmul(q_blocks.float(), k_sel.float().transpose(-2, -1).contiguous()) * scale
         gate_bias_tok = (0.05 * torch.tanh(sel_gate_vals)).unsqueeze(-1).expand(-1, -1, -1, -1, bs)
         scores_tok = scores_tok + gate_bias_tok.reshape(B, H, num_q_blocks, 1, max_sel * bs)

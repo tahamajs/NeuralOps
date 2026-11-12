@@ -597,7 +597,7 @@ class MinimalNOVAAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        scale = 1.0 / math.sqrt(D)
+        scale = 1.0 / math.sqrt(max(int(D), 1))
 
         try:
             _qs = maybe_half(Q)

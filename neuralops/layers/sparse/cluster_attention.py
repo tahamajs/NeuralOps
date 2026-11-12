@@ -678,7 +678,7 @@ class ClusterAttention(BaseAttention):
                 K = repeat_kv(K, rep)[:, : Q.shape[1], :, :]
                 V = repeat_kv(V, rep)[:, : Q.shape[1], :, :]
 
-        scale = 1.0 / math.sqrt(int(Dh))
+        scale = 1.0 / math.sqrt(max(int(Dh), 1))
 
         mask = attention_mask if attention_mask is not None else kwargs.get("mask", kwargs.get("attention_mask"))
         is_causal_mask = False

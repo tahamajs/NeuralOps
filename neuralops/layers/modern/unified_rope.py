@@ -100,7 +100,7 @@ class UnifiedRoPE(BaseAttention):
         self.head_dim = self.hidden_size // self.num_heads
         self.max_seq_len = max_seq_len
         self.base = base
-        self.scale = 1.0 / math.sqrt(self.head_dim)
+        self.scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         self.lora_rank = int(kwargs.get("lora_rank", _cfg_get(config, "lora_rank", lora_rank)))
         self.lora_alpha = float(kwargs.get("lora_alpha", _cfg_get(config, "lora_alpha", lora_alpha)))
 

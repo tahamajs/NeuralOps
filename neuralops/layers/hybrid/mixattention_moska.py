@@ -700,7 +700,7 @@ class MixAttentionMoSKA(BaseAttention):
             K_full, V_full = K.contiguous(), V.contiguous()
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         is_causal = bool(self.is_decoder and not is_cross and L > 1)
         compute_dtype = q.dtype
 

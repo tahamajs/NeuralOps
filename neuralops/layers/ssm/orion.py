@@ -426,7 +426,7 @@ class ORIONAttention(BaseAttention):
         )
 
         rff_init = torch.randn(max(1, self.num_kernel_heads), self.head_dim, orion_cfg.rff_features) * (
-            1.0 / math.sqrt(self.head_dim)
+            1.0 / math.sqrt(max(int(self.head_dim), 1))
         )
         self.register_buffer("rff_proj", rff_init, persistent=False)
         self.dropout = nn.Dropout(orion_cfg.dropout)
@@ -678,7 +678,7 @@ class ORIONAttention(BaseAttention):
         Q, K, V = Q.float(), K.float(), V.float()
         proj = self.rff_proj[:Hk].to(Q.device).float()
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         Q_scaled = Q * scale
         K_scaled = K * scale
 
@@ -758,7 +758,7 @@ class ORIONAttention(BaseAttention):
         if Hf == 0:
             return torch.zeros(B, 0, N, D, device=Q.device, dtype=Q.dtype)
 
-        scale = 1.0 / math.sqrt(int(self.head_dim))
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         is_causal = bool(self.is_decoder) and (N > 1 or past_len > 0)
 
         attn_bias = None

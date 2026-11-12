@@ -721,7 +721,7 @@ class AdaptiveSVDAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        scale = 1.0 / math.sqrt(int(D))
+        scale = 1.0 / math.sqrt(max(int(D), 1))
         scores = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
 
         position_bias = kwargs.get("position_bias")

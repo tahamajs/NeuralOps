@@ -644,7 +644,7 @@ class AdaSplashAttention(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        scale = 1.0 / math.sqrt(int(Dh))
+        scale = 1.0 / math.sqrt(max(int(Dh), 1))
         logits = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
 
         position_bias = kwargs.get("position_bias")

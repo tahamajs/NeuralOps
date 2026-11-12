@@ -440,7 +440,7 @@ class CompressedAttentionLayer(BaseAttention):
             k = repeat_kv(k, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
 
         try:
             is_causal = self.is_decoder and (attention_mask is None or attention_mask.dim() != 4)

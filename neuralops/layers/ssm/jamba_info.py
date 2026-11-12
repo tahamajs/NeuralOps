@@ -665,7 +665,7 @@ class JambaInfoBlock(BaseAttention):
             k2 = repeat_kv(k2, self.kv_repeat)
             v = repeat_kv(v, self.kv_repeat)
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         kv_len = k1.shape[-2]
         lambda_full = (
             torch.exp(self.lambda_q1 * self.lambda_k1) - torch.exp(self.lambda_q2 * self.lambda_k2) + self.lambda_init

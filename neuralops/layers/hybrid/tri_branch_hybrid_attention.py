@@ -128,7 +128,7 @@ def _local_window_attention_chunked(
             # allowed-swallow: best-effort-telemetry
             logger.debug("CUDA hybrid_local_attn fallback failed, using PyTorch: %s", e, exc_info=True)
 
-    scale = 1.0 / math.sqrt(int(D))
+    scale = 1.0 / math.sqrt(max(int(D), 1))
     device = Q.device
 
     chunk = max(64, min(radius * 2, 256))

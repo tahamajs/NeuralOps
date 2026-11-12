@@ -557,7 +557,7 @@ class BlockTransformerHIBA(BaseAttention):
         """
         B, H, L, D = q.shape
         bs = self.block_size
-        scale = 1.0 / math.sqrt(D)
+        scale = 1.0 / math.sqrt(max(int(D), 1))
         is_causal = self.is_decoder and not is_cross
 
         num_blocks = (L + bs - 1) // bs
@@ -837,7 +837,7 @@ class BlockTransformerHIBA(BaseAttention):
 
                     warn_once("hiba_dense_sdpa", "HIBA dense SDPA failed, using manual fallback: %s", e)
 
-            scale = 1.0 / math.sqrt(self.head_dim)
+            scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
             scores = torch.matmul(q, k.transpose(-2, -1)) * scale
             scores = scores.float()
             if is_causal_dense:

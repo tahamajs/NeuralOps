@@ -780,7 +780,7 @@ class AdaptiveSpanAttention(BaseAttention):
         else:
             K_full, V_full = K, V
 
-        scale = 1.0 / math.sqrt(int(d))
+        scale = 1.0 / math.sqrt(max(int(d), 1))
         scores = torch.matmul(Q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale
 
         position_bias = kwargs.get("position_bias")

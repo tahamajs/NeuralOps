@@ -731,7 +731,7 @@ class FlashAttention3FP8(BaseAttention):
                     if not FORCE_PYTORCH_FALLBACK and (major > 8 or (major == 8 and minor >= 9)):
                         from neuralops.ops.triton.low_rank import fp8_tensorcore_matmul_triton
 
-                        scale = 1.0 / math.sqrt(Dh)
+                        scale = 1.0 / math.sqrt(max(int(Dh), 1))
                         scores = torch.matmul(q.float(), k.float().transpose(-1, -2).contiguous()) * scale
                         if causal_flag:
                             causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))

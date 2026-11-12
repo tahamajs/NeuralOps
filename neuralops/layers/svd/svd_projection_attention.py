@@ -576,7 +576,7 @@ class SVDProjectionAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         if is_causal:

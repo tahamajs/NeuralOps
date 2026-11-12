@@ -591,7 +591,7 @@ class WeightedGroupedQueryAttention(BaseAttention):
         else:
             K_full, V_full = K, V
 
-        scale = 1.0 / math.sqrt(int(d))
+        scale = 1.0 / math.sqrt(max(int(d), 1))
         is_cross = bool(kwargs.get("is_cross_attention", False)) or is_cross_attention
 
         mask = attention_mask if attention_mask is not None else kwargs.get("mask")

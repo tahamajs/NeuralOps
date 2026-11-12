@@ -494,7 +494,7 @@ class OptimizedHybridAttention(BaseAttention):
         valid_mask_2d = self._prepare_valid_mask(attention_mask, B, N, device)
         key_valid_4d = valid_mask_2d.unsqueeze(1).unsqueeze(2)
 
-        scale = 1.0 / math.sqrt(d)
+        scale = 1.0 / math.sqrt(max(int(d), 1))
         idx = torch.arange(N, device=device)
         diff = idx.unsqueeze(1) - idx.unsqueeze(0)
 

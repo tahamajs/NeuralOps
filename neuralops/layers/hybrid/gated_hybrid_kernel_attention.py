@@ -637,7 +637,7 @@ class GatedHybridKernelAttention(BaseAttention):
         B, h, N, d = Q.shape
         N_k = K.shape[2]
         W = self.window
-        scale = 1.0 / math.sqrt(int(d))
+        scale = 1.0 / math.sqrt(max(int(d), 1))
         is_causal_win = self.is_decoder and not is_cross
         valid_b = valid.to(device=Q.device, dtype=torch.bool)
 

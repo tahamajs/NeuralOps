@@ -614,7 +614,7 @@ class GalerkinAttention(BaseAttention):
                     # allowed-swallow: best-effort-telemetry
                     pass
 
-            scale = 1.0 / math.sqrt(int(d))
+            scale = 1.0 / math.sqrt(max(int(d), 1))
             scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
             causal_diag = 1 + max(0, kv_len - N)
@@ -664,7 +664,7 @@ class GalerkinAttention(BaseAttention):
             r_actual = max(1, min(self.rank, kv_len))
             Phi = self._get_orthonormal_basis(kv_len, r_actual, device, dtype)
 
-            scale = 1.0 / math.sqrt(int(d))
+            scale = 1.0 / math.sqrt(max(int(d), 1))
 
             if not output_attentions and head_mask is None:
                 try:

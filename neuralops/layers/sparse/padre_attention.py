@@ -30,6 +30,8 @@ from neuralops.core.utils.gqa import repeat_kv
 
 logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
+
 
 @ATTENTION_REGISTRY.register("padre_attention")
 class PADReAttention(BaseAttention):
@@ -479,7 +481,7 @@ class PADReAttention(BaseAttention):
             k = repeat_kv(k, self.num_heads // self.num_kv_heads)
             v = repeat_kv(v, self.num_heads // self.num_kv_heads)
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
 
         invalid_mask = None
         has_invalid = False
@@ -514,8 +516,8 @@ class PADReAttention(BaseAttention):
                 context = context.permute(0, 2, 1, 3).contiguous().view(B, N, self.all_head_size)
                 output = context if self.is_nested_encoder else self.out_proj(context)
                 return (output, None)
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("fused_padre_polynomial_attn_triton failed, falling back to manual path: %s", e)
 
         scores = torch.matmul(q, k.transpose(-2, -1).contiguous()) * scale
 

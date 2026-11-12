@@ -172,8 +172,8 @@ class FactorisedLinear(nn.Module):
                         * self.lora_scaling
                     )
                 return base
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Level 1 CUDA low_rank_svd failed, falling back: %s", e)
 
             # Level 2: Triton JIT kernel
             try:
@@ -190,8 +190,8 @@ class FactorisedLinear(nn.Module):
                         * self.lora_scaling
                     )
                 return base
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Level 2 Triton low_rank_svd failed, falling back: %s", e)
 
             if x.dtype in (torch.float16, torch.bfloat16):
                 try:
@@ -208,9 +208,8 @@ class FactorisedLinear(nn.Module):
                             * self.lora_scaling
                         )
                     return base
-                except Exception:
-                    # allowed-swallow: best-effort-telemetry
-                    pass
+                except Exception as e:
+                    logger.debug("Level 1 CUDA low_rank_gated_gemm failed, falling back: %s", e)
         if x.is_cuda:
             try:
                 from neuralops.ops.triton.low_rank import fused_svd_lora_sparse_attn_triton
@@ -224,9 +223,8 @@ class FactorisedLinear(nn.Module):
                     lora_scale=self.lora_scaling,
                     bias=self.up.bias,
                 )
-            except Exception:
-                # allowed-swallow: best-effort-telemetry
-                pass
+            except Exception as e:
+                logger.debug("Level 2 Triton fused_svd_lora_sparse_attn failed, falling back: %s", e)
         out = self.up(self.down(x))
         if self.lora_rank > 0 and self.lora_A is not None and self.lora_B is not None:
             out = (
@@ -634,7 +632,7 @@ class MinimalSVDAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        scale = 1.0 / math.sqrt(D)
+        scale = 1.0 / math.sqrt(max(int(D), 1))
 
         try:
             _qs = maybe_half(Q)

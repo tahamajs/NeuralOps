@@ -660,7 +660,7 @@ class AdaptiveSparseAttention(BaseAttention):
             V = repeat_kv(V, self.kv_repeat).contiguous()
 
         chunk_size = 64
-        scale = 1.0 / math.sqrt(int(d))
+        scale = 1.0 / math.sqrt(max(int(d), 1))
 
         position_bias = kwargs.get("position_bias")
         if position_bias is None and self.has_relative_attention_bias:

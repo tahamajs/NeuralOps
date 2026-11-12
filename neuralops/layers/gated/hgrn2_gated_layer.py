@@ -611,7 +611,7 @@ class HGRN2Layer(BaseAttention):
                     out = None
 
         if out is None:
-            scale = 1.0 / math.sqrt(d)
+            scale = 1.0 / math.sqrt(max(int(d), 1))
             chunk_q = max(64, self.window_size)
             if L <= chunk_q:
                 q_pos = (past_len + torch.arange(L, device=hidden_states.device)).unsqueeze(1)

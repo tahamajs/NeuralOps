@@ -458,7 +458,7 @@ class NystromAttention(BaseAttention):
         dtype: torch.dtype,
     ) -> torch.Tensor:
         """Dense (non-causal) attention for encoder fallback."""
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(int(self.head_dim), 1))
         try:
             if valid_mask.all():
                 return F.scaled_dot_product_attention(
@@ -540,7 +540,7 @@ class NystromAttention(BaseAttention):
             V_c = V[:, :, start:end, :]
             mask_c = valid_mask[:, start:end]
 
-            scale = 1.0 / math.sqrt(d)
+            scale = 1.0 / math.sqrt(max(int(d), 1))
             scores_intra = torch.matmul(Q_c.float(), K_c.float().transpose(-2, -1).contiguous()) * scale
             causal = torch.tril(torch.ones(C_len, C_len, device=device, dtype=torch.bool))
             scores_intra = scores_intra.masked_fill(~causal.unsqueeze(0).unsqueeze(0), -1e4)
@@ -636,7 +636,7 @@ class NystromAttention(BaseAttention):
             Q_landmarks = self._pool_landmarks(Q, m)
             K_landmarks = self._pool_landmarks(K, m)
 
-            scale = 1.0 / math.sqrt(d)
+            scale = 1.0 / math.sqrt(max(int(d), 1))
 
             scores1 = torch.matmul(Q.float(), K_landmarks.float().transpose(-2, -1).contiguous()) * scale
             F1 = F.softmax(scores1, dim=-1).to(dtype)

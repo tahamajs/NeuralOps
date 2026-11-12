@@ -539,7 +539,7 @@ class RoutingAttention(BaseAttention):
         joint_feat = F.normalize(Q + K, p=2, dim=-1)
         cluster_ids = self._kmeans_assign(joint_feat, K_num, self.n_iters)
 
-        scale = 1.0 / math.sqrt(int(d))
+        scale = 1.0 / math.sqrt(max(int(d), 1))
         is_causal = self.is_decoder or kwargs.get("is_causal", False)
 
         if is_causal:

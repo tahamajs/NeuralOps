@@ -523,7 +523,7 @@ class ResidualSVDAttention(BaseAttention):
             K = repeat_kv(K, repeats)
             V = repeat_kv(V, repeats)
 
-        scale = 1.0 / math.sqrt(int(D))
+        scale = 1.0 / math.sqrt(max(int(D), 1))
         scores = torch.matmul(Q.float(), K.float().transpose(-2, -1).contiguous()) * scale
 
         is_causal = self.is_decoder and N > 1
