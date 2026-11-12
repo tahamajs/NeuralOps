@@ -59,9 +59,9 @@ def upload_directory(
     metrics: dict[str, Any] = {}
     if metrics_file.exists():
         try:
-            metrics = json.loads(metrics_file.read_text())
-        except Exception:
-            pass
+            metrics = json.loads(metrics_file.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as err:
+            logger.warning("[%s] Could not read metrics file %s: %s", attn_key, metrics_file, err)
 
     is_compressor = "compressor" in str(target_dir) or "compressor" in metrics or "param_reduction" in metrics
     is_qwen = "qwen" in str(target_dir) or "qwen" in metrics or "model" in metrics and "qwen" in str(metrics["model"]).lower()
@@ -132,18 +132,43 @@ def upload_directory(
             )
             uploaded_count += 1
 
-        logger.info("[%s] Upload completed successfully (%d attention-only files uploaded to %s)!", attn_key, uploaded_count, repo_id)
+        logger.info("[%s] Upload completed successfully (%d files uploaded to %s)!", attn_key, uploaded_count, repo_id)
         commit_hash = "verified"
 
         # Write confirmation record
         success_record = {
             "status": "UPLOAD_SUCCESS",
             "repo_id": repo_id,
-            "format": "attention_only_fp16",
+            "format": "model_safetensors" if is_qwen else "attention_only_fp16",
             "commit_hash": str(commit_hash),
             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat() + "Z",
         }
         (target_dir / "upload_success.json").write_text(json.dumps(success_record, indent=2), encoding="utf-8")
+
+        # Cluster Disk Quota Management: prune local heavy weights upon verified upload
+        if cleanup_weights:
+            heavy_extensions = {".bin", ".safetensors", ".pt", ".pth", ".ckpt"}
+            purged_bytes = 0
+            for fpath in sorted(target_dir.iterdir()):
+                if fpath.is_file() and fpath.suffix in heavy_extensions:
+                    try:
+                        file_size = fpath.stat().st_size
+                        fpath.unlink()
+                        purged_bytes += file_size
+                        logger.info(
+                            "[%s] [DISK CLEANUP] Purged local heavy weight %s (%.1f MB freed).",
+                            attn_key,
+                            fpath.name,
+                            file_size / (1024 * 1024),
+                        )
+                    except OSError as err:
+                        logger.warning("[%s] Could not purge heavy file %s: %s", attn_key, fpath.name, err)
+            if purged_bytes > 0:
+                logger.info(
+                    "[%s] [DISK CLEANUP] Verified upload complete. Total local storage freed: %.1f MB.",
+                    attn_key,
+                    purged_bytes / (1024 * 1024),
+                )
 
         return True
 

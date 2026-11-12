@@ -98,21 +98,29 @@ def upload_compressed_dir(target_dir: Path, hf_org: str, cleanup_after: bool = T
             "status": "UPLOAD_SUCCESS",
             "repo_id": repo_id,
             "commit_hash": commit_hash,
-            "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat() + "Z",
         }
         (target_dir / "upload_success.json").write_text(json.dumps(success, indent=2), encoding="utf-8")
 
         if cleanup_after:
-            for fname in ("pytorch_model.bin", "model.safetensors", "attention_weights.safetensors"):
-                bin_path = target_dir / fname
-                if bin_path.exists():
-                    bin_path.unlink()
-                    logger.info("[%s] Purged local %s post-upload.", comp_key, fname)
+            heavy_extensions = {".bin", ".safetensors", ".pt", ".pth", ".ckpt"}
+            purged_bytes = 0
+            for fpath in sorted(target_dir.iterdir()):
+                if fpath.is_file() and fpath.suffix in heavy_extensions:
+                    try:
+                        file_size = fpath.stat().st_size
+                        fpath.unlink()
+                        purged_bytes += file_size
+                        logger.info("[%s] Purged local heavy weight %s post-upload (%.1f MB freed).", comp_key, fpath.name, file_size / (1024 * 1024))
+                    except OSError as err:
+                        logger.warning("[%s] Could not purge heavy file %s: %s", comp_key, fpath.name, err)
+            if purged_bytes > 0:
+                logger.info("[%s] [DISK CLEANUP] Verified upload complete. Total local storage freed: %.1f MB.", comp_key, purged_bytes / (1024 * 1024))
         return True
     except Exception as exc:
         logger.error("[%s] Upload failed: %s", comp_key, exc)
         (target_dir / "upload_error.json").write_text(
-            json.dumps({"error": str(exc), "timestamp": datetime.datetime.utcnow().isoformat() + "Z"}),
+            json.dumps({"error": str(exc), "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat() + "Z"}),
             encoding="utf-8",
         )
         return False

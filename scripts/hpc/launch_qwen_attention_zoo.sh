@@ -32,6 +32,10 @@ cd /tmp/neuralops_run
 
 mkdir -p results/qwen_attention_zoo
 
+# Process Lock Hygiene: clean orphaned lock files on /dev/shm before starting new training chains
+echo "Cleaning orphaned process locks on /dev/shm..."
+rm -f /dev/shm/*.lock /dev/shm/*_lock /dev/shm/*.lock.* 2>/dev/null || true
+
 echo "Running Qwen Attention Zoo with hot-swap..."
 $PYTHON scripts/benchmarks/qwen_zoo_train_mix.py \
     --model /dev/shm/Qwen2.5-0.5B \

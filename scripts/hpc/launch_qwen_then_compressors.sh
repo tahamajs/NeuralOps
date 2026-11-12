@@ -39,6 +39,10 @@ echo "==========================================================================
 echo "STARTING PRIORITY QWEN DISTILLATION & COMPRESSION PIPELINE AT $(date)"
 echo "================================================================================"
 
+# Process Lock Hygiene: clean orphaned lock files on /dev/shm before starting new training chains
+echo "Cleaning orphaned process locks on /dev/shm..."
+rm -f /dev/shm/*.lock /dev/shm/*_lock /dev/shm/*.lock.* 2>/dev/null || true
+
 # -----------------------------------------------------------------------------
 # PHASE 1 (PRIORITY): Qwen 2.5 (0.5B) Attention Zoo Distillation (All 110 Attentions)
 # WikiText-2 PPL with Layer-wise Representation Alignment + Cosine Fine-Tuning

@@ -40,6 +40,10 @@ echo "==========================================================================
 echo "STARTING MASTER DUAL-ZOO PIPELINE AT $(date)"
 echo "================================================================================"
 
+# Process Lock Hygiene: clean orphaned lock files on /dev/shm before starting new training chains
+echo "Cleaning orphaned process locks on /dev/shm..."
+rm -f /dev/shm/*.lock /dev/shm/*_lock /dev/shm/*.lock.* 2>/dev/null || true
+
 # -----------------------------------------------------------------------------
 # PHASE 1: 82-Compressor Multi-Rank Pareto & LoRA Recovery Engine (All 82 Compressors)
 # Estimated time: ~35 minutes (6.5s per rank x 4 ranks x 82 compressors)

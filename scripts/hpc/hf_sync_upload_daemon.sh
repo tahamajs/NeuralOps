@@ -30,25 +30,25 @@ while true; do
 
     # 3. Check for completed un-uploaded BERT models
     for dir in "$LOCAL_RESULTS/bert_attention_zoo"/*; do
-        if [ -d "$dir" ] && [ -f "$dir/attention_weights.safetensors" ] && [ ! -f "$dir/upload_success.json" ]; then
+        if [ -d "$dir" ] && { [ -f "$dir/attention_weights.safetensors" ] || [ -f "$dir/model.safetensors" ] || [ -f "$dir/pytorch_model.bin" ]; } && [ ! -f "$dir/upload_success.json" ]; then
             key=$(basename "$dir")
             echo "[UPLOAD DAEMON] Uploading BERT model: $key to Hugging Face..."
             $PYTHON /home/tahamajlesi.ut/NeuralOps/scripts/hpc/bert_zoo_upload_hf.py \
                 --single_dir "$dir" \
                 --hf_org "tahamajs" \
-                --cleanup 0 >> /tmp/hf_uploader_daemon.log 2>&1 || true
+                --cleanup 1 >> /tmp/hf_uploader_daemon.log 2>&1 || true
         fi
     done
 
     # 4. Check for completed un-uploaded Qwen models
     for dir in "$LOCAL_RESULTS/qwen_attention_zoo"/*; do
-        if [ -d "$dir" ] && [ -f "$dir/attention_weights.safetensors" ] && [ ! -f "$dir/upload_success.json" ]; then
+        if [ -d "$dir" ] && { [ -f "$dir/model.safetensors" ] || [ -f "$dir/attention_weights.safetensors" ] || [ -f "$dir/pytorch_model.bin" ]; } && [ ! -f "$dir/upload_success.json" ]; then
             key=$(basename "$dir")
             echo "[UPLOAD DAEMON] Uploading Qwen model: $key to Hugging Face..."
             $PYTHON /home/tahamajlesi.ut/NeuralOps/scripts/hpc/bert_zoo_upload_hf.py \
                 --single_dir "$dir" \
                 --hf_org "tahamajs" \
-                --cleanup 0 >> /tmp/hf_uploader_daemon.log 2>&1 || true
+                --cleanup 1 >> /tmp/hf_uploader_daemon.log 2>&1 || true
         fi
     done
 
