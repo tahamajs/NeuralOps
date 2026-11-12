@@ -1,4 +1,11 @@
 #!/bin/bash
+# Copyright (c) 2024-2026, Taha Majlesi
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+# For a list of all contributors, visit:
+#   https://github.com/tahamajs/NeuralOps/graphs/contributors
+
 # Authoritative Qwen Attention Zoo Distillation & Training Runner
 # Hardware: GPU-3090-1 (RTX 3090 24GB, CUDA 11.3)
 # Base model: /dev/shm/Qwen2.5-0.5B (Resident in RAM disk)
