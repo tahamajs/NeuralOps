@@ -26,6 +26,7 @@ import logging
 import os
 import sys
 import time
+import uuid
 from pathlib import Path
 
 import torch
@@ -88,7 +89,7 @@ def precompute_and_cache(
     all_labels = torch.tensor(train_labels, dtype=torch.long)
 
     dataset = TensorDataset(all_input_ids, all_attention_mask, all_labels)
-    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, pin_memory=(device.type == "cuda"))
 
     logger.info("Pre-computing teacher representations and layer-wise attention targets on %s across %d batches...", device, len(loader))
     cached_layer_inputs = [[] for _ in range(12)]
@@ -99,8 +100,8 @@ def precompute_and_cache(
     t0 = time.time()
     with torch.no_grad():
         for b_idx, (b_in, b_att, b_lbl) in enumerate(loader):
-            b_in = b_in.to(device)
-            b_att = b_att.to(device)
+            b_in = b_in.to(device, non_blocking=True)
+            b_att = b_att.to(device, non_blocking=True)
             ext_mask = teacher.get_extended_attention_mask(b_att, b_in.shape)
 
             with torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16):
@@ -148,7 +149,9 @@ def precompute_and_cache(
 
     cache_mb = (full_layer_inputs.numel() * 2 + full_attn_outputs.numel() * 2 + full_last_hidden.numel() * 2) / (1024 * 1024)
     logger.info("Saving cache payload to %s (Size: %.2f MB)...", out_file, cache_mb)
-    torch.save(cache_payload, str(out_file))
+    tmp_file = out_file.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    torch.save(cache_payload, str(tmp_file))
+    tmp_file.replace(out_file)
     logger.info("Layer-wise teacher cache successfully generated and verified at: %s", out_file)
 
 

@@ -20,6 +20,7 @@ import logging
 import os
 import sys
 import time
+import uuid
 from pathlib import Path
 
 import torch
@@ -46,9 +47,9 @@ def evaluate_sst2(model: nn.Module, loader: DataLoader, device: torch.device) ->
 
     with torch.no_grad():
         for batch in loader:
-            input_ids = batch["input_ids"].to(device)
-            attention_mask = batch["attention_mask"].to(device)
-            labels = batch["label"].to(device)
+            input_ids = batch["input_ids"].to(device, non_blocking=True)
+            attention_mask = batch["attention_mask"].to(device, non_blocking=True)
+            labels = batch["label"].to(device, non_blocking=True)
 
             with torch.cuda.amp.autocast(enabled=(device.type == "cuda")):
                 outputs = model(input_ids=input_ids, attention_mask=attention_mask)
@@ -103,8 +104,8 @@ def main() -> None:
     tokenized_train.set_format(type="torch", columns=["input_ids", "attention_mask", "label"])
     tokenized_val.set_format(type="torch", columns=["input_ids", "attention_mask", "label"])
 
-    train_loader = DataLoader(tokenized_train, batch_size=args.batch_size, shuffle=True, drop_last=False)
-    val_loader = DataLoader(tokenized_val, batch_size=args.batch_size, shuffle=False)
+    train_loader = DataLoader(tokenized_train, batch_size=args.batch_size, shuffle=True, drop_last=False, pin_memory=(device.type == "cuda"))
+    val_loader = DataLoader(tokenized_val, batch_size=args.batch_size, shuffle=False, pin_memory=(device.type == "cuda"))
 
     # Initial zero-shot accuracy before training head
     initial_acc, initial_loss = evaluate_sst2(model, val_loader, device)
@@ -123,9 +124,9 @@ def main() -> None:
         steps = 0
 
         for step, batch in enumerate(train_loader):
-            input_ids = batch["input_ids"].to(device)
-            attention_mask = batch["attention_mask"].to(device)
-            labels = batch["label"].to(device)
+            input_ids = batch["input_ids"].to(device, non_blocking=True)
+            attention_mask = batch["attention_mask"].to(device, non_blocking=True)
+            labels = batch["label"].to(device, non_blocking=True)
 
             optimizer.zero_grad()
             with torch.cuda.amp.autocast(enabled=(device.type == "cuda")):
@@ -172,7 +173,9 @@ def main() -> None:
 
     out_file = Path(args.metrics_out)
     out_file.parent.mkdir(parents=True, exist_ok=True)
-    out_file.write_text(json.dumps(metrics_record, indent=2), encoding="utf-8")
+    tmp_file = out_file.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    tmp_file.write_text(json.dumps(metrics_record, indent=2), encoding="utf-8")
+    tmp_file.replace(out_file)
     logger.info("Saved teacher metrics to %s", out_file)
 
 

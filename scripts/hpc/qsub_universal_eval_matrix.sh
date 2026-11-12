@@ -113,6 +113,10 @@ print(f"CUDA Available: True | Device 0: {device_name}")
 print(f"Compute Capability: {device_cap} | VRAM: {total_vram_gb:.2f} GB")
 PYEOF
 
+# Process Lock Hygiene: clean orphaned lock files on /dev/shm before starting new training chains
+echo "Cleaning orphaned process locks on /dev/shm..."
+rm -f /dev/shm/*.lock /dev/shm/*_lock /dev/shm/*.lock.* 2>/dev/null || true
+
 # 5. Output Directory & Run Orchestration
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 OUTPUT_DIR="results/hpc_eval_matrix_${TIMESTAMP}"
