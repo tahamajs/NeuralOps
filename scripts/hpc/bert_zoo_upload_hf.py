@@ -26,6 +26,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from neuralops.hub.uploader import _redact_secrets, retry_hf_api_call
+
 # Force official Hugging Face Hub endpoint (bypass any read-only mirrors like devneeds.ir)
 os.environ["HF_ENDPOINT"] = "https://huggingface.co"
 
@@ -84,7 +86,7 @@ def upload_directory(
             repo_id = f"{effective_org}/bert-{slug}-sst2"
 
         logger.info("[%s] Uploading files to %s via single-stream HTTPS...", attn_key, repo_id)
-        api.create_repo(repo_id=repo_id, repo_type="model", exist_ok=True, private=False)
+        retry_hf_api_call(api.create_repo, repo_id=repo_id, repo_type="model", exist_ok=True, private=False)
 
         # For BERT: purge whole-model weights to preserve storage/bandwidth
         # For Qwen: keep model.safetensors so HF users can load it directly
@@ -120,7 +122,8 @@ def upload_directory(
         uploaded_count = 0
         for fpath in files_to_upload:
             logger.info("[%s] Uploading %s (%.2f MB)...", attn_key, fpath.name, fpath.stat().st_size / (1024 * 1024))
-            api.upload_file(
+            retry_hf_api_call(
+                api.upload_file,
                 path_or_fileobj=str(fpath),
                 path_in_repo=fpath.name,
                 repo_id=repo_id,
@@ -138,16 +141,18 @@ def upload_directory(
             "repo_id": repo_id,
             "format": "attention_only_fp16",
             "commit_hash": str(commit_hash),
-            "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat() + "Z",
         }
-        (target_dir / "upload_success.json").write_text(json.dumps(success_record, indent=2))
+        (target_dir / "upload_success.json").write_text(json.dumps(success_record, indent=2), encoding="utf-8")
 
         return True
 
     except Exception as e:
-        logger.error("[%s] Upload failed: %s", attn_key, e, exc_info=True)
+        redacted = _redact_secrets(str(e), token)
+        logger.error("[%s] Upload failed: %s", attn_key, redacted, exc_info=True)
         (target_dir / "upload_error.json").write_text(
-            json.dumps({"error": str(e), "timestamp": datetime.datetime.utcnow().isoformat() + "Z"})
+            json.dumps({"error": redacted, "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat() + "Z"}),
+            encoding="utf-8",
         )
         return False
 

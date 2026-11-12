@@ -306,12 +306,15 @@ def _resolve_repo_file(
         raise FileNotFoundError(f"Missing {filename} in local checkpoint directory {repo_id}")
 
     from huggingface_hub import hf_hub_download
+    from neuralops.hub.uploader import retry_hf_api_call
 
+    resolved_token = token or os.environ.get("HF_TOKEN")
     try:
-        downloaded = hf_hub_download(
+        downloaded = retry_hf_api_call(
+            hf_hub_download,
             repo_id=str(repo_id),
             filename=filename,
-            token=token,
+            token=resolved_token,
             revision=revision,
             cache_dir=cache_dir,
         )
@@ -615,7 +618,7 @@ def load_surgeried_model(
     legacy checkpoints), loads the delta weights with ``strict=False``, and returns
     ``(model.eval(), tokenizer_or_processor)``.
     """
-    token = kwargs.pop("token", None) or kwargs.pop("hf_token", None)
+    token = kwargs.pop("token", None) or kwargs.pop("hf_token", None) or os.environ.get("HF_TOKEN")
     revision = kwargs.pop("revision", None)
     cache_dir = kwargs.pop("cache_dir", None)
     base_model_override = kwargs.pop("base_model_id", None)

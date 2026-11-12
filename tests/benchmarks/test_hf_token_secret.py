@@ -98,3 +98,29 @@ def test_uploader_retry_hf_api_call_rate_limit():
     assert result == "success"
     assert mock_func.call_count == 2
 
+
+def test_redact_secrets_filters_patterns():
+    """Assert _redact_secrets masks explicit tokens and regex patterns."""
+    raw = "Failed with token hf_123456789012345678901234567890 in URL"
+    clean = _redact_secrets(raw)
+    assert "hf_1234567890" not in clean
+    assert "[REDACTED_HF_TOKEN]" in clean
+
+
+def test_upload_with_retry_requires_token(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
+    """Assert upload_with_retry raises ValueError if no token is available."""
+    from neuralops.hub.uploader import upload_with_retry
+
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    fake_home = tmp_path / "fake_home"
+    fake_home.mkdir()
+    monkeypatch.setenv("HOME", str(fake_home))
+    try:
+        import huggingface_hub
+        monkeypatch.setattr(huggingface_hub, "get_token", lambda: None)
+    except Exception:
+        pass
+    with pytest.raises(ValueError, match="HF_TOKEN environment variable is strictly required"):
+        upload_with_retry("test/repo", tmp_path, token=None)
+
+
