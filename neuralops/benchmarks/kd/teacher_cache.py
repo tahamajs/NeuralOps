@@ -45,6 +45,8 @@ logger = logging.getLogger("neuralops.benchmarks.kd.teacher_cache")
 _env_cache_root = os.environ.get("NEURALOPS_CACHE_DIR")
 if _env_cache_root:
     HPC_DATA_CACHE_ROOT = Path(_env_cache_root)
+elif (Path.home() / "NeuralOps" / "data_cache").exists():
+    HPC_DATA_CACHE_ROOT = Path.home() / "NeuralOps" / "data_cache"
 elif Path("/home/tahamajlesi.ut/NeuralOps/data_cache").exists():
     HPC_DATA_CACHE_ROOT = Path("/home/tahamajlesi.ut/NeuralOps/data_cache")
 else:
