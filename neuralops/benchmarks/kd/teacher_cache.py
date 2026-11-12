@@ -30,6 +30,7 @@ import math
 import os
 import re
 import shutil
+import time
 import uuid
 from pathlib import Path
 from typing import Any, Callable, Iterator, Optional
@@ -41,7 +42,14 @@ from torch.utils.data import DataLoader, Dataset
 
 logger = logging.getLogger("neuralops.benchmarks.kd.teacher_cache")
 
-HPC_DATA_CACHE_ROOT = Path("/home/tahamajlesi.ut/NeuralOps/data_cache")
+_env_cache_root = os.environ.get("NEURALOPS_CACHE_DIR")
+if _env_cache_root:
+    HPC_DATA_CACHE_ROOT = Path(_env_cache_root)
+elif Path("/home/tahamajlesi.ut/NeuralOps/data_cache").exists():
+    HPC_DATA_CACHE_ROOT = Path("/home/tahamajlesi.ut/NeuralOps/data_cache")
+else:
+    HPC_DATA_CACHE_ROOT = Path.home() / ".cache" / "neuralops" / "data_cache"
+
 VLM_MAX_CACHE_BYTES = int(1.75 * 1024 * 1024 * 1024)
 
 
@@ -95,7 +103,8 @@ def resolve_teacher_cache_path(
 
     - 'none' / 'off' / 'false' / '0' disables caching (returns None).
     - Explicit path is returned as Path(teacher_cache_path).
-    - 'auto' / None uses /home/tahamajlesi.ut/NeuralOps/data_cache/teacher_caches/<slug>.pt
+    - 'auto' / None uses $NEURALOPS_CACHE_DIR/teacher_caches/<slug>.pt
+      or /home/tahamajlesi.ut/NeuralOps/data_cache/teacher_caches/<slug>.pt
       when HPC data_cache exists, otherwise <out_dir>/_teacher_cache.pt.
     """
     if teacher_cache_path is not None:
@@ -438,6 +447,7 @@ def build_or_load_causal_teacher_cache(
                         if device.type == "cuda":
                             torch.cuda.empty_cache()
                         gc.collect()
+                        time.sleep(0.05)
                         continue
                     raise
 
@@ -617,6 +627,7 @@ def build_or_load_vlm_teacher_cache(
                         if device.type == "cuda":
                             torch.cuda.empty_cache()
                         gc.collect()
+                        time.sleep(0.05)
                         continue
                     raise
 
@@ -689,6 +700,7 @@ def build_or_load_vlm_teacher_cache(
                         if device.type == "cuda":
                             torch.cuda.empty_cache()
                         gc.collect()
+                        time.sleep(0.05)
                         continue
                     raise
 

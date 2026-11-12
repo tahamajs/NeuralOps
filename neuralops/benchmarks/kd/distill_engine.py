@@ -60,6 +60,36 @@ def _forward_hidden(mod: nn.Module, in_ids: torch.Tensor, att_m: Optional[torch.
         return mod(input_ids=in_ids, **kwargs)
 
 
+def _compute_masked_representation_loss(
+    s_h: List[torch.Tensor],
+    t_h: List[torch.Tensor],
+    attention_mask: Optional[torch.Tensor] = None,
+) -> Tuple[torch.Tensor, torch.Tensor]:
+    """Compute token-masked MSE and cosine distance across layers, excluding pad tokens."""
+    if attention_mask is not None and attention_mask.dim() == 2:
+        mask_f = attention_mask.float()
+        mask_sum = mask_f.sum().clamp(min=1.0)
+        mask_3d = mask_f.unsqueeze(-1)
+
+        mse_list = []
+        cos_list = []
+        for s, t in zip(s_h, t_h):
+            diff_sq = ((s.float() - t.float()) ** 2) * mask_3d
+            mse_val = diff_sq.sum() / (mask_sum * s.size(-1))
+            mse_list.append(mse_val)
+
+            cos_sim = F.cosine_similarity(s.float(), t.float(), dim=-1)
+            cos_dist = ((1.0 - cos_sim) * mask_f).sum() / mask_sum
+            cos_list.append(cos_dist)
+
+        loss_mse = torch.stack(mse_list).mean()
+        loss_cos = torch.stack(cos_list).mean()
+    else:
+        loss_mse = torch.stack([F.mse_loss(s, t) for s, t in zip(s_h, t_h)]).mean()
+        loss_cos = torch.stack([1.0 - F.cosine_similarity(s, t, dim=-1).mean() for s, t in zip(s_h, t_h)]).mean()
+    return loss_mse, loss_cos
+
+
 def compute_topk_sparse_kd_loss(
     student_logits: torch.Tensor,
     teacher_logits: torch.Tensor,
@@ -315,8 +345,7 @@ class TwoStageDistillationEngine:
                         s_h = s_out.hidden_states[1:]
                         t_h = t_out.hidden_states[1:]
 
-                    loss_mse = torch.stack([F.mse_loss(s, t) for s, t in zip(s_h, t_h)]).mean()
-                    loss_cos = torch.stack([1.0 - F.cosine_similarity(s, t, dim=-1).mean() for s, t in zip(s_h, t_h)]).mean()
+                    loss_mse, loss_cos = _compute_masked_representation_loss(s_h, t_h, att_m)
                     loss = (loss_mse + 0.25 * loss_cos) / self.grad_accum
 
                 scaler1.scale(loss).backward()
@@ -385,8 +414,7 @@ class TwoStageDistillationEngine:
                         s_h = s_out.hidden_states[1:]
                         t_h = t_out.hidden_states[1:]
 
-                    loss_mse = torch.stack([F.mse_loss(s, t) for s, t in zip(s_h, t_h)]).mean()
-                    loss_cos = torch.stack([1.0 - F.cosine_similarity(s, t, dim=-1).mean() for s, t in zip(s_h, t_h)]).mean()
+                    loss_mse, loss_cos = _compute_masked_representation_loss(s_h, t_h, att_m)
 
                     # Compute logit loss if available
                     lm_head = getattr(student, "lm_head", None)
