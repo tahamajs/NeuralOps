@@ -32,7 +32,7 @@ This authoritative audit dossier establishes the exhaustive, line-by-line inspec
 
 ## Master Architectural Audit: 10 Core Functional Domains
 
-Below is the deep architectural inspection, defect breakdown, and concrete step-by-step remediation guide across all 10 structural sections of the codebase.
+Below is the deep architectural inspection, defect breakdown, code walkthrough, and concrete step-by-step remediation guide across all 10 structural sections of the codebase.
 
 
 ---
@@ -44,6 +44,41 @@ Below is the deep architectural inspection, defect breakdown, and concrete step-
 
 ### 1. Architectural Mandate & Operational Contracts
 Audit of 68 modified and newly added attention layers across Linear, Gated, Hybrid, Sparse, SSM, and SVD architectural families.
+
+#### Architectural & Algorithmic Code Walkthrough:
+`GatedDeltaNet` (`gated_delta_net.py`) implements a chunkwise parallel delta-rule recurrence scan. In long-sequence attention transformations, it solves the $O(N^2)$ quadratic memory barrier by formulating the key-value association as an associative state recurrence:
+$$S_t = S_{t-1} + eta_t (v_t - S_{t-1} k_t) \otimes k_t^T$$
+
+**Code Pattern Inspected:**
+```python
+def chunked_delta_rule_scan(q, k, v, beta, chunk_size=64):
+    # Splits sequences into L // chunk_size blocks
+    # Computes intra-chunk local associative matrix and inter-chunk state recurrence
+    b, h, l, d = q.shape
+    num_chunks = l // chunk_size
+    # Vulnerability: If l % chunk_size != 0, residual tokens are truncated or raise tensor shape mismatch!
+```
+
+**Forensic Defect Identified:**
+1. **Residual Sequence Truncation:** In non-power-of-two sequence lengths (e.g., $L = 500$, where $500 \pmod{64} = 52$), chunked scan implementations in `_delta_chunk_forward` drop trailing tokens unless dynamic padding is applied.
+2. **FP16 Logit Saturation in `XAttention` (`xattention.py`):** The attention logit masking logic previously applied `-1e9` for invalid query tokens. In half-precision (`torch.float16`), values below `-65504.0` underflow to `-inf`, leading to `NaN` propagation during `softmax` normalization.
+
+#### Concrete Remediation Implementation:
+Modify `_delta_chunk_forward` and `_clamp_fp16_safe_to_dtype` to explicitly pad sequences to the nearest multiple of `chunk_size` and un-pad prior to returning:
+```python
+# Fix sequence length mismatch and residual chunk truncation
+pad_len = (chunk_size - (seq_len % chunk_size)) % chunk_size
+if pad_len > 0:
+    q = F.pad(q, (0, 0, 0, pad_len))
+    k = F.pad(k, (0, 0, 0, pad_len))
+    v = F.pad(v, (0, 0, 0, pad_len))
+    beta = F.pad(beta, (0, pad_len))
+
+out = chunked_delta_rule_scan(q, k, v, beta, chunk_size=chunk_size)
+if pad_len > 0:
+    out = out[:, :, :seq_len, :]
+return out
+```
 
 ### 2. Comprehensive Per-File Code Analysis & Forensic Diagnosis
 
@@ -131,17 +166,6 @@ Audit of 68 modified and newly added attention layers across Linear, Gated, Hybr
 
 Standardize sequence dimension contracts across all 68 layers to strictly accept [B, S, D] and [B, H, S, d].
 
-**Code Modification Pattern:**
-```python
-# Ensure numerical headroom and strict dtype clamping
-def forward(self, hidden_states: torch.Tensor, attention_mask: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-    # Clamp extreme attention logits to prevent FP16 overflow (+inf)
-    if hidden_states.dtype == torch.float16:
-        hidden_states = torch.clamp(hidden_states, min=-65500.0, max=65500.0)
-    output = self._forward_impl(hidden_states, attention_mask)
-    return output, None
-```
-
 **Verification Gate Command:**
 ```bash
 python3 -m pytest tests/test_attention_numerics_and_gradients.py -v --tb=short
@@ -151,17 +175,6 @@ python3 -m pytest tests/test_attention_numerics_and_gradients.py -v --tb=short
 
 Enforce gradient checkpointing support on heavy hybrid layers (spectron_fp8_attention.py, fusion_attn.py) to prevent VRAM spikes at sequence lengths >= 4096.
 
-**Code Modification Pattern:**
-```python
-# Ensure numerical headroom and strict dtype clamping
-def forward(self, hidden_states: torch.Tensor, attention_mask: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-    # Clamp extreme attention logits to prevent FP16 overflow (+inf)
-    if hidden_states.dtype == torch.float16:
-        hidden_states = torch.clamp(hidden_states, min=-65500.0, max=65500.0)
-    output = self._forward_impl(hidden_states, attention_mask)
-    return output, None
-```
-
 **Verification Gate Command:**
 ```bash
 python3 -m pytest tests/test_attention_numerics_and_gradients.py -v --tb=short
@@ -170,17 +183,6 @@ python3 -m pytest tests/test_attention_numerics_and_gradients.py -v --tb=short
 #### Step 1.3: Detailed Implementation Spec
 
 Add shape assertions in BertAttentionAdapter and QwenAttentionAdapter for Multi-Query (MQA) and Grouped-Query (GQA) head projections.
-
-**Code Modification Pattern:**
-```python
-# Ensure numerical headroom and strict dtype clamping
-def forward(self, hidden_states: torch.Tensor, attention_mask: Optional[torch.Tensor] = None) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
-    # Clamp extreme attention logits to prevent FP16 overflow (+inf)
-    if hidden_states.dtype == torch.float16:
-        hidden_states = torch.clamp(hidden_states, min=-65500.0, max=65500.0)
-    output = self._forward_impl(hidden_states, attention_mask)
-    return output, None
-```
 
 **Verification Gate Command:**
 ```bash
@@ -197,6 +199,32 @@ python3 -m pytest tests/test_attention_numerics_and_gradients.py -v --tb=short
 
 ### 1. Architectural Mandate & Operational Contracts
 Audit of 65 compressor modules including low-rank SVD decompositions, structured channel/head pruning, uniform and non-uniform quantization, and KV-cache compression mechanisms.
+
+#### Architectural & Algorithmic Code Walkthrough:
+`WandaCompressor` (`wanda.py`) executes Pruning by Weights and Activations without iterative retraining. For weight matrix $W \in \mathbb{R}^{d_{out} 	imes d_{in}}$ and input activation norm $\|X_j\|_2$, the Wanda importance metric $S_{ij}$ is computed as:
+$$S_{ij} = |W_{ij}| \cdot \|X_j\|_2$$
+`SmoothQuantCompressor` (`smoothquant.py`) migrates activation quantization difficulty to weights via per-channel scaling factors $s \in \mathbb{R}^{d_{in}}$:
+$$s_j = rac{\max(|X_j|)^lpha}{\max(|W_j|)^{1-lpha}}, \quad \hat{W} = W \cdot 	ext{diag}(s), \quad \hat{X} = X \cdot 	ext{diag}(s)^{-1}$$
+
+**Forensic Defect Identified:**
+1. **Division-by-Zero in Zero-Activation Channels:** If an activation channel $X_j$ is constantly zero (e.g. following a ReLU activation or dead neuron), computing $s_j$ or normalizing by $\|X_j\|_2$ results in division by zero (`NaN` scales).
+2. **Silent Swallowing in Compression Exceptions:** In `neuralops/compression/low_rank/grecodec_compressor.py:130` and `mlorq_compressor.py`, if SVD decomposition fails to converge, the exception is caught with `except Exception: pass`, leaving weights in a corrupt or uncompressed state while masquerading as successful.
+
+#### Concrete Remediation Implementation:
+Enforce epsilon bounding on all activation normalization vectors and replace silent exception swallows with fail-closed assertions:
+```python
+# Robust division guard in Wanda and SmoothQuant
+act_norms = torch.norm(X, p=2, dim=0)
+act_norms = torch.clamp(act_norms, min=1e-8)  # Prevent zero-division
+metric = torch.abs(weight) * act_norms.unsqueeze(0)
+
+# Replace bare except pass in SVD compressors:
+try:
+    U, S, V = torch.linalg.svd(W, full_matrices=False)
+except Exception as err:
+    logger.error(f"SVD decomposition failed on layer {layer_name}: {err}")
+    raise SingularValueDecompositionError(f"Decomposition failure on {layer_name}: {err}") from err
+```
 
 ### 2. Comprehensive Per-File Code Analysis & Forensic Diagnosis
 
@@ -281,16 +309,6 @@ Audit of 65 compressor modules including low-rank SVD decompositions, structured
 
 Unify all compressor classes under a strict common interface: compress(module, rank, calib_data) returning (compressed_module, compression_stats).
 
-**Code Modification Pattern:**
-```python
-# Enforce fail-closed physical reduction validation
-def compress(self, module: nn.Module, rank: int, calib_data: Optional[torch.Tensor] = None) -> Tuple[nn.Module, Dict[str, Any]]:
-    compressed_module, stats = self._compress_impl(module, rank, calib_data)
-    if stats.get('effective_ratio', 1.0) <= 1.05 and stats.get('sparsity', 0.0) <= 0.0:
-        raise CompressionVerificationError(f"Compressor {self.__class__.__name__} failed physical reduction contract.")
-    return compressed_module, stats
-```
-
 **Verification Gate Command:**
 ```bash
 python3 -m pytest tests/compression/group1/ -v --tb=short
@@ -300,16 +318,6 @@ python3 -m pytest tests/compression/group1/ -v --tb=short
 
 Deprecate unverified compressors or quarantine them under neuralops/compression/experimental/ with explicit warning logs.
 
-**Code Modification Pattern:**
-```python
-# Enforce fail-closed physical reduction validation
-def compress(self, module: nn.Module, rank: int, calib_data: Optional[torch.Tensor] = None) -> Tuple[nn.Module, Dict[str, Any]]:
-    compressed_module, stats = self._compress_impl(module, rank, calib_data)
-    if stats.get('effective_ratio', 1.0) <= 1.05 and stats.get('sparsity', 0.0) <= 0.0:
-        raise CompressionVerificationError(f"Compressor {self.__class__.__name__} failed physical reduction contract.")
-    return compressed_module, stats
-```
-
 **Verification Gate Command:**
 ```bash
 python3 -m pytest tests/compression/group1/ -v --tb=short
@@ -318,16 +326,6 @@ python3 -m pytest tests/compression/group1/ -v --tb=short
 #### Step 2.3: Detailed Implementation Spec
 
 Enforce mathematical validation that SVD reconstructions satisfy Frobenius norm bounds within singular value truncation tolerances.
-
-**Code Modification Pattern:**
-```python
-# Enforce fail-closed physical reduction validation
-def compress(self, module: nn.Module, rank: int, calib_data: Optional[torch.Tensor] = None) -> Tuple[nn.Module, Dict[str, Any]]:
-    compressed_module, stats = self._compress_impl(module, rank, calib_data)
-    if stats.get('effective_ratio', 1.0) <= 1.05 and stats.get('sparsity', 0.0) <= 0.0:
-        raise CompressionVerificationError(f"Compressor {self.__class__.__name__} failed physical reduction contract.")
-    return compressed_module, stats
-```
 
 **Verification Gate Command:**
 ```bash
@@ -344,6 +342,31 @@ python3 -m pytest tests/compression/group1/ -v --tb=short
 
 ### 1. Architectural Mandate & Operational Contracts
 Audit of 6 core surgery facades, transaction snapshots, atomic rollback engines, and state dictionary reconciliation for BERT, Qwen, and LLaMA backbones.
+
+#### Architectural & Algorithmic Code Walkthrough:
+`neuralops/models/surgery.py` provides the transactional model transplant facade `transplant_model_attention()`. In deep transformer architectures (BERT, Qwen2.5, LLaMA), self-attention layers are deeply embedded within transformer block hierarchies (`model.bert.encoder.layer[i].attention.self` or `model.model.layers[i].self_attn`).
+
+**Forensic Defect Identified:**
+1. **Tied-Weights & Projection Mismatch:** In models with grouped-query attention (Qwen2.5, LLaMA), `num_key_value_heads < num_attention_heads`. Direct substitution with standard `BaseAttention` modules expecting symmetric query/key dimensions triggers runtime dimension broadcast crashes.
+2. **Partial Surgery State Leaks:** If layer $i=11$ fails during a 12-layer surgery pipeline, earlier layers $0 \dots 10$ remain mutated in-place while layer 11 remains in the original state, corrupting model architecture without atomic rollback.
+
+#### Concrete Remediation Implementation:
+Implement full pre-surgery model state dictionary snapshotting and automatic rollback on verification gate failure:
+```python
+def transplant_model_attention(model: nn.Module, layer_idx: int, target_cls: Type[BaseAttention], **kwargs):
+    # Capture atomic snapshot
+    snapshot = capture_model_snapshot(model, target_layers=[layer_idx])
+    try:
+        # Perform surgery
+        new_layer = target_cls(**kwargs)
+        _swap_submodule(model, layer_idx, new_layer)
+        # Execute verification gate pass
+        _verify_forward_backward_gate(model)
+    except Exception as e:
+        # Atomic rollback on failure
+        restore_model_snapshot(model, snapshot)
+        raise SurgeryTransactionError(f"Surgery aborted on layer {layer_idx}, model rolled back: {e}") from e
+```
 
 ### 2. Comprehensive Per-File Code Analysis & Forensic Diagnosis
 
@@ -368,13 +391,6 @@ Audit of 6 core surgery facades, transaction snapshots, atomic rollback engines,
 
 Enforce fail-closed verification: If any layer fails post-surgery numerical validation, execute automatic rollback and raise SurgeryValidationError.
 
-**Code Modification Pattern:**
-```python
-# Assert tensor contiguity and memory alignment before launching CUDA/Triton
-assert x.is_contiguous(), "Input tensor x must be memory contiguous"
-assert x.dtype in (torch.float32, torch.float16, torch.bfloat16), f"Unsupported kernel dtype: {x.dtype}"
-```
-
 **Verification Gate Command:**
 ```bash
 python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
@@ -384,13 +400,6 @@ python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
 
 Audit neuralops/hub/surgery_loader.py to ensure that models downloaded from Hugging Face Hub instantiate exact surgical deltas without full base model redownload.
 
-**Code Modification Pattern:**
-```python
-# Assert tensor contiguity and memory alignment before launching CUDA/Triton
-assert x.is_contiguous(), "Input tensor x must be memory contiguous"
-assert x.dtype in (torch.float32, torch.float16, torch.bfloat16), f"Unsupported kernel dtype: {x.dtype}"
-```
-
 **Verification Gate Command:**
 ```bash
 python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
@@ -399,13 +408,6 @@ python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
 #### Step 3.3: Detailed Implementation Spec
 
 Eliminate legacy private module references (neuralops/core/_attention_surgery.py) in favor of the canonical public API neuralops.models.surgery.
-
-**Code Modification Pattern:**
-```python
-# Assert tensor contiguity and memory alignment before launching CUDA/Triton
-assert x.is_contiguous(), "Input tensor x must be memory contiguous"
-assert x.dtype in (torch.float32, torch.float16, torch.bfloat16), f"Unsupported kernel dtype: {x.dtype}"
-```
 
 **Verification Gate Command:**
 ```bash
@@ -422,6 +424,36 @@ python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
 
 ### 1. Architectural Mandate & Operational Contracts
 Audit of 5 knowledge distillation modules, offline teacher representation loading, multi-objective loss schedules, and torch cross-version compatibility layers.
+
+#### Architectural & Algorithmic Code Walkthrough:
+`TwoStageDistillationEngine` (`distill_engine.py`) orchestrates the 6-pillar knowledge distillation process:
+$$\mathcal{L}_{total} = \lambda_1 \mathcal{L}_{task} + \lambda_2 \mathcal{L}_{rep} + \lambda_3 \mathcal{L}_{attn} + \lambda_4 \mathcal{L}_{cov} + \lambda_5 \mathcal{L}_{spec} + \lambda_6 \mathcal{L}_{sparse}$$
+Intermediate teacher representations (hidden states and task logits) are pre-computed offline and cached to avoid dual-model GPU allocation (`teacher_cache.py`).
+
+**Forensic Defect Identified:**
+1. **PyTorch Version AMP Incompatibility:** Modern PyTorch (>= 2.0) houses `GradScaler` under `torch.amp.GradScaler('cuda')`, whereas legacy cluster environments (e.g. CUDA 11.3 + PyTorch 1.12.1) require `torch.cuda.amp.GradScaler()`. Direct calls without multi-tier fallback trigger runtime `ImportError`.
+2. **Padding Token Loss Pollution:** When computing representation alignment loss ($\mathcal{L}_{rep} = \|H_{student} - H_{teacher}\|_2^2$), failure to mask out padding tokens causes student gradients to prioritize learning meaningless padding embedding geometry.
+
+#### Concrete Remediation Implementation:
+Wrap `GradScaler` initialization with dynamic version dispatch and apply attention masks across all token-level distillation loss metrics:
+```python
+# Robust PyTorch version-tolerant GradScaler
+try:
+    from torch.amp import GradScaler, autocast
+    scaler = GradScaler("cuda")
+except (ImportError, TypeError):
+    from torch.cuda.amp import GradScaler, autocast
+    scaler = GradScaler()
+
+# Masked intermediate representation loss
+def compute_masked_mse_loss(s_hidden, t_hidden, attention_mask):
+    diff = (s_hidden - t_hidden) ** 2
+    if attention_mask is not None:
+        mask = attention_mask.unsqueeze(-1).expand_as(diff)
+        diff = diff * mask
+        return diff.sum() / mask.sum().clamp(min=1.0)
+    return diff.mean()
+```
 
 ### 2. Comprehensive Per-File Code Analysis & Forensic Diagnosis
 
@@ -445,13 +477,6 @@ Audit of 5 knowledge distillation modules, offline teacher representation loadin
 
 Verify that CausalTextDataset handles end-of-sequence padding and token truncation deterministically across training and validation splits.
 
-**Code Modification Pattern:**
-```python
-# Assert tensor contiguity and memory alignment before launching CUDA/Triton
-assert x.is_contiguous(), "Input tensor x must be memory contiguous"
-assert x.dtype in (torch.float32, torch.float16, torch.bfloat16), f"Unsupported kernel dtype: {x.dtype}"
-```
-
 **Verification Gate Command:**
 ```bash
 python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
@@ -461,13 +486,6 @@ python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
 
 Ensure Warmup-Stable-Decay (WSD) learning rate schedules correctly synchronize across arbitrary step counts without step overflow.
 
-**Code Modification Pattern:**
-```python
-# Assert tensor contiguity and memory alignment before launching CUDA/Triton
-assert x.is_contiguous(), "Input tensor x must be memory contiguous"
-assert x.dtype in (torch.float32, torch.float16, torch.bfloat16), f"Unsupported kernel dtype: {x.dtype}"
-```
-
 **Verification Gate Command:**
 ```bash
 python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
@@ -476,13 +494,6 @@ python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
 #### Step 4.3: Detailed Implementation Spec
 
 Implement cold-cache memory cleanup after every distillation key evaluation to guarantee zero GPU memory fragmentation across sequential runs.
-
-**Code Modification Pattern:**
-```python
-# Assert tensor contiguity and memory alignment before launching CUDA/Triton
-assert x.is_contiguous(), "Input tensor x must be memory contiguous"
-assert x.dtype in (torch.float32, torch.float16, torch.bfloat16), f"Unsupported kernel dtype: {x.dtype}"
-```
 
 **Verification Gate Command:**
 ```bash
@@ -499,6 +510,37 @@ python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
 
 ### 1. Architectural Mandate & Operational Contracts
 Microarchitectural and systems audit of 12 native CUDA C++ autograd bindings and Triton JIT implementations for low-rank SVD projections, FP8 compression, and structured pruning.
+
+#### Architectural & Algorithmic Code Walkthrough:
+`DirectSVDFunction` (`direct_svd/autograd.py`) and Triton low-rank kernels (`low_rank.py`) implement hardware-accelerated singular value projection and fused GEMM operations. For low-rank factors $U \in \mathbb{R}^{M 	imes R}$ and $V \in \mathbb{R}^{R 	imes N}$, forward and backward passes compute:
+$$Y = (X U) V^T, \quad rac{\partial \mathcal{L}}{\partial X} = \left(rac{\partial \mathcal{L}}{\partial Y} Vight) U^T, \quad rac{\partial \mathcal{L}}{\partial U} = X^T \left(rac{\partial \mathcal{L}}{\partial Y} Vight)$$
+
+**Forensic Defect Identified:**
+1. **Non-Contiguous Tensor Strides:** When tensors are sliced or transposed prior to autograd dispatch, passing non-contiguous pointers directly to CUDA kernels triggers illegal memory access or silent numerical garbage.
+2. **Triton 3.0 Block Pointer Deprecation:** Older Triton kernels relying on legacy `tl.make_block_ptr` or unaligned boundary masks cause compiler deprecation warnings and performance degradation on newer Triton versions.
+
+#### Concrete Remediation Implementation:
+Enforce contiguity checking in Python autograd facades and vectorize memory load strides in Triton kernels:
+```python
+# Assert tensor memory contiguity in autograd functions
+class DirectSVDFunction(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, x, U, V):
+        x = x.contiguous()
+        U = U.contiguous()
+        V = V.contiguous()
+        ctx.save_for_backward(x, U, V)
+        return torch.matmul(torch.matmul(x, U), V.t())
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        x, U, V = ctx.saved_tensors
+        grad_output = grad_output.contiguous()
+        grad_x = torch.matmul(torch.matmul(grad_output, V), U.t())
+        grad_U = torch.matmul(x.t(), torch.matmul(grad_output, V))
+        grad_V = torch.matmul(grad_output.t(), torch.matmul(x, U))
+        return grad_x, grad_U, grad_V
+```
 
 ### 2. Comprehensive Per-File Code Analysis & Forensic Diagnosis
 
@@ -529,13 +571,6 @@ Microarchitectural and systems audit of 12 native CUDA C++ autograd bindings and
 
 Audit memory coalescing in custom autograd kernels: Ensure all global memory loads utilize vectorized types (float4 / half2) where applicable.
 
-**Code Modification Pattern:**
-```python
-# Assert tensor contiguity and memory alignment before launching CUDA/Triton
-assert x.is_contiguous(), "Input tensor x must be memory contiguous"
-assert x.dtype in (torch.float32, torch.float16, torch.bfloat16), f"Unsupported kernel dtype: {x.dtype}"
-```
-
 **Verification Gate Command:**
 ```bash
 python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
@@ -545,13 +580,6 @@ python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
 
 Eliminate deprecated block pointer syntax across Triton kernels to guarantee forward compatibility with Triton 3.x.
 
-**Code Modification Pattern:**
-```python
-# Assert tensor contiguity and memory alignment before launching CUDA/Triton
-assert x.is_contiguous(), "Input tensor x must be memory contiguous"
-assert x.dtype in (torch.float32, torch.float16, torch.bfloat16), f"Unsupported kernel dtype: {x.dtype}"
-```
-
 **Verification Gate Command:**
 ```bash
 python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
@@ -560,13 +588,6 @@ python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
 #### Step 5.3: Detailed Implementation Spec
 
 Ensure all CUDA autograd functions check tensor contiguity (tensor.is_contiguous()) and device consistency before launching kernels.
-
-**Code Modification Pattern:**
-```python
-# Assert tensor contiguity and memory alignment before launching CUDA/Triton
-assert x.is_contiguous(), "Input tensor x must be memory contiguous"
-assert x.dtype in (torch.float32, torch.float16, torch.bfloat16), f"Unsupported kernel dtype: {x.dtype}"
-```
 
 **Verification Gate Command:**
 ```bash
@@ -583,6 +604,36 @@ python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
 
 ### 1. Architectural Mandate & Operational Contracts
 Review of 6 modules handling asynchronous model publishing, Hub metadata synchronization, universal model card generation, and automated telemetry tracking.
+
+#### Architectural & Algorithmic Code Walkthrough:
+`AsyncHFHubUploader` (`uploader.py`) manages concurrent asynchronous uploads of distilled models and benchmark artifacts to Hugging Face Hub (`tahamajs/bert-{slug}-sst2`). It operates on a background worker thread to prevent training loops from stalling on external HTTP I/O.
+
+**Forensic Defect Identified:**
+1. **Unbounded Concurrent Requests & HTTP 429:** Rapid sequential uploads of 110 models in a tight loop trigger Hugging Face API rate-limiting (HTTP 429 Too Many Requests), causing upload threads to drop models.
+2. **Hardcoded Secrets Risk:** Explicit token strings in test or helper scripts risk catastrophic credential leakage in git history.
+
+#### Concrete Remediation Implementation:
+Implement exponential backoff with jitter on HTTP 429 and enforce strict environment variable extraction for credentials:
+```python
+import time, random
+from huggingface_hub.utils import HfHubHTTPError
+
+def upload_with_retry(repo_id, folder_path, max_retries=5):
+    token = os.environ.get("HF_TOKEN")
+    if not token:
+        raise ValueError("HF_TOKEN environment variable is strictly required.")
+    for attempt in range(max_retries):
+        try:
+            upload_folder(repo_id=repo_id, folder_path=folder_path, token=token)
+            return True
+        except HfHubHTTPError as e:
+            if "429" in str(e) and attempt < max_retries - 1:
+                sleep_time = (2 ** attempt) + random.uniform(0.5, 2.0)
+                logger.warning(f"Rate limited on {repo_id}. Backing off for {sleep_time:.2f}s...")
+                time.sleep(sleep_time)
+            else:
+                raise
+```
 
 ### 2. Comprehensive Per-File Code Analysis & Forensic Diagnosis
 
@@ -607,13 +658,6 @@ Review of 6 modules handling asynchronous model publishing, Hub metadata synchro
 
 Implement rate-limiting exponential backoff in neuralops/hub/uploader.py to prevent HTTP 429 throttling during bulk model card updates.
 
-**Code Modification Pattern:**
-```python
-# Assert tensor contiguity and memory alignment before launching CUDA/Triton
-assert x.is_contiguous(), "Input tensor x must be memory contiguous"
-assert x.dtype in (torch.float32, torch.float16, torch.bfloat16), f"Unsupported kernel dtype: {x.dtype}"
-```
-
 **Verification Gate Command:**
 ```bash
 python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
@@ -623,13 +667,6 @@ python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
 
 Enforce mandatory repository metadata validation: Ensure every model repo contains README.md, adapter_config.json, and benchmark evaluation summary.
 
-**Code Modification Pattern:**
-```python
-# Assert tensor contiguity and memory alignment before launching CUDA/Triton
-assert x.is_contiguous(), "Input tensor x must be memory contiguous"
-assert x.dtype in (torch.float32, torch.float16, torch.bfloat16), f"Unsupported kernel dtype: {x.dtype}"
-```
-
 **Verification Gate Command:**
 ```bash
 python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
@@ -638,13 +675,6 @@ python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
 #### Step 6.3: Detailed Implementation Spec
 
 Provide single-line universal loading helper: model = neuralops.from_pretrained("tahamajs/bert-asvd-sst2").
-
-**Code Modification Pattern:**
-```python
-# Assert tensor contiguity and memory alignment before launching CUDA/Triton
-assert x.is_contiguous(), "Input tensor x must be memory contiguous"
-assert x.dtype in (torch.float32, torch.float16, torch.bfloat16), f"Unsupported kernel dtype: {x.dtype}"
-```
 
 **Verification Gate Command:**
 ```bash
@@ -661,6 +691,35 @@ python3 -m pytest tests/test_all_cuda_kernels_comprehensive.py -v --tb=short
 
 ### 1. Architectural Mandate & Operational Contracts
 Audit of 23 benchmark orchestration scripts, in-memory model reuse engines, Pareto matrix evaluators, and canonical 5-format persistence modules.
+
+#### Architectural & Algorithmic Code Walkthrough:
+`export_dual_zoo_5formats.py` (1852 lines) is the authoritative persistence engine that synchronizes metrics from all 6 zoo ledgers into JSON, JSONL, CSV, Markdown, and Parquet. `llama_zoo_train_mix.py` executes in-memory distillation for TinyLlama.
+
+**Forensic Defect Identified:**
+1. **Type Coercion Failures in Columnar Parquet Export:** In `export_dual_zoo_5formats.py`, if a field contains mixed types (e.g. float `0.892` in some rows and string `"N/A"` or `None` in failed runs), Parquet schema inference throws `ArrowTypeError`.
+2. **Missing Atomic Renaming:** Direct writes to ledger destination paths risk data corruption if a job is killed mid-write.
+
+#### Concrete Remediation Implementation:
+Sanitize all tabular fields to strictly typed floats with `np.nan` before Parquet export and enforce atomic file replacement:
+```python
+# Safe columnar type sanitization
+def sanitize_record_for_parquet(record: dict) -> dict:
+    clean = {}
+    for k, v in record.items():
+        if k in ("accuracy", "perplexity", "compression_ratio", "vram_peak_mb"):
+            try:
+                clean[k] = float(v) if (v is not None and v != "N/A") else np.nan
+            except (ValueError, TypeError):
+                clean[k] = np.nan
+        else:
+            clean[k] = str(v) if v is not None else ""
+    return clean
+
+# Atomic ledger write pattern
+tmp_path = dest_path.with_suffix(".tmp")
+tmp_path.write_text(serialized_data, encoding="utf-8")
+tmp_path.replace(dest_path)  # Atomic POSIX rename
+```
 
 ### 2. Comprehensive Per-File Code Analysis & Forensic Diagnosis
 
@@ -702,12 +761,6 @@ Audit of 23 benchmark orchestration scripts, in-memory model reuse engines, Pare
 
 Ensure CLI flag parsing adheres to argparse standards with proper validation and stable exit codes (0 for success, 1 for failure, 2 for usage error).
 
-**Code Modification Pattern:**
-```python
-# Strict verification gate enforcement
-assert all(status == 'PASSED' for status in results), 'Failure detected in execution tier'
-```
-
 **Verification Gate Command:**
 ```bash
 python3 scripts/verifiers/verify_invariants.py
@@ -717,12 +770,6 @@ python3 scripts/verifiers/verify_invariants.py
 
 Enforce atomic writes (.tmp file renaming) for all ledger updates to prevent data corruption during process aborts.
 
-**Code Modification Pattern:**
-```python
-# Strict verification gate enforcement
-assert all(status == 'PASSED' for status in results), 'Failure detected in execution tier'
-```
-
 **Verification Gate Command:**
 ```bash
 python3 scripts/verifiers/verify_invariants.py
@@ -731,12 +778,6 @@ python3 scripts/verifiers/verify_invariants.py
 #### Step 7.3: Detailed Implementation Spec
 
 Remove hardcoded cluster paths in favor of configurable environment variables (NEURALOPS_RESULTS_DIR, NEURALOPS_CACHE_DIR).
-
-**Code Modification Pattern:**
-```python
-# Strict verification gate enforcement
-assert all(status == 'PASSED' for status in results), 'Failure detected in execution tier'
-```
 
 **Verification Gate Command:**
 ```bash
@@ -753,6 +794,28 @@ python3 scripts/verifiers/verify_invariants.py
 
 ### 1. Architectural Mandate & Operational Contracts
 Review of 7 Torque PBS job scripts, asynchronous upload daemons, environment isolation configs, and persistent node orchestration.
+
+#### Architectural & Algorithmic Code Walkthrough:
+HPC execution scripts automate execution on the Sharif University cluster (Rocks 6.1, Torque PBS, RTX 3090 24GB). They manage RAM disk caching (`/dev/shm`), persistent PBS job submission, and background upload daemons.
+
+**Forensic Defect Identified:**
+1. **License Header Omission:** Shell scripts in `scripts/hpc/` omitted the mandatory repository MIT copyright header.
+2. **Cluster Disk Quota Overflow:** Saving uncompressed PyTorch checkpoints locally for 110 models (at ~2.2 GB per TinyLlama checkpoint) consumes over 240 GB of disk space, exceeding cluster user quotas unless purged post-upload.
+
+#### Concrete Remediation Implementation:
+Add explicit post-upload checkpoint purge routines and include MIT license headers across all shell scripts:
+```bash
+#!/bin/bash
+# Copyright (c) 2024-2026, Taha Majlesi
+# This source code is licensed under the MIT license found in the LICENSE file.
+
+# Automated disk quota management:
+# Upon verified upload to Hugging Face Hub, purge local heavy weights
+python3 -c "
+import shutil, os, pathlib
+# Purge uncompressed checkpoint if Hub upload is confirmed
+"
+```
 
 ### 2. Comprehensive Per-File Code Analysis & Forensic Diagnosis
 
@@ -778,12 +841,6 @@ Review of 7 Torque PBS job scripts, asynchronous upload daemons, environment iso
 
 Add explicit MIT copyright headers to hf_sync_upload_daemon.sh, launch_full_dual_zoo_pipeline.sh, launch_qwen_attention_zoo.sh, and launch_qwen_then_compressors.sh.
 
-**Code Modification Pattern:**
-```python
-# Strict verification gate enforcement
-assert all(status == 'PASSED' for status in results), 'Failure detected in execution tier'
-```
-
 **Verification Gate Command:**
 ```bash
 bash -n scripts/hpc/launch_full_dual_zoo_pipeline.sh
@@ -793,12 +850,6 @@ bash -n scripts/hpc/launch_full_dual_zoo_pipeline.sh
 
 Implement automated disk quota monitoring to purge local intermediate weights after successful Hugging Face upload.
 
-**Code Modification Pattern:**
-```python
-# Strict verification gate enforcement
-assert all(status == 'PASSED' for status in results), 'Failure detected in execution tier'
-```
-
 **Verification Gate Command:**
 ```bash
 bash -n scripts/hpc/launch_full_dual_zoo_pipeline.sh
@@ -807,12 +858,6 @@ bash -n scripts/hpc/launch_full_dual_zoo_pipeline.sh
 #### Step 8.3: Detailed Implementation Spec
 
 Standardize resource allocation directives in PBS scripts (#PBS -l nodes=1:ppn=8, #PBS -l walltime=48:00:00).
-
-**Code Modification Pattern:**
-```python
-# Strict verification gate enforcement
-assert all(status == 'PASSED' for status in results), 'Failure detected in execution tier'
-```
 
 **Verification Gate Command:**
 ```bash
@@ -829,6 +874,26 @@ bash -n scripts/hpc/launch_full_dual_zoo_pipeline.sh
 
 ### 1. Architectural Mandate & Operational Contracts
 Exhaustive test suite covering 92 unit and integration test files for individual compressor classes across Groups 1 through 5.
+
+#### Architectural & Algorithmic Code Walkthrough:
+The 92 compression test suites exhaustively verify that all 82 compressors instantiate, execute forward passes without producing NaN/Inf, and achieve physical compression across Pareto ranks `[256, 128, 64, 32]`.
+
+**Forensic Defect Identified:**
+1. **Assert Swallowing in Test Assertions:** In `test_group1_suite.py:165`, checking `if "effective_ratio" in stats:` inside a `try ... except: pass` block masks assertion errors and allows broken compressors to pass silently.
+2. **Missing Monotonicity Checks:** Pareto compression requires that lower ranks yield strictly smaller model sizes and lower floating-point parameter counts.
+
+#### Concrete Remediation Implementation:
+Refactor test suites to enforce strict pytest assertions with explicit failure diagnostics:
+```python
+def test_compressor_monotonic_pareto(compressor_cls, model):
+    prev_params = float('inf')
+    for rank in [256, 128, 64, 32]:
+        comp_model, stats = compressor_cls(rank=rank).compress(copy.deepcopy(model))
+        curr_params = sum(p.numel() for p in comp_model.parameters())
+        assert curr_params < prev_params, f"Rank {rank} did not decrease parameter count!"
+        assert stats['effective_ratio'] > 1.05, f"Rank {rank} failed physical reduction ratio contract!"
+        prev_params = curr_params
+```
 
 ### 2. Comprehensive Per-File Code Analysis & Forensic Diagnosis
 
@@ -939,16 +1004,6 @@ Exhaustive test suite covering 92 unit and integration test files for individual
 
 Parametrize test ranks across [256, 128, 64, 32] to validate Pareto curve monotonicity (higher rank -> higher recovery, lower compression ratio).
 
-**Code Modification Pattern:**
-```python
-# Enforce fail-closed physical reduction validation
-def compress(self, module: nn.Module, rank: int, calib_data: Optional[torch.Tensor] = None) -> Tuple[nn.Module, Dict[str, Any]]:
-    compressed_module, stats = self._compress_impl(module, rank, calib_data)
-    if stats.get('effective_ratio', 1.0) <= 1.05 and stats.get('sparsity', 0.0) <= 0.0:
-        raise CompressionVerificationError(f"Compressor {self.__class__.__name__} failed physical reduction contract.")
-    return compressed_module, stats
-```
-
 **Verification Gate Command:**
 ```bash
 python3 -m pytest tests/compression/group1/ -v --tb=short
@@ -958,16 +1013,6 @@ python3 -m pytest tests/compression/group1/ -v --tb=short
 
 Enforce gradient flow testing: Verify that compressed layers maintain valid autograd backward passes for downstream fine-tuning.
 
-**Code Modification Pattern:**
-```python
-# Enforce fail-closed physical reduction validation
-def compress(self, module: nn.Module, rank: int, calib_data: Optional[torch.Tensor] = None) -> Tuple[nn.Module, Dict[str, Any]]:
-    compressed_module, stats = self._compress_impl(module, rank, calib_data)
-    if stats.get('effective_ratio', 1.0) <= 1.05 and stats.get('sparsity', 0.0) <= 0.0:
-        raise CompressionVerificationError(f"Compressor {self.__class__.__name__} failed physical reduction contract.")
-    return compressed_module, stats
-```
-
 **Verification Gate Command:**
 ```bash
 python3 -m pytest tests/compression/group1/ -v --tb=short
@@ -976,16 +1021,6 @@ python3 -m pytest tests/compression/group1/ -v --tb=short
 #### Step 9.3: Detailed Implementation Spec
 
 Ensure tests gracefully skip CUDA-dependent operations when running on CPU-only CI environments.
-
-**Code Modification Pattern:**
-```python
-# Enforce fail-closed physical reduction validation
-def compress(self, module: nn.Module, rank: int, calib_data: Optional[torch.Tensor] = None) -> Tuple[nn.Module, Dict[str, Any]]:
-    compressed_module, stats = self._compress_impl(module, rank, calib_data)
-    if stats.get('effective_ratio', 1.0) <= 1.05 and stats.get('sparsity', 0.0) <= 0.0:
-        raise CompressionVerificationError(f"Compressor {self.__class__.__name__} failed physical reduction contract.")
-    return compressed_module, stats
-```
 
 **Verification Gate Command:**
 ```bash
@@ -1002,6 +1037,21 @@ python3 -m pytest tests/compression/group1/ -v --tb=short
 
 ### 1. Architectural Mandate & Operational Contracts
 Audit of 31 system-level integration suites, scratch test scripts, diagnostic probe harnesses, and invariant verifiers.
+
+#### Architectural & Algorithmic Code Walkthrough:
+System integration tests and invariant verifiers (`verify_invariants.py`) validate repository contracts: 115 attentions, 82 compressors, 58 Triton modules, 140 CUDA packages, and 94 notebooks.
+
+**Forensic Defect Identified:**
+1. **Ad-Hoc Probe Scripts in Root `tests/`:** Diagnostic scripts `probe_group1.py` through `probe_group5.py` contain `if __name__ == '__main__':` execution logic that fails under standard pytest test collection.
+2. **Temporary Scratch Scripts in `scripts/`:** `test_cuda_ld.py` and `test_qwen_gpu.py` were committed as scratch debug files and must be removed prior to merging.
+
+#### Concrete Remediation Implementation:
+Move diagnostic probes to `tests/diagnostics/` and remove scratch files:
+```bash
+git rm scripts/test_cuda_ld.py scripts/test_qwen_gpu.py
+mkdir -p tests/diagnostics
+git mv tests/probe_group*.py tests/diagnose_*.py tests/diagnostics/
+```
 
 ### 2. Comprehensive Per-File Code Analysis & Forensic Diagnosis
 
@@ -1051,12 +1101,6 @@ Audit of 31 system-level integration suites, scratch test scripts, diagnostic pr
 
 Permanently remove temporary scratch scripts (scripts/test_cuda_ld.py, scripts/test_qwen_gpu.py) from git tracking.
 
-**Code Modification Pattern:**
-```python
-# Strict verification gate enforcement
-assert all(status == 'PASSED' for status in results), 'Failure detected in execution tier'
-```
-
 **Verification Gate Command:**
 ```bash
 python3 scripts/verifiers/verify_invariants.py
@@ -1066,12 +1110,6 @@ python3 scripts/verifiers/verify_invariants.py
 
 Quarantine diagnostic probe scripts under tests/diagnostics/ or refactor them into structured integration tests with pytest markers.
 
-**Code Modification Pattern:**
-```python
-# Strict verification gate enforcement
-assert all(status == 'PASSED' for status in results), 'Failure detected in execution tier'
-```
-
 **Verification Gate Command:**
 ```bash
 python3 scripts/verifiers/verify_invariants.py
@@ -1080,12 +1118,6 @@ python3 scripts/verifiers/verify_invariants.py
 #### Step 10.3: Detailed Implementation Spec
 
 Incorporate verify_invariants.py as a non-negotiable pre-commit and CI gatekeeper.
-
-**Code Modification Pattern:**
-```python
-# Strict verification gate enforcement
-assert all(status == 'PASSED' for status in results), 'Failure detected in execution tier'
-```
 
 **Verification Gate Command:**
 ```bash
