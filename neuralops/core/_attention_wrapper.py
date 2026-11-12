@@ -490,7 +490,7 @@ class ReplaceAttention(BaseAttention):
                 scores = scores + attention_mask.float()
 
         scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
-        probs = F.softmax(scores, dim=-1).to(dtype)
+        probs = F.softmax(scores.float(), dim=-1).to(dtype)
         probs = self.dropout(probs)
 
         if head_mask is not None:

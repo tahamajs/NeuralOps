@@ -6,24 +6,31 @@
 # For a list of all contributors, visit:
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
-Attention Graph Surgery
+Attention Graph Surgery.
 
 AST and module-tree manipulation routines performing in-place surgery on neural network layers.
+Canonical implementation located in `neuralops.models.surgery`.
 """
 
 from __future__ import annotations
 
-from neuralops.core._attention_surgery import (
+from neuralops.models.surgery import (
     FUSED_QKV_REGEX,
     PROJ_REGEX_PATTERNS,
+    SubspaceAnchorWrapper,
+    SurgeryTransactionError,
     adapt_decoder_attention_forward,
     apply_backbone_surgery_hooks,
     calibrate_attention_subspace,
     calibrate_surgically_replaced_model,
+    compute_attention_weights,
     compute_reconstruction_error,
     heal_replaced_model,
+    replace_attention,
+    replace_attention_in_model,
     slice_fused_qkv,
     split_and_set_qkv_weights,
+    transplant_model_attention,
 )
 
 __all__ = [
@@ -37,4 +44,10 @@ __all__ = [
     "calibrate_surgically_replaced_model",
     "calibrate_attention_subspace",
     "heal_replaced_model",
+    "SubspaceAnchorWrapper",
+    "replace_attention",
+    "replace_attention_in_model",
+    "transplant_model_attention",
+    "SurgeryTransactionError",
+    "compute_attention_weights",
 ]

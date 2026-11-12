@@ -12,7 +12,7 @@ NeuralOps Surgery Subpackage.
 from typing import Any
 
 from neuralops.api import replace_attention, transplant_attention
-from neuralops.core._attention_surgery import calibrate_attention_subspace, heal_replaced_model
+from neuralops.models.surgery import calibrate_attention_subspace, heal_replaced_model
 from neuralops.export.surgery_manifest import (
     AttentionSurgeryEntry,
     CompressionSurgeryEntry,
