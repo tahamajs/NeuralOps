@@ -799,9 +799,11 @@ class GoldFinchAHNBlock(BaseAttention):
                 else contextlib.nullcontext()
             )
             with amp_ctx:
-                scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * (1.0 / math.sqrt(int(d)))
-                scores = scores.masked_fill(~valid_local_4d, -1e9)
-                scores = torch.nan_to_num(scores, nan=-1e9, posinf=1e4, neginf=-1e9)
+                scale = 1.0 / math.sqrt(max(int(d), 1))
+                scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
+                neg_inf = -65500.0 if scores.dtype == torch.float16 else -1e4
+                scores = scores.masked_fill(~valid_local_4d, neg_inf).clamp(min=-65500.0, max=65500.0)
+                scores = torch.nan_to_num(scores, nan=neg_inf, posinf=65500.0, neginf=neg_inf)
                 attn_weights = F.softmax(scores, dim=-1)
                 attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
                 attn_weights = self.dropout(attn_weights)
