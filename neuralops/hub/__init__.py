@@ -32,7 +32,11 @@ from neuralops.hub.surgery_loader import (
     load_surgeried_model,
     normalize_base_model_id,
 )
-from neuralops.hub.uploader import AsyncHFHubUploader
+from neuralops.hub.uploader import (
+    AsyncHFHubUploader,
+    retry_hf_api_call,
+    upload_with_retry,
+)
 from neuralops.models.surgical_io import save_surgical_delta
 
 __all__ = [
@@ -49,4 +53,6 @@ __all__ = [
     "list_pretrained_compressed_bert_models",
     "generate_compressor_model_card_markdown",
     "AsyncHFHubUploader",
+    "retry_hf_api_call",
+    "upload_with_retry",
 ]

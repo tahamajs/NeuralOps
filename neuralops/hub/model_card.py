@@ -657,12 +657,12 @@ def generate_unified_model_card(
         anchor_count = len(anchor_layers)
 
     # Extract verified finite metrics
-    acc_before = _first_finite(metrics_dict, ("acc_before", "pre_kd_acc", "zero_shot_acc"))
-    acc_after = _first_finite(metrics_dict, ("acc_after", "post_kd_acc", "healed_acc", "accuracy"))
-    teacher_acc = _first_finite(metrics_dict, ("teacher_acc", "teacher_baseline_acc"))
-    ppl_before = _first_finite(metrics_dict, ("ppl_before", "zero_shot_ppl"))
-    ppl_after = _first_finite(metrics_dict, ("ppl_after", "post_kd_ppl", "perplexity"))
-    teacher_ppl = _first_finite(metrics_dict, ("teacher_ppl",))
+    acc_before = _first_finite(metrics_dict, ("acc_before", "pre_kd_acc", "zero_shot_acc", "pre_kd_sst2_acc", "zero_shot_sst2_acc"))
+    acc_after = _first_finite(metrics_dict, ("acc_after", "post_kd_acc", "healed_acc", "post_kd_sst2_acc", "sst2_acc", "accuracy", "eval_accuracy"))
+    teacher_acc = _first_finite(metrics_dict, ("teacher_acc", "teacher_baseline_acc", "teacher_sst2_acc"))
+    ppl_before = _first_finite(metrics_dict, ("ppl_before", "zero_shot_ppl", "pre_kd_ppl", "pre_kd_wikitext_ppl"))
+    ppl_after = _first_finite(metrics_dict, ("ppl_after", "post_kd_ppl", "perplexity", "post_kd_wikitext_ppl", "wikitext_ppl", "eval_perplexity"))
+    teacher_ppl = _first_finite(metrics_dict, ("teacher_ppl", "teacher_baseline_ppl"))
     post_loss = _first_finite(metrics_dict, ("post_kd_loss", "healed_loss"))
     comp_params_val = _first_finite(metrics_dict, ("comp_params",))
     comp_ratio = _first_finite(metrics_dict, ("compression_ratio", "param_reduction", "ratio"))
@@ -949,6 +949,7 @@ def generate_unified_model_card(
     # Hardware Telemetry
     telemetry_lines = [
         f"- **Hardware:** {hardware}",
+        "- **Teacher GPU VRAM Allocation:** `0 MB` (Offline Teacher Representation Caching per AGENTS.md §21.1)",
         f"- **Optimization Steps:** `{total_steps}` (`Stage 1: {steps_s1}` | `Stage 2: {steps_s2}`)",
         f"- **Training Duration:** `{train_secs:.1f}s`",
         f"- **Peak GPU VRAM:** `{peak_vram} MB`",

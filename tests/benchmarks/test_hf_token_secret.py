@@ -11,10 +11,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 import pytest
 
 from neuralops.benchmarks.cli import _build_parser
 from neuralops.benchmarks.config import BenchmarkConfig
+from neuralops.hub.uploader import AsyncHFHubUploader, _redact_secrets, retry_hf_api_call
 
 
 def test_to_dict_excludes_token():
@@ -42,3 +44,57 @@ def test_no_hf_token_cli_flag():
     parser = _build_parser()
     with pytest.raises(SystemExit):
         parser.parse_args(["run", "--hf-token", "hf_test_secret"])
+
+
+def test_async_uploader_repr_excludes_token():
+    """Assert AsyncHFHubUploader.__repr__ does not expose plaintext token."""
+    secret = "hf_token_super_secret_12345"
+    uploader = AsyncHFHubUploader(token=secret)
+    assert secret not in repr(uploader)
+    assert "token='set'" in repr(uploader)
+
+
+def test_async_uploader_reads_hf_token_env(monkeypatch: pytest.MonkeyPatch):
+    """Assert AsyncHFHubUploader prioritizes HF_TOKEN env var."""
+    secret = "hf_env_secret_token_abcdef"
+    monkeypatch.setenv("HF_TOKEN", secret)
+    uploader = AsyncHFHubUploader()
+    assert uploader.token == secret
+    assert secret not in repr(uploader)
+
+
+def test_async_uploader_redacts_token_on_failure(tmp_path: Path):
+    """Assert _worker_upload_and_cleanup redacts secret token from error file."""
+    secret = "hf_secret_token_do_not_leak_98765"
+    uploader = AsyncHFHubUploader(token=secret)
+    stage = tmp_path / "stage"
+    stage.mkdir()
+
+    # Trigger a failure containing the secret
+    mock_api = MagicMock()
+    mock_api.create_repo.side_effect = RuntimeError(f"Connection failed to api.huggingface.co with token {secret}")
+    with patch("huggingface_hub.HfApi", return_value=mock_api):
+        res = uploader._worker_upload_and_cleanup("test_key", stage, {})
+
+    assert res["status"] == "UPLOAD_FAILED"
+    assert secret not in res["error"]
+    assert "[REDACTED_HF_TOKEN]" in res["error"]
+
+    err_file = stage / "upload_error.json"
+    assert err_file.exists()
+    err_text = err_file.read_text(encoding="utf-8")
+    assert secret not in err_text
+    assert "[REDACTED_HF_TOKEN]" in err_text
+
+
+def test_uploader_retry_hf_api_call_rate_limit():
+    """Assert retry_hf_api_call handles HTTP 429 rate limit with backoff."""
+    class Mock429(Exception):
+        status_code = 429
+
+    mock_func = MagicMock()
+    mock_func.side_effect = [Mock429("Rate limit exceeded"), "success"]
+    result = retry_hf_api_call(mock_func, max_retries=3, base_delay=0.01)
+    assert result == "success"
+    assert mock_func.call_count == 2
+

@@ -22,9 +22,138 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Any, Optional
+import random
+import re
+import time
+from typing import Any, Callable, Optional, TypeVar
 
 logger = logging.getLogger(__name__)
+
+T = TypeVar("T")
+
+
+def _redact_secrets(message: str, secret: Optional[str] = None) -> str:
+    """Ensure no HF token or API secret appears in messages, errors, or logs."""
+    if not message:
+        return message
+    text = str(message)
+    if secret:
+        text = text.replace(secret, "[REDACTED_HF_TOKEN]")
+    env_token = os.environ.get("HF_TOKEN")
+    if env_token:
+        text = text.replace(env_token, "[REDACTED_HF_TOKEN]")
+    # Redact standard HF user access tokens (hf_...)
+    text = re.sub(r"hf_[A-Za-z0-9]{20,}", "[REDACTED_HF_TOKEN]", text)
+    return text
+
+
+def retry_hf_api_call(
+    func: Callable[..., T],
+    *args: Any,
+    max_retries: int = 5,
+    base_delay: float = 2.0,
+    max_delay: float = 60.0,
+    **kwargs: Any,
+) -> T:
+    """Execute a Hugging Face API call with resilient exponential backoff and jitter for rate limits (HTTP 429) and timeouts."""
+    for attempt in range(1, max_retries + 1):
+        try:
+            return func(*args, **kwargs)
+        except Exception as exc:
+            status_code = getattr(exc, "status_code", None)
+            if status_code is None and hasattr(exc, "response") and exc.response is not None:
+                status_code = getattr(exc.response, "status_code", None)
+
+            is_rate_limit = status_code == 429 or "429" in str(exc) or "rate limit" in str(exc).lower()
+            is_timeout = (
+                isinstance(exc, (TimeoutError, ConnectionError))
+                or "timeout" in str(exc).lower()
+                or "timed out" in str(exc).lower()
+                or "connection" in str(exc).lower()
+                or status_code in (500, 502, 503, 504)
+            )
+
+            if attempt == max_retries or (not is_rate_limit and not is_timeout):
+                logger.error("HF Hub API call fatal failure on attempt %d/%d: %s", attempt, max_retries, _redact_secrets(str(exc)))
+                raise exc
+
+            retry_after: float | None = None
+            if hasattr(exc, "response") and hasattr(exc.response, "headers"):
+                ra_header = exc.response.headers.get("Retry-After")
+                if ra_header and str(ra_header).isdigit():
+                    retry_after = float(ra_header)
+
+            if retry_after is not None:
+                delay = retry_after + random.uniform(0.5, 1.5)
+            else:
+                delay = min(max_delay, base_delay * (2 ** (attempt - 1)) + random.uniform(0.5, 2.0))
+
+            reason = "Rate limited (HTTP 429)" if is_rate_limit else "Network timeout / server error"
+            logger.warning(
+                "%s on attempt %d/%d. Backing off for %.2fs before retrying...",
+                reason,
+                attempt,
+                max_retries,
+                delay,
+            )
+            time.sleep(delay)
+
+    raise RuntimeError("Unreachable: retry loop exited without return or exception")
+
+
+def upload_with_retry(
+    repo_id: str,
+    folder_path: str | Path,
+    token: Optional[str] = None,
+    max_retries: int = 5,
+    base_delay: float = 2.0,
+    max_delay: float = 60.0,
+    repo_type: str = "model",
+    ignore_patterns: Optional[list[str]] = None,
+    commit_message: Optional[str] = None,
+) -> Any:
+    """Synchronous upload folder helper with exponential backoff on HTTP 429 and strict token security."""
+    resolved_token = os.environ.get("HF_TOKEN") or token
+    if not resolved_token:
+        try:
+            from huggingface_hub import get_token
+            resolved_token = get_token()
+        except Exception:
+            pass
+    if not resolved_token:
+        token_path = Path.home() / ".cache" / "huggingface" / "token"
+        if token_path.exists():
+            resolved_token = token_path.read_text(encoding="utf-8").strip()
+
+    if not resolved_token:
+        raise ValueError("HF_TOKEN environment variable is strictly required for uploading to Hugging Face Hub.")
+
+    from huggingface_hub import HfApi
+
+    api = HfApi(token=resolved_token)
+
+    retry_hf_api_call(
+        api.create_repo,
+        repo_id=repo_id,
+        repo_type=repo_type,
+        exist_ok=True,
+        private=False,
+        max_retries=max_retries,
+        base_delay=base_delay,
+        max_delay=max_delay,
+    )
+
+    return retry_hf_api_call(
+        api.upload_folder,
+        folder_path=str(folder_path),
+        repo_id=repo_id,
+        repo_type=repo_type,
+        ignore_patterns=ignore_patterns,
+        commit_message=commit_message or f"Upload {repo_id}",
+        max_retries=max_retries,
+        base_delay=base_delay,
+        max_delay=max_delay,
+    )
 
 
 class AsyncHFHubUploader:
@@ -36,11 +165,26 @@ class AsyncHFHubUploader:
         max_workers: int = 2,
         cleanup_weights: bool = True,
         token: Optional[str] = None,
+        org: Optional[str] = None,
+        max_retries: int = 5,
+        base_delay: float = 2.0,
+        max_delay: float = 60.0,
+        **kwargs: Any,
     ) -> None:
-        self.hf_org = hf_org
+        self.hf_org = org or hf_org
         self.max_workers = max_workers
         self.cleanup_weights = cleanup_weights
-        resolved_token = token or os.environ.get("HF_TOKEN")
+        self.max_retries = max_retries
+        self.base_delay = base_delay
+        self.max_delay = max_delay
+
+        resolved_token = os.environ.get("HF_TOKEN") or token
+        if not resolved_token:
+            try:
+                from huggingface_hub import get_token
+                resolved_token = get_token()
+            except Exception:
+                pass
         if not resolved_token:
             token_path = Path.home() / ".cache" / "huggingface" / "token"
             if token_path.exists():
@@ -50,6 +194,13 @@ class AsyncHFHubUploader:
             max_workers=max_workers, thread_name_prefix="hf_upload"
         )
         self.futures: list[concurrent.futures.Future[Any]] = []
+
+    def __repr__(self) -> str:
+        token_status = "set" if self.token else "unset"
+        return (
+            f"AsyncHFHubUploader(hf_org={self.hf_org!r}, max_workers={self.max_workers}, "
+            f"cleanup_weights={self.cleanup_weights}, token={token_status!r})"
+        )
 
     def resolve_repo_id(
         self,
@@ -161,8 +312,17 @@ class AsyncHFHubUploader:
 
             api = HfApi(token=self.token)
 
-            # 1. Ensure remote repository exists
-            api.create_repo(repo_id=repo_id, repo_type="model", exist_ok=True, private=False)
+            # 1. Ensure remote repository exists with exponential backoff on HTTP 429
+            retry_hf_api_call(
+                api.create_repo,
+                repo_id=repo_id,
+                repo_type="model",
+                exist_ok=True,
+                private=False,
+                max_retries=self.max_retries,
+                base_delay=self.base_delay,
+                max_delay=self.max_delay,
+            )
 
             # 2. Strip legacy full weights before upload if surgical delta safetensors exists
             ignore_patterns = ["upload_success.json", "upload_error.json", "*.tmp"]
@@ -179,12 +339,16 @@ class AsyncHFHubUploader:
             stat_summary = f" ({', '.join(stat_parts)})" if stat_parts else ""
             commit_message = f"Upload {slug} checkpoint -> {repo_id}{stat_summary}"
 
-            commit_info = api.upload_folder(
+            commit_info = retry_hf_api_call(
+                api.upload_folder,
                 folder_path=str(staging_dir),
                 repo_id=repo_id,
                 repo_type="model",
                 ignore_patterns=ignore_patterns,
                 commit_message=commit_message,
+                max_retries=self.max_retries,
+                base_delay=self.base_delay,
+                max_delay=self.max_delay,
             )
 
             commit_hash = getattr(commit_info, "commit_id", getattr(commit_info, "oid", "verified"))
@@ -226,10 +390,11 @@ class AsyncHFHubUploader:
             return success_record
 
         except Exception as e:
-            logger.error("[%s] Background upload failed: %s", attn_key, e, exc_info=True)
+            redacted_err = _redact_secrets(str(e), self.token)
+            logger.error("[%s] Background upload failed: %s", attn_key, redacted_err, exc_info=True)
             err_record = {
                 "status": "UPLOAD_FAILED",
-                "error": str(e),
+                "error": redacted_err,
                 "timestamp": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             }
             (staging_dir / "upload_error.json").write_text(json.dumps(err_record, indent=2), encoding="utf-8")
@@ -249,3 +414,10 @@ class AsyncHFHubUploader:
     def shutdown(self, wait: bool = True) -> None:
         """Shutdown the background thread pool."""
         self.executor.shutdown(wait=wait)
+
+
+__all__ = [
+    "AsyncHFHubUploader",
+    "retry_hf_api_call",
+    "upload_with_retry",
+]
