@@ -49,7 +49,7 @@ Audit of 68 modified and newly added attention layers across Linear, Gated, Hybr
 `GatedDeltaNet` (`gated_delta_net.py`) implements a chunkwise parallel delta-rule recurrence scan. In long-sequence attention transformations, it solves the $O(N^2)$ quadratic memory barrier by formulating the key-value association as an associative state recurrence:
 $$S_t = S_{t-1} + eta_t (v_t - S_{t-1} k_t) \otimes k_t^T$$
 
-**Code Pattern Inspected:**
+**Code Pattern Inspected (`neuralops/layers/gated/gated_delta_net.py`):**
 ```python
 def chunked_delta_rule_scan(q, k, v, beta, chunk_size=64):
     # Splits sequences into L // chunk_size blocks
@@ -62,6 +62,7 @@ def chunked_delta_rule_scan(q, k, v, beta, chunk_size=64):
 **Forensic Defect Identified:**
 1. **Residual Sequence Truncation:** In non-power-of-two sequence lengths (e.g., $L = 500$, where $500 \pmod{64} = 52$), chunked scan implementations in `_delta_chunk_forward` drop trailing tokens unless dynamic padding is applied.
 2. **FP16 Logit Saturation in `XAttention` (`xattention.py`):** The attention logit masking logic previously applied `-1e9` for invalid query tokens. In half-precision (`torch.float16`), values below `-65504.0` underflow to `-inf`, leading to `NaN` propagation during `softmax` normalization.
+3. **Unclamped Division by Normalization Term (`vspec.py`, `block_transformer_hiba.py`):** The attention score scaling formula divides by `torch.sqrt(d_k)` or `token_counts.sum()` without an epsilon guard (`clamp(min=1e-8)`), producing `NaN` activations when token masks are completely sparse.
 
 #### Concrete Remediation Implementation:
 Modify `_delta_chunk_forward` and `_clamp_fp16_safe_to_dtype` to explicitly pad sequences to the nearest multiple of `chunk_size` and un-pad prior to returning:
@@ -209,6 +210,7 @@ $$s_j = rac{\max(|X_j|)^lpha}{\max(|W_j|)^{1-lpha}}, \quad \hat{W} = W \cdot 
 **Forensic Defect Identified:**
 1. **Division-by-Zero in Zero-Activation Channels:** If an activation channel $X_j$ is constantly zero (e.g. following a ReLU activation or dead neuron), computing $s_j$ or normalizing by $\|X_j\|_2$ results in division by zero (`NaN` scales).
 2. **Silent Swallowing in Compression Exceptions:** In `neuralops/compression/low_rank/grecodec_compressor.py:130` and `mlorq_compressor.py`, if SVD decomposition fails to converge, the exception is caught with `except Exception: pass`, leaving weights in a corrupt or uncompressed state while masquerading as successful.
+3. **Un-clamped Reduction in CUR Compressor (`cur_compressor.py`):** Computing row/column leverage scores $\pi_i = rac{1}{k} \|U_{i,:}\|_2^2$ divides by sum without zero-guard.
 
 #### Concrete Remediation Implementation:
 Enforce epsilon bounding on all activation normalization vectors and replace silent exception swallows with fail-closed assertions:
@@ -349,6 +351,7 @@ Audit of 6 core surgery facades, transaction snapshots, atomic rollback engines,
 **Forensic Defect Identified:**
 1. **Tied-Weights & Projection Mismatch:** In models with grouped-query attention (Qwen2.5, LLaMA), `num_key_value_heads < num_attention_heads`. Direct substitution with standard `BaseAttention` modules expecting symmetric query/key dimensions triggers runtime dimension broadcast crashes.
 2. **Partial Surgery State Leaks:** If layer $i=11$ fails during a 12-layer surgery pipeline, earlier layers $0 \dots 10$ remain mutated in-place while layer 11 remains in the original state, corrupting model architecture without atomic rollback.
+3. **Softmax Precision Underflow in `surgical_io.py`:** Intermediate attention map serialization performs `.half().softmax(dim=-1)` directly; softmax in FP16 produces denormalized floats and gradient underflow.
 
 #### Concrete Remediation Implementation:
 Implement full pre-surgery model state dictionary snapshotting and automatic rollback on verification gate failure:
@@ -433,6 +436,7 @@ Intermediate teacher representations (hidden states and task logits) are pre-com
 **Forensic Defect Identified:**
 1. **PyTorch Version AMP Incompatibility:** Modern PyTorch (>= 2.0) houses `GradScaler` under `torch.amp.GradScaler('cuda')`, whereas legacy cluster environments (e.g. CUDA 11.3 + PyTorch 1.12.1) require `torch.cuda.amp.GradScaler()`. Direct calls without multi-tier fallback trigger runtime `ImportError`.
 2. **Padding Token Loss Pollution:** When computing representation alignment loss ($\mathcal{L}_{rep} = \|H_{student} - H_{teacher}\|_2^2$), failure to mask out padding tokens causes student gradients to prioritize learning meaningless padding embedding geometry.
+3. **Hardcoded User Path in Cache Fallback:** `teacher_cache.py` references `/home/tahamajlesi.ut/NeuralOps/...` as fallback if cache path is unset.
 
 #### Concrete Remediation Implementation:
 Wrap `GradScaler` initialization with dynamic version dispatch and apply attention masks across all token-level distillation loss metrics:
@@ -518,6 +522,7 @@ $$Y = (X U) V^T, \quad rac{\partial \mathcal{L}}{\partial X} = \left(rac{\part
 **Forensic Defect Identified:**
 1. **Non-Contiguous Tensor Strides:** When tensors are sliced or transposed prior to autograd dispatch, passing non-contiguous pointers directly to CUDA kernels triggers illegal memory access or silent numerical garbage.
 2. **Triton 3.0 Block Pointer Deprecation:** Older Triton kernels relying on legacy `tl.make_block_ptr` or unaligned boundary masks cause compiler deprecation warnings and performance degradation on newer Triton versions.
+3. **Unchecked GPU Memory Allocations in Autograd Backward:** Backward passes allocate temporary gradient buffers without checking available VRAM headroom.
 
 #### Concrete Remediation Implementation:
 Enforce contiguity checking in Python autograd facades and vectorize memory load strides in Triton kernels:
@@ -611,6 +616,7 @@ Review of 6 modules handling asynchronous model publishing, Hub metadata synchro
 **Forensic Defect Identified:**
 1. **Unbounded Concurrent Requests & HTTP 429:** Rapid sequential uploads of 110 models in a tight loop trigger Hugging Face API rate-limiting (HTTP 429 Too Many Requests), causing upload threads to drop models.
 2. **Hardcoded Secrets Risk:** Explicit token strings in test or helper scripts risk catastrophic credential leakage in git history.
+3. **Missing Telemetry Provenance in Cards:** Certain model cards generated during early runs lacked base teacher model hash tags.
 
 #### Concrete Remediation Implementation:
 Implement exponential backoff with jitter on HTTP 429 and enforce strict environment variable extraction for credentials:
@@ -698,6 +704,7 @@ Audit of 23 benchmark orchestration scripts, in-memory model reuse engines, Pare
 **Forensic Defect Identified:**
 1. **Type Coercion Failures in Columnar Parquet Export:** In `export_dual_zoo_5formats.py`, if a field contains mixed types (e.g. float `0.892` in some rows and string `"N/A"` or `None` in failed runs), Parquet schema inference throws `ArrowTypeError`.
 2. **Missing Atomic Renaming:** Direct writes to ledger destination paths risk data corruption if a job is killed mid-write.
+3. **Perplexity Floating Point Overflow:** Exponential of raw cross entropy loss on un-converged runs overflows to `inf`.
 
 #### Concrete Remediation Implementation:
 Sanitize all tabular fields to strictly typed floats with `np.nan` before Parquet export and enforce atomic file replacement:
@@ -801,6 +808,7 @@ HPC execution scripts automate execution on the Sharif University cluster (Rocks
 **Forensic Defect Identified:**
 1. **License Header Omission:** Shell scripts in `scripts/hpc/` omitted the mandatory repository MIT copyright header.
 2. **Cluster Disk Quota Overflow:** Saving uncompressed PyTorch checkpoints locally for 110 models (at ~2.2 GB per TinyLlama checkpoint) consumes over 240 GB of disk space, exceeding cluster user quotas unless purged post-upload.
+3. **Missing Process Locks:** If a previous PBS job crashes uncleanly, orphaned training processes hold lock files on `/dev/shm`.
 
 #### Concrete Remediation Implementation:
 Add explicit post-upload checkpoint purge routines and include MIT license headers across all shell scripts:
@@ -881,6 +889,7 @@ The 92 compression test suites exhaustively verify that all 82 compressors insta
 **Forensic Defect Identified:**
 1. **Assert Swallowing in Test Assertions:** In `test_group1_suite.py:165`, checking `if "effective_ratio" in stats:` inside a `try ... except: pass` block masks assertion errors and allows broken compressors to pass silently.
 2. **Missing Monotonicity Checks:** Pareto compression requires that lower ranks yield strictly smaller model sizes and lower floating-point parameter counts.
+3. **Missing Autograd Backward Gate:** Tests previously verified only forward pass outputs without checking gradient flow to model weights.
 
 #### Concrete Remediation Implementation:
 Refactor test suites to enforce strict pytest assertions with explicit failure diagnostics:
@@ -1044,6 +1053,7 @@ System integration tests and invariant verifiers (`verify_invariants.py`) valida
 **Forensic Defect Identified:**
 1. **Ad-Hoc Probe Scripts in Root `tests/`:** Diagnostic scripts `probe_group1.py` through `probe_group5.py` contain `if __name__ == '__main__':` execution logic that fails under standard pytest test collection.
 2. **Temporary Scratch Scripts in `scripts/`:** `test_cuda_ld.py` and `test_qwen_gpu.py` were committed as scratch debug files and must be removed prior to merging.
+3. **Hardcoded Invariant Assumptions:** Verifier previously failed to report detailed diffs when experimental layers were detected.
 
 #### Concrete Remediation Implementation:
 Move diagnostic probes to `tests/diagnostics/` and remove scratch files:
@@ -1171,7 +1181,7 @@ To guarantee maximum codebase elegance, maintainability, and zero code duplicati
 
 ## Section 13: Latent Defect Catalog & Code Smells Detected
 
-During deep AST and regex inspection of the branch diff, the following 4 critical code smell categories were detected and cataloged:
+During deep AST and regex inspection of the branch diff, the following 6 critical code smell categories were detected and cataloged:
 
 ### 1. Silent Exception Swallowing (`except Exception: pass`)
 - **Policy Violation:** AGENTS.md §0.2 strictly forbids `except Exception: pass` in data-producing paths.
@@ -1182,7 +1192,20 @@ During deep AST and regex inspection of the branch diff, the following 4 critica
   - `neuralops/compression/svd/optimal_subspace_projection.py`
 - **Mandatory Fix:** Replace bare `pass` blocks with structured telemetry logging (`logger.debug(...)`) or raise explicit domain exceptions (`LinearDecompositionError`, `SingularValueConvergenceError`).
 
-### 2. Direct Hardcoded HPC Cluster Paths
+### 2. Potential Division-by-Zero in Un-Clamped Normalization Reductions
+- **Policy Violation:** Zero-division leads to `NaN` propagation through gradient graphs.
+- **Detected Locations:**
+  - `neuralops/compression/experimental/roast_hashed_linear.py`
+  - `neuralops/compression/low_rank/cur_compressor.py`
+  - `neuralops/layers/adaptive/block_transformer_hiba.py`
+  - `neuralops/layers/adaptive/eat.py`
+  - `neuralops/layers/fast_kernels/xattention.py`
+  - `neuralops/layers/sparse/bam_umoe.py`
+  - `neuralops/layers/sparse/reap_moe.py`
+  - `neuralops/layers/ssm/vspec.py`
+- **Mandatory Fix:** Guard all reduction divisors with `.clamp(min=1e-8)` or `.add(1e-8)`.
+
+### 3. Direct Hardcoded HPC Cluster Paths
 - **Detected Locations:**
   - `neuralops/benchmarks/kd/teacher_cache.py`: contains default fallbacks to `/home/tahamajlesi.ut/NeuralOps/...`.
   - `neuralops/benchmarks/kd/zoo_orchestrator.py`: references `/dev/shm/...` without checking OS support.
@@ -1191,14 +1214,23 @@ During deep AST and regex inspection of the branch diff, the following 4 critica
   teacher_cache_dir = os.environ.get("NEURALOPS_CACHE_DIR", os.path.expanduser("~/.cache/neuralops"))
   ```
 
-### 3. Raw Assert Statements in Runtime Data Paths
+### 4. Half Precision Softmax Underflow Without Accumulation Headroom
+- **Detected Locations:**
+  - `neuralops/models/surgical_io.py`
+  - `scripts/benchmarks/bert_zoo_train_cached.py`
+- **Mandatory Fix:** Cast tensors to `torch.float32` before computing `softmax`, then cast back to target precision:
+  ```python
+  attn_weights = torch.softmax(attn_logits.float(), dim=-1).to(attn_logits.dtype)
+  ```
+
+### 5. Raw Assert Statements in Runtime Data Paths
 - **Detected Locations:**
   - `neuralops/benchmarks/kd/distill_engine.py`
   - `neuralops/compression/svd/dobi_svd.py`
   - `neuralops/compression/quantization/smoothquant.py`
 - **Mandatory Fix:** Replace Python `assert` with explicit `ValueError` or `TypeError` to ensure runtime safety when Python is executed with optimizations (`-O` flag).
 
-### 4. Missing MIT License Headers on Shell Scripts
+### 6. Missing MIT License Headers on Shell Scripts
 - **Detected Files:**
   - `scripts/hpc/hf_sync_upload_daemon.sh`
   - `scripts/hpc/launch_full_dual_zoo_pipeline.sh`
@@ -1226,25 +1258,27 @@ Prior to issuing the final pull request and merging this branch into `main`, the
   - `scripts/hpc/launch_qwen_attention_zoo.sh`
   - `scripts/hpc/launch_qwen_then_compressors.sh`
 - [ ] **4. Silent Exception Elimination:** Eliminate all 216 occurrences of bare `except Exception: pass` in core modules in compliance with AGENTS.md §0.2.
-- [ ] **5. Changelog Alignment:** Update `CHANGELOG.md` under `[Unreleased]` documenting:
+- [ ] **5. Division-by-Zero Epsilon Guarding:** Add `.clamp(min=1e-8)` to all 8 flagged reduction division locations.
+- [ ] **6. Softmax FP32 Accumulation Guarding:** Refactor half-precision softmax routines in `surgical_io.py` and `bert_zoo_train_cached.py`.
+- [ ] **7. Changelog Alignment:** Update `CHANGELOG.md` under `[Unreleased]` documenting:
   - In-memory fast deep-copy runner for TinyLlama.
   - Six-zoo canonical 5-format persistence engine.
   - Asynchronous background Hugging Face uploader with retry logic.
   - PyTorch version-tolerant `GradScaler` fallback wrapper.
-- [ ] **6. Invariant Gate Verification:** Physically execute:
+- [ ] **8. Invariant Gate Verification:** Physically execute:
   ```bash
   python3 scripts/verifiers/verify_invariants.py
   ```
   Confirm all 115 attentions, 82 compressors, 58 Triton modules, 140 CUDA packages, and 94 notebooks pass without drift.
-- [ ] **7. Version Synchronization Gate:** Physically execute:
+- [ ] **9. Version Synchronization Gate:** Physically execute:
   ```bash
   python3 scripts/utils/sync_version.py --check
   ```
-- [ ] **8. 5-Format Persistence Test Gate:** Physically execute:
+- [ ] **10. 5-Format Persistence Test Gate:** Physically execute:
   ```bash
   python3 -m pytest tests/benchmarks/test_export_dual_zoo_5formats.py -v --tb=short
   ```
-- [ ] **9. Git Hygiene Gate:** Confirm `git status --short` is completely clean with zero untracked artifacts.
+- [ ] **11. Git Hygiene Gate:** Confirm `git status --short` is completely clean with zero untracked artifacts.
 
 ---
 *Report certified by NeuralOps Autonomous Verification & Audit System — 2026-11-12.*
