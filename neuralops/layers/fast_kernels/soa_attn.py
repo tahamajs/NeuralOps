@@ -554,37 +554,38 @@ class SOAAttention(BaseAttention):
                 bias: torch.Tensor | None,
                 name: str,
             ) -> None:
-                W_f = W.float()
-                try:
-                    U, S, Vt = torch.linalg.svd(W_f, full_matrices=False)
-                except Exception as e:
-                    logger.warning("SVD failed for %s: %s", name, e)
-                    return
+                with torch.no_grad():
+                    W_f = W.float()
+                    try:
+                        U, S, Vt = torch.linalg.svd(W_f, full_matrices=False)
+                    except Exception as e:
+                        logger.warning("SVD failed for %s: %s", name, e)
+                        return
 
-                S = S.clamp(min=1e-6)
-                r = min(self.k_rank, U.size(1), Vt.size(0))
+                    S = S.clamp(min=1e-6)
+                    r = min(self.k_rank, U.size(1), Vt.size(0))
 
-                down.weight.zero_()
-                up.weight.zero_()
-                sqrt_s = torch.sqrt(S[:r])
+                    down.weight.data.zero_()
+                    up.weight.data.zero_()
+                    sqrt_s = torch.sqrt(S[:r])
 
-                down.weight.data[:r, :].copy_((sqrt_s.unsqueeze(1) * Vt[:r, :]).to(down.weight.dtype))
-                up.weight.data[:, :r].copy_((U[:, :r] * sqrt_s).to(up.weight.dtype))
+                    down.weight.data[:r, :].copy_((sqrt_s.unsqueeze(1) * Vt[:r, :]).to(down.weight.dtype))
+                    up.weight.data[:, :r].copy_((U[:, :r] * sqrt_s).to(up.weight.dtype))
 
-                if bias is not None and up.bias is not None:
-                    n = min(up.bias.numel(), bias.numel())
-                    up.bias.data[:n].copy_(bias[:n].to(up.bias.dtype))
-                elif up.bias is not None:
-                    up.bias.zero_()
+                    if bias is not None and up.bias is not None:
+                        n = min(up.bias.numel(), bias.numel())
+                        up.bias.data[:n].copy_(bias[:n].to(up.bias.dtype))
+                    elif up.bias is not None:
+                        up.bias.data.zero_()
 
-                rec = up.weight @ down.weight
-                f_norm = float(torch.linalg.norm(rec.float()).item())
-                if f_norm < 1e-4:
-                    logger.warning(
-                        "SOAAttention: reconstructed weight norm near zero for '%s' (%.2e)",
-                        name,
-                        f_norm,
-                    )
+                    rec = up.weight @ down.weight
+                    f_norm = float(torch.linalg.norm(rec.float()).item())
+                    if f_norm < 1e-4:
+                        logger.warning(
+                            "SOAAttention: reconstructed weight norm near zero for '%s' (%.2e)",
+                            name,
+                            f_norm,
+                        )
 
             _factorize_svd(w_q, self.q_down, self.q_up, b_q, "q")
             _factorize_svd(w_k, self.k_down, self.k_up, b_k, "k")
@@ -726,7 +727,7 @@ class SOAAttention(BaseAttention):
             k = repeat_kv(k, self.num_key_value_groups)
             v = repeat_kv(v, self.num_key_value_groups)
 
-        scale = 1.0 / math.sqrt(head_dim)
+        scale = 1.0 / math.sqrt(max(int(head_dim), 1))
         is_causal = self.is_decoder and not is_cross and N > 1
 
         eff_mask = encoder_attention_mask if is_cross else attention_mask
@@ -757,7 +758,7 @@ class SOAAttention(BaseAttention):
                 attn_bias = None
 
                 if is_causal or (key_padding_mask is not None):
-                    bias_val = _safe_mask_value(q.dtype)
+                    bias_val = -65500.0 if q.dtype == torch.float16 else -1e4
                     attn_bias = torch.zeros((B, 1, N, N_kv), device=q.device, dtype=q.dtype)
 
                     if is_causal:
@@ -795,18 +796,18 @@ class SOAAttention(BaseAttention):
         if context is None:
             scores = torch.matmul(q.float(), k.float().transpose(-2, -1).contiguous()) * scale
 
+            bias_val = -65500.0 if scores.dtype == torch.float16 else -1e4
             if is_causal:
                 q_pos = (past_len + torch.arange(N, device=scores.device)).unsqueeze(1)
                 k_pos = torch.arange(N_kv, device=scores.device).unsqueeze(0)
                 causal_bool = k_pos <= q_pos
-                bias_val = _safe_mask_value(scores.dtype)
                 scores = scores.masked_fill(~causal_bool.unsqueeze(0).unsqueeze(0), bias_val)
 
             if key_padding_mask is not None:
-                bias_val = _safe_mask_value(scores.dtype)
                 scores = scores.masked_fill(key_padding_mask.unsqueeze(1).unsqueeze(2), bias_val)
 
-            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+            scores = scores.clamp(min=-65500.0, max=65500.0)
+            scores = torch.nan_to_num(scores, nan=-65500.0, posinf=65500.0, neginf=-65500.0)
             attn_weights = F.softmax(scores, dim=-1).to(v.dtype)
             attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
 

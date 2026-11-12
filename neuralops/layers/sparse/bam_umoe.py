@@ -271,7 +271,7 @@ class UnifiedMoE(nn.Module):
             sel_mask = F.one_hot(topk_idx[..., 0].long(), num_classes=self.num_experts).float().unsqueeze(-1)
             out = (exp_stacked * sel_mask).sum(dim=-2) * topk_probs[..., :1]
         else:
-            scores = topk_probs / topk_probs.sum(dim=-1, keepdim=True).clamp(min=1e-6)
+            scores = topk_probs / topk_probs.sum(dim=-1, keepdim=True).clamp(min=1e-8)
             scores = torch.nan_to_num(scores, nan=0.0)
             from neuralops.ops.triton.sparse_attn import fused_bam_unified_qkv_moe_triton
 
@@ -292,7 +292,7 @@ class UnifiedMoE(nn.Module):
         """BAM-FIX-04: return aux loss on the correct device."""
         if self._aux_loss is None:
             return torch.zeros((), device=device, dtype=torch.float32)
-        return self._aux_loss.to(device)
+        return self._aux_loss.to(device=device, dtype=torch.float32)
 
 
 @ATTENTION_REGISTRY.register("bam_umoe", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
@@ -861,7 +861,7 @@ class BAMUMoEBlock(BaseAttention):
                 moe_delta_v = repeat_kv(moe_delta_v, self.kv_repeat)
             v = (v + 0.1 * moe_delta_v.to(v.dtype)).to(v.dtype)
 
-        scale = 1.0 / math.sqrt(self.head_dim)
+        scale = 1.0 / math.sqrt(max(self.head_dim, 1))
         eff_mask = encoder_attention_mask if is_cross else attention_mask
         is_causal = self.is_decoder and not is_cross
         device = q.device

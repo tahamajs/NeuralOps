@@ -542,15 +542,16 @@ class EATBlock(BaseAttention):
 
                 out_d = min(target.weight.size(0), w.size(0))
                 in_d = min(target.weight.size(1), w.size(1))
-                target.weight.data.zero_()
-                target.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(target.weight.device, target.weight.dtype))
+                with torch.no_grad():
+                    target.weight.data.zero_()
+                    target.weight.data[:out_d, :in_d].copy_(w[:out_d, :in_d].to(target.weight.device, target.weight.dtype))
 
-                if b is not None and target.bias is not None:
-                    mb = min(target.bias.numel(), b.numel())
-                    target.bias.data.zero_()
-                    target.bias.data[:mb].copy_(b[:mb].to(target.bias.device, target.bias.dtype))
-                elif target.bias is not None:
-                    nn.init.zeros_(target.bias)
+                    if b is not None and target.bias is not None:
+                        mb = min(target.bias.numel(), b.numel())
+                        target.bias.data.zero_()
+                        target.bias.data[:mb].copy_(b[:mb].to(target.bias.device, target.bias.dtype))
+                    elif target.bias is not None:
+                        nn.init.zeros_(target.bias)
 
                 n = float(torch.linalg.norm(target.weight.data.float()).item())
                 if n < 1e-4:

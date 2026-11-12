@@ -289,10 +289,20 @@ class GLAttention(BaseAttention):
             out = None
             if self._fla_kernel is not None and Q.is_cuda and Q.dtype == torch.bfloat16 and attention_mask is None:
                 try:
-                    Q_f = Q.contiguous()
-                    K_f = K.contiguous()
-                    V_f = V.contiguous()
-                    g_f = g.unsqueeze(-1).expand(B, N, H, d).to(torch.bfloat16).contiguous()
+                    chunk_size = 64
+                    pad_len = (chunk_size - (N % chunk_size)) % chunk_size
+                    if pad_len > 0:
+                        Q_in = F.pad(Q, (0, 0, 0, 0, 0, pad_len))
+                        K_in = F.pad(K, (0, 0, 0, 0, 0, pad_len))
+                        V_in = F.pad(V, (0, 0, 0, 0, 0, pad_len))
+                        g_in = F.pad(g, (0, 0, 0, pad_len), value=-1e4)
+                    else:
+                        Q_in, K_in, V_in, g_in = Q, K, V, g
+
+                    Q_f = Q_in.contiguous()
+                    K_f = K_in.contiguous()
+                    V_f = V_in.contiguous()
+                    g_f = g_in.unsqueeze(-1).expand(B, N + pad_len, H, d).to(torch.bfloat16).contiguous()
 
                     out_raw, _ = self._fla_kernel(
                         Q_f,
@@ -302,7 +312,7 @@ class GLAttention(BaseAttention):
                         scale=self.scale,
                         output_final_state=False,
                     )
-                    out = out_raw.float()
+                    out = out_raw[:, :N].float()
                 except Exception as e:
                     from neuralops.utils.logging_config import warn_once
 
@@ -551,5 +561,5 @@ def _chunked_gla_forward(
     chunk_size: int = 64,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Module-level function for chunked GLA forward pass."""
-    dummy = GLAttention(hidden_size=q.shape[-1] * q.shape[1], num_heads=q.shape[1]).to(q.device)
+    dummy = GLAttention(hidden_size=q.shape[-1] * q.shape[1], num_heads=q.shape[1]).to(device=q.device, dtype=q.dtype)
     return dummy._chunked_gla_forward(q, k, v, log_gate, chunk_size)

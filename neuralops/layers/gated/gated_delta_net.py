@@ -179,6 +179,17 @@ def chunked_delta_rule_scan(
     if mask is not None:
         mask_h = mask[:, None, :].expand(-1, H, -1).contiguous()
 
+    align_size = 64 if chunk_size <= 64 and 64 % chunk_size == 0 else (chunk_size if chunk_size % 64 == 0 else math.lcm(64, chunk_size))
+    pad_len = (align_size - (L % align_size)) % align_size if L > 1 else 0
+    if pad_len > 0:
+        q_f = F.pad(q_f, (0, 0, 0, pad_len))
+        k_f = F.pad(k_f, (0, 0, 0, pad_len))
+        v_f = F.pad(v_f, (0, 0, 0, pad_len))
+        beta_f = F.pad(beta_f, (0, pad_len), value=1.0)
+        alpha_f = F.pad(alpha_f, (0, pad_len), value=0.0)
+        if mask_h is not None:
+            mask_h = F.pad(mask_h, (0, pad_len), value=False)
+
     if (
         HAS_TRITON_GDN
         and gdn_scan_triton is not None
@@ -198,6 +209,8 @@ def chunked_delta_rule_scan(
                 return_final_state=True,
                 normalize_qk=False,
             )
+            if pad_len > 0:
+                out = out[:, :, :L, :]
             out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
             return out, S_final.to(device=device, dtype=torch.float32)
         except Exception as e:
@@ -213,14 +226,17 @@ def chunked_delta_rule_scan(
         try:
             from fla.ops import chunk_gdn
 
-            q_fl = q.transpose(1, 2).contiguous()
-            k_fl = k.transpose(1, 2).contiguous()
-            v_fl = v.transpose(1, 2).contiguous()
+            q_fl = q_f.to(q.dtype).transpose(1, 2).contiguous()
+            k_fl = k_f.to(q.dtype).transpose(1, 2).contiguous()
+            v_fl = v_f.to(q.dtype).transpose(1, 2).contiguous()
             log_g = torch.log(beta_f.clamp(min=1e-4, max=1.0)).transpose(1, 2).to(q.dtype).contiguous()
             step_beta = alpha_f.transpose(1, 2).to(q.dtype).contiguous()
             res = chunk_gdn(q_fl, k_fl, v_fl, log_g, step_beta)
             out_fl = res[0] if isinstance(res, tuple) else res
-            out = torch.nan_to_num(out_fl.transpose(1, 2).contiguous(), nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
+            out = out_fl.transpose(1, 2).contiguous()
+            if pad_len > 0:
+                out = out[:, :, :L, :]
+            out = torch.nan_to_num(out, nan=0.0, posinf=1e4, neginf=-1e4).to(q.dtype)
             S_final = torch.zeros(B, H, d, d, device=device, dtype=torch.float32)
             return out, S_final
         except Exception:
@@ -235,16 +251,6 @@ def chunked_delta_rule_scan(
     if L == 1:
         y_i, S_out = _delta_chunk_forward(S, q_f, k_f, v_f, beta_f, alpha_f, mask_h)
         return _clamp_fp16_safe_to_dtype(y_i, q.dtype), S_out
-
-    pad_len = (chunk_size - L % chunk_size) % chunk_size
-    if pad_len > 0:
-        q_f = F.pad(q_f, (0, 0, 0, pad_len))
-        k_f = F.pad(k_f, (0, 0, 0, pad_len))
-        v_f = F.pad(v_f, (0, 0, 0, pad_len))
-        beta_f = F.pad(beta_f, (0, pad_len), value=1.0)
-        alpha_f = F.pad(alpha_f, (0, pad_len), value=1.0)
-        if mask_h is not None:
-            mask_h = F.pad(mask_h, (0, pad_len), value=False)
 
     L_pad = L + pad_len
     n_chunks = L_pad // chunk_size
@@ -447,7 +453,7 @@ class GatedDeltaNet(BaseAttention):
         explicit_freeze = kwargs.get("freeze_base", None)
         if explicit_freeze is None and comp_config is not None:
             explicit_freeze = getattr(comp_config, "freeze_base", None)
-        self.freeze_base = bool(explicit_freeze) if explicit_freeze is not None else False
+        self.freeze_base = bool(explicit_freeze) if explicit_freeze is not None else (self.lora_rank > 0)
 
         model_type = str(getattr(config, "model_type", "") if config else "").lower()
         is_dec = False

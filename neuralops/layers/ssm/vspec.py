@@ -38,7 +38,7 @@ def _masked_mean(x: torch.Tensor, valid_mask: torch.Tensor | None = None) -> tor
     """Computes mean over valid non-padded tokens."""
     if valid_mask is not None:
         m = valid_mask.unsqueeze(-1).to(x.dtype)
-        return (x * m).sum(dim=1) / m.sum(dim=1).clamp(min=1.0)
+        return (x * m).sum(dim=1) / m.sum(dim=1).clamp(min=1e-8)
     return x.mean(dim=1)
 
 
@@ -822,12 +822,12 @@ class VSpecAttention(BaseAttention):
                 attn_mask=combined_mask,
                 is_causal=is_causal_sdpa,
                 dropout_p=self.dropout.p if self.training else 0.0,
-                scale=1.0 / math.sqrt(Dh),
+                scale=1.0 / math.sqrt(max(Dh, 1)),
             )
             context = context * hg.to(context.dtype)
             attn_weights = None
         else:
-            scale = 1.0 / math.sqrt(Dh)
+            scale = 1.0 / math.sqrt(max(Dh, 1))
             scores = torch.matmul(Q.float(), K.float().transpose(-1, -2).contiguous()) * scale * hg.float()
 
             if is_decoder and k_len > 1:

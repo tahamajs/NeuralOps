@@ -124,7 +124,7 @@ class REAPMoE(nn.Module):
         from neuralops.ops.cuda.moe_routing import moe_topk_routing_fused
 
         topk_weights, topk_indices = moe_topk_routing_fused(scores, self.top_k)
-        topk_weights = (topk_weights / topk_weights.sum(dim=-1, keepdim=True).clamp(min=1e-9)).to(target_dtype)
+        topk_weights = (topk_weights / topk_weights.sum(dim=-1, keepdim=True).clamp(min=1e-8)).to(target_dtype)
 
         router_probs = F.softmax(logits.float(), dim=-1).view(-1, self.n_experts)
         expert_mask = F.one_hot(topk_indices, num_classes=self.n_experts).float()
@@ -715,7 +715,7 @@ class REAPMoEAttention(BaseAttention):
             attn_out = torch.nan_to_num(attn_out, nan=0.0, posinf=1e4, neginf=-1e4)
             attn_ret = None
         else:
-            scale = 1.0 / math.sqrt(self.head_dim)
+            scale = 1.0 / math.sqrt(max(self.head_dim, 1))
             scores = torch.matmul(q.float(), K_full.float().transpose(-2, -1).contiguous()) * scale
 
             token_valid = self._prepare_valid_mask(attention_mask, B, N_kv, device)

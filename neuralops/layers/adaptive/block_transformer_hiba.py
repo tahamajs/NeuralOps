@@ -695,7 +695,7 @@ class BlockTransformerHIBA(BaseAttention):
         m = scores_f.amax(dim=-1, keepdim=True)
         m_safe = torch.where(m < -1e3, torch.zeros_like(m), m)
         exp_scores = torch.exp((scores_f - m_safe).clamp(max=0.0))
-        denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-9)
+        denom = exp_scores.sum(dim=-1, keepdim=True).clamp(min=1e-8)
         probs = (exp_scores / denom).to(all_scores.dtype)
 
         probs = self.dropout(probs)
@@ -857,7 +857,7 @@ class BlockTransformerHIBA(BaseAttention):
             m = scores.amax(dim=-1, keepdim=True)
             m_safe = torch.where(m < -1e3, torch.zeros_like(m), m)
             exp_s = torch.exp((scores - m_safe).clamp(max=0.0))
-            probs = (exp_s / exp_s.sum(dim=-1, keepdim=True).clamp(min=1e-9)).to(v.dtype)
+            probs = (exp_s / exp_s.sum(dim=-1, keepdim=True).clamp(min=1e-8)).to(v.dtype)
             probs = self.dropout(probs)
 
             if head_mask is not None:
