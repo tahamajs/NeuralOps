@@ -12,7 +12,7 @@ from neuralops.attentions.linear.gla_attention import GLAttention
 
 def test_forward_backward():
     torch.manual_seed(42)
-    device = "cuda"
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     B, N, D = 2, 128, 256
     H, d = 8, 32
 

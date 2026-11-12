@@ -14,6 +14,7 @@ import torch
 import torch.nn as nn
 
 import neuralops.attentions
+import neuralops.layers
 from neuralops.core.registry import ATTENTION_REGISTRY
 
 
@@ -50,6 +51,7 @@ class TestAttentionMechanisms(unittest.TestCase):
                 return cls(hidden_size=self.hidden_size, num_heads=self.cfg.num_heads)
 
     def test_registry_size(self):
+        ATTENTION_REGISTRY._load_all()
         self.assertGreaterEqual(len(ATTENTION_REGISTRY), 50)
 
     def test_full_and_gqa_attention(self):

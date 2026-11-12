@@ -21,18 +21,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from neuralops.core._attention_injectors import _inject_attention_loop
-from neuralops.core._attention_surgery import (
-    FUSED_QKV_REGEX,
-    PROJ_REGEX_PATTERNS,
-    _copy_projection_weights,
-    _find_submodule_by_regex,
-    _slice_fused_qkv_weights,
-    _svd_factorize_weights,
-    compute_reconstruction_error,
-    slice_fused_qkv,
-    split_and_set_qkv_weights,
-)
 from neuralops.core.common import softpick
 from neuralops.core.peft.lora import LoRALinear
 from neuralops.core.utils.gqa import repeat_kv
@@ -241,6 +229,20 @@ def apply_rotary_pos_emb(
         k = (k * cos_k_cut) + (_rotate_half(k) * sin_k_cut)
 
     return q, k
+
+
+from neuralops.core._attention_injectors import _inject_attention_loop
+from neuralops.core._attention_surgery import (
+    FUSED_QKV_REGEX,
+    PROJ_REGEX_PATTERNS,
+    _copy_projection_weights,
+    _find_submodule_by_regex,
+    _slice_fused_qkv_weights,
+    _svd_factorize_weights,
+    compute_reconstruction_error,
+    slice_fused_qkv,
+    split_and_set_qkv_weights,
+)
 
 
 __all__ = [
