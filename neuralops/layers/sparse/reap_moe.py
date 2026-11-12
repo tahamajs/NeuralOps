@@ -670,7 +670,7 @@ class REAPMoEAttention(BaseAttention):
         past_len = N_kv - L if self.is_decoder else 0
 
         if self.num_heads != self.num_kv_heads:
-            repeats = self.num_heads // self.num_kv_heads
+            repeats = max(1, self.num_heads // max(1, self.num_kv_heads))
             K_full = repeat_kv(K_cat, repeats)
             V_full = repeat_kv(V_cat, repeats)
         else:

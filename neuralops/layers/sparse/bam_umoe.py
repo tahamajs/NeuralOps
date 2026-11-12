@@ -380,7 +380,7 @@ class BAMUMoEBlock(BaseAttention):
                         nkv = out_d // max(1, self.head_dim)
                         break
         self.num_kv_heads = max(1, min(int(nkv if nkv is not None else self.num_heads), self.num_heads))
-        self.kv_repeat = self.num_heads // self.num_kv_heads
+        self.kv_repeat = max(1, self.num_heads // max(1, self.num_kv_heads))
 
         self.all_head_size = self.num_heads * self.head_dim
         self.all_kv_head_size = self.num_kv_heads * self.head_dim
