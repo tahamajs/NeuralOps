@@ -38,7 +38,7 @@ def test_registry():
 
 def test_oats_linear_forward():
     lin = nn.Linear(128, 128)
-    layer = OATSLoRALinear.from_linear(lin, rank=16)
+    layer = OATSLoRALinear.from_linear(lin, weight=lin.weight, rank=16)
     x = torch.randn(2, 128)
     out = layer(x)
     assert out.shape == (2, 128)

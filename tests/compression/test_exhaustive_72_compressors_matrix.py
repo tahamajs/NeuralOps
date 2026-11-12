@@ -158,6 +158,11 @@ def test_2_5_gradient_propagation_ste(compressor_name: str):
     out = comp_model(x)
     loss = out.sum()
     loss.backward()
+    trainable = [p for p in comp_model.parameters() if p.requires_grad]
+    if trainable:
+        grads = [p.grad for p in trainable if p.grad is not None]
+        assert len(grads) > 0, f"No parameter gradients computed in {compressor_name}"
+        assert all(torch.isfinite(g).all() for g in grads), f"Non-finite parameter gradient in {compressor_name}"
     assert x.grad is not None, f"Input gradient missing in {compressor_name}"
     assert torch.isfinite(x.grad).all(), f"Non-finite input gradient in {compressor_name}"
 

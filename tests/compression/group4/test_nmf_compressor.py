@@ -60,7 +60,7 @@ def test_nmf_compressor():
 
 def test_nmf_factory():
     model = DummyMLP()
-    compressed = nmf_factory(model, rank=16, max_iter=5)
+    compressed = nmf_factory(model, comp_config={"nmf_max_iter": 5}, rank=16)
     assert compressed is not None
     x = torch.randn(2, 128)
     out = compressed(x)
