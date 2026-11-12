@@ -275,38 +275,38 @@ def restore(model: nn.Module, snapshot: Snapshot) -> None:
                         param_found = False
                         for p_name, p in model.named_parameters():
                             if p_name == name:
-                                p.data.copy_(tensor.to(p.device))
+                                p.data.copy_(tensor.to(device=p.device, dtype=p.dtype))
                                 param_found = True
                                 break
                         if not param_found:
                             parent, attr = _get_parent_and_attr(model, name)
-                            setattr(parent, attr, nn.Parameter(tensor.to(device).clone()))
+                            setattr(parent, attr, nn.Parameter(tensor.to(device=device, dtype=tensor.dtype).clone()))
                     elif full_key.startswith("b:"):
                         name = full_key[2:]
                         tensor = f.get_tensor(full_key)
                         for b_name, b in model.named_buffers():
                             if b_name == name:
-                                b.data.copy_(tensor.to(b.device))
+                                b.data.copy_(tensor.to(device=b.device, dtype=b.dtype))
                                 break
         else:
             for name, tensor in snapshot.params.items():
                 param_found = False
                 for p_name, p in model.named_parameters():
                     if p_name == name:
-                        p.data.copy_(tensor.to(p.device))
+                        p.data.copy_(tensor.to(device=p.device, dtype=p.dtype))
                         param_found = True
                         break
 
                 if not param_found:
                     # Re-attach parameter if removed during mutation
                     parent, attr = _get_parent_and_attr(model, name)
-                    setattr(parent, attr, nn.Parameter(tensor.to(device).clone()))
+                    setattr(parent, attr, nn.Parameter(tensor.to(device=device, dtype=tensor.dtype).clone()))
 
             # 3. Restore buffers
             for name, tensor in snapshot.buffers.items():
                 for b_name, b in model.named_buffers():
                     if b_name == name:
-                        b.data.copy_(tensor.to(b.device))
+                        b.data.copy_(tensor.to(device=b.device, dtype=b.dtype))
                         break
 
         # 4. Restore config attributes

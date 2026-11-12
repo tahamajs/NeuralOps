@@ -152,6 +152,14 @@ def _unwrap_attention_module(sub: nn.Module) -> Tuple[nn.Module, bool]:
     return sub, False
 
 
+def compute_attention_weights(logits: torch.Tensor, dim: int = -1) -> torch.Tensor:
+    """Compute attention weights using FP32 accumulation to prevent half-precision underflow (DEF-026).
+
+    Ensures numerical headroom and prevents gradient underflow in fp16/bf16 attention maps.
+    """
+    return torch.softmax(logits.float(), dim=dim).to(logits.dtype)
+
+
 def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
     """Walk model tree and extract exact metadata for all surgical modules.
 
@@ -825,4 +833,5 @@ __all__ = [
     "save_surgical_delta",
     "save_surgical_checkpoint",
     "load_surgical_checkpoint",
+    "compute_attention_weights",
 ]
