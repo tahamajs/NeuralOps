@@ -219,15 +219,16 @@ class OATSLoRALinear(nn.Module):
                             x_flat, self.V.to(x.dtype), self.U.to(x.dtype), s=s_buf.to(x.dtype), bias=self.bias
                         )
                         dispatched = True
-                    except Exception:
-                        pass
+                    except Exception as exc:
+                        logger.debug("OATS CUDA fused_svd_residual fallback: %s", exc)
                 else:
                     try:
                         from neuralops.ops.cuda.fused_svd_projection import fused_svd_projection
 
                         out = fused_svd_projection(x_flat, self.V.t().to(x.dtype), None, self.U.t().to(x.dtype), bias=self.bias)
                         dispatched = True
-                    except Exception:
+                    except Exception as exc:
+                        logger.debug("OATS CUDA fused_svd_projection fallback: %s", exc)
                         try:
                             from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
 
@@ -235,8 +236,8 @@ class OATSLoRALinear(nn.Module):
                                 x_flat, self.V.to(x.dtype), self.U.t().to(x.dtype).contiguous(), bias=self.bias
                             )
                             dispatched = True
-                        except Exception:
-                            pass
+                        except Exception as exc2:
+                            logger.debug("OATS Triton low_rank fallback: %s", exc2)
 
             if not dispatched or out is None:
                 h = F.linear(x, self.V)
@@ -260,8 +261,8 @@ class OATSLoRALinear(nn.Module):
                         x, self.lora_A.to(x.dtype), self.lora_B.t().to(x.dtype).contiguous(), bias=None
                     )
                     return out + (self.scaling * lora_out)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("OATS Triton LoRA fallback: %s", exc)
 
             out = out + self.scaling * F.linear(F.linear(x.float(), self.lora_A), self.lora_B).to(out.dtype)
         return out

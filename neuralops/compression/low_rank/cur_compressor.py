@@ -50,17 +50,17 @@ def compute_leverage_scores(W: torch.Tensor, rank: int) -> tuple[torch.Tensor, t
         U, S, Vt = torch.linalg.svd(W.float().cpu(), full_matrices=False)
         U, Vt = U.to(W.device), Vt.to(W.device)
 
-    row_scores = (U[:, :k] ** 2).sum(dim=1) / float(k)
-    col_scores = (Vt[:k, :] ** 2).sum(dim=0) / float(k)
+    row_scores = (U[:, :k] ** 2).sum(dim=1) / float(max(1, k))
+    col_scores = (Vt[:k, :] ** 2).sum(dim=0) / float(max(1, k))
 
-    row_scores = row_scores / row_scores.sum().clamp_min(1e-12)
-    col_scores = col_scores / col_scores.sum().clamp_min(1e-12)
+    row_scores = row_scores / row_scores.sum().clamp(min=1e-8)
+    col_scores = col_scores / col_scores.sum().clamp(min=1e-8)
     return col_scores, row_scores
 
 
 def compute_energy_scores(W: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
     """Compute Frobenius energy sampling probabilities for columns and rows."""
-    frob_sq = (W.float() ** 2).sum().clamp_min(1e-12)
+    frob_sq = (W.float() ** 2).sum().clamp(min=1e-8)
     col_scores = (W.float() ** 2).sum(dim=0) / frob_sq
     row_scores = (W.float() ** 2).sum(dim=1) / frob_sq
     return col_scores, row_scores
@@ -74,8 +74,8 @@ def select_indices(scores: torch.Tensor, k: int, deterministic: bool = True) -> 
         _, idx = torch.topk(scores, k=k, largest=True, sorted=True)
         return idx
     else:
-        probs = (scores / scores.sum().clamp_min(1e-12)).clamp_min(1e-8)
-        probs = probs / probs.sum()
+        probs = (scores / scores.sum().clamp(min=1e-8)).clamp(min=1e-8)
+        probs = probs / probs.sum().clamp(min=1e-8)
         idx = torch.multinomial(probs, num_samples=k, replacement=False)
         return idx
 
@@ -180,9 +180,8 @@ class CURLinear(nn.Module):
                     )
                     return out + lora_out
                 return out
-            except Exception:
-                # allowed-swallow: best-effort-telemetry
-                pass
+            except Exception as exc:
+                logger.debug("CUR Triton linear fallback: %s", exc)
 
         x_r = F.linear(x, self.R)
         x_ru = F.linear(x_r, self.U)
@@ -579,9 +578,8 @@ def cur_compressor_factory(
     compressed_model, stats = compressor.compress()
     try:
         compressed_model.compression_stats = stats
-    except Exception:
-        # allowed-swallow: best-effort-telemetry
-        pass
+    except Exception as exc:
+        logger.debug("Could not assign compression_stats: %s", exc)
     if kwargs.get("return_stats") or kwargs.get("return_tuple"):
         return compressed_model, stats
     return compressed_model

@@ -23,6 +23,7 @@ import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
 from neuralops.core.common import _cfg_get
+from neuralops.core.exceptions import CompressionVerificationError, LinearDecompositionError
 from neuralops.core.model_utils import replace_module
 from neuralops.core.registry import COMPRESSOR_REGISTRY
 from neuralops.utils.compat import should_compress_linear
@@ -213,8 +214,8 @@ class MLoRQLoRALinear(nn.Module):
 
                 out = fused_svd_projection(x, Vt.t(), S=S, V_T=U.t(), bias=b)
                 dispatched = True
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("MLoRQ CUDA fused_svd_projection fallback: %s", exc)
 
             # Level 2: Triton JIT kernel
             if not dispatched:
@@ -223,13 +224,17 @@ class MLoRQLoRALinear(nn.Module):
 
                     out = fused_svd_projection_triton(x, Vt.t(), S=S, V_T=U.t(), bias=b)
                     dispatched = True
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("MLoRQ Triton fused_svd_projection fallback: %s", exc)
 
         # Level 3: Vectorized PyTorch reference
         if not dispatched or out is None:
-            x_v = F.linear(x, Vt) * S
-            out = F.linear(x_v, U, b)
+            try:
+                x_v = F.linear(x, Vt) * S
+                out = F.linear(x_v, U, b)
+            except Exception as e:
+                logger.error("MLoRQLoRALinear PyTorch projection failed: %s", e)
+                raise CompressionVerificationError(f"MLoRQ low-rank projection failed during forward pass: {e}") from e
 
         if self.lora_r > 0 and self.lora_A is not None and self.lora_B is not None:
             lora_dispatched = False
@@ -240,10 +245,14 @@ class MLoRQLoRALinear(nn.Module):
 
                     lora_out = fused_down_up_gemm_bias_triton(x.float(), self.lora_A.t(), self.lora_B.t())
                     lora_dispatched = True
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("MLoRQ Triton low_rank LoRA fallback: %s", exc)
             if not lora_dispatched or lora_out is None:
-                lora_out = F.linear(F.linear(x.float(), self.lora_A), self.lora_B)
+                try:
+                    lora_out = F.linear(F.linear(x.float(), self.lora_A), self.lora_B)
+                except Exception as e:
+                    logger.error("MLoRQLoRALinear LoRA projection failed: %s", e)
+                    raise CompressionVerificationError(f"MLoRQ LoRA low-rank projection failed during forward pass: {e}") from e
             out = out + self.scaling * lora_out.to(out.dtype)
         return out
 
@@ -264,15 +273,33 @@ class MLoRQLoRALinear(nn.Module):
     def from_linear(
         cls,
         linear: nn.Module,
-        U: torch.Tensor,
-        S: torch.Tensor,
-        Vt: torch.Tensor,
-        bits: int,
+        U: torch.Tensor | None = None,
+        S: torch.Tensor | None = None,
+        Vt: torch.Tensor | None = None,
+        bits: int = 8,
+        rank: int | None = None,
         lora_r: int = 0,
         lora_alpha: float = 1.0,
     ) -> MLoRQLoRALinear:
         base_layer = getattr(linear, "base_layer", linear)
         bias = base_layer.bias.detach() if getattr(base_layer, "bias", None) is not None else None
+        raw_w = base_layer.weight.data
+
+        if U is None or S is None or Vt is None:
+            r = rank if rank is not None else 16
+            cls_name = base_layer.__class__.__name__.lower()
+            is_conv1d = "conv1d" in cls_name or hasattr(base_layer, "nf")
+            W_float = raw_w.t().contiguous().float() if is_conv1d else raw_w.float()
+            r = max(1, min(r, W_float.shape[0], W_float.shape[1]))
+            try:
+                U_full, S_full, Vt_full = torch.linalg.svd(W_float, full_matrices=False)
+                U = U_full[:, :r]
+                S = S_full[:r]
+                Vt = Vt_full[:r, :]
+            except Exception as e:
+                logger.error("MLoRQLoRALinear SVD factorization failed: %s", e)
+                raise LinearDecompositionError(f"MLoRQ SVD failed for shape {W_float.shape}: {e}") from e
+
         in_features = int(getattr(base_layer, "in_features", Vt.shape[1]))
         out_features = int(getattr(base_layer, "out_features", U.shape[0]))
         rank = int(min(U.shape[1], Vt.shape[0], S.numel()))
@@ -714,6 +741,11 @@ class MLoRQCompressor(BaseCompressor):
                 logger.warning("MLoRQ: failed on %s: %s", name, e)
                 self.fallback_layers.append(name)
                 total_comp_bytes += info["orig_bits"] // 8
+
+        if not self.fallback_to_original and len(self.compressed_layers) == 0:
+            raise CompressionVerificationError(
+                "MLoRQ failed to compress any target layer and fallback_to_original is False."
+            )
 
         forward_check_success = True
         try:

@@ -130,8 +130,8 @@ class SALRLayer(nn.Module):
                         lora_out = F.linear(F.linear(x, self.lora_A), self.lora_B) * self.scaling
                     return out + lora_out
                 return out
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("SALR CUDA fallback: %s", exc)
 
             # Level 2: Triton JIT kernel
             from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
@@ -149,8 +149,8 @@ class SALRLayer(nn.Module):
                         )
                         return out + lora_out
                     return out
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("SALR Triton fallback: %s", exc)
 
         latent = F.linear(x, V_masked)
         out = F.linear(latent, self.U, self.bias)

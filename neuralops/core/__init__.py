@@ -92,6 +92,10 @@ _MODULE_MAP: dict[str, str] = {
     "IncompatibleArchitectureError": "errors",
     "KernelDispatchError": "errors",
     "CalibrationError": "errors",
+    "CompressionError": "errors",
+    "CompressionVerificationError": "errors",
+    "LinearDecompositionError": "errors",
+    "SingularValueDecompositionError": "errors",
     "torch_install_error": "errors",
 }
 

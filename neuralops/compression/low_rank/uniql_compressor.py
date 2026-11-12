@@ -407,7 +407,7 @@ class UniQLCompressor(BaseCompressor):
                 row_norms_orig = torch.linalg.norm(W.to(orig_device), dim=1).clamp_min(1e-8)
                 row_norms_rec = torch.linalg.norm(W_rec, dim=1).clamp_min(1e-8)
                 gain = (row_norms_orig / row_norms_rec).clamp(0.2, 5.0)
-                scale_u.mul_(gain)
+                scale_u = scale_u * gain
 
             new_layer = UniQLinear(
                 in_features=in_f,

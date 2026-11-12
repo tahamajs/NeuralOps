@@ -150,8 +150,8 @@ class ResSVDLinear(nn.Module):
                         res_out = self.scaling * F.linear(F.linear(x, self.lora_A), self.lora_B)
                     return base_out + res_out
                 return base_out
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Residual SVD CUDA fallback: %s", exc)
 
             # Level 2: Triton JIT kernel
             from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
@@ -169,8 +169,8 @@ class ResSVDLinear(nn.Module):
                         )
                         return base_out + res_out
                     return base_out
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("Residual SVD Triton fallback: %s", exc)
 
         if self.factorize_base:
             base_intermediate = F.linear(x, self.base_V)

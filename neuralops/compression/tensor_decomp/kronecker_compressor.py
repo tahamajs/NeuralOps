@@ -227,8 +227,8 @@ class KroneckerLinear(nn.Module):
                 from neuralops.ops.cuda.kronecker_gemm import kronecker_matmul
 
                 return kronecker_matmul(x, self.A, self.B, bias=self.bias)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("CUDA kronecker_matmul fallback: %s", exc)
 
             # Level 2: Triton JIT Kronecker kernel
             try:
@@ -273,8 +273,8 @@ class KroneckerLinear(nn.Module):
                 from neuralops.ops.cuda.fused_svd_projection import fused_svd_projection
 
                 return fused_svd_projection(x, v_w.t(), S=None, V_T=u_w.t(), bias=b_w)
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("CUDA fused_svd_projection fallback: %s", exc)
 
             # Level 2: Triton JIT low-rank kernel
             try:

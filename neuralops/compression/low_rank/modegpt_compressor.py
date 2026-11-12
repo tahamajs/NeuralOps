@@ -23,6 +23,7 @@ import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
 from neuralops.core.common import _cfg_get
+from neuralops.core.exceptions import CompressionVerificationError, LinearDecompositionError
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -164,12 +165,13 @@ class MoDeGPTLowRankLinear(nn.Module):
                         from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton
 
                         lora_out = fused_down_up_gemm_bias_triton(x, a, bb.t().contiguous(), bias=None) * self.scaling
-                    except Exception:
+                    except Exception as exc:
+                        logger.debug("MoDeGPT Triton LoRA fallback to PyTorch: %s", exc)
                         lora_out = F.linear(F.linear(x, a), bb) * self.scaling
                     return out + lora_out
                 return out
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("MoDeGPT CUDA fused_svd_projection fallback: %s", exc)
 
             # Level 2: Triton JIT kernel
             from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
@@ -184,8 +186,8 @@ class MoDeGPTLowRankLinear(nn.Module):
                         lora_out = fused_down_up_gemm_bias_triton(x, a, bb.t().contiguous(), bias=None) * self.scaling
                         return out + lora_out
                     return out
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("MoDeGPT Triton low_rank fallback: %s", exc)
 
         h = F.linear(x, V)
         out = F.linear(h, U, b)
@@ -211,10 +213,21 @@ class MoDeGPTLowRankLinear(nn.Module):
         W = raw_w.t().contiguous().float() if is_conv1d else raw_w.float()
         out_f, in_f = W.shape
         r = max(1, min(int(rank), out_f, in_f))
-        U_svd, S, Vt = torch.linalg.svd(W, full_matrices=False)
-        r = min(r, len(S))
-        U_r = (U_svd[:, :r] * S[:r].unsqueeze(0)).contiguous()
-        V_r = Vt[:r, :].contiguous()
+        try:
+            U_svd, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            r = min(r, len(S))
+            U_r = (U_svd[:, :r] * S[:r].unsqueeze(0)).contiguous()
+            V_r = Vt[:r, :].contiguous()
+        except Exception as e:
+            logger.warning("MoDeGPT from_linear SVD failed (%s), falling back to QR decomposition", e)
+            try:
+                Q, R = torch.linalg.qr(W, mode="reduced")
+                r = min(r, Q.shape[1], R.shape[0])
+                U_r = Q[:, :r].contiguous()
+                V_r = R[:r, :].contiguous()
+            except Exception as qr_err:
+                logger.error("MoDeGPT from_linear QR decomposition also failed: %s", qr_err)
+                raise LinearDecompositionError(f"MoDeGPT decomposition failed: {qr_err}") from qr_err
         bias = target_layer.bias.data if getattr(target_layer, "bias", None) is not None else None
         return cls(
             in_features=in_f,
@@ -458,21 +471,29 @@ class MoDeGPTCompressor(BaseCompressor):
 
         try:
             U, S, Vt = torch.linalg.svd(W_joint, full_matrices=False)
+            r = min(r, len(S))
+            if r <= 0:
+                return None
+            U_r = U[:, :r] * S[:r].unsqueeze(0)
+            V_shared = Vt[:r, :].contiguous()
+            U1 = U_r[:out1, :].contiguous()
+            U2 = U_r[out1:, :].contiguous()
+            return U1, U2, V_shared, r
         except Exception as e:
-            logger.debug("MoDeGPT joint SVD failed: %s", e)
-            return None
-
-        r = min(r, len(S))
-        if r <= 0:
-            return None
-
-        U_r = U[:, :r] * S[:r].unsqueeze(0)
-        V_shared = Vt[:r, :].contiguous()
-
-        U1 = U_r[:out1, :].contiguous()
-        U2 = U_r[out1:, :].contiguous()
-
-        return U1, U2, V_shared, r
+            logger.warning("MoDeGPT joint SVD failed (%s), falling back to QR decomposition", e)
+            try:
+                Q, R = torch.linalg.qr(W_joint, mode="reduced")
+                r = min(r, Q.shape[1], R.shape[0])
+                if r <= 0:
+                    return None
+                U_r = Q[:, :r].contiguous()
+                V_shared = R[:r, :].contiguous()
+                U1 = U_r[:out1, :].contiguous()
+                U2 = U_r[out1:, :].contiguous()
+                return U1, U2, V_shared, r
+            except Exception as qr_err:
+                logger.error("MoDeGPT joint QR fallback also failed: %s", qr_err)
+                return None
 
     def _decompose_single(
         self,
@@ -482,15 +503,25 @@ class MoDeGPTCompressor(BaseCompressor):
         r = self._select_rank(out_f, in_f)
         try:
             U, S, Vt = torch.linalg.svd(W, full_matrices=False)
+            r = min(r, len(S))
+            if r <= 0:
+                return None
+            U_r = U[:, :r] * S[:r].unsqueeze(0)
+            V_r = Vt[:r, :].contiguous()
+            return U_r, V_r, r
         except Exception as e:
-            logger.debug("MoDeGPT single SVD failed: %s", e)
-            return None
-        r = min(r, len(S))
-        if r <= 0:
-            return None
-        U_r = U[:, :r] * S[:r].unsqueeze(0)
-        V_r = Vt[:r, :].contiguous()
-        return U_r, V_r, r
+            logger.warning("MoDeGPT single SVD failed (%s), falling back to QR decomposition", e)
+            try:
+                Q, R = torch.linalg.qr(W, mode="reduced")
+                r = min(r, Q.shape[1], R.shape[0])
+                if r <= 0:
+                    return None
+                U_r = Q[:, :r].contiguous()
+                V_r = R[:r, :].contiguous()
+                return U_r, V_r, r
+            except Exception as qr_err:
+                logger.error("MoDeGPT single QR fallback also failed: %s", qr_err)
+                return None
 
     def _storage_bytes(self, module: nn.Module) -> int:
         total = 0
@@ -727,6 +758,11 @@ class MoDeGPTCompressor(BaseCompressor):
             self.compressed_layers.append(name)
             processed_names.add(name)
             self._comp_storage_bytes += self._storage_bytes(new_layer)
+
+        if not self.fallback_to_original and len(self.compressed_layers) == 0:
+            raise CompressionVerificationError(
+                "MoDeGPT failed to compress any target layer and fallback_to_original is False."
+            )
 
         forward_check_success = True
         try:

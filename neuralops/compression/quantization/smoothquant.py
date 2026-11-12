@@ -58,7 +58,7 @@ class SmoothQuantLinear(nn.Module):
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.register_buffer("s_inv", (1.0 / s.to(torch.float32)).to(device=device, dtype=dtype))
+        self.register_buffer("s_inv", (1.0 / s.to(torch.float32).clamp(min=1e-8)).to(device=device, dtype=dtype))
         self.register_buffer("act_scale", s.to(torch.float32).to(device=device, dtype=dtype))
 
         if weight is None:
@@ -128,16 +128,16 @@ def smoothquant_layer(
         else:
             a_max = stacked.abs().amax(dim=0).clamp(min=1e-5)
     else:
-        a_max = act_scales.clamp(min=1e-5)
+        a_max = act_scales.clamp(min=1e-8)
 
-    w_max = module.weight.abs().amax(dim=0).clamp(min=1e-5)
-    s = (a_max.pow(alpha) / w_max.pow(1.0 - alpha)).clamp(min=1e-5)
+    w_max = module.weight.abs().amax(dim=0).clamp(min=1e-8)
+    s = (a_max.pow(alpha) / w_max.pow(1.0 - alpha).clamp(min=1e-8)).clamp(min=1e-8)
 
     w_fp32 = module.weight.data.to(torch.float32)
     s_fp32 = s.to(torch.float32).to(w_fp32.device)
     w_migrated = w_fp32 * s_fp32.unsqueeze(0)
 
-    module.register_buffer("s_inv", (1.0 / s_fp32).to(module.weight.dtype))
+    module.register_buffer("s_inv", (1.0 / s_fp32.clamp(min=1e-8)).to(module.weight.dtype))
     module.register_buffer("act_scale", s_fp32.to(module.weight.dtype))
 
     if quantize:
@@ -145,11 +145,13 @@ def smoothquant_layer(
         w_int8 = torch.clamp(torch.round(w_migrated / scale_w), -128, 127).to(torch.int8)
         w_dequant = (w_int8.to(torch.float32) * scale_w).to(module.weight.dtype)
 
-        module.weight.data.copy_(w_dequant)
+        with torch.no_grad():
+            module.weight.data.copy_(w_dequant)
         module.register_buffer("weight_int8", w_int8)
         module.register_buffer("weight_scale", scale_w.to(module.weight.dtype))
     else:
-        module.weight.data = w_migrated.to(module.weight.dtype)
+        with torch.no_grad():
+            module.weight.data.copy_(w_migrated.to(module.weight.dtype))
 
     orig_forward = module.forward
 

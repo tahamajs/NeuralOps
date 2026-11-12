@@ -88,12 +88,28 @@ class InjectionError(NeuralOpsError):
     """Raised when injecting a new attention module into a model fails."""
 
 
+class SurgeryTransactionError(NeuralOpsError, RuntimeError):
+    """Raised when an in-place model surgery transaction fails and is rolled back."""
+
+
 class KDError(NeuralOpsError):
     """Raised when knowledge distillation encounters a fatal error."""
 
 
 class CompressionError(NeuralOpsError):
     """Raised when model compression fails."""
+
+
+class CompressionVerificationError(CompressionError):
+    """Raised when compression verification or physical reduction checks fail."""
+
+
+class LinearDecompositionError(CompressionError):
+    """Raised when linear decomposition or matrix factorization fails."""
+
+
+class SingularValueDecompositionError(LinearDecompositionError):
+    """Raised when singular value decomposition fails to converge."""
 
 
 class InferenceError(NeuralOpsError):
@@ -142,8 +158,12 @@ __all__ = [
     "NumericalError",
     "ShapeError",
     "InjectionError",
+    "SurgeryTransactionError",
     "KDError",
     "CompressionError",
+    "CompressionVerificationError",
+    "LinearDecompositionError",
+    "SingularValueDecompositionError",
     "InferenceError",
     "torch_install_error",
     "_torch_install_error",

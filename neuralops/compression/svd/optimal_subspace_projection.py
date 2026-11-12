@@ -23,6 +23,7 @@ import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
 from neuralops.core.common import _cfg_get
+from neuralops.core.exceptions import CompressionVerificationError, SingularValueDecompositionError
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import get_calibration_tensors
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -219,8 +220,8 @@ class OptimalSubspaceLoRALinear(nn.Module):
                         x_flat, self.V.t().to(x.dtype), None, self.U.t().to(x.dtype), bias=self.bias
                     )
                     dispatched = True
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("OSP CUDA fused_svd_projection fallback: %s", exc)
 
                 # Level 2: Triton JIT kernel
                 if not dispatched:
@@ -231,8 +232,8 @@ class OptimalSubspaceLoRALinear(nn.Module):
                             x_flat, self.V.to(x.dtype), self.U.t().to(x.dtype).contiguous(), bias=self.bias
                         )
                         dispatched = True
-                    except Exception:
-                        pass
+                    except Exception as exc:
+                        logger.debug("OSP Triton low_rank fallback: %s", exc)
 
             if not dispatched or out is None:
                 h = F.linear(x, self.V)
@@ -254,8 +255,8 @@ class OptimalSubspaceLoRALinear(nn.Module):
                         x, self.lora_A.to(x.dtype), self.lora_B.t().to(x.dtype).contiguous(), bias=None
                     )
                     return out + (self.scaling * lora_out)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("OSP Triton LoRA fallback: %s", exc)
 
             out = out + self.scaling * F.linear(F.linear(x.float(), self.lora_A), self.lora_B).to(out.dtype)
         return out
@@ -563,11 +564,13 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
                 self.layer_ranks[name] = r
 
                 if not math.isfinite(err) or err > self.max_error:
+                    spectrum = S_r.tolist() if "S_r" in locals() and isinstance(S_r, torch.Tensor) else []
                     logger.warning(
-                        "OSP: reconstruction error %.4f on %s exceeded %.4f.",
+                        "OSP: reconstruction error %.4f on %s exceeded %.4f; singular spectrum: %s",
                         err,
                         name,
                         self.max_error,
+                        spectrum,
                     )
                     if self.fallback_to_original:
                         self.fallback_layers.append(name)
@@ -575,6 +578,10 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
                         for p in module.parameters():
                             p.requires_grad = False
                         continue
+                    else:
+                        raise CompressionVerificationError(
+                            f"OSP reconstruction error {err:.4f} exceeded threshold {self.max_error:.4f} on {name}"
+                        )
 
                 compressed_layer = OptimalSubspaceLoRALinear.from_linear(
                     module,
@@ -594,13 +601,25 @@ class OptimalSubspaceProjectionCompressor(BaseCompressor):
                 self.compressed_layers.append(name)
                 total_comp_params += sum(p.numel() for p in compressed_layer.parameters())
 
+            except CompressionVerificationError:
+                raise
             except Exception as e:
-                logger.warning("OSP: SVD/decomposition failed on %s: %s", name, e)
+                spectrum = S.tolist() if "S" in locals() and isinstance(S, torch.Tensor) else []
+                logger.error("OSP: SVD/decomposition failed on %s: %s; singular spectrum: %s", name, e, spectrum)
+                if not self.fallback_to_original:
+                    raise SingularValueDecompositionError(
+                        f"OSP SVD/decomposition failed on {name}: {e}"
+                    ) from e
                 self.fallback_layers.append(name)
                 self.layer_errors[name] = 1.0
                 total_comp_params += base_param_count
                 for p in module.parameters():
                     p.requires_grad = False
+
+        if not self.fallback_to_original and len(self.compressed_layers) == 0:
+            raise CompressionVerificationError(
+                "OptimalSubspaceProjection failed to compress any target layer and fallback_to_original is False."
+            )
 
         forward_check_success = True
         try:

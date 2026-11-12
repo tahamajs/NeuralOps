@@ -23,6 +23,7 @@ import torch.nn.functional as F
 
 from neuralops.core.base import BaseCompressor
 from neuralops.core.common import _cfg_get
+from neuralops.core.exceptions import LinearDecompositionError
 from neuralops.core.model_utils import replace_module
 from neuralops.core.pruning_utils import adaptive_max_error
 from neuralops.core.registry import COMPRESSOR_REGISTRY
@@ -127,8 +128,8 @@ class GreCoDeCLinear(nn.Module):
 
                     out = fused_svd_projection(x_flat, self.V.t(), S=None, V_T=self.U.t(), bias=self.bias)
                     return out.view(*orig_shape[:-1], self.out_features)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("GreCoDeC Native CUDA fused_svd_projection fallback: %s", exc)
 
             # Level 2: Triton JIT low-rank kernel
             from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
@@ -152,9 +153,8 @@ class GreCoDeCLinear(nn.Module):
                         )
                         return (out + lora_out).view(*orig_shape[:-1], self.out_features)
                     return out.view(*orig_shape[:-1], self.out_features)
-                except Exception:
-                    # allowed-swallow: best-effort-telemetry
-                    pass
+                except Exception as exc:
+                    logger.debug("GreCoDeC Triton low_rank fallback: %s", exc)
 
         # Level 3: Vectorized PyTorch reference
 
@@ -204,18 +204,24 @@ class GreCoDeCLinear(nn.Module):
         existing_lora_A = getattr(linear, "lora_A", None)
         existing_lora_B = getattr(linear, "lora_B", None)
 
-        U_init, S_init, Vt_init = torch.linalg.svd(W_float, full_matrices=False)
+        try:
+            U_init, S_init, Vt_init = torch.linalg.svd(W_float, full_matrices=False)
+        except Exception as e:
+            logger.error("GreCoDeC SVD factorization failed to converge: %s", e)
+            raise LinearDecompositionError(f"GreCoDeC SVD non-convergence for shape {W_float.shape}: {e}") from e
+
         sqrt_S = torch.sqrt(torch.clamp(S_init[:r], min=1e-12))
         U_mat = (U_init[:, :r] * sqrt_S.unsqueeze(0)).clone()
         V_mat = (sqrt_S.unsqueeze(1) * Vt_init[:r, :]).clone()
 
-        for _ in range(max_iter):
+        for step in range(max_iter):
             VVt = torch.matmul(V_mat, V_mat.t().contiguous())
             VVt_reg = VVt + 1e-6 * torch.eye(r, device=VVt.device, dtype=VVt.dtype)
             try:
                 WV_t = torch.matmul(W_float, V_mat.t().contiguous())
                 U_mat = torch.linalg.solve(VVt_reg, WV_t.t().contiguous()).t().contiguous()
-            except Exception:
+            except Exception as e:
+                logger.warning("GreCoDeC solve for U terminated at step %d: %s", step, e)
                 break
 
             UtU = torch.matmul(U_mat.t().contiguous(), U_mat)
@@ -223,7 +229,8 @@ class GreCoDeCLinear(nn.Module):
             try:
                 UtW = torch.matmul(U_mat.t().contiguous(), W_float)
                 V_mat = torch.linalg.solve(UtU_reg, UtW)
-            except Exception:
+            except Exception as e:
+                logger.warning("GreCoDeC solve for V terminated at step %d: %s", step, e)
                 break
 
         U_norm = torch.norm(U_mat, p=2, dim=0, keepdim=True).clamp_min(1e-8)
@@ -581,9 +588,8 @@ def grecodec_compressor_factory(
     compressed_model, stats = compressor.compress()
     try:
         compressed_model.compression_stats = stats
-    except Exception:
-        # allowed-swallow: best-effort-telemetry
-        pass
+    except Exception as exc:
+        logger.debug("Could not attach compression_stats to compressed_model: %s", exc)
     if return_stats:
         return compressed_model, stats
     return compressed_model

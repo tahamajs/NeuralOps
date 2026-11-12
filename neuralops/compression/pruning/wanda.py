@@ -36,6 +36,8 @@ def _pytorch_wanda(
     """Vectorized PyTorch reference implementation for Wanda pruning (Level 3 fallback)."""
     if act_norm is None:
         act_norm = torch.ones(W.shape[1], device=W.device, dtype=W.dtype)
+    else:
+        act_norm = act_norm.clamp(min=1e-8)
     metric = torch.abs(W) * act_norm.unsqueeze(0)
     n_keep = max(1, min(metric.shape[1], int(round(metric.shape[1] * (1.0 - sparsity)))))
     _, top_idx = torch.topk(metric, k=n_keep, dim=1, largest=True)
@@ -80,7 +82,7 @@ def wanda_prune_layer(
             if stacked.shape[-1] != W.shape[1]:
                 act_norm = torch.ones(W.shape[1], device=W.device, dtype=W.dtype)
             else:
-                act_norm = torch.norm(stacked.to(torch.float32), p=2, dim=0).to(W.device, dtype=W.dtype)
+                act_norm = torch.norm(stacked.to(torch.float32), p=2, dim=0).clamp(min=1e-8).to(W.device, dtype=W.dtype)
 
     try:
         from neuralops.ops.cuda._fallback import dispatch_wanda
@@ -92,9 +94,10 @@ def wanda_prune_layer(
         W_pruned = _pytorch_wanda(W, sparsity=sparsity, act_norm=act_norm)
         mask = W_pruned != 0.0
 
-    module.weight.data.copy_(W_pruned)
-    module.register_buffer("pruning_mask", mask)
-    module.register_buffer("mask", mask.to(dtype=module.weight.dtype))
+    with torch.no_grad():
+        module.weight.data.copy_(W_pruned)
+        module.register_buffer("pruning_mask", mask)
+        module.register_buffer("mask", mask.to(dtype=module.weight.dtype))
     return module, mask
 
 

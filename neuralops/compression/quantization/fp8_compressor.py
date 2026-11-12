@@ -208,6 +208,6 @@ def fp8_compressor_factory(
     compressed.compression_ratio = 4.0
     try:
         compressed.compression_stats = stats
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("Failed to set compression_stats attribute: %s", exc)
     return compressed

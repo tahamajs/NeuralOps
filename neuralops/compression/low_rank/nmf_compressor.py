@@ -124,8 +124,8 @@ class NMFLinear(nn.Module):
 
                 out = fused_svd_projection(x_flat, self.V.t().to(x_flat.dtype), None, self.H.t().to(x_flat.dtype), bias=b)
                 dispatched = True
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("NMF CUDA fused_svd_projection fallback: %s", exc)
 
             if not dispatched:
                 try:
@@ -133,8 +133,8 @@ class NMFLinear(nn.Module):
 
                     out = fused_down_up_gemm_bias_triton(x_flat, self.V.to(x_flat.dtype), self.H.to(x_flat.dtype), bias=b)
                     dispatched = True
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("NMF Triton low_rank fallback: %s", exc)
 
             if not dispatched or out is None:
                 W_eff = self.weight.to(dtype=x_flat.dtype)
@@ -152,8 +152,8 @@ class NMFLinear(nn.Module):
 
                     lora_out = fused_down_up_gemm_bias_triton(x_flat.float(), self.lora_A.t(), self.lora_B.t())
                     lora_dispatched = True
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("NMF Triton LoRA fallback: %s", exc)
             if not lora_dispatched or lora_out is None:
                 lora_out = F.linear(F.linear(x_flat.float(), self.lora_A), self.lora_B)
             out = out + self.scaling * lora_out.to(out.dtype)

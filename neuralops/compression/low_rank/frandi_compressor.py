@@ -183,15 +183,16 @@ class FRanDILinear(nn.Module):
         """Fold LoRA delta into base factors (approximate, additive)."""
         if self.lora_r <= 0 or self.lora_A is None or self.lora_B is None:
             return
-        A_f = self.A.float()
-        delta = self.scaling * torch.matmul(self.lora_B.float(), self.lora_A.float())
-        A_pinv = torch.linalg.pinv(A_f)
-        B_new = self.B.float() + delta @ A_pinv
-        self.B.data.copy_(B_new.to(self.B.dtype))
-        self.lora_A.data.zero_()
-        self.lora_B.data.zero_()
-        self._cached_weight = None
-        self._unmerged_B = self.B.data.clone()
+        with torch.no_grad():
+            A_f = self.A.float()
+            delta = self.scaling * torch.matmul(self.lora_B.float(), self.lora_A.float())
+            A_pinv = torch.linalg.pinv(A_f)
+            B_new = self.B.float() + delta @ A_pinv
+            self.B.data.copy_(B_new.to(self.B.dtype))
+            self.lora_A.data.zero_()
+            self.lora_B.data.zero_()
+            self._cached_weight = None
+            self._unmerged_B = self.B.data.clone()
 
     def merge_and_unload(self) -> FRanDILinear:
         self.merge()
@@ -200,9 +201,10 @@ class FRanDILinear(nn.Module):
     def unmerge(self) -> None:
         """Restores original B weights if merge() was previously called."""
         if hasattr(self, "_unmerged_B") and self._unmerged_B is not None:
-            self.B.data.copy_(self._unmerged_B)
-            self._cached_weight = None
-            self._unmerged_B = None
+            with torch.no_grad():
+                self.B.data.copy_(self._unmerged_B)
+                self._cached_weight = None
+                self._unmerged_B = None
 
     @staticmethod
     def _select_rank(

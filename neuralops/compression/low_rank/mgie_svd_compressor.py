@@ -359,7 +359,7 @@ class MGIESVDBudgetCompressor(BaseCompressor):
 
                 W_approx = torch.nan_to_num(U_r @ V_r, nan=0.0)
                 w_norm = torch.norm(W, p="fro").clamp_min(1e-12).item()
-                err = (torch.norm(W.to(device) - W_approx, p="fro") / w_norm).item()
+                err = (torch.norm(W.to(device=device, dtype=dtype) - W_approx, p="fro") / w_norm).item()
                 self.layer_errors[name] = float(err)
                 self.layer_ranks[name] = r
 

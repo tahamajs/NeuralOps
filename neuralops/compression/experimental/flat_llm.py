@@ -349,7 +349,9 @@ class FLATLLMCompressor(BaseCompressor):
 
         aggregated: dict[str, torch.Tensor] = {}
         for name, esum in energy_sum.items():
-            aggregated[name] = (esum / max(1, batch_count[name])).to(self.target_device)
+            aggregated[name] = (esum / max(1, batch_count[name])).to(
+                device=self.target_device, dtype=esum.dtype
+            )
         return aggregated
 
     def compress(self, **kwargs: Any) -> tuple[nn.Module, dict[str, Any]]:

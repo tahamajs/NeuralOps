@@ -144,9 +144,8 @@ class ROASTLinear(nn.Module):
                     lora_out = F.linear(F.linear(x.float(), self.lora_A), self.lora_B) * self.scaling
                     out = out + lora_out.to(out.dtype)
                 return out
-            except Exception:
-                # allowed-swallow: best-effort-telemetry
-                pass
+            except Exception as exc:
+                logger.debug("ROAST Triton fast path fallback: %s", exc)
 
         W = self.weight.to(device=x.device, dtype=x.dtype)
         out = F.linear(x, W, self.bias.to(dtype=x.dtype) if self.bias is not None else None)
@@ -245,11 +244,15 @@ class ROASTLinear(nn.Module):
 
             flat_idx = roast.tile_hash_idx.view(-1).to(device=roast.weight_table.device)
             flat_means = tile_means.view(-1).to(device=roast.weight_table.device, dtype=roast.weight_table.dtype)
-            roast.weight_table.data.scatter_(0, flat_idx, flat_means)
+            bin_sums = torch.zeros(roast.n_buckets, device=roast.weight_table.device, dtype=roast.weight_table.dtype)
+            bin_counts = torch.zeros(roast.n_buckets, device=roast.weight_table.device, dtype=roast.weight_table.dtype)
+            bin_sums.scatter_add_(0, flat_idx, flat_means)
+            bin_counts.scatter_add_(0, flat_idx, torch.ones_like(flat_means))
+            roast.weight_table.data.copy_(bin_sums / bin_counts.clamp(min=1.0))
 
             W_recon_unscaled = roast.weight.detach().float()
             orig_row_norms = torch.norm(W, p=2, dim=1)
-            recon_row_norms = torch.norm(W_recon_unscaled, p=2, dim=1).clamp(min=1e-6)
+            recon_row_norms = torch.norm(W_recon_unscaled, p=2, dim=1).clamp(min=1e-8)
             g = orig_row_norms / recon_row_norms
             roast.row_scales.copy_(g.to(dtype=roast.row_scales.dtype, device=roast.row_scales.device))
             roast._invalidate_cache()

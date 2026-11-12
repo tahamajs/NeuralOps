@@ -133,12 +133,12 @@ class SVDLLMLinear(nn.Module):
     def set_factors(self, W_u: torch.Tensor, W_v: torch.Tensor, bias: torch.Tensor | None = None) -> None:
         with torch.no_grad():
             r = min(self.rank, W_u.size(1), W_v.size(0))
-            self.W_u.data.zero_()
-            self.W_v.data.zero_()
-            self.W_u.data[:, :r].copy_(W_u[:, :r].to(device=self.W_u.device, dtype=self.W_u.dtype))
-            self.W_v.data[:r, :].copy_(W_v[:r, :].to(device=self.W_v.device, dtype=self.W_v.dtype))
+            self.W_u.zero_()
+            self.W_v.zero_()
+            self.W_u[:, :r].copy_(W_u[:, :r].to(device=self.W_u.device, dtype=self.W_u.dtype))
+            self.W_v[:r, :].copy_(W_v[:r, :].to(device=self.W_v.device, dtype=self.W_v.dtype))
             if bias is not None and self.bias is not None:
-                self.bias.data.copy_(bias.to(device=self.bias.device, dtype=self.bias.dtype))
+                self.bias.copy_(bias.to(device=self.bias.device, dtype=self.bias.dtype))
 
     def set_active_lora_stage(self, stage: str | None) -> None:
         """
