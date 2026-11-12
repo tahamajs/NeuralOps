@@ -732,7 +732,7 @@ class REAPMoEAttention(BaseAttention):
             if token_valid is not None:
                 scores = scores.masked_fill(~token_valid[:, None, None, :].bool(), -1e4)
 
-            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
+            scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4).clamp(min=-65500.0, max=65500.0)
             probs = F.softmax(scores, dim=-1).to(hidden_states.dtype)
             probs = torch.nan_to_num(probs, nan=0.0)
             probs = self.dropout(probs)

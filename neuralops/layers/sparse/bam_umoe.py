@@ -927,15 +927,15 @@ class BAMUMoEBlock(BaseAttention):
             if valid_k is not None:
                 invalid = invalid | (~valid_k).unsqueeze(1).unsqueeze(2)
             else:
-                scores = apply_attention_mask(scores, eff_mask, mask_value=-1e9)
-                invalid = invalid | (scores <= -5e8)
+                scores = apply_attention_mask(scores, eff_mask, mask_value=-65500.0)
+                invalid = invalid | (scores <= -5e4)
 
         all_masked = invalid.all(dim=-1, keepdim=True)
         safe_invalid = invalid.clone()
         if all_masked.any():
             safe_invalid[..., :1] = safe_invalid[..., :1] & (~all_masked)
 
-        scores = torch.nan_to_num(scores, nan=0.0, posinf=1e4, neginf=-1e4).masked_fill(safe_invalid, -1e9)
+        scores = torch.nan_to_num(scores, nan=0.0, posinf=1e4, neginf=-1e4).masked_fill(safe_invalid, -65500.0).clamp(min=-65500.0, max=65500.0)
         probs = F.softmax(scores, dim=-1).masked_fill(all_masked, 0.0)
         probs = self.dropout(probs)
 
