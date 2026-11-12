@@ -52,8 +52,10 @@ class DirectSVDFunction(Function):
 
     @staticmethod
     def forward(ctx, U: torch.Tensor, V: torch.Tensor, scale: float = 1.0) -> torch.Tensor:
+        U = U.contiguous()
+        V = V.contiguous()
         ctx.save_for_backward(U, V)
-        ctx.scale = scale
+        ctx.scale = float(scale)
 
         from neuralops.ops.cuda import _fallback
 
@@ -62,12 +64,12 @@ class DirectSVDFunction(Function):
             ops = _get_direct_svd_ops()
             if ops is not None and hasattr(ops, "direct_svd_fwd"):
                 try:
-                    out = ops.direct_svd_fwd(U.contiguous(), V.contiguous(), float(scale))
+                    out = ops.direct_svd_fwd(U, V, float(scale))
                     _fallback.set_last_dispatch_backend("direct_svd", "cuda")
                     return out
-                except Exception:
-                    # allowed-swallow: best-effort-telemetry
-                    pass
+                except Exception as e:
+                    _fallback.set_last_dispatch_error("direct_svd", f"Level 1 (CUDA) failed: {e}")
+                    _fallback._DISPATCH_STATS["cuda_failures"] += 1
 
         # Level 2: Triton JIT Kernel
         if U.is_cuda and V.is_cuda:
@@ -84,8 +86,8 @@ class DirectSVDFunction(Function):
                         triton.cdiv(N, META["BLOCK_N"]),
                     )
                     _direct_svd_reconstruct_kernel[grid](
-                        U.contiguous(),
-                        V.contiguous(),
+                        U,
+                        V,
                         out,
                         M,
                         N,
@@ -100,19 +102,20 @@ class DirectSVDFunction(Function):
                     )
                     _fallback.set_last_dispatch_backend("direct_svd", "triton")
                     return out
-            except Exception:
-                # allowed-swallow: best-effort-telemetry
-                pass
+            except Exception as e:
+                _fallback.set_last_dispatch_error("direct_svd", f"Level 2 (Triton) failed: {e}")
+                _fallback._DISPATCH_STATS["triton_failures"] += 1
 
         # Level 3: Vectorized PyTorch reference fallback
         _fallback.set_last_dispatch_backend("direct_svd", "pytorch")
-        return torch.matmul(U, V) * scale
+        return torch.matmul(U, V) * float(scale)
 
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor):
         U, V = ctx.saved_tensors
         scale = ctx.scale
 
+        grad_output = grad_output.contiguous()
         grad_scaled = grad_output * scale
         grad_U = torch.matmul(grad_scaled, V.t())
         grad_V = torch.matmul(U.t(), grad_scaled)

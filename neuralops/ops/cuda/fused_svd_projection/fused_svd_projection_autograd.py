@@ -130,6 +130,8 @@ class FusedSVDProjectionFunction(Function):
                     _fallback.set_last_dispatch_backend("fused_svd_projection", "cuda")
             except Exception as e:
                 logger.debug("FusedSVDProjection CUDA forward failed (%s); falling back to Level 2/3.", e)
+                _fallback.set_last_dispatch_error("fused_svd_projection", f"Level 1 (CUDA) failed: {e}")
+                _fallback._DISPATCH_STATS["cuda_failures"] += 1
 
         # Level 2: Triton JIT Kernel
         if not dispatched and x.is_cuda:
@@ -143,6 +145,8 @@ class FusedSVDProjectionFunction(Function):
                 _fallback.set_last_dispatch_backend("fused_svd_projection", "triton")
             except Exception as e:
                 logger.debug("FusedSVDProjection Triton forward failed (%s); falling back to Level 3.", e)
+                _fallback.set_last_dispatch_error("fused_svd_projection", f"Level 2 (Triton) failed: {e}")
+                _fallback._DISPATCH_STATS["triton_failures"] += 1
 
         # Level 3: Vectorized PyTorch Reference
         if not dispatched:

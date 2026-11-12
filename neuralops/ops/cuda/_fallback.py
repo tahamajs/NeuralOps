@@ -53,6 +53,11 @@ def set_last_dispatch_backend(kernel_name: str, backend: str) -> None:
     _LAST_DISPATCH_BACKEND[kernel_name] = backend
 
 
+def set_last_dispatch_error(kernel_name: str, error: str) -> None:
+    """Explicitly record the last fallback/dispatch error diagnostic for a kernel."""
+    _LAST_DISPATCH_ERROR[kernel_name] = error
+
+
 def get_last_dispatch_backend(kernel_name: str) -> str:
     return _LAST_DISPATCH_BACKEND.get(kernel_name, "unknown")
 
@@ -1215,6 +1220,7 @@ __all__ = [
     "get_last_dispatch_backend",
     "set_last_dispatch_backend",
     "get_last_dispatch_error",
+    "set_last_dispatch_error",
     "is_kernel_available",
     "register_kernel",
     "dispatch_direct_svd",

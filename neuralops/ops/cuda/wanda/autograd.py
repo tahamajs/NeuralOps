@@ -49,7 +49,7 @@ def _get_wanda_ops():
 
 
 class WandaFunction(Function):
-    """Autograd Function wrapping CUDA wanda_prune_forward kernel."""
+    """Autograd Function wrapping CUDA wanda_prune_forward kernel with 3-level fallback."""
 
     @staticmethod
     def forward(
@@ -58,13 +58,38 @@ class WandaFunction(Function):
         sparsity: float = 0.5,
         act_norm: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
+        W = W.contiguous()
+        if act_norm is not None:
+            act_norm = act_norm.contiguous()
         ctx.save_for_backward(W)
 
-        ops = _get_wanda_ops()
-        if ops is not None and hasattr(ops, "wanda_prune_forward"):
-            return ops.wanda_prune_forward(W.contiguous(), float(sparsity), act_norm)
+        from neuralops.ops.cuda import _fallback
 
-        # Level 3 PyTorch reference fallback
+        # Level 1: Native CUDA C++ extension
+        if W.is_cuda and (act_norm is None or act_norm.is_cuda):
+            ops = _get_wanda_ops()
+            if ops is not None and hasattr(ops, "wanda_prune_forward"):
+                try:
+                    out = ops.wanda_prune_forward(W, float(sparsity), act_norm)
+                    _fallback.set_last_dispatch_backend("wanda", "cuda")
+                    return out
+                except Exception as e:
+                    _fallback.set_last_dispatch_error("wanda", f"Level 1 (CUDA) failed: {e}")
+                    _fallback._DISPATCH_STATS["cuda_failures"] += 1
+
+        # Level 2: Triton JIT Kernel
+        if W.is_cuda and (act_norm is None or act_norm.is_cuda):
+            try:
+                from neuralops.ops.triton.prune_wanda import wanda_compress as _triton_compress
+                out = _triton_compress(W, sparsity=float(sparsity), act_norm=act_norm)
+                _fallback.set_last_dispatch_backend("wanda", "triton")
+                return out
+            except Exception as e:
+                _fallback.set_last_dispatch_error("wanda", f"Level 2 (Triton) failed: {e}")
+                _fallback._DISPATCH_STATS["triton_failures"] += 1
+
+        # Level 3: Vectorized PyTorch reference fallback
+        _fallback.set_last_dispatch_backend("wanda", "pytorch")
         if sparsity <= 0.0:
             return W.clone()
         if act_norm is None:
@@ -79,4 +104,5 @@ class WandaFunction(Function):
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor):
         # STE (Straight-Through Estimator)
+        grad_output = grad_output.contiguous()
         return grad_output, None, None
