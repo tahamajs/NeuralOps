@@ -252,9 +252,10 @@ class GLAttention(BaseAttention):
         V = self.v_proj(hidden_states).view(B, N, H, d)
 
         if not self.is_decoder:
-            # Bidirectional mode with positive feature maps and symmetric state decay
-            q_all = (F.elu(Q.float()) + 1.0).permute(0, 2, 1, 3)
-            k_all = (F.elu(K.float()) + 1.0).permute(0, 2, 1, 3)
+            # Bidirectional mode with positive feature maps, data-dependent gating, and symmetric state decay
+            g_h = g.permute(0, 2, 1).unsqueeze(-1)
+            q_all = (F.elu(Q.float()) + 1.0).permute(0, 2, 1, 3) * torch.exp(0.5 * g_h)
+            k_all = (F.elu(K.float()) + 1.0).permute(0, 2, 1, 3) * torch.exp(0.5 * g_h)
             v_all = V.float().permute(0, 2, 1, 3)
 
             diff_sym = -torch.abs(
@@ -280,11 +281,7 @@ class GLAttention(BaseAttention):
                     scores = scores.masked_fill(~mask, 0.0)
             den = scores.sum(dim=-1, keepdim=True).clamp(min=1e-4)
             attn = scores / den
-            out = torch.matmul(attn, v_all).permute(0, 2, 1, 3).contiguous()
-            if hidden_states.dtype == torch.float16:
-                fmax = torch.finfo(torch.float16).max * 0.5
-                out = out.clamp(min=-fmax, max=fmax)
-            out = out.to(hidden_states.dtype)
+            out = torch.matmul(attn, v_all).permute(0, 2, 1, 3).contiguous().float()
         else:
             out = None
             if self._fla_kernel is not None and Q.is_cuda and Q.dtype == torch.bfloat16 and attention_mask is None:
@@ -337,12 +334,12 @@ class GLAttention(BaseAttention):
                 # Numerically stable vectorized chunked GLAttention path in FP32
                 out = self._pytorch_gla_stable(Q, K, V, g, attention_mask=attention_mask).float()
 
-            rms = torch.sqrt(torch.mean(out.float() ** 2, dim=-1, keepdim=True) + self.o_norm.eps)
-            out = (out.float() / rms) * self.o_norm.weight.float()
-            if hidden_states.dtype == torch.float16:
-                fmax = torch.finfo(torch.float16).max * 0.5
-                out = out.clamp(min=-fmax, max=fmax)
-            out = out.to(hidden_states.dtype)
+        rms = torch.sqrt(torch.mean(out.float() ** 2, dim=-1, keepdim=True) + self.o_norm.eps)
+        out = (out.float() / rms) * self.o_norm.weight.float()
+        if hidden_states.dtype == torch.float16:
+            fmax = torch.finfo(torch.float16).max * 0.5
+            out = out.clamp(min=-fmax, max=fmax)
+        out = out.to(hidden_states.dtype)
 
         out = out.contiguous().view(B, N, self.all_head_size)
         if self.is_nested_encoder:
