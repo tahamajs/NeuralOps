@@ -34,7 +34,12 @@ from neuralops.models.modeling_norm import NeuralOpsRMSNorm, build_norm_layer
 from neuralops.models.modeling_rope import NeuralOpsRotaryEmbedding
 from neuralops.models.paged_state import PagedStateTable, RadixPrefixStateCache
 from neuralops.models.protocols import ModelHandle, SurgicalModel
-from neuralops.models.surgery import ModelSurgery, transplant_model_attention
+from neuralops.models.surgery import (
+    ModelSurgery,
+    SurgeryTransactionError,
+    compute_attention_weights,
+    transplant_model_attention,
+)
 from neuralops.models.surgical_io import extract_surgical_manifest, load_surgical_checkpoint, save_surgical_checkpoint
 
 logger = logging.getLogger(__name__)
@@ -43,6 +48,8 @@ __all__ = [
     "ModelHandle",
     "SurgicalModel",
     "ModelSurgery",
+    "SurgeryTransactionError",
+    "compute_attention_weights",
     "transplant_model_attention",
     "extract_surgical_manifest",
     "load_surgical_checkpoint",

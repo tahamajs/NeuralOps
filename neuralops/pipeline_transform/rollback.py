@@ -11,7 +11,7 @@ Transactional Rollback Exception Definitions.
 
 from __future__ import annotations
 
-from neuralops.core.exceptions import NeuralOpsError
+from neuralops.core.exceptions import NeuralOpsError, SurgeryTransactionError
 
 
 class RollbackError(NeuralOpsError):
@@ -30,4 +30,4 @@ class RollbackError(NeuralOpsError):
         return f"[{self.error_code}] {self.message}"
 
 
-__all__ = ["RollbackError"]
+__all__ = ["RollbackError", "SurgeryTransactionError"]

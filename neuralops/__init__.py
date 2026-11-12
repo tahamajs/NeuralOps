@@ -661,8 +661,8 @@ _LAZY_EXPORTS = {
     "unregister_custom_module": ("neuralops.core.extensibility", "unregister_custom_module"),
     "validate_module_contract": ("neuralops.core.extensibility", "validate_module_contract"),
     "scaffold_module": ("neuralops.core.extensibility", "scaffold_module"),
-    "calibrate_attention_subspace": ("neuralops.core._attention_surgery", "calibrate_attention_subspace"),
-    "heal_replaced_model": ("neuralops.core._attention_surgery", "heal_replaced_model"),
+    "calibrate_attention_subspace": ("neuralops.models.surgery", "calibrate_attention_subspace"),
+    "heal_replaced_model": ("neuralops.models.surgery", "heal_replaced_model"),
     "RooflineReport": ("neuralops.analysis.roofline", "RooflineReport"),
     "profile_roofline": ("neuralops.analysis.roofline", "profile_roofline"),
     "render_roofline_terminal": ("neuralops.analysis.roofline", "render_roofline_terminal"),
@@ -884,7 +884,7 @@ _COMPAT_SUBPACKAGES: dict[str, str] = {
 def inject_gla(model, **kwargs):
     """Replace all standard attention layers with GLA. Convenience wrapper."""
     from neuralops.layers.linear.gla_attention import GLAttention as _GLA
-    from neuralops.core._attention_surgery import replace_attention_in_model
+    from neuralops.models.surgery import replace_attention_in_model
 
     return replace_attention_in_model(model, _GLA, **kwargs)
 

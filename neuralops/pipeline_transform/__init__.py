@@ -31,7 +31,7 @@ from neuralops.pipeline_transform.hardware_planner import (
 from neuralops.pipeline_transform.plan import ExecutionPlan, Stage
 from neuralops.pipeline_transform.planner import plan_recipe
 from neuralops.pipeline_transform.result import PipelineError, PipelineResult, StageRecord
-from neuralops.pipeline_transform.rollback import RollbackError
+from neuralops.pipeline_transform.rollback import RollbackError, SurgeryTransactionError
 from neuralops.pipeline_transform.snapshot import ModelSnapshot, Snapshot, capture, restore
 
 __all__ = [
@@ -50,6 +50,7 @@ __all__ = [
     "PlanningError",
     "ResourceEstimate",
     "RollbackError",
+    "SurgeryTransactionError",
     "Snapshot",
     "Stage",
     "StageRecord",
