@@ -26,8 +26,10 @@ import json
 import logging
 import math
 import os
+import shutil
 import sys
 import time
+import uuid
 from pathlib import Path
 from typing import Any, Optional
 
@@ -68,6 +70,28 @@ _extract_attention_metadata = extract_attention_metadata
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("llama_zoo_distill")
+
+
+def append_ledger_record_atomic(dest_path: Path | str, record: dict[str, Any]) -> None:
+    """Atomically append a record to a JSONL ledger via a .tmp file and POSIX rename."""
+    dest = Path(dest_path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = dest.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    if dest.exists():
+        shutil.copyfile(dest, tmp_path)
+    with tmp_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, default=str) + "\n")
+        f.flush()
+        os.fsync(f.fileno())
+    tmp_path.replace(dest)
+
+
+def _atomic_write_text(dest_path: Path, content: str) -> None:
+    """Atomically write text content to a destination file via a .tmp file and POSIX rename."""
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = dest_path.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    tmp_path.write_text(content, encoding="utf-8")
+    tmp_path.replace(dest_path)
 
 
 def train_single_llama_attention(
@@ -346,7 +370,7 @@ def train_single_llama_attention(
             "saved_tensor_count": saved_tensor_count,
             "saved_tensor_keys": sorted(attn_state.keys()),
         }
-        (out_dir / "surgical_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        _atomic_write_text(out_dir / "surgical_manifest.json", json.dumps(manifest, indent=2))
 
     for heavy_name in ("pytorch_model.bin", "model.safetensors", "optimizer.pt"):
         h_path = out_dir / heavy_name
@@ -363,12 +387,12 @@ def train_single_llama_attention(
     cfg["anchor_layers"] = anchor_indices
     cfg["weights_format"] = "attention_only_fp16"
     cfg["saved_tensor_count"] = saved_tensor_count
-    (out_dir / "config.json").write_text(json.dumps(cfg, indent=2), encoding="utf-8")
-    (out_dir / "training_metrics.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    _atomic_write_text(out_dir / "config.json", json.dumps(cfg, indent=2))
+    _atomic_write_text(out_dir / "training_metrics.json", json.dumps(result, indent=2))
 
     meta_map = _extract_attention_metadata()
     readme = build_llama_readme(attn_key, result, teacher_ppl, out_dir, meta_map.get(attn_key, {}))
-    (out_dir / "README.md").write_text(readme, encoding="utf-8")
+    _atomic_write_text(out_dir / "README.md", readme)
 
     del student, opt2, scaler2
     if device.type == "cuda":
@@ -574,6 +598,7 @@ def main() -> None:
                     curr_accum,
                     curr_ckpt,
                 )
+                time.sleep(0.05)
                 continue
 
             if is_oom:
@@ -583,8 +608,7 @@ def main() -> None:
                 res = {"attn_key": key, "status": "FAIL_TRAINING", "error": err_msg, "timestamp": datetime.datetime.utcnow().isoformat() + "Z"}
             break
 
-        with open(ledger, "a", encoding="utf-8") as f:
-            f.write(json.dumps(res) + "\n")
+        append_ledger_record_atomic(ledger, res)
 
 
 if __name__ == "__main__":

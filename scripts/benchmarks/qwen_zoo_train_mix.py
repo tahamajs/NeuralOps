@@ -636,6 +636,7 @@ def main() -> None:
                     curr_accum,
                     curr_ckpt,
                 )
+                time.sleep(0.05)
                 continue
 
             if is_oom:

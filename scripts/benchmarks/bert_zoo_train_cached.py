@@ -28,8 +28,10 @@ import json
 import logging
 import math
 import os
+import shutil
 import sys
 import time
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -58,7 +60,29 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("bert_zoo_cached_train")
 
 
-def build_cached_dataloader(cache: dict[str, Any], batch_size: int, is_cuda: bool) -> DataLoader:
+def append_ledger_record_atomic(dest_path: Path | str, record: dict[str, Any]) -> None:
+    """Atomically append a record to a JSONL ledger via a .tmp file and POSIX rename."""
+    dest = Path(dest_path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = dest.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    if dest.exists():
+        shutil.copyfile(dest, tmp_path)
+    with tmp_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, default=str) + "\n")
+        f.flush()
+        os.fsync(f.fileno())
+    tmp_path.replace(dest)
+
+
+def _atomic_write_text(dest_path: Path, content: str) -> None:
+    """Atomically write text content to a destination file via a .tmp file and POSIX rename."""
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = dest_path.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    tmp_path.write_text(content, encoding="utf-8")
+    tmp_path.replace(dest_path)
+
+
+def build_cached_dataloader(cache: dict[str, Any], batch_size: int, is_cuda: bool = True) -> DataLoader:
     """Builds a high-throughput DataLoader with optional parallel layer-wise attention targets."""
     tensors = [
         cache["input_ids"],
@@ -80,7 +104,7 @@ def build_cached_dataloader(cache: dict[str, Any], batch_size: int, is_cuda: boo
         dataset,
         batch_size=batch_size,
         shuffle=True,
-        pin_memory=is_cuda,
+        pin_memory=True,
         drop_last=(len(dataset) >= batch_size),
     )
 
@@ -261,9 +285,9 @@ def train_single_attention_cached(
                 s_logits = s_out.logits.float()
                 s_hid = s_out.hidden_states[-1].float()
 
-                # 1. Task KL Divergence on classification logits
-                p_s = F.log_softmax(s_logits / tau, dim=-1)
-                p_t = F.softmax(t_log / tau, dim=-1)
+                # 1. Task KL Divergence on classification logits (DEF-027: accumulate softmax exponents in float32)
+                p_s = F.log_softmax((s_logits / tau).float(), dim=-1)
+                p_t = F.softmax((t_log / tau).float(), dim=-1)
                 loss_kl = F.kl_div(p_s, p_t, reduction="batchmean") * (tau * tau)
 
                 # 2. Hard ground-truth cross-entropy
@@ -380,7 +404,7 @@ def train_single_attention_cached(
         "AutoModel": "modeling_neuralops_bert.NeuralOpsBertModel",
         "AutoModelForSequenceClassification": "modeling_neuralops_bert.NeuralOpsBertForSequenceClassification",
     }
-    (out_dir / "config.json").write_text(json.dumps(student_cfg, indent=2), encoding="utf-8")
+    _atomic_write_text(out_dir / "config.json", json.dumps(student_cfg, indent=2))
 
     modeling_py = f"""# Self-contained HuggingFace Hub loading shim for NeuralOps BERT ({attn_key})
 import os
@@ -441,8 +465,8 @@ class NeuralOpsBertForSequenceClassification(BertForSequenceClassification):
         _load_attention_weights_into(base, pretrained_model_name_or_path)
         return base
 """
-    (out_dir / "modeling_neuralops_bert.py").write_text(modeling_py, encoding="utf-8")
-    (out_dir / "training_metrics.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+    _atomic_write_text(out_dir / "modeling_neuralops_bert.py", modeling_py)
+    _atomic_write_text(out_dir / "training_metrics.json", json.dumps(result, indent=2))
 
     # Canonical BenchmarkResult persistence across all 5 formats (JSON, JSONL, CSV, MD, Parquet)
     try:
@@ -506,7 +530,7 @@ class NeuralOpsBertForSequenceClassification(BertForSequenceClassification):
         },
         dataset="nyu-mll/glue",
     )
-    (out_dir / "README.md").write_text(card_md, encoding="utf-8")
+    _atomic_write_text(out_dir / "README.md", card_md)
 
     del student
     if device.type == "cuda":
@@ -560,7 +584,7 @@ def main() -> None:
 
         while True:
             train_loader = build_cached_dataloader(cache, batch_size=curr_bs, is_cuda=(device.type == "cuda"))
-            val_loader = DataLoader(val_dataset, batch_size=curr_bs, shuffle=False, pin_memory=(device.type == "cuda"))
+            val_loader = DataLoader(val_dataset, batch_size=curr_bs, shuffle=False, pin_memory=True)
             if device.type == "cuda":
                 torch.cuda.reset_peak_memory_stats()
 
@@ -608,6 +632,7 @@ def main() -> None:
                 )
                 curr_bs = next_bs
                 curr_accum = curr_accum * scale
+                time.sleep(0.05)
                 continue
 
             return {
@@ -630,8 +655,7 @@ def main() -> None:
         ckpt_dir = out_base / args.single_key
         logger.info("[WORKER] Training single attention: %s", args.single_key)
         res = _run_with_oom_retry(args.single_key, cache, val_dataset, tokenizer, ckpt_dir)
-        with open(args.metrics_log, "a", encoding="utf-8") as f:
-            f.write(json.dumps(res) + "\n")
+        append_ledger_record_atomic(args.metrics_log, res)
         return
 
     # 1. Load keys
@@ -690,8 +714,7 @@ def main() -> None:
                     "exit_code": proc.returncode,
                     "timestamp": datetime.datetime.utcnow().isoformat(),
                 }
-                with open(args.metrics_log, "a", encoding="utf-8") as f:
-                    f.write(json.dumps(fail_record) + "\n")
+                append_ledger_record_atomic(args.metrics_log, fail_record)
         else:
             # In-process execution
             from transformers import AutoTokenizer
@@ -712,8 +735,7 @@ def main() -> None:
                 torch.cuda.empty_cache()
             gc.collect()
 
-            with open(args.metrics_log, "a", encoding="utf-8") as f:
-                f.write(json.dumps(res) + "\n")
+            append_ledger_record_atomic(args.metrics_log, res)
 
     logger.info("\nDistillation Engine Complete. Master ledger at: %s", args.metrics_log)
 

@@ -23,8 +23,10 @@ import json
 import logging
 import math
 import os
+import shutil
 import sys
 import time
+import uuid
 from pathlib import Path
 from typing import Any, Optional
 
@@ -72,6 +74,28 @@ def _normalize_base_model_id(model_name: str) -> str:
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("qwen_compressor_zoo_train")
+
+
+def append_ledger_record_atomic(dest_path: Path | str, record: dict[str, Any]) -> None:
+    """Atomically append a record to a JSONL ledger via a .tmp file and POSIX rename."""
+    dest = Path(dest_path)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = dest.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    if dest.exists():
+        shutil.copyfile(dest, tmp_path)
+    with tmp_path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, default=str) + "\n")
+        f.flush()
+        os.fsync(f.fileno())
+    tmp_path.replace(dest)
+
+
+def _atomic_write_text(dest_path: Path, content: str) -> None:
+    """Atomically write text content to a destination file via a .tmp file and POSIX rename."""
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = dest_path.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    tmp_path.write_text(content, encoding="utf-8")
+    tmp_path.replace(dest_path)
 
 
 def _compute_sparsity_pct(model: nn.Module) -> float:
@@ -155,7 +179,7 @@ def _save_compressed_weights(
             "saved_tensor_keys": sorted(comp_state.keys()),
         }
     )
-    (out_dir / "surgical_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    _atomic_write_text(out_dir / "surgical_manifest.json", json.dumps(manifest, indent=2))
 
     for heavy_name in ["pytorch_model.bin", "model.safetensors", "optimizer.pt"]:
         h_path = out_dir / heavy_name
@@ -486,8 +510,8 @@ def train_single_qwen_compressor(
         cfg_out["compression_ratio"] = round(param_reduction, 3)
         cfg_out["weights_format"] = "compressor_only_fp16"
         cfg_out["saved_tensor_count"] = num_tensors
-        (out_dir / "config.json").write_text(json.dumps(cfg_out, indent=2), encoding="utf-8")
-        (out_dir / "training_metrics.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+        _atomic_write_text(out_dir / "config.json", json.dumps(cfg_out, indent=2))
+        _atomic_write_text(out_dir / "training_metrics.json", json.dumps(result, indent=2))
 
         readme_text = _build_qwen_comp_readme(
             repo_id=repo_id,
@@ -507,7 +531,7 @@ def train_single_qwen_compressor(
             out_dir=out_dir,
             modified_prefixes=saved_prefixes,
         )
-        (out_dir / "README.md").write_text(readme_text, encoding="utf-8")
+        _atomic_write_text(out_dir / "README.md", readme_text)
         logger.info("[%s] Saved %d compressed tensors + README to %s (PPL: %s -> %s)", comp_key, num_tensors, out_dir, pre_val, post_val)
 
     del student
@@ -724,6 +748,7 @@ def main() -> None:
                     curr_accum,
                     curr_ckpt,
                 )
+                time.sleep(0.05)
                 continue
 
             if is_oom:
@@ -746,9 +771,7 @@ def main() -> None:
             break
 
         if res is not None:
-            with open(metrics_file, "a", encoding="utf-8") as f:
-                f.write(json.dumps(res) + "\n")
-                f.flush()
+            append_ledger_record_atomic(metrics_file, res)
 
             if res.get("status") == "PASSED" and args.hf_upload and uploader:
                 uploader.submit_upload(
