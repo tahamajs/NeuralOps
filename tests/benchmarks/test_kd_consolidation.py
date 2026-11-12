@@ -336,3 +336,45 @@ def test_configurable_train_secs_unbounded() -> None:
     assert parsed.train_secs == 5000.0
     assert parsed.min_lr_s2 == 5e-7
     assert parsed.margin_weight == 0.75
+
+
+def test_masked_representation_loss_ignores_padding() -> None:
+    """Verify that tokens flagged as 0 in attention_mask do not influence MSE or cosine representation loss."""
+    from neuralops.benchmarks.kd.distill_engine import _compute_masked_representation_loss
+
+    torch.manual_seed(42)
+    b, s, d = 2, 8, 16
+    s_h = [torch.randn(b, s, d) for _ in range(2)]
+    t_h = [torch.randn(b, s, d) for _ in range(2)]
+
+    attention_mask = torch.tensor([[1, 1, 1, 1, 1, 0, 0, 0], [1, 1, 1, 1, 0, 0, 0, 0]], dtype=torch.long)
+
+    loss_mse_clean, loss_cos_clean = _compute_masked_representation_loss(s_h, t_h, attention_mask)
+
+    s_h_corrupt = [t.clone() for t in s_h]
+    t_h_corrupt = [t.clone() for t in t_h]
+    for sc, tc in zip(s_h_corrupt, t_h_corrupt):
+        sc[0, 5:, :] = 9999.0
+        tc[0, 5:, :] = -8888.0
+        sc[1, 4:, :] = 1234.0
+        tc[1, 4:, :] = -5678.0
+
+    loss_mse_corrupt, loss_cos_corrupt = _compute_masked_representation_loss(s_h_corrupt, t_h_corrupt, attention_mask)
+
+    assert torch.allclose(loss_mse_clean, loss_mse_corrupt, atol=1e-5), "Padding tokens corrupted MSE loss!"
+    assert torch.allclose(loss_cos_clean, loss_cos_corrupt, atol=1e-5), "Padding tokens corrupted Cosine loss!"
+
+
+def test_fast_gram_covariance_loss_with_mask() -> None:
+    """Verify that fast_gram_covariance_loss computes normalized Gram alignment with optional masking."""
+    torch.manual_seed(42)
+    s_hidden = torch.randn(2, 6, 8)
+    t_hidden = torch.randn(2, 6, 8)
+    mask = torch.tensor([[1, 1, 1, 1, 0, 0], [1, 1, 1, 0, 0, 0]], dtype=torch.long)
+
+    loss_unmasked = fast_gram_covariance_loss(s_hidden, t_hidden)
+    loss_masked = fast_gram_covariance_loss(s_hidden, t_hidden, attention_mask=mask)
+
+    assert torch.isfinite(loss_unmasked)
+    assert torch.isfinite(loss_masked)
+    assert loss_masked.item() >= 0.0

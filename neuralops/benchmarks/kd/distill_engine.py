@@ -38,10 +38,24 @@ from neuralops.benchmarks.kd.teacher_cache import (
 logger = logging.getLogger("neuralops.benchmarks.kd.distill_engine")
 
 
-def fast_gram_covariance_loss(s_hidden: torch.Tensor, t_hidden: torch.Tensor) -> torch.Tensor:
+def fast_gram_covariance_loss(
+    s_hidden: torch.Tensor,
+    t_hidden: torch.Tensor,
+    attention_mask: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
     """Computes normalized Gram matrix covariance alignment across feature dimensions."""
-    s_flat = s_hidden.view(-1, s_hidden.size(-1)).float()
-    t_flat = t_hidden.view(-1, t_hidden.size(-1)).float()
+    if attention_mask is not None and attention_mask.dim() == 2:
+        mask_bool = attention_mask.bool()
+        if mask_bool.any():
+            s_flat = s_hidden[mask_bool].float()
+            t_flat = t_hidden[mask_bool].float()
+        else:
+            s_flat = s_hidden.view(-1, s_hidden.size(-1)).float()
+            t_flat = t_hidden.view(-1, t_hidden.size(-1)).float()
+    else:
+        s_flat = s_hidden.view(-1, s_hidden.size(-1)).float()
+        t_flat = t_hidden.view(-1, t_hidden.size(-1)).float()
+
     s_norm = s_flat - s_flat.mean(dim=0, keepdim=True)
     t_norm = t_flat - t_flat.mean(dim=0, keepdim=True)
     g_s = torch.mm(s_norm.t(), s_norm) / max(s_flat.size(0) - 1, 1)
@@ -60,6 +74,27 @@ def _forward_hidden(mod: nn.Module, in_ids: torch.Tensor, att_m: Optional[torch.
         return mod(input_ids=in_ids, **kwargs)
 
 
+def _make_grad_scaler(device: torch.device, enabled: bool = True, init_scale: float = 1024.0) -> Any:
+    """Create a GradScaler compatible across PyTorch 1.12, 2.0, and 2.6+ without deprecation warnings."""
+    if hasattr(torch, "amp") and hasattr(torch.amp, "GradScaler"):
+        try:
+            dev_str = device.type if hasattr(device, "type") else str(device)
+            return torch.amp.GradScaler(dev_str if dev_str.startswith("cuda") else "cuda", enabled=enabled, init_scale=init_scale)
+        except (TypeError, ValueError):
+            pass
+    if hasattr(torch, "cuda") and hasattr(torch.cuda, "amp") and hasattr(torch.cuda.amp, "GradScaler"):
+        try:
+            return torch.cuda.amp.GradScaler(enabled=enabled, init_scale=init_scale)
+        except (TypeError, ValueError):
+            pass
+    try:
+        from torch.cuda.amp import GradScaler
+        return GradScaler(enabled=enabled, init_scale=init_scale)
+    except Exception:
+        from torch.amp import GradScaler
+        return GradScaler("cuda", enabled=enabled, init_scale=init_scale)
+
+
 def _compute_masked_representation_loss(
     s_h: List[torch.Tensor],
     t_h: List[torch.Tensor],
@@ -68,18 +103,24 @@ def _compute_masked_representation_loss(
     """Compute token-masked MSE and cosine distance across layers, excluding pad tokens."""
     if attention_mask is not None and attention_mask.dim() == 2:
         mask_f = attention_mask.float()
-        mask_sum = mask_f.sum().clamp(min=1.0)
-        mask_3d = mask_f.unsqueeze(-1)
-
         mse_list = []
         cos_list = []
         for s, t in zip(s_h, t_h):
-            diff_sq = ((s.float() - t.float()) ** 2) * mask_3d
-            mse_val = diff_sq.sum() / (mask_sum * s.size(-1))
+            s_f = s.float()
+            t_f = t.float()
+            min_l = min(s_f.size(1), t_f.size(1), mask_f.size(1))
+            cur_mask = mask_f[:, :min_l]
+            cur_s = s_f[:, :min_l, :]
+            cur_t = t_f[:, :min_l, :]
+            cur_sum = cur_mask.sum().clamp(min=1.0)
+            cur_3d = cur_mask.unsqueeze(-1)
+
+            diff_sq = ((cur_s - cur_t) ** 2) * cur_3d
+            mse_val = diff_sq.sum() / (cur_sum * cur_s.size(-1))
             mse_list.append(mse_val)
 
-            cos_sim = F.cosine_similarity(s.float(), t.float(), dim=-1)
-            cos_dist = ((1.0 - cos_sim) * mask_f).sum() / mask_sum
+            cos_sim = F.cosine_similarity(cur_s, cur_t, dim=-1)
+            cos_dist = ((1.0 - cos_sim) * cur_mask).sum() / cur_sum
             cos_list.append(cos_dist)
 
         loss_mse = torch.stack(mse_list).mean()
@@ -315,7 +356,7 @@ class TwoStageDistillationEngine:
 
         # Stage 1
         opt1 = torch.optim.AdamW(trainable_params, lr=self.lr_s1, weight_decay=self.weight_decay)
-        scaler1 = torch.cuda.amp.GradScaler(init_scale=1024.0, enabled=(dev.type == "cuda"))
+        scaler1 = _make_grad_scaler(dev, enabled=(dev.type == "cuda"), init_scale=1024.0)
         student.train()
         step_s1 = 0
         t0_s1 = time.time()
@@ -377,7 +418,7 @@ class TwoStageDistillationEngine:
             lr=self.lr_s2,
             weight_decay=self.weight_decay,
         )
-        scaler2 = torch.cuda.amp.GradScaler(init_scale=1024.0, enabled=(dev.type == "cuda"))
+        scaler2 = _make_grad_scaler(dev, enabled=(dev.type == "cuda"), init_scale=1024.0)
         student.train()
         step_s2 = 0
         t0_s2 = time.time()
@@ -560,6 +601,7 @@ def execute_with_oom_retry(
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
                 gc.collect()
+                time.sleep(0.05)
                 if on_oom_hook is not None:
                     on_oom_hook(cur_bs)
                 continue

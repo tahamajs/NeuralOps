@@ -116,6 +116,9 @@ def resolve_teacher_cache_path(
 
     safe_id = re.sub(r"[^a-zA-Z0-9._-]+", "_", model_id.strip("/")).strip("_") or "model"
     filename = f"{safe_id}_{tag}_seq{int(seq_len)}_n{int(max_cache_samples)}_k{int(topk)}.pt"
+    env_cache = os.environ.get("NEURALOPS_CACHE_DIR")
+    if env_cache:
+        return Path(env_cache) / "teacher_caches" / filename
     if HPC_DATA_CACHE_ROOT.exists():
         return HPC_DATA_CACHE_ROOT / "teacher_caches" / filename
     return Path(out_dir) / "_teacher_cache.pt"

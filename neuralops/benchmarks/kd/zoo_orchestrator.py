@@ -65,6 +65,23 @@ class StratifiedQwenDataset(Dataset):
 CausalTextDataset = StratifiedQwenDataset
 
 
+def _resolve_shm_cache_path(filename: str, override: Optional[str] = None) -> Path:
+    """Resolve high-speed cache path using NEURALOPS_CACHE_DIR, /dev/shm, or user cache directory."""
+    if override:
+        return Path(override)
+    env_cache = os.environ.get("NEURALOPS_CACHE_DIR")
+    if env_cache:
+        p = Path(env_cache)
+        p.mkdir(parents=True, exist_ok=True)
+        return p / filename
+    shm = Path("/dev/shm")
+    if shm.exists() and os.access(shm, os.W_OK):
+        return shm / filename
+    fallback = Path.home() / ".cache" / "neuralops"
+    fallback.mkdir(parents=True, exist_ok=True)
+    return fallback / filename
+
+
 def load_tokenized_qwen_corpus(
     tokenizer: Any,
     dataset_name: str = "wikitext-2-raw-v1",
@@ -73,7 +90,7 @@ def load_tokenized_qwen_corpus(
     cache_path_override: Optional[str] = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Tokenizes corpus into contiguous chunks of length seq_len with RAM caching."""
-    cache_path = Path(cache_path_override) if cache_path_override else Path(f"/dev/shm/wikitext_qwen_seq{seq_len}.pt")
+    cache_path = _resolve_shm_cache_path(f"wikitext_qwen_seq{seq_len}.pt", cache_path_override)
     if cache_path.exists():
         try:
             logger.info("Loading pre-tokenized corpus from RAM cache: %s", cache_path)
@@ -133,16 +150,17 @@ def load_tokenized_qwen_corpus(
 def build_cache_wikitext(
     tokenizer: Any,
     seq_len: int = 512,
-    cache_path: str = "/dev/shm/wikitext_tinyllama_seq512.pt",
+    cache_path: Optional[str] = None,
     max_train_samples: int = 4000,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Build or load cached WikiText-2 token chunks for a tokenizer-specific cache path."""
+    resolved_path = str(_resolve_shm_cache_path(f"wikitext_tinyllama_seq{seq_len}.pt", cache_path))
     return load_tokenized_qwen_corpus(
         tokenizer=tokenizer,
         dataset_name="wikitext-2-raw-v1",
         seq_len=seq_len,
         max_train_samples=max_train_samples,
-        cache_path_override=cache_path,
+        cache_path_override=resolved_path,
     )
 
 

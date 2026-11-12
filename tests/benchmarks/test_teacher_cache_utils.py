@@ -96,6 +96,13 @@ def test_resolve_teacher_cache_path_variants(tmp_path: Path) -> None:
     assert auto_path is not None
 
 
+def test_resolve_teacher_cache_path_with_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    env_dir = tmp_path / "custom_env_cache"
+    monkeypatch.setenv("NEURALOPS_CACHE_DIR", str(env_dir))
+    resolved = resolve_teacher_cache_path("auto", tmp_path / "out", "Qwen/Qwen2.5-0.5B", "wt2", 512, 256, 64)
+    assert resolved == env_dir / "teacher_caches" / "Qwen_Qwen2.5-0.5B_wt2_seq512_n256_k64.pt"
+
+
 def test_strided_and_vlm_layer_selection() -> None:
     assert select_strided_layer_indices(24) == [3, 7, 11, 15, 19, 23]
     assert select_strided_layer_indices(22) == [3, 7, 11, 15, 19, 21]

@@ -13,6 +13,7 @@ This module provides the :class:`KDRunner` class, which manages data loaders, ev
 
 from __future__ import annotations
 
+import contextlib
 import gc
 import json
 import logging
@@ -27,10 +28,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from datasets import load_dataset
-try:
-    from torch.cuda.amp import GradScaler, autocast
-except ImportError:
-    from torch.amp import GradScaler, autocast
 from torch.optim import AdamW
 from torch.utils.data import DataLoader
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, DataCollatorWithPadding
@@ -40,6 +37,41 @@ from neuralops.benchmarks.kd.reporter import KDReporter
 from neuralops.core.architecture import get_attention_modules
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.trainer.metrics import accuracy_score
+
+
+def _make_grad_scaler(device: str = "cuda", enabled: bool = True, init_scale: float = 1024.0) -> Any:
+    """Create a GradScaler compatible across PyTorch 1.12, 2.0, and 2.6+."""
+    if hasattr(torch, "amp") and hasattr(torch.amp, "GradScaler"):
+        try:
+            return torch.amp.GradScaler(device if device.startswith("cuda") else "cuda", enabled=enabled, init_scale=init_scale)
+        except (TypeError, ValueError):
+            pass
+    if hasattr(torch, "cuda") and hasattr(torch.cuda, "amp") and hasattr(torch.cuda.amp, "GradScaler"):
+        try:
+            return torch.cuda.amp.GradScaler(enabled=enabled, init_scale=init_scale)
+        except (TypeError, ValueError):
+            pass
+    try:
+        from torch.cuda.amp import GradScaler
+        return GradScaler(enabled=enabled, init_scale=init_scale)
+    except Exception:
+        from torch.amp import GradScaler
+        return GradScaler("cuda", enabled=enabled, init_scale=init_scale)
+
+
+def _autocast_context(device: str = "cuda", enabled: bool = True, dtype: torch.dtype = torch.float16) -> Any:
+    """Create an autocast context compatible across PyTorch 1.12, 2.0, and 2.6+."""
+    if hasattr(torch, "amp") and hasattr(torch.amp, "autocast"):
+        try:
+            return torch.amp.autocast(device if device.startswith("cuda") else "cuda", enabled=enabled, dtype=dtype)
+        except (TypeError, ValueError):
+            pass
+    if hasattr(torch, "cuda") and hasattr(torch.cuda, "amp") and hasattr(torch.cuda.amp, "autocast"):
+        try:
+            return torch.cuda.amp.autocast(enabled=enabled, dtype=dtype)
+        except (TypeError, ValueError):
+            pass
+    return contextlib.nullcontext()
 
 try:
     from neuralops.evaluation.eval_patcher import apply_module_to_model
@@ -394,7 +426,7 @@ class KDRunner:
             result["alpha"] = self.config.alpha
 
             optimizer = AdamW(trainable, lr=self.config.kd_lr, weight_decay=0.01)
-            scaler = GradScaler("cuda", enabled=(self.config.use_fp16 and self.device == "cuda"))
+            scaler = _make_grad_scaler(self.device, enabled=(self.config.use_fp16 and self.device == "cuda"))
 
             student.train()
             best_acc = pre_acc
@@ -419,10 +451,10 @@ class KDRunner:
                 batch = {k: v.to(self.device) for k, v in batch.items()}
 
                 with torch.no_grad():
-                    with autocast("cuda", enabled=(self.config.use_fp16 and self.device == "cuda")):
+                    with _autocast_context(self.device, enabled=(self.config.use_fp16 and self.device == "cuda")):
                         teacher_logits = teacher(**batch).logits
 
-                with autocast("cuda", enabled=(self.config.use_fp16 and self.device == "cuda")):
+                with _autocast_context(self.device, enabled=(self.config.use_fp16 and self.device == "cuda")):
                     student_out = student(**batch)
                     loss = self._kd_loss(student_out.logits, teacher_logits, batch["labels"])
 
