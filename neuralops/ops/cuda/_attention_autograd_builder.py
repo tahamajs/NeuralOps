@@ -21,18 +21,24 @@ def make_attention_autograd_fn(forward_dispatch_fn, ref_fn, grad_arg_names, has_
             ctx.arg_names = grad_arg_names
             ctx.saved_arg_indices = []
             saved = []
+            c_args = []
             for i, arg in enumerate(args):
                 if isinstance(arg, torch.Tensor):
-                    saved.append(arg)
+                    c_arg = arg.contiguous()
+                    saved.append(c_arg)
+                    c_args.append(c_arg)
                     ctx.saved_arg_indices.append(i)
                 else:
                     saved.append(None)
+                    c_args.append(arg)
             ctx.save_for_backward(*saved)
             ctx.num_total_args = len(args)
-            return forward_dispatch_fn(*args)
+            return forward_dispatch_fn(*c_args)
 
         @staticmethod
         def backward(ctx, grad_output):
+            if isinstance(grad_output, torch.Tensor):
+                grad_output = grad_output.contiguous()
             saved = list(ctx.saved_tensors)
             args_for_ref = []
             tensors_to_diff = []

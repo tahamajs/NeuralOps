@@ -174,6 +174,7 @@ class _AutogradBridge(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, *grad_outputs):
+        grad_outputs = tuple(g.contiguous() if isinstance(g, torch.Tensor) else g for g in grad_outputs)
         saved = ctx.saved_tensors
         with torch.enable_grad():
             detached = [t.detach().requires_grad_(t.requires_grad) for t in saved]
@@ -214,7 +215,7 @@ def _pack_for_autograd(args: tuple, kwargs: dict):
     for a in args:
         if isinstance(a, torch.Tensor):
             arg_is_tensor.append(True)
-            tensor_list.append(a)
+            tensor_list.append(a.contiguous())
         else:
             arg_is_tensor.append(False)
 
@@ -222,7 +223,7 @@ def _pack_for_autograd(args: tuple, kwargs: dict):
     for k, v in kwargs.items():
         if isinstance(v, torch.Tensor):
             kw_is_tensor[k] = True
-            tensor_list.append(v)
+            tensor_list.append(v.contiguous())
         else:
             kw_is_tensor[k] = False
 
@@ -352,6 +353,7 @@ def dispatch(
             except Exception as e:
                 _DISPATCH_STATS["triton_failures"] += 1
                 logger.warning(f"[{kernel_name}] Triton autograd path failed: {e}. Falling back to PyTorch.")
+                _LAST_DISPATCH_ERROR[kernel_name] = str(e)
 
         _DISPATCH_STATS["pytorch"] += 1
         _LAST_DISPATCH_BACKEND[kernel_name] = "pytorch"
@@ -430,6 +432,7 @@ def dispatch(
             if debug_dispatch:
                 print(f"[dispatch] {kernel_name}: TRITON failed with {type(e).__name__}: {e}", file=sys.stderr)
             logger.warning(f"[{kernel_name}] Triton path failed: {e}. Falling back to PyTorch.")
+            _LAST_DISPATCH_ERROR[kernel_name] = str(e)
 
     _DISPATCH_STATS["pytorch"] += 1
     _LAST_DISPATCH_BACKEND[kernel_name] = "pytorch"

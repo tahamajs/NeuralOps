@@ -90,12 +90,18 @@ class _FusedLowRankGatedGemmFunction(torch.autograd.Function):
         bias: torch.Tensor | None,
     ) -> torch.Tensor:
         mod = _get_module()
-        dummy_tensor = torch.empty(0, device=x.device, dtype=x.dtype)
-        a_arg = alpha if alpha is not None else dummy_tensor
-        b_arg = bias if bias is not None else dummy_tensor
+        x_c = x.contiguous()
+        V_c = V.contiguous()
+        U_c = U.contiguous()
+        alpha_c = alpha.contiguous() if alpha is not None else None
+        bias_c = bias.contiguous() if bias is not None else None
 
-        out = mod.fused_lowrank_gated_gemm_fwd(x, V, U, a_arg, b_arg)
-        ctx.save_for_backward(x, V, U, a_arg)
+        dummy_tensor = torch.empty(0, device=x.device, dtype=x.dtype)
+        a_arg = alpha_c if alpha_c is not None else dummy_tensor
+        b_arg = bias_c if bias_c is not None else dummy_tensor
+
+        out = mod.fused_lowrank_gated_gemm_fwd(x_c, V_c, U_c, a_arg, b_arg)
+        ctx.save_for_backward(x_c, V_c, U_c, a_arg)
         ctx.has_alpha = alpha is not None
         ctx.has_bias = bias is not None
         return out
