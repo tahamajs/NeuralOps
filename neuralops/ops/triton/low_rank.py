@@ -447,10 +447,10 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
         x_2d = x.contiguous().view(-1, D_in)
         M = x_2d.shape[0]
 
-        V_mat = V.t() if V.shape[-1] == D_in else V
+        V_mat = (V.t() if V.shape[-1] == D_in else V).contiguous()
         Rank = V_mat.shape[1]
 
-        U_mat = U.t() if U.shape[-1] == Rank else U
+        U_mat = (U.t() if U.shape[-1] == Rank else U).contiguous()
         D_out = U_mat.shape[1]
 
         has_bias = bias is not None
@@ -552,10 +552,10 @@ class _TritonLowRankAutogradFunction(torch.autograd.Function):
         x_2d = x.contiguous().view(-1, D_in)
         M = x_2d.shape[0]
 
-        V_mat = V.t() if V.shape[-1] == D_in else V
+        V_mat = (V.t() if V.shape[-1] == D_in else V).contiguous()
         Rank = V_mat.shape[1]
 
-        U_mat = U.t() if U.shape[-1] == Rank else U
+        U_mat = (U.t() if U.shape[-1] == Rank else U).contiguous()
         D_out = U_mat.shape[1]
 
         grad_out_2d = grad_out.contiguous().view(-1, D_out)

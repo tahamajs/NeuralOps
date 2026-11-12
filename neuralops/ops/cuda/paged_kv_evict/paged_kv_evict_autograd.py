@@ -79,17 +79,22 @@ paged_kv_evict_ref = paged_kv_compact_pytorch_ref
 
 
 def paged_kv_evict(k_in: torch.Tensor, v_in: torch.Tensor, keep_indices: torch.Tensor) -> list[torch.Tensor]:
+    k_in_c = k_in.contiguous()
+    v_in_c = v_in.contiguous()
+    keep_indices_c = keep_indices.contiguous()
+
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
         fn = mod.paged_kv_compact_fwd
-        return fn(*args, **kwargs)
+        c_args = [a.contiguous() if isinstance(a, torch.Tensor) else a for a in args]
+        return fn(*c_args, **kwargs)
 
     return dispatch(
         cuda_fn,
         paged_kv_compact_triton_ref,
         paged_kv_compact_pytorch_ref,
-        k_in,
-        v_in,
-        keep_indices,
+        k_in_c,
+        v_in_c,
+        keep_indices_c,
         kernel_name="paged_kv_evict",
     )

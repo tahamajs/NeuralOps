@@ -183,10 +183,14 @@ class FusedSVDProjectionFunction(Function):
             try:
                 mod = _get_cuda_module()
                 if mod is not None:
+                    U_c = U.contiguous()
+                    VT_c = V_T.contiguous()
                     dummy_s = (
-                        S if (S is not None and S.numel() > 0) else torch.empty(0, device=dout.device, dtype=dout.dtype)
+                        S.contiguous()
+                        if (S is not None and S.numel() > 0)
+                        else torch.empty(0, device=dout.device, dtype=dout.dtype)
                     )
-                    dx = mod.fused_svd_projection_bwd_dx(dout, U, dummy_s, V_T, ctx.alpha)
+                    dx = mod.fused_svd_projection_bwd_dx(dout, U_c, dummy_s, VT_c, ctx.alpha)
                     dx = dx.reshape(ctx.orig_shape)
                     dx_dispatched = True
             except Exception:
