@@ -639,7 +639,8 @@ class FUSIONATTN(BaseAttention):
         if all_masked.any():
             safe_invalid[..., :1] = safe_invalid[..., :1] & (~all_masked)
 
-        scores = torch.nan_to_num(scores, nan=0.0, posinf=1e4, neginf=-1e4).masked_fill(safe_invalid, -1e9)
+        neg_inf = -65500.0 if scores.dtype == torch.float16 else -1e4
+        scores = torch.nan_to_num(scores, nan=0.0, posinf=1e4, neginf=-1e4).masked_fill(safe_invalid, neg_inf).clamp(min=-65500.0, max=65500.0)
         probs = F.softmax(scores, dim=-1).masked_fill(all_masked, 0.0)
         probs = self.dropout(probs)
 
@@ -725,7 +726,8 @@ class FUSIONATTN(BaseAttention):
             causal_blocks = torch.ones((num_q_blocks, num_k_blocks), device=device, dtype=torch.bool)
 
         allowed_blocks = causal_blocks.unsqueeze(0).unsqueeze(0) & block_valid.unsqueeze(2)
-        gate_masked = gate_scores.masked_fill(~allowed_blocks, -1e9)
+        neg_inf_gate = -65500.0 if gate_scores.dtype == torch.float16 else -1e4
+        gate_masked = gate_scores.masked_fill(~allowed_blocks, neg_inf_gate).clamp(min=-65500.0, max=65500.0)
 
         top_k = min(self.top_k_blocks, num_k_blocks)
         _, top_idx = torch.topk(gate_masked, top_k, dim=-1)
@@ -751,7 +753,7 @@ class FUSIONATTN(BaseAttention):
             sel_mask,
             100.0 + gate_scores.clamp(-50.0, 50.0),
             gate_scores.clamp(-50.0, 50.0) - 100.0,
-        ).masked_fill(~allowed_blocks, -1e9)
+        ).masked_fill(~allowed_blocks, neg_inf_gate).clamp(min=-65500.0, max=65500.0)
         _, sel_idx = torch.topk(sel_priority, k=max_sel, dim=-1)
         sel_blk_valid = torch.gather(allowed_blocks.expand(B, H, num_q_blocks, num_k_blocks), -1, sel_idx)
         sel_gate_vals = torch.gather(gate_scores, -1, sel_idx)
@@ -811,7 +813,8 @@ class FUSIONATTN(BaseAttention):
         if all_masked.any():
             safe_invalid[..., :1] = safe_invalid[..., :1] & (~all_masked)
 
-        scores_all = torch.nan_to_num(scores_all, nan=0.0, posinf=1e4, neginf=-1e4).masked_fill(safe_invalid, -1e9)
+        neg_inf_all = -65500.0 if scores_all.dtype == torch.float16 else -1e4
+        scores_all = torch.nan_to_num(scores_all, nan=0.0, posinf=1e4, neginf=-1e4).masked_fill(safe_invalid, neg_inf_all).clamp(min=-65500.0, max=65500.0)
         probs = F.softmax(scores_all, dim=-1).masked_fill(all_masked, 0.0)
         probs = self.dropout(probs)
 

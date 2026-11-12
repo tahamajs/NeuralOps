@@ -721,8 +721,8 @@ class MultiQueryAttention(BaseAttention):
 
 def _safe_mask_val(dtype: torch.dtype) -> float:
     if dtype in (torch.float16, torch.bfloat16):
-        return -1e4
-    return -1e9
+        return -65500.0
+    return -1e4
 
 
 def inject_mqa(

@@ -690,7 +690,8 @@ class SVDLinearAttention(BaseAttention):
                         xc = kv_input[:, start:end, :].float()
                         logits_p = torch.matmul(xc, proj_sub) * proj_scale
                         if km_c is not None:
-                            logits_p = logits_p.masked_fill(~km_c.unsqueeze(-1), -1e9)
+                            neg_inf_p = -65500.0 if logits_p.dtype == torch.float16 else -1e4
+                            logits_p = logits_p.masked_fill(~km_c.unsqueeze(-1), neg_inf_p).clamp(min=-65500.0, max=65500.0)
                             w_p = F.softmax(logits_p, dim=1) * km_c.unsqueeze(-1).float()
                             cnt_p = km_c.float().sum(dim=1, keepdim=True)
                             has_valid_p = km_c.any(dim=1, keepdim=True)
@@ -721,7 +722,8 @@ class SVDLinearAttention(BaseAttention):
                 logits_s = torch.matmul(kv_input.float(), proj_sub) * proj_scale
 
                 if k_valid_mask is not None:
-                    logits_s = logits_s.masked_fill(~k_valid_mask.unsqueeze(-1), -1e9)
+                    neg_inf_s = -65500.0 if logits_s.dtype == torch.float16 else -1e4
+                    logits_s = logits_s.masked_fill(~k_valid_mask.unsqueeze(-1), neg_inf_s).clamp(min=-65500.0, max=65500.0)
                     w_s = F.softmax(logits_s, dim=1) * k_valid_mask.unsqueeze(-1).float()
                     cnt_s = k_valid_mask.float().sum(dim=1, keepdim=True).clamp(min=1.0)
                     has_valid = k_valid_mask.any(dim=1, keepdim=True)

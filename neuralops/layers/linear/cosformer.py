@@ -443,7 +443,7 @@ class CosformerAttention(BaseAttention):
 
     def _local_attention(self, Q, K, V_local, padding_mask, seq_len, device, dtype, is_decoder: bool = True):
         B, H, L, d = Q.shape
-        neg_inf = -1e4 if dtype == torch.float16 else -1e9
+        neg_inf = -65500.0 if dtype in (torch.float16, torch.bfloat16) else -1e4
 
         idx = torch.arange(L, device=device)
         window_bool = (idx.unsqueeze(0) - idx.unsqueeze(1)).abs() <= self.window_size

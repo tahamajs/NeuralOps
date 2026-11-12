@@ -758,8 +758,8 @@ class ClusterAttention(BaseAttention):
             if all_masked.any():
                 safe_invalid[..., :1] = safe_invalid[..., :1] & (~all_masked)
 
-            f32_min = -1e9
-            scores_safe = torch.nan_to_num(scores, nan=0.0, posinf=1e4, neginf=-1e4).masked_fill(safe_invalid, f32_min)
+            f32_min = -65500.0 if scores.dtype == torch.float16 else -1e4
+            scores_safe = torch.nan_to_num(scores, nan=0.0, posinf=1e4, neginf=-1e4).masked_fill(safe_invalid, f32_min).clamp(min=-65500.0, max=65500.0)
             attn_exact = F.softmax(scores_safe, dim=-1).masked_fill(all_masked, 0.0)
 
             def _apply_head_mask(t: torch.Tensor) -> torch.Tensor:
@@ -817,7 +817,8 @@ class ClusterAttention(BaseAttention):
             V_f = V.float()
 
             scores_cent = torch.matmul(centroids_f, K_f.transpose(-2, -1).contiguous()) * scale
-            scores_cent = scores_cent.clamp(min=-1e4, max=1e4).masked_fill(~key_valid_4d, -1e9)
+            neg_inf_cent = -65500.0 if scores_cent.dtype == torch.float16 else -1e4
+            scores_cent = scores_cent.clamp(min=-1e4, max=1e4).masked_fill(~key_valid_4d, neg_inf_cent).clamp(min=-65500.0, max=65500.0)
             all_cent_masked = (~key_valid_4d).all(dim=-1, keepdim=True)
             if all_cent_masked.any():
                 scores_cent = scores_cent.masked_fill(all_cent_masked, 0.0)
@@ -831,7 +832,8 @@ class ClusterAttention(BaseAttention):
             all_empty = empty_clusters.all(dim=-1, keepdim=True)
             if all_empty.any():
                 empty_clusters = empty_clusters & (~all_empty)
-            scores_assign = scores_assign.clamp(min=-1e4, max=1e4).masked_fill(empty_clusters, -1e9)
+            neg_inf_assign = -65500.0 if scores_assign.dtype == torch.float16 else -1e4
+            scores_assign = scores_assign.clamp(min=-1e4, max=1e4).masked_fill(empty_clusters, neg_inf_assign).clamp(min=-65500.0, max=65500.0)
             temp_clamped = 0.05 + F.softplus(self.temp.float())
             attn_assign = F.softmax(scores_assign / temp_clamped, dim=-1).masked_fill(all_empty, 0.0)
             global_context = torch.nan_to_num(torch.matmul(attn_assign, V_cent), nan=0.0)
@@ -849,9 +851,10 @@ class ClusterAttention(BaseAttention):
                 safe_loc_mask = band_mask_4d.clone()
                 if all_loc_masked.any():
                     safe_loc_mask[..., :1] = safe_loc_mask[..., :1] | all_loc_masked
+                neg_inf_loc = -65500.0 if scores_loc.dtype == torch.float16 else -1e4
                 scores_loc = torch.nan_to_num(scores_loc, nan=0.0, posinf=1e4, neginf=-1e4).masked_fill(
-                    ~safe_loc_mask, -1e9
-                )
+                    ~safe_loc_mask, neg_inf_loc
+                ).clamp(min=-65500.0, max=65500.0)
                 attn_loc = F.softmax(scores_loc, dim=-1).masked_fill(all_loc_masked, 0.0)
                 attn_loc = self.dropout(attn_loc)
                 local_context = torch.matmul(attn_loc, V_f)

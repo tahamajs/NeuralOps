@@ -690,7 +690,7 @@ class GraniteHybridBlock(BaseAttention):
                 can_sdpa = False
 
         if not can_sdpa:
-            scale = 1.0 / math.sqrt(Dh)
+            scale = 1.0 / math.sqrt(max(int(Dh), 1))
             mask_val = _safe_mask_value(q.dtype)
             if not output_attentions and L > 64:
                 chunk_size = 64
@@ -728,7 +728,7 @@ class GraniteHybridBlock(BaseAttention):
                             )
                             scores_c = scores_c + m4.to(scores_c.dtype)
 
-                    scores_c = torch.nan_to_num(scores_c, nan=mask_val, posinf=1e9, neginf=mask_val)
+                    scores_c = torch.nan_to_num(scores_c, nan=mask_val, posinf=65500.0, neginf=mask_val).clamp(min=-65500.0, max=65500.0)
                     aw_c = F.softmax(scores_c.float(), dim=-1).to(hidden_states.dtype)
                     aw_c = torch.nan_to_num(aw_c, nan=0.0)
                     ctx_chunks.append(torch.matmul(aw_c, V_c))
@@ -750,7 +750,7 @@ class GraniteHybridBlock(BaseAttention):
                     elif attention_mask.dim() == 4:
                         scores = scores + attention_mask.to(scores.dtype)
 
-                scores = torch.nan_to_num(scores, nan=mask_val, posinf=1e9, neginf=mask_val)
+                scores = torch.nan_to_num(scores, nan=mask_val, posinf=65500.0, neginf=mask_val).clamp(min=-65500.0, max=65500.0)
                 attn_weights = F.softmax(scores.float(), dim=-1).to(hidden_states.dtype)
                 attn_weights = torch.nan_to_num(attn_weights, nan=0.0)
                 context = torch.matmul(attn_weights, V_full)

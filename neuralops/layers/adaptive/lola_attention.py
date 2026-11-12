@@ -835,15 +835,15 @@ class LoLAAttention(BaseAttention):
             K = repeat_kv(K, self.kv_repeat)
             V = repeat_kv(V, self.kv_repeat)
 
-        scale = 1.0 / math.sqrt(int(d))
+        scale = 1.0 / math.sqrt(max(int(d), 1))
 
         scores_lr = torch.matmul(Q, K.transpose(-2, -1).contiguous()) * scale
 
         mask = attention_mask if attention_mask is not None else kwargs.get("mask")
         mask_val = (
-            -1e4
+            -65500.0
             if dtype in (torch.float16, torch.bfloat16) or scores_lr.dtype in (torch.float16, torch.bfloat16)
-            else -1e9
+            else -1e4
         )
         if mask is not None:
             if mask.dim() == 4:

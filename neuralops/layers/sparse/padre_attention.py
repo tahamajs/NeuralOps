@@ -524,10 +524,10 @@ class PADReAttention(BaseAttention):
 
         from neuralops.ops.triton.sparse_attn import fused_padre_polynomial_attn_triton
 
-        fill_val = -1e4 if scores.dtype in (torch.float16, torch.bfloat16) else -1e9
-        masked_for_max = scores.masked_fill(invalid_mask, fill_val)
+        fill_val = -65500.0 if scores.dtype in (torch.float16, torch.bfloat16) else -1e4
+        masked_for_max = scores.masked_fill(invalid_mask, fill_val).clamp(min=-65500.0, max=65500.0)
         max_scores = masked_for_max.max(dim=-1, keepdim=True).values
-        thresh = -5e3 if scores.dtype in (torch.float16, torch.bfloat16) else -1e8
+        thresh = -5e4 if scores.dtype in (torch.float16, torch.bfloat16) else -5e3
         max_scores = torch.where(max_scores <= thresh, torch.zeros_like(max_scores), max_scores)
 
         scores_centered = (scores - max_scores) / max(self.temperature, 1e-6)
