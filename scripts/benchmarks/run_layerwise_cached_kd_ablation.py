@@ -35,6 +35,8 @@ import os
 import sqlite3
 import sys
 import time
+import uuid
+from pathlib import Path
 from typing import Any
 
 os.environ["TRANSFORMERS_OFFLINE"] = "1"

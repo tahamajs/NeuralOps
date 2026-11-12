@@ -23,6 +23,8 @@ import logging
 import math
 import os
 import sys
+import uuid
+from pathlib import Path
 
 import torch
 import torch.nn as nn
@@ -134,9 +136,9 @@ def compute_ppl(model, dataloader, device) -> tuple[float, float, float, int, in
 
     with torch.no_grad():
         for batch in dataloader:
-            input_ids = batch["input_ids"].to(device)
-            attn_mask = batch["attention_mask"].to(device)
-            labels = batch["labels"].to(device)
+            input_ids = batch["input_ids"].to(device, non_blocking=True)
+            attn_mask = batch["attention_mask"].to(device, non_blocking=True)
+            labels = batch["labels"].to(device, non_blocking=True)
 
             out = model(input_ids=input_ids, attention_mask=attn_mask, labels=labels)
             mask = labels != -100
@@ -188,7 +190,7 @@ def main() -> None:
 
     logger.info("Building WikiText MLM dataset...")
     dataset = build_mlm_dataset(tokenizer, args.dataset, args.split, args.seq_len)
-    loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=2)
+    loader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False, num_workers=2, pin_memory=(device.type == "cuda"))
     logger.info(f"Dataset: {len(dataset)} chunks of seq_len={args.seq_len}")
 
     logger.info("Computing PPL and Masked Accuracy...")
@@ -212,9 +214,12 @@ def main() -> None:
         "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
     }
 
-    os.makedirs(os.path.dirname(args.output), exist_ok=True)
-    with open(args.output, "w") as f:
+    out_p = Path(args.output)
+    out_p.parent.mkdir(parents=True, exist_ok=True)
+    tmp_p = out_p.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    with tmp_p.open("w", encoding="utf-8") as f:
         json.dump(result, f, indent=2)
+    tmp_p.replace(out_p)
     logger.info(f"Baseline PPL written to: {args.output}")
 
 

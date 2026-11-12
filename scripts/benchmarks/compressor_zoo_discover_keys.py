@@ -30,6 +30,8 @@ import os
 import subprocess
 import sys
 import time
+import uuid
+from pathlib import Path
 from typing import Any
 
 import torch
@@ -215,19 +217,21 @@ def main() -> None:
     logger.info("  Failed / Missing Dependencies: %d / %d", len(failed_keys), len(all_keys))
     logger.info("=" * 80)
 
-    # Write artifacts
-    with open(out_path / "registry_keys.json", "w") as f:
-        json.dump(functional_keys, f, indent=2)
-    with open(out_path / "identity_keys.json", "w") as f:
-        json.dump(identity_keys, f, indent=2)
-    with open(out_path / "failed_keys.json", "w") as f:
-        json.dump(failed_keys, f, indent=2)
-    with open(out_path / "audit_report.json", "w") as f:
-        json.dump(full_report, f, indent=2)
+    def _atomic_write_json(p: Path, data: Any) -> None:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        tmp = p.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+        with tmp.open("w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+        tmp.replace(p)
+
+    # Write artifacts atomically
+    _atomic_write_json(out_path / "registry_keys.json", functional_keys)
+    _atomic_write_json(out_path / "identity_keys.json", identity_keys)
+    _atomic_write_json(out_path / "failed_keys.json", failed_keys)
+    _atomic_write_json(out_path / "audit_report.json", full_report)
 
     logger.info("Artifacts saved to %s/", out_path)
 
 
 if __name__ == "__main__":
-    from pathlib import Path
     main()

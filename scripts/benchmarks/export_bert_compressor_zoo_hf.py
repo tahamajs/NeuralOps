@@ -29,6 +29,7 @@ import json
 import logging
 import os
 import sys
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -60,6 +61,14 @@ from neuralops.models.surgical_io import extract_surgical_manifest
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("export_bert_comp_hf")
+
+
+def _atomic_write_text(dest_path: Path, content: str) -> None:
+    """Atomically write text content to a destination file via a .tmp file and POSIX rename."""
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = dest_path.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    tmp_path.write_text(content, encoding="utf-8")
+    tmp_path.replace(dest_path)
 
 TEACHER_BASELINE_ACC = 91.63
 
@@ -328,7 +337,7 @@ def main() -> None:
                     "saved_tensor_keys": sorted(delta_state.keys()),
                 }
             )
-            (comp_dir / "surgical_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+            _atomic_write_text(comp_dir / "surgical_manifest.json", json.dumps(manifest, indent=2))
 
             for heavy_name in ("pytorch_model.bin", "model.safetensors", "optimizer.pt"):
                 h_path = comp_dir / heavy_name
@@ -344,7 +353,7 @@ def main() -> None:
             cfg["compression_ratio"] = ratio
             cfg["weights_format"] = "compressor_only_fp16"
             cfg["saved_tensor_count"] = len(delta_state)
-            (comp_dir / "config.json").write_text(json.dumps(cfg, indent=2), encoding="utf-8")
+            _atomic_write_text(comp_dir / "config.json", json.dumps(cfg, indent=2))
 
             summary = {
                 "compressor": comp_key,
@@ -354,10 +363,10 @@ def main() -> None:
                 "saved_tensor_count": len(delta_state),
                 "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
             }
-            summary_file.write_text(json.dumps(summary, indent=2), encoding="utf-8")
+            _atomic_write_text(summary_file, json.dumps(summary, indent=2))
 
             readme = build_compressor_readme(comp_key, showcase, ranks_list, meta_map.get(comp_key, {}), comp_dir)
-            (comp_dir / "README.md").write_text(readme, encoding="utf-8")
+            _atomic_write_text(comp_dir / "README.md", readme)
             logger.info("[%d/%d] Packaged %s (Acc=%.2f%%, Ratio=%.2fx) -> %s", idx, len(by_comp), comp_key, showcase.get("healed_acc", zero_acc), ratio, comp_dir)
         except Exception as e:
             logger.error("[%d/%d] Failed packaging %s: %s", idx, len(by_comp), comp_key, e)

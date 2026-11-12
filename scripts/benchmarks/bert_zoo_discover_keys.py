@@ -25,6 +25,8 @@ import os
 import sys
 import time
 import traceback
+import uuid
+from pathlib import Path
 
 import torch
 
@@ -123,15 +125,18 @@ def main() -> None:
         f"{len(valid_keys)} valid, {len(skipped)} skipped out of {len(all_keys)} total."
     )
 
-    os.makedirs(os.path.dirname(args.output), exist_ok=True)
-    os.makedirs(os.path.dirname(args.skipped_output), exist_ok=True)
+    def _atomic_write_json(path_str: str, data: Any) -> None:
+        p = Path(path_str)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        tmp = p.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+        with tmp.open("w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+        tmp.replace(p)
 
-    with open(args.output, "w") as f:
-        json.dump(valid_keys, f, indent=2)
+    _atomic_write_json(args.output, valid_keys)
     logger.info(f"Valid keys written to: {args.output}")
 
-    with open(args.skipped_output, "w") as f:
-        json.dump(skipped, f, indent=2)
+    _atomic_write_json(args.skipped_output, skipped)
     logger.info(f"Skipped keys written to: {args.skipped_output}")
 
 
