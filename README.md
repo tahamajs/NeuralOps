@@ -103,10 +103,13 @@ The following empirical verification table records physical hardware execution o
 
 ### ⚡ 30-Second Quickstart
 
+```bash
+# 1. Install NeuralOps with PyTorch core runtime from PyPI (v2.1.0)
+pip install "neuralops[core]==2.1.0"
+# (Bare `pip install neuralops==2.1.0` is a lightweight install containing metadata and torch-free utilities only; `import neuralops.api` requires PyTorch via `neuralops[core]`)
+```
+
 ```python
-# 1. Install NeuralOps with PyTorch core runtime from PyPI
-pip install "neuralops[core]"
-# (Bare `pip install neuralops` is a lightweight install containing metadata and torch-free utilities only; `import neuralops.api` requires PyTorch via `neuralops[core]`)
 
 # 2. High-Level Ergonomic Pipeline (One-line Hugging Face-compatible inference)
 import neuralops
@@ -873,8 +876,8 @@ NeuralOps adopts a **JIT-only build model** for native CUDA C++ operators:
 - **TensorRT-LLM C++ Plugin Serving**: The dynamic plugin source `neuralops/ops/cuda/plugins/trt_linear_attention_plugin.cpp` implements `nvinfer1::IPluginV2DynamicExt` for high-throughput linear attention serving engines. It is packaged with `neuralops-cuda` and orchestrated by `TensorRTLLMPluginBuilder` in `neuralops.integrations.tensorrt_llm`.
 
 ```bash
-# Standard distribution with CPU, MPS, and Linux Triton/CUDA JIT support
-pip install neuralops
+# Standard distribution with CPU, MPS, and Linux Triton/CUDA JIT support (v2.1.0)
+pip install neuralops==2.1.0
 ```
 
 The base `neuralops` package does not install PyTorch. Choose a runtime extra for
@@ -1026,7 +1029,7 @@ NeuralOps installs canonical binary commands (`neuralops`, `nops`, `nops-cli`, a
 │ nops recipe valid  │ Static YAML schema & contract validation (W1-W15) │
 │ nops ops list      │ Enumerate all 15 versioned operation contracts    │
 │ nops compat check  │ Runtime export compatibility (HF, vLLM, SGLang)   │
-│ neuralops list     │ Interactive catalog (131 Attentions, 72 Comp)     │
+│ neuralops list     │ Interactive catalog (115 Attentions, 82 Comp)     │
 │ neuralops test     │ Fast diagnostic test suite (health, kernels, surg)│
 │ neuralops train    │ Multi-corpus training, varlen packing, WSD & Lion │
 │ neuralops eval     │ Perplexity, token throughput & latency evaluation │
@@ -1088,9 +1091,12 @@ nops recipe execute recipe.yaml --device auto
 python -m neuralops.benchmarks run --category attention --backend triton
 python -m neuralops.benchmarks run --category cuda    # Benchmark native CUDA C++ kernel modules
 python -m neuralops.benchmarks matrix --attention-keys flash_attention3,gated_delta_net --shapes "1,128,768;1,512,768;1,2048,768"
-neuralops list --type attention      # Lists 131 registered attention mechanisms
-neuralops list --type compressor     # Lists 82 registered compression engines
-neuralops list --type kernels        # Lists unified native CUDA (141) and Triton (58) kernels
+neuralops list --type attention      # Lists registered attention mechanisms (115 canonical / 131 registered keys)
+neuralops list --type compressor     # Lists registered compression engines (72 canonical / 82 registered keys)
+neuralops list --type kernels        # Lists unified native CUDA (140) and Triton (58) kernels
+neuralops list --type attention --backend triton
+neuralops list --type compressor --family svd
+neuralops list --json
 neuralops results --latest           # Show human-readable report of latest benchmark run
 neuralops results --latest --format json  # Display summary metrics JSON from latest run
 
@@ -1098,10 +1104,70 @@ neuralops results --latest --format json  # Display summary metrics JSON from la
 neuralops doctor
 neuralops doctor --json
 
-# 6. Hardware Environment Telemetry & Invariant Registry Information
+# 6. Hardware Environment Telemetry & Invariant Registry Verification
 neuralops info
-neuralops verify  # Strictly verifies 131 Attentions, 72/82 Compressors, 58 Triton, 141 CUDA, 94 Notebooks
+neuralops verify  # Strictly verifies 115 Attentions (131 historical/alias), 82 Compressors, 58 Triton, 140 CUDA, 94 Notebooks
+
+# 7. Fast Diagnostic Test Suite (Health gates, kernel capabilities, surgery verification)
+neuralops test --all
+neuralops test --health --kernels
+
+# 8. Multi-Dataset Streaming, Variable-Length Packing & WSD Scheduling
+neuralops train \
+  --model gpt2 \
+  --dataset HuggingFaceFW/fineweb-edu,opencsg/Fineweb-Edu-Chinese-V2 \
+  --varlen \
+  --seq-len 4096 \
+  --context-len 4096 \
+  --batch-size 4 \
+  --optimizer lion \
+  --lr 1e-4 \
+  --lr-scheduler wsd \
+  --decay-ratio 0.2
+
+# 9. Multi-Metric Evaluation (Perplexity, Token Throughput, Latency, Peak VRAM)
+neuralops eval --model gpt2 --dataset wikitext --batch-size 16 --seq-len 512 --json
+
+# 10. High-Throughput Serving Engine with PagedKVCache & Speculative Decoding
+neuralops serve --model gpt2 --port 8000 --engine fastapi
+
+# 11. Deep Compression CLI (Fisher-Weighted SVD, Hadamard Incoherent, W4A16, INT4)
+neuralops compress --model gpt2 --compressor fwsvd_compressor --rank 32 --save-dir ./compressed_gpt2
+neuralops compress --model roberta-base --compressor svd_truncated --rank 32
+
+# 12. Fast Model Surgery & Transplantation CLI (with Closed-Form Ridge & Micro-Healing)
+neuralops surgery --model distilbert-base-uncased --attention cosformer --rank 64 --heal --heal-steps 25
+neuralops transplant --model gpt2 --attention svd_linear_attention --rank 32 --calibrate
+
+# 13. Interactive Hardware Roofline Analysis (FLOPs/byte & memory bandwidth saturation)
+neuralops roofline --module gated_delta_net --device cuda --seq-len 4096 --latex
+
+# 14. Production Model Export (Safetensors, ONNX Runtime, TorchScript)
+neuralops export --model gpt2 --attn cosformer --rank 64 --format safetensors --output-dir exported_gpt2
+neuralops export --model distilbert-base-uncased --comp direct_svd --rank 32 --format onnx
+
+# 15. High-Throughput Production Serving Runner (PagedKVCache + FastAPI + WebSockets)
+neuralops serve --host 127.0.0.1 --port 8080 --model ./checkpoints/healed_gdn_gpt2
+
+# 16. Self-Speculative Draft-and-Verify Accelerated Generation (Draft-K = 4)
+neuralops generate --model gpt2 --speculative --draft-k 4 --max-new-tokens 64
+
+# 17. Automated Rank Allocation via AutoSVD Pareto Search
+neuralops search --model distilbert-base-uncased --target-param-ratio 0.5 --output-json ranks.json
+
+# 18. Needle-In-A-Haystack (NIAH) Long-Context Passkey Retrieval
+neuralops niah --model gpt2 --context-lengths 1024,2048,4096 --output-plot niah.png
+
+# 19. NeuralOps Modern Web UI Dashboard (FastAPI + HTMX + Observable Plot)
+neuralops ui start --port 8080               # Launch Web UI dashboard
+neuralops ui start --share --auth admin      # Secure public Cloudflare tunnel
+neuralops ui --static ./dist                 # Export static bundle for Hugging Face Spaces
+
+# 20. Interactive Two-Pane UNIX TUI Inspector
+neuralops tui         # Launch interactive Terminal User Interface (TUI mode)
+neuralops tui --snapshot
 ```
+
 
 ### 6.7 Modular Surgical Delta Storage & Universal Hub Loader
 
@@ -1134,69 +1200,7 @@ vlm_model, processor = load_surgeried_model(
 )
 print("VLM Architecture successfully loaded with subquadratic ChunkGLA decoder!")
 ```
-neuralops list --type attention --backend triton
-neuralops list --type compressor --family svd
-neuralops list --json
 
-# 6. Fast Diagnostic Test Suite (Health gates, kernel capabilities, surgery verification)
-neuralops test --all
-neuralops test --health --kernels
-
-# 7. Multi-Dataset Streaming, Variable-Length Packing & WSD Scheduling
-neuralops train \
-  --model gpt2 \
-  --dataset HuggingFaceFW/fineweb-edu,opencsg/Fineweb-Edu-Chinese-V2 \
-  --varlen \
-  --seq-len 4096 \
-  --context-len 4096 \
-  --batch-size 4 \
-  --optimizer lion \
-  --lr 1e-4 \
-  --lr-scheduler wsd \
-  --decay-ratio 0.2
-
-# 8. Multi-Metric Evaluation (Perplexity, Token Throughput, Latency, Peak VRAM)
-neuralops eval --model gpt2 --dataset wikitext --batch-size 16 --seq-len 512 --json
-
-# 9. High-Throughput Serving Engine with PagedKVCache & Speculative Decoding
-neuralops serve --model gpt2 --port 8000 --engine fastapi
-
-# 10. Deep Compression CLI (Fisher-Weighted SVD, Hadamard Incoherent, W4A16, INT4)
-neuralops compress --model gpt2 --compressor fwsvd_compressor --rank 32 --save-dir ./compressed_gpt2
-neuralops compress --model roberta-base --compressor svd_truncated --rank 32
-
-# 11. Fast Model Surgery & Transplantation CLI (with Closed-Form Ridge & Micro-Healing)
-neuralops surgery --model distilbert-base-uncased --attention cosformer --rank 64 --heal --heal-steps 25
-neuralops transplant --model gpt2 --attention svd_linear_attention --rank 32 --calibrate
-
-# 12. Interactive Hardware Roofline Analysis (FLOPs/byte & memory bandwidth saturation)
-neuralops roofline --module gated_delta_net --device cuda --seq-len 4096 --latex
-
-# 13. Production Model Export (Safetensors, ONNX Runtime, TorchScript)
-neuralops export --model gpt2 --attn cosformer --rank 64 --format safetensors --output-dir exported_gpt2
-neuralops export --model distilbert-base-uncased --comp direct_svd --rank 32 --format onnx
-
-# 14. High-Throughput Production Serving Runner (PagedKVCache + FastAPI + WebSockets)
-neuralops serve --host 127.0.0.1 --port 8080 --model ./checkpoints/healed_gdn_gpt2
-
-# 15. Self-Speculative Draft-and-Verify Accelerated Generation (Draft-K = 4)
-neuralops generate --model gpt2 --speculative --draft-k 4 --max-new-tokens 64
-
-# 16. Automated Rank Allocation via AutoSVD Pareto Search
-neuralops search --model distilbert-base-uncased --target-param-ratio 0.5 --output-json ranks.json
-
-# 17. Needle-In-A-Haystack (NIAH) Long-Context Passkey Retrieval
-neuralops niah --model gpt2 --context-lengths 1024,2048,4096 --output-plot niah.png
-
-# 18. NeuralOps Modern Web UI Dashboard (FastAPI + HTMX + Observable Plot)
-neuralops ui start --port 8080               # Launch Web UI dashboard
-neuralops ui start --share --auth admin      # Secure public Cloudflare tunnel
-neuralops ui --static ./dist                 # Export static bundle for Hugging Face Spaces
-
-# 19. Interactive Two-Pane UNIX TUI Inspector
-neuralops tui         # Launch interactive Terminal User Interface (TUI mode)
-neuralops tui --snapshot
-```
 
 ---
 
