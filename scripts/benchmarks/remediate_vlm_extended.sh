@@ -97,7 +97,7 @@ for KEY in $($PYTHON -c "import json; print('\n'.join(json.load(open('/tmp/vlm_e
         --grad_accum 8 \
         --max_train_samples 800 \
         --max_val_samples 200 \
-        --hf_org tahamajs \
+        --hf_org Hooshaai \
         --device cuda
     EC=$?
     if [ $EC -ne 0 ]; then

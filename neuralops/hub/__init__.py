@@ -9,7 +9,7 @@
 NeuralOps Hugging Face Hub Integration Package.
 
 Provides high-level APIs to download, reconstruct, inspect, and upload
-surgeried and compressed models hosted on the Hugging Face Hub (org: tahamajs).
+surgeried and compressed models hosted on the Hugging Face Hub (org: Hooshaai).
 """
 from __future__ import annotations
 

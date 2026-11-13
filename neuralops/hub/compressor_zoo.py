@@ -9,7 +9,7 @@
 Pretrained BERT & Generative Compressor Zoo API.
 
 Allows users to load, list, and fine-tune any of the compressed and distilled
-transformer models hosted on the Hugging Face Hub (org: tahamajs).
+transformer models hosted on the Hugging Face Hub (org: Hooshaai).
 """
 from __future__ import annotations
 
@@ -167,7 +167,7 @@ for res in results:
 
 def list_pretrained_compressed_bert_models(
     metrics_path: Optional[str] = None,
-    hf_org: str = "tahamajs",
+    hf_org: str = "Hooshaai",
 ) -> list[dict[str, Any]]:
     """
     Returns the list of available pretrained compressed BERT models,
@@ -211,7 +211,7 @@ def load_pretrained_compressed_bert(
     compressor_type: str,
     task: Optional[str] = None,
     num_labels: int = 2,
-    hf_org: str = "tahamajs",
+    hf_org: str = "Hooshaai",
     device: str = "auto",
     **kwargs: Any,
 ) -> Tuple[nn.Module, Any]:

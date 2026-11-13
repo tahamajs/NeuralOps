@@ -155,7 +155,7 @@ def train_single_qwen_attention(
     stage2_frac: float = 0.70,
     topk: int = 64,
     grad_accum: int = 4,
-    hf_org: str = "tahamajs",
+    hf_org: str = "Hooshaai",
     gradient_checkpointing: bool = False,
     teacher_cache: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:

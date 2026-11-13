@@ -333,7 +333,7 @@ def train_single_vlm_attention(
     train_secs: float = 240.0,
     batch_size: int = 4,
     grad_accum: int = 4,
-    hf_org: str = "tahamajs",
+    hf_org: str = "Hooshaai",
     gradient_checkpointing: bool = False,
     teacher_cache: Optional[dict[str, Any]] = None,
     lr_s2: float = 6.0e-5,
@@ -740,7 +740,7 @@ def main() -> None:
     parser.add_argument("--topk", type=int, default=64)
     parser.add_argument("--max_train_samples", type=int, default=800)
     parser.add_argument("--max_val_samples", type=int, default=200)
-    parser.add_argument("--hf_org", default="tahamajs")
+    parser.add_argument("--hf_org", default="Hooshaai")
     parser.add_argument(
         "--gradient_checkpointing",
         nargs="?",

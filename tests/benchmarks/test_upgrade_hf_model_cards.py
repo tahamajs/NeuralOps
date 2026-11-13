@@ -37,7 +37,7 @@ license: mit
 # Test Model Card
 This is a test model card without mandatory disclosures.
 """
-    repo_id = "tahamajs/bert-test-sst2"
+    repo_id = "Hooshaai/bert-test-sst2"
     enhanced = enhance_readme_content(
         original_readme=raw_readme,
         repo_id=repo_id,
@@ -84,7 +84,7 @@ def test_audit_readme_compliance():
     # Enhanced readme
     good_readme = enhance_readme_content(
         original_readme=bad_readme,
-        repo_id="tahamajs/bert-adaptive-span-attention-sst2",
+        repo_id="Hooshaai/bert-adaptive-span-attention-sst2",
         family="bert_attention",
         metrics={"post_kd_acc": 91.06},
     )

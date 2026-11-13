@@ -498,6 +498,6 @@ change appears, stop the affected phase and report it.
 ### 21.4 Decoupled Asynchronous Hugging Face Upload
 - Cluster compute nodes without outbound internet access MUST NOT stall GPU execution waiting for network I/O.
 - Checkpoints are saved locally to `results/bert_attention_zoo/<key>/`.
-- An asynchronous background upload daemon (`scripts/hpc/bert_zoo_upload_hf.py`) runs in parallel on the login node, continuously syncing completed models to Hugging Face Hub (`tahamajs/bert-{slug}-sst2`) and purging heavy local weights to protect cluster disk quotas.
+- An asynchronous background upload daemon (`scripts/hpc/bert_zoo_upload_hf.py`) runs in parallel on the login node, continuously syncing completed models to Hugging Face Hub (`Hooshaai/bert-{slug}-sst2`) and purging heavy local weights to protect cluster disk quotas.
 
 *Last updated: 2026-11-09.*

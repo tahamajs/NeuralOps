@@ -106,7 +106,7 @@ def train_single_llama_attention(
     pattern: str = "hybrid_3_1",
     train_secs: float = 150.0,
     grad_accum: int = 8,
-    hf_org: str = "tahamajs",
+    hf_org: str = "Hooshaai",
     model_name: str = "/home/tahamajlesi.ut/NeuralOps/models/tinyllama_1.1b",
     gradient_checkpointing: bool = False,
     teacher_cache: Optional[dict[str, Any]] = None,
@@ -414,7 +414,7 @@ def main() -> None:
     parser.add_argument("--topk", type=int, default=64)
     parser.add_argument("--out_dir", default="/home/tahamajlesi.ut/NeuralOps/results/tinyllama_1.1b_zoo")
     parser.add_argument("--metrics_log", default="/home/tahamajlesi.ut/NeuralOps/results/tinyllama_1.1b_zoo/metrics.jsonl")
-    parser.add_argument("--hf_org", default="tahamajs")
+    parser.add_argument("--hf_org", default="Hooshaai")
     parser.add_argument(
         "--gradient_checkpointing",
         nargs="?",

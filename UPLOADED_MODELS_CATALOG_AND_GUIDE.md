@@ -1,6 +1,6 @@
 # NeuralOps Hugging Face Hub Catalog & Model Card Guide
 
-**Namespace:** `tahamajs` ([Hugging Face Hub](https://huggingface.co/tahamajs))  
+**Namespace:** `Hooshaai` ([Hugging Face Hub](https://huggingface.co/Hooshaai))
 **Repository:** NeuralOps (`v2.0.6`)  
 **Authority:** Aligned with `AGENTS.md` (§21 Cached Distillation & Dual Zoo Verification Protocol, §0 Non-negotiable principles, §8 Three-level kernel contract, §12 Results & Artifacts).
 
@@ -49,39 +49,39 @@ All published artifacts adhere strictly to the **Zero-Fake Serialization** and *
 - **Scope:** 115 registered attention mechanisms transplanted across all 12 encoder self-attention blocks (`bert.encoder.layer.{i}.attention`).
 - **Benchmark Suite:** GLUE SST-2 (Validation split, 872 binary sequence classification samples).
 - **Teacher Baseline:** Fine-tuned BERT-Base teacher (`91.63%` accuracy).
-- **Hub Repository Pattern:** `https://huggingface.co/tahamajs/bert-{slug}-sst2`
+- **Hub Repository Pattern:** `https://huggingface.co/Hooshaai/bert-{slug}-sst2`
 
 ### Track 2: BERT Compressor & LoRA-Healed Zoo
 - **Base Architecture:** `google-bert/bert-base-uncased` (109.5M parameters)
 - **Scope:** 82 registered compression algorithms (SVD, HNC-SVD, ASVD, ADMM, Sparse-GPT, Fisher-weighted factorization) evaluated across 4 physical ranks ($k \in \{64, 48, 32, 16\}$) with LoRA recovery healing.
 - **Benchmark Suite:** GLUE SST-2 and WikiText-2.
 - **Teacher Baseline:** `91.63%` SST-2 Accuracy | `10.48` WikiText-2 PPL.
-- **Hub Repository Pattern:** `https://huggingface.co/tahamajs/bert-comp-{slug}-sst2`
+- **Hub Repository Pattern:** `https://huggingface.co/Hooshaai/bert-comp-{slug}-sst2`
 
 ### Track 3: Qwen2.5-0.5B Subquadratic Attention Surgery Zoo
 - **Base Architecture:** `Qwen/Qwen2.5-0.5B` (494M parameters, 24 layers, hidden=896, 14Q:2KV 7:1 GQA)
 - **Scope:** Hybrid 3:1 subquadratic architecture (every 4th layer retains quadratic full-rank attention anchor, remaining 18 layers transplanted with subquadratic kernels).
 - **Benchmark Suite:** WikiText-2 raw validation (causal language modeling perplexity).
-- **Hub Repository Pattern:** `https://huggingface.co/tahamajs/qwen-2.5-0.5b-{slug}-wikitext2`
+- **Hub Repository Pattern:** `https://huggingface.co/Hooshaai/qwen-2.5-0.5b-{slug}-wikitext2`
 
 ### Track 4: Qwen2.5-0.5B Compressor Zoo
 - **Base Architecture:** `Qwen/Qwen2.5-0.5B` (494M parameters)
 - **Scope:** Multi-rank linear layer compression with 2-stage sparse knowledge distillation.
 - **Benchmark Suite:** WikiText-2 raw validation (causal language modeling perplexity).
-- **Hub Repository Pattern:** `https://huggingface.co/tahamajs/qwen-2.5-0.5b-comp-{slug}-wikitext2`
+- **Hub Repository Pattern:** `https://huggingface.co/Hooshaai/qwen-2.5-0.5b-comp-{slug}-wikitext2`
 
 ### Track 5: LLaVA-Qwen-0.5B Multimodal Vision-Language Zoo
 - **Base Architecture:** `llava-hf/llava-interleave-qwen-0.5b-hf` (892M parameters)
 - **Scope:** Frozen SigLIP vision encoder + 2-layer MLP projector + 24-layer Qwen2 decoder with subquadratic attention surgery.
 - **Benchmark Suite:** ScienceQA Image-Bearing STEM subset (1,024 test questions).
 - **Teacher Baseline:** `68.20%` ScienceQA multimodal visual reasoning accuracy.
-- **Hub Repository Pattern:** `https://huggingface.co/tahamajs/llava-qwen-0.5b-{slug}-scienceqa`
+- **Hub Repository Pattern:** `https://huggingface.co/Hooshaai/llava-qwen-0.5b-{slug}-scienceqa`
 
 ### Track 6: TinyLlama-1.1B Attention Zoo
 - **Base Architecture:** `TinyLlama/TinyLlama_v1.1` (1.10B parameters, 22 layers, hidden=2048, 32Q:4KV 8:1 GQA, bias-free)
 - **Scope:** Subquadratic attention replacement with hybrid anchor retention.
 - **Benchmark Suite:** WikiText-2 raw validation (causal language modeling perplexity).
-- **Hub Repository Pattern:** `https://huggingface.co/tahamajs/tinyllama-1.1b-{slug}-wikitext2`
+- **Hub Repository Pattern:** `https://huggingface.co/Hooshaai/tinyllama-1.1b-{slug}-wikitext2`
 
 ---
 
@@ -153,7 +153,7 @@ import torch
 from neuralops.hub import load_surgeried_model
 
 # Load model and tokenizer in a single call directly from Hugging Face Hub
-model, tokenizer = load_surgeried_model("tahamajs/bert-gated-delta-net-sst2")
+model, tokenizer = load_surgeried_model("Hooshaai/bert-gated-delta-net-sst2")
 model.eval()
 
 # Sequence classification inference
@@ -173,7 +173,7 @@ print(f"Predicted Sentiment (0 = Negative, 1 = Positive): {predicted_class}")
 import torch
 from neuralops.hub import load_surgeried_model
 
-model, tokenizer = load_surgeried_model("tahamajs/qwen-2.5-0.5b-mamba-wikitext2")
+model, tokenizer = load_surgeried_model("Hooshaai/qwen-2.5-0.5b-mamba-wikitext2")
 model.eval()
 
 prompt = "Subquadratic attention mechanisms replace standard softmax attention by"
@@ -248,25 +248,25 @@ Below is the verified master index of prominent NeuralOps repositories hosted on
 
 | Repository ID | Zoo Family | Mechanism / Engine | Base Architecture | Target Benchmark | Format |
 |---|---|---|---|---|---|
-| [`tahamajs/bert-gated-delta-net-sst2`](https://huggingface.co/tahamajs/bert-gated-delta-net-sst2) | BERT Attention | `gated_delta_net` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
-| [`tahamajs/bert-linear-attention-sst2`](https://huggingface.co/tahamajs/bert-linear-attention-sst2) | BERT Attention | `linear_attention` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
-| [`tahamajs/bert-flash-attention-sst2`](https://huggingface.co/tahamajs/bert-flash-attention-sst2) | BERT Attention | `flash_attention` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
-| [`tahamajs/bert-mamba-sst2`](https://huggingface.co/tahamajs/bert-mamba-sst2) | BERT Attention | `mamba` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
-| [`tahamajs/bert-hyena-sst2`](https://huggingface.co/tahamajs/bert-hyena-sst2) | BERT Attention | `hyena` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
-| [`tahamajs/bert-retention-sst2`](https://huggingface.co/tahamajs/bert-retention-sst2) | BERT Attention | `retention` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
-| [`tahamajs/bert-rwkv-sst2`](https://huggingface.co/tahamajs/bert-rwkv-sst2) | BERT Attention | `rwkv` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
-| [`tahamajs/bert-cosformer-sst2`](https://huggingface.co/tahamajs/bert-cosformer-sst2) | BERT Attention | `cosformer` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
-| [`tahamajs/bert-performer-sst2`](https://huggingface.co/tahamajs/bert-performer-sst2) | BERT Attention | `performer` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
-| [`tahamajs/bert-nystrom-sst2`](https://huggingface.co/tahamajs/bert-nystrom-sst2) | BERT Attention | `nystrom` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
-| [`tahamajs/bert-comp-hnc-svd-sst2`](https://huggingface.co/tahamajs/bert-comp-hnc-svd-sst2) | BERT Compressor | `hnc_svd` | `bert-base-uncased` | GLUE SST-2 (Acc) | `safetensors_lora` |
-| [`tahamajs/bert-comp-svd-linear-sst2`](https://huggingface.co/tahamajs/bert-comp-svd-linear-sst2) | BERT Compressor | `svd_linear` | `bert-base-uncased` | GLUE SST-2 (Acc) | `safetensors_lora` |
-| [`tahamajs/bert-comp-asvd-sst2`](https://huggingface.co/tahamajs/bert-comp-asvd-sst2) | BERT Compressor | `asvd` | `bert-base-uncased` | GLUE SST-2 (Acc) | `safetensors_lora` |
-| [`tahamajs/bert-comp-admm-sst2`](https://huggingface.co/tahamajs/bert-comp-admm-sst2) | BERT Compressor | `admm` | `bert-base-uncased` | GLUE SST-2 (Acc) | `safetensors_lora` |
-| [`tahamajs/qwen-2.5-0.5b-gated-delta-net-wikitext2`](https://huggingface.co/tahamajs/qwen-2.5-0.5b-gated-delta-net-wikitext2) | Qwen Attention | `gated_delta_net` | `Qwen2.5-0.5B` | WikiText-2 (PPL) | `safetensors` |
-| [`tahamajs/qwen-2.5-0.5b-mamba-wikitext2`](https://huggingface.co/tahamajs/qwen-2.5-0.5b-mamba-wikitext2) | Qwen Attention | `mamba` | `Qwen2.5-0.5B` | WikiText-2 (PPL) | `safetensors` |
-| [`tahamajs/qwen-2.5-0.5b-comp-hnc-svd-wikitext2`](https://huggingface.co/tahamajs/qwen-2.5-0.5b-comp-hnc-svd-wikitext2) | Qwen Compressor | `hnc_svd` | `Qwen2.5-0.5B` | WikiText-2 (PPL) | `safetensors` |
-| [`tahamajs/llava-qwen-0.5b-gated-delta-net-scienceqa`](https://huggingface.co/tahamajs/llava-qwen-0.5b-gated-delta-net-scienceqa) | LLaVA VLM | `gated_delta_net` | `llava-interleave-qwen-0.5b` | ScienceQA (Acc) | `safetensors` |
-| [`tahamajs/tinyllama-1.1b-gated-delta-net-wikitext2`](https://huggingface.co/tahamajs/tinyllama-1.1b-gated-delta-net-wikitext2) | TinyLlama | `gated_delta_net` | `TinyLlama_v1.1` | WikiText-2 (PPL) | `safetensors` |
+| [`Hooshaai/bert-gated-delta-net-sst2`](https://huggingface.co/Hooshaai/bert-gated-delta-net-sst2) | BERT Attention | `gated_delta_net` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
+| [`Hooshaai/bert-linear-attention-sst2`](https://huggingface.co/Hooshaai/bert-linear-attention-sst2) | BERT Attention | `linear_attention` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
+| [`Hooshaai/bert-flash-attention-sst2`](https://huggingface.co/Hooshaai/bert-flash-attention-sst2) | BERT Attention | `flash_attention` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
+| [`Hooshaai/bert-mamba-sst2`](https://huggingface.co/Hooshaai/bert-mamba-sst2) | BERT Attention | `mamba` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
+| [`Hooshaai/bert-hyena-sst2`](https://huggingface.co/Hooshaai/bert-hyena-sst2) | BERT Attention | `hyena` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
+| [`Hooshaai/bert-retention-sst2`](https://huggingface.co/Hooshaai/bert-retention-sst2) | BERT Attention | `retention` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
+| [`Hooshaai/bert-rwkv-sst2`](https://huggingface.co/Hooshaai/bert-rwkv-sst2) | BERT Attention | `rwkv` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
+| [`Hooshaai/bert-cosformer-sst2`](https://huggingface.co/Hooshaai/bert-cosformer-sst2) | BERT Attention | `cosformer` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
+| [`Hooshaai/bert-performer-sst2`](https://huggingface.co/Hooshaai/bert-performer-sst2) | BERT Attention | `performer` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
+| [`Hooshaai/bert-nystrom-sst2`](https://huggingface.co/Hooshaai/bert-nystrom-sst2) | BERT Attention | `nystrom` | `bert-base-uncased` | GLUE SST-2 (Acc) | `attention_only_fp16` |
+| [`Hooshaai/bert-comp-hnc-svd-sst2`](https://huggingface.co/Hooshaai/bert-comp-hnc-svd-sst2) | BERT Compressor | `hnc_svd` | `bert-base-uncased` | GLUE SST-2 (Acc) | `safetensors_lora` |
+| [`Hooshaai/bert-comp-svd-linear-sst2`](https://huggingface.co/Hooshaai/bert-comp-svd-linear-sst2) | BERT Compressor | `svd_linear` | `bert-base-uncased` | GLUE SST-2 (Acc) | `safetensors_lora` |
+| [`Hooshaai/bert-comp-asvd-sst2`](https://huggingface.co/Hooshaai/bert-comp-asvd-sst2) | BERT Compressor | `asvd` | `bert-base-uncased` | GLUE SST-2 (Acc) | `safetensors_lora` |
+| [`Hooshaai/bert-comp-admm-sst2`](https://huggingface.co/Hooshaai/bert-comp-admm-sst2) | BERT Compressor | `admm` | `bert-base-uncased` | GLUE SST-2 (Acc) | `safetensors_lora` |
+| [`Hooshaai/qwen-2.5-0.5b-gated-delta-net-wikitext2`](https://huggingface.co/Hooshaai/qwen-2.5-0.5b-gated-delta-net-wikitext2) | Qwen Attention | `gated_delta_net` | `Qwen2.5-0.5B` | WikiText-2 (PPL) | `safetensors` |
+| [`Hooshaai/qwen-2.5-0.5b-mamba-wikitext2`](https://huggingface.co/Hooshaai/qwen-2.5-0.5b-mamba-wikitext2) | Qwen Attention | `mamba` | `Qwen2.5-0.5B` | WikiText-2 (PPL) | `safetensors` |
+| [`Hooshaai/qwen-2.5-0.5b-comp-hnc-svd-wikitext2`](https://huggingface.co/Hooshaai/qwen-2.5-0.5b-comp-hnc-svd-wikitext2) | Qwen Compressor | `hnc_svd` | `Qwen2.5-0.5B` | WikiText-2 (PPL) | `safetensors` |
+| [`Hooshaai/llava-qwen-0.5b-gated-delta-net-scienceqa`](https://huggingface.co/Hooshaai/llava-qwen-0.5b-gated-delta-net-scienceqa) | LLaVA VLM | `gated_delta_net` | `llava-interleave-qwen-0.5b` | ScienceQA (Acc) | `safetensors` |
+| [`Hooshaai/tinyllama-1.1b-gated-delta-net-wikitext2`](https://huggingface.co/Hooshaai/tinyllama-1.1b-gated-delta-net-wikitext2) | TinyLlama | `gated_delta_net` | `TinyLlama_v1.1` | WikiText-2 (PPL) | `safetensors` |
 
 ---
 

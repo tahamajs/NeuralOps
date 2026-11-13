@@ -476,24 +476,24 @@ def test_zoo_wrappers_route_to_load_surgeried_model() -> None:
     with patch("neuralops.hub.surgery_loader.load_surgeried_model", return_value=sentinel) as mock_loader:
         res_bert = load_pretrained_bert("gated_delta_net", task="sequence-classification", num_labels=2, device="cpu")
         assert res_bert is sentinel
-        assert mock_loader.call_args.kwargs["repo_id"] == "tahamajs/bert-gated-delta-net-sst2"
+        assert mock_loader.call_args.kwargs["repo_id"] == "Hooshaai/bert-gated-delta-net-sst2"
 
         res_comp = load_pretrained_compressed_bert("direct_svd", device="cpu")
         assert res_comp is sentinel
-        assert mock_loader.call_args.kwargs["repo_id"] == "tahamajs/bert-comp-direct-svd-sst2"
+        assert mock_loader.call_args.kwargs["repo_id"] == "Hooshaai/bert-comp-direct-svd-sst2"
 
 
 def test_async_uploader_zoo_routing_and_delta_cleanup(tmp_path: Path) -> None:
     uploader = AsyncHFHubUploader(token="hf_test_token", cleanup_weights=True)
-    assert uploader.hf_org == "tahamajs"
+    assert uploader.hf_org == "Hooshaai"
 
     expected_routes = {
-        ("bert_attention_zoo", "gated_delta_net"): "tahamajs/bert-gated-delta-net-sst2",
-        ("bert_compressor_zoo_hf", "direct_svd"): "tahamajs/bert-comp-direct-svd-sst2",
-        ("qwen_attention_zoo", "gated_delta_net"): "tahamajs/qwen-2.5-0.5b-gated-delta-net-wikitext2",
-        ("qwen_compressor_zoo", "direct_svd"): "tahamajs/qwen-2.5-0.5b-comp-direct-svd-wikitext2",
-        ("tinyllama_1.1b_zoo", "gated_delta_net"): "tahamajs/tinyllama-1.1b-gated-delta-net-wikitext2",
-        ("vlm_llava_scienceqa_zoo", "gated_delta_net"): "tahamajs/llava-qwen-0.5b-gated-delta-net-scienceqa",
+        ("bert_attention_zoo", "gated_delta_net"): "Hooshaai/bert-gated-delta-net-sst2",
+        ("bert_compressor_zoo_hf", "direct_svd"): "Hooshaai/bert-comp-direct-svd-sst2",
+        ("qwen_attention_zoo", "gated_delta_net"): "Hooshaai/qwen-2.5-0.5b-gated-delta-net-wikitext2",
+        ("qwen_compressor_zoo", "direct_svd"): "Hooshaai/qwen-2.5-0.5b-comp-direct-svd-wikitext2",
+        ("tinyllama_1.1b_zoo", "gated_delta_net"): "Hooshaai/tinyllama-1.1b-gated-delta-net-wikitext2",
+        ("vlm_llava_scienceqa_zoo", "gated_delta_net"): "Hooshaai/llava-qwen-0.5b-gated-delta-net-scienceqa",
     }
     for (zoo_dir, key), expected_repo in expected_routes.items():
         d = tmp_path / zoo_dir / key
@@ -504,7 +504,7 @@ def test_async_uploader_zoo_routing_and_delta_cleanup(tmp_path: Path) -> None:
     generic_dir = tmp_path / "generic_parent" / "alibi"
     generic_dir.mkdir(parents=True)
     (generic_dir / "surgical_manifest.json").write_text('{"zoo_type": "llava_vlm"}', encoding="utf-8")
-    assert uploader.resolve_repo_id("alibi", generic_dir) == "tahamajs/llava-qwen-0.5b-alibi-scienceqa"
+    assert uploader.resolve_repo_id("alibi", generic_dir) == "Hooshaai/llava-qwen-0.5b-alibi-scienceqa"
 
     # Verify upload strips legacy full weights via ignore_patterns and cleans up all local weights after commit
     stage = tmp_path / "bert_attention_zoo" / "alibi"
@@ -525,7 +525,7 @@ def test_async_uploader_zoo_routing_and_delta_cleanup(tmp_path: Path) -> None:
 
     uploader.shutdown(wait=True)
     assert res["status"] == "UPLOAD_SUCCESS"
-    assert res["repo_id"] == "tahamajs/bert-alibi-sst2"
+    assert res["repo_id"] == "Hooshaai/bert-alibi-sst2"
     ignore_pats = mock_api.upload_folder.call_args.kwargs["ignore_patterns"]
     assert "pytorch_model.bin" in ignore_pats
     assert "model.safetensors" in ignore_pats

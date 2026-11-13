@@ -44,7 +44,7 @@ $PYTHON scripts/benchmarks/llama_zoo_train_mix.py \
     --train_secs 90.0 \
     --out_dir /home/tahamajlesi.ut/NeuralOps/results/tinyllama_1.1b_zoo \
     --metrics_log /home/tahamajlesi.ut/NeuralOps/results/tinyllama_1.1b_zoo/metrics.jsonl \
-    --hf_org tahamajs \
+    --hf_org Hooshaai \
     --device cuda
 
 echo "=== [2/2] RUNNING POST-CHAIN RECONCILIATION & 5-FORMAT EXPORT ==="

@@ -11,7 +11,7 @@ Dedicated Hugging Face Hub Uploader for Compressed + LoRA-Healed BERT Showcase M
 Uploads complete serialized checkpoints (`pytorch_model.bin`, `config.json`,
 `compression_summary.json`, `README.md`, and tokenizer assets) from
 `results/bert_compressor_zoo_hf/<comp_key>/` directly to
-`tahamajs/bert-comp-<slug>-sst2` WITHOUT stripping `pytorch_model.bin` pre-upload.
+`Hooshaai/bert-comp-<slug>-sst2` WITHOUT stripping `pytorch_model.bin` pre-upload.
 Optionally purges local `pytorch_model.bin` ONLY AFTER verified Hub commit.
 """
 from __future__ import annotations
@@ -134,7 +134,7 @@ def main() -> None:
         "--watch_dir",
         default="/home/tahamajlesi.ut/NeuralOps/results/bert_attention_zoo,/home/tahamajlesi.ut/NeuralOps/results/bert_compressor_zoo_hf,/home/tahamajlesi.ut/NeuralOps/results/qwen_attention_zoo,/home/tahamajlesi.ut/NeuralOps/results/qwen_compressor_zoo,/home/tahamajlesi.ut/NeuralOps/results/vlm_llava_scienceqa_zoo,/home/tahamajlesi.ut/NeuralOps/results/tinyllama_1.1b_zoo",
     )
-    parser.add_argument("--hf_org", default="tahamajs")
+    parser.add_argument("--hf_org", default="Hooshaai")
     parser.add_argument("--cleanup", type=int, default=1)
     parser.add_argument("--once", action="store_true", help="Upload all ready directories once and exit.")
     parser.add_argument("--poll_interval", type=int, default=10)

@@ -143,7 +143,7 @@ def test_unified_model_card_all_six_zoos_honest_audit(tmp_path: Path) -> None:
         card = generate_unified_model_card(
             zoo_type=zoo_type,
             mechanism_key="cosformer",
-            repo_id=f"tahamajs/test-{zoo_type}",
+            repo_id=f"Hooshaai/test-{zoo_type}",
             out_dir=tmp_path,
             metrics={
                 "acc_before": 40.0,
@@ -191,7 +191,7 @@ def test_unified_model_card_yaml_frontmatter_and_nonfinite_guard(tmp_path: Path)
     card = generate_unified_model_card(
         zoo_type="llava_vlm",
         mechanism_key="retnet",
-        repo_id="tahamajs/llava-qwen-0.5b-retnet-scienceqa",
+        repo_id="Hooshaai/llava-qwen-0.5b-retnet-scienceqa",
         base_model="/home/user/models/llava_qwen_0.5b",
         out_dir=tmp_path,
         metrics={
@@ -237,7 +237,7 @@ def test_honest_artifact_audit_empty_and_legacy_bin(tmp_path: Path) -> None:
     card_empty = generate_unified_model_card(
         zoo_type="bert_attention",
         mechanism_key="linear_attention",
-        repo_id="tahamajs/bert-linear-attention-sst2",
+        repo_id="Hooshaai/bert-linear-attention-sst2",
         out_dir=empty_dir,
         metrics={"acc_after": 86.2},
     )
@@ -251,7 +251,7 @@ def test_honest_artifact_audit_empty_and_legacy_bin(tmp_path: Path) -> None:
     card_legacy = generate_unified_model_card(
         zoo_type="bert_attention",
         mechanism_key="linear_attention",
-        repo_id="tahamajs/bert-linear-attention-sst2",
+        repo_id="Hooshaai/bert-linear-attention-sst2",
         out_dir=legacy_dir,
         metrics={"acc_after": 86.2},
     )
@@ -450,7 +450,7 @@ def test_qwen_compressor_delta_and_bert_pareto_card(tmp_path: Path) -> None:
     assert q_sd["model.layers.0.self_attn.q_proj.qzeros"].dtype == torch.int8
 
     q_card = _build_qwen_comp_readme(
-        repo_id="tahamajs/qwen-2.5-0.5b-comp-direct-svd-wikitext2",
+        repo_id="Hooshaai/qwen-2.5-0.5b-comp-direct-svd-wikitext2",
         base_model="/dev/shm/Qwen2.5-0.5B",
         comp_key="direct_svd",
         rank=2,

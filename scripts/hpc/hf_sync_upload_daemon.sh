@@ -35,7 +35,7 @@ while true; do
             echo "[UPLOAD DAEMON] Uploading BERT model: $key to Hugging Face..."
             $PYTHON /home/tahamajlesi.ut/NeuralOps/scripts/hpc/bert_zoo_upload_hf.py \
                 --single_dir "$dir" \
-                --hf_org "tahamajs" \
+                --hf_org "Hooshaai" \
                 --cleanup 1 >> /tmp/hf_uploader_daemon.log 2>&1 || true
         fi
     done
@@ -47,7 +47,7 @@ while true; do
             echo "[UPLOAD DAEMON] Uploading Qwen model: $key to Hugging Face..."
             $PYTHON /home/tahamajlesi.ut/NeuralOps/scripts/hpc/bert_zoo_upload_hf.py \
                 --single_dir "$dir" \
-                --hf_org "tahamajs" \
+                --hf_org "Hooshaai" \
                 --cleanup 1 >> /tmp/hf_uploader_daemon.log 2>&1 || true
         fi
     done

@@ -71,7 +71,7 @@ def upload_directory(
 
         api = HfApi(token=token)
         whoami = api.whoami()
-        username = whoami.get("name", "tahamajs")
+        username = whoami.get("name", "Hooshaai")
         allowed_orgs = [o["name"] for o in whoami.get("orgs", []) if o.get("canCreateModels", False)]
         effective_org = hf_org if (hf_org in allowed_orgs or hf_org == username) else username
 
@@ -243,7 +243,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="BERT/Qwen Dual Zoo Hugging Face Parallel Uploader")
     parser.add_argument("--watch_dir", default=None, help="Directory or comma-separated directories to watch for completed models")
     parser.add_argument("--single_dir", default=None, help="Single directory to upload directly")
-    parser.add_argument("--hf_org", default="tahamajs", help="Hugging Face organization or user namespace")
+    parser.add_argument("--hf_org", default="Hooshaai", help="Hugging Face organization or user namespace")
     parser.add_argument("--cleanup", type=int, default=1, help="1 to delete weights after upload, 0 to keep")
     parser.add_argument("--poll_interval", type=int, default=15, help="Polling interval in seconds")
     parser.add_argument("--parallel", type=int, default=3, help="Number of concurrent parallel uploads")

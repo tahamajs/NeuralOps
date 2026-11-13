@@ -9,7 +9,7 @@
 Pretrained BERT Attention Zoo API.
 
 Allows users to load, list, and fine-tune any of the distilled BERT attention
-models hosted on the Hugging Face Hub (org: tahamajs).
+models hosted on the Hugging Face Hub (org: Hooshaai).
 """
 from __future__ import annotations
 
@@ -188,7 +188,7 @@ If you use this model or the NeuralOps attention zoo in your research, please ci
 
 def list_pretrained_bert_models(
     metrics_path: Optional[str] = None,
-    hf_org: str = "tahamajs",
+    hf_org: str = "Hooshaai",
 ) -> list[dict[str, Any]]:
     """
     Returns the list of available pretrained BERT models with attention mechanisms,
@@ -231,7 +231,7 @@ def load_pretrained_bert(
     attention_type: str,
     task: str = "sequence-classification",
     num_labels: int = 2,
-    hf_org: str = "tahamajs",
+    hf_org: str = "Hooshaai",
     device: str = "auto",
     **kwargs: Any,
 ) -> Tuple[nn.Module, Any]:

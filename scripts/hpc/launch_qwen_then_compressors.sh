@@ -61,7 +61,7 @@ $PYTHON scripts/benchmarks/qwen_zoo_train_mix.py \
     --topk 64 \
     --out_dir /home/tahamajlesi.ut/NeuralOps/results/qwen_attention_zoo \
     --metrics_log /home/tahamajlesi.ut/NeuralOps/results/qwen_attention_zoo/metrics.jsonl \
-    --hf_org tahamajs \
+    --hf_org Hooshaai \
     --device cuda
 
 echo ""

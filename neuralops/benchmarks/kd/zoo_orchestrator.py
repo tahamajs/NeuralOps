@@ -337,7 +337,7 @@ def build_qwen_readme(
     """Generate a unified Hugging Face model card README.md for distilled Qwen checkpoints."""
     base_id = normalize_base_model_id(base_model)
     attn_slug = attn_key.replace("_", "-")
-    target_repo = repo_id or f"tahamajs/qwen-2.5-0.5b-{attn_slug}-wikitext2"
+    target_repo = repo_id or f"Hooshaai/qwen-2.5-0.5b-{attn_slug}-wikitext2"
     pattern = str(result.get("pattern", "hybrid_3_1"))
     if pattern == "hybrid_3_1":
         anchor_layers = [i for i in range(num_layers) if i % 4 == 3]
@@ -388,7 +388,7 @@ def build_llama_readme(
 ) -> str:
     """Generates a complete TinyLlama-1.1B Hugging Face Model Card via unified generator."""
     slug = attn_key.replace("_", "-")
-    repo_id = f"{result.get('hf_org', 'tahamajs')}/tinyllama-1.1b-{slug}-wikitext2"
+    repo_id = f"{result.get('hf_org', 'Hooshaai')}/tinyllama-1.1b-{slug}-wikitext2"
     pattern = str(result.get("pattern", "hybrid_3_1"))
     total_layers = int(result.get("total_layers", 22))
     surgeried_layers = result.get("surgeried_layers") or (
@@ -440,7 +440,7 @@ def build_vlm_readme(
     """Generates a complete Hugging Face VLM Model Card via the unified NeuralOps generator."""
     slug = attn_key.replace("_", "-")
     repo_slug = f"llava-qwen-0.5b-{slug}-scienceqa"
-    repo_id = f"{result.get('hf_org', 'tahamajs')}/{repo_slug}"
+    repo_id = f"{result.get('hf_org', 'Hooshaai')}/{repo_slug}"
     pattern = str(result.get("pattern", "hybrid_3_1"))
     total_layers = int(result.get("total_layers", 24))
     surgeried_layers = result.get("surgeried_layers") or (
@@ -495,7 +495,7 @@ class ZooOrchestrator:
         zoo_type: str,
         out_dir: str | Path,
         metrics_log: str | Path,
-        hf_org: str = "tahamajs",
+        hf_org: str = "Hooshaai",
         hf_upload: bool = False,
         keep_local_weights: bool = True,
     ) -> None:

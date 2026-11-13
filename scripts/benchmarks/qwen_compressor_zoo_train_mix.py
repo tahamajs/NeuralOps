@@ -251,7 +251,7 @@ def train_single_qwen_compressor(
     tokenizer: Any,
     out_dir: Path,
     model_name: str = "Qwen/Qwen2.5-0.5B",
-    repo_id: str = "tahamajs/qwen-2.5-0.5b-comp-unknown-wikitext2",
+    repo_id: str = "Hooshaai/qwen-2.5-0.5b-comp-unknown-wikitext2",
     train_secs: float = 60.0,
     topk: int = 64,
     rank: int = 128,
@@ -555,7 +555,7 @@ def main() -> None:
     parser.add_argument("--rank", type=int, default=128)
     parser.add_argument("--out_dir", default="/home/tahamajlesi.ut/NeuralOps/results/qwen_compressor_zoo")
     parser.add_argument("--metrics_log", default="/home/tahamajlesi.ut/NeuralOps/results/qwen_compressor_zoo/metrics.jsonl")
-    parser.add_argument("--hf_org", default="tahamajs")
+    parser.add_argument("--hf_org", default="Hooshaai")
     parser.add_argument("--hf_upload", type=int, default=0)
     parser.add_argument("--keep_local_weights", type=int, default=0)
     parser.add_argument(

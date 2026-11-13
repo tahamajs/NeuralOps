@@ -132,6 +132,6 @@ def test_list_pretrained_compressed_bert_models(tmp_path: Path):
     models = list_pretrained_compressed_bert_models(metrics_path=str(metrics_file))
     assert len(models) == 2
     assert models[0]["compressor"] == "direct_svd"
-    assert models[0]["repo_id"] == "tahamajs/bert-comp-direct-svd-sst2"
+    assert models[0]["repo_id"] == "Hooshaai/bert-comp-direct-svd-sst2"
     assert models[1]["compressor"] == "auto_svd"
-    assert models[1]["repo_id"] == "tahamajs/bert-comp-auto-svd-sst2"
+    assert models[1]["repo_id"] == "Hooshaai/bert-comp-auto-svd-sst2"

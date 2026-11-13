@@ -9,7 +9,7 @@
 Asynchronous Hugging Face Hub Uploader with Automated Disk Quota Protection.
 
 Uploads trained NeuralOps model checkpoints across all zoos (BERT Attention/Compressor,
-Qwen2.5, TinyLlama, LLaVA VLM) to the Hugging Face Hub (org: tahamajs) in a non-blocking
+Qwen2.5, TinyLlama, LLaVA VLM) to the Hugging Face Hub (org: Hooshaai) in a non-blocking
 background thread pool, confirms remote commit integrity, and automatically deletes
 weight files (attention_weights.safetensors / pytorch_model.bin / model.safetensors)
 to maintain local disk usage under quota constraints.
@@ -161,7 +161,7 @@ class AsyncHFHubUploader:
 
     def __init__(
         self,
-        hf_org: str = "tahamajs",
+        hf_org: str = "Hooshaai",
         max_workers: int = 2,
         cleanup_weights: bool = True,
         token: Optional[str] = None,

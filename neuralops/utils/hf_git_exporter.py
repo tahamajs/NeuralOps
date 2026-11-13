@@ -481,7 +481,7 @@ def handle_benchmark_run_export(
 
     clean_model = sanitize_slug(Path(model_name).name)
     clean_mod = sanitize_slug(module_name)
-    hf_org = os.environ.get("HF_ORG", "tahamajs")
+    hf_org = os.environ.get("HF_ORG", "Hooshaai")
     repo_id = f"{hf_org}/svd-linear-attention-{clean_model}-{clean_mod}"
 
     LOG.info(

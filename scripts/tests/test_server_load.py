@@ -14,7 +14,7 @@ import os
 import sys
 
 # Ensure offline mode if testing local folder on GPU node
-if len(sys.argv) > 1 and not sys.argv[1].startswith("tahamajs/"):
+if len(sys.argv) > 1 and not sys.argv[1].startswith("Hooshaai/"):
     os.environ["HF_HUB_OFFLINE"] = "1"
     os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
@@ -34,7 +34,7 @@ def test_load(model_path: str):
     print(f"TESTING MODEL LOADING: {model_path}")
     print("=" * 70)
 
-    is_hub = model_path.startswith("tahamajs/") or "/" in model_path and not os.path.exists(model_path)
+    is_hub = model_path.startswith("Hooshaai/") or "/" in model_path and not os.path.exists(model_path)
     local_only = not is_hub
 
     tokenizer = AutoTokenizer.from_pretrained(model_path, local_files_only=local_only)

@@ -65,12 +65,12 @@ def test_bert_zoo_upload_cleanup_on_success(tmp_path: Path):
         mock_api = MagicMock()
         MockHfApi.return_value = mock_api
         mock_api.whoami.return_value = {"name": "tahamajs", "orgs": []}
-        mock_api.create_repo.return_value = "https://huggingface.co/tahamajs/bert-test-model-sst2"
+        mock_api.create_repo.return_value = "https://huggingface.co/Hooshaai/bert-test-model-sst2"
         mock_api.upload_file.return_value = "commit_123"
 
         success = upload_directory(
             target_dir=model_dir,
-            hf_org="tahamajs",
+            hf_org="Hooshaai",
             cleanup_weights=True,
             token="mock_hf_token",
         )
@@ -102,12 +102,12 @@ def test_bert_zoo_upload_cleanup_disabled(tmp_path: Path):
         mock_api = MagicMock()
         MockHfApi.return_value = mock_api
         mock_api.whoami.return_value = {"name": "tahamajs", "orgs": []}
-        mock_api.create_repo.return_value = "https://huggingface.co/tahamajs/qwen-2.5-0.5b-test-model-wikitext2"
+        mock_api.create_repo.return_value = "https://huggingface.co/Hooshaai/qwen-2.5-0.5b-test-model-wikitext2"
         mock_api.upload_file.return_value = "commit_456"
 
         success = upload_directory(
             target_dir=model_dir,
-            hf_org="tahamajs",
+            hf_org="Hooshaai",
             cleanup_weights=False,
             token="mock_hf_token",
         )
@@ -135,7 +135,7 @@ def test_bert_zoo_upload_failure_preserves_weights(tmp_path: Path):
 
         success = upload_directory(
             target_dir=model_dir,
-            hf_org="tahamajs",
+            hf_org="Hooshaai",
             cleanup_weights=True,
             token="mock_hf_token",
         )

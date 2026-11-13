@@ -335,7 +335,7 @@ def audit_catalog_completeness(base_dir: Path) -> dict[str, Any]:
         meta_file = model_dir / "upload_success.json"
         error_file = model_dir / "upload_error.json"
 
-        repo_id = f"tahamajs/bert-{model_dir.name.replace('_', '-')}-sst2"
+        repo_id = f"Hooshaai/bert-{model_dir.name.replace('_', '-')}-sst2"
         if meta_file.exists():
             try:
                 meta = json.loads(meta_file.read_text(encoding="utf-8"))
@@ -490,7 +490,7 @@ def main() -> None:
             except Exception:
                 pass
 
-        repo_id = f"tahamajs/bert-{model_dir.name.replace('_', '-')}-sst2"
+        repo_id = f"Hooshaai/bert-{model_dir.name.replace('_', '-')}-sst2"
         if marker.exists():
             try:
                 meta = json.loads(marker.read_text(encoding="utf-8"))

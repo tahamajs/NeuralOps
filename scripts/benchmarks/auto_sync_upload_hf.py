@@ -9,7 +9,7 @@
 Automated Continuous Hugging Face Sync & Upload Daemon.
 
 Continuously monitors trained models on the Sharif HPC cluster (results/bert_attention_zoo),
-transfers them via high-speed rsync, uploads them directly to Hugging Face Hub (tahamajs/bert-<slug>-sst2),
+transfers them via high-speed rsync, uploads them directly to Hugging Face Hub (Hooshaai/bert-<slug>-sst2),
 and cleans up heavy weights to preserve cluster disk quotas.
 """
 from __future__ import annotations
@@ -47,7 +47,7 @@ def run_ssh(cmd: str) -> str:
 
 def sync_and_upload_loop(
     remote_base: str = "/home/tahamajlesi.ut/NeuralOps/results/bert_attention_zoo",
-    hf_org: str = "tahamajs",
+    hf_org: str = "Hooshaai",
     poll_interval: int = 20,
     temp_dir: str = "/tmp/bert_zoo_sync",
 ) -> None:
@@ -127,7 +127,7 @@ def sync_and_upload_loop(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Continuous HF Sync & Upload Daemon")
     parser.add_argument("--remote_base", default="/home/tahamajlesi.ut/NeuralOps/results/bert_attention_zoo")
-    parser.add_argument("--hf_org", default="tahamajs")
+    parser.add_argument("--hf_org", default="Hooshaai")
     parser.add_argument("--poll_interval", type=int, default=20)
     args = parser.parse_args()
 

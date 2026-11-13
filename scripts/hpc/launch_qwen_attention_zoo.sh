@@ -48,7 +48,7 @@ $PYTHON scripts/benchmarks/qwen_zoo_train_mix.py \
     --topk 64 \
     --out_dir /tmp/neuralops_run/results/qwen_attention_zoo \
     --metrics_log /tmp/neuralops_run/results/qwen_attention_zoo/metrics.jsonl \
-    --hf_org tahamajs \
+    --hf_org Hooshaai \
     --device cuda
 
 echo "=== QWEN ATTENTION ZOO COMPLETED SUCCESSFULLY ==="

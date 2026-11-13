@@ -325,13 +325,13 @@ NeuralOps powers the official **[Hooshaai](https://huggingface.co/Hooshaai)** re
 - **[⚡ Hooshaai General Space & Documentation Hub](https://huggingface.co/spaces/Hooshaai/README)**: Complete architecture atlas, model cards, and interactive execution primers.
 - **[📊 Master Benchmark Ledger Dataset (`Hooshaai/neuralops-results`)](https://huggingface.co/datasets/Hooshaai/neuralops-results)**: Complete Parquet, CSV, and SQLite benchmark ledgers certified on physical silicon (NVIDIA RTX 4070 SM 8.9 & RTX 3090 GA102).
 - **[🏛️ The Multi-Zoo Distillation Ecosystem (All 6 Zoos, 110 to 328 Models)](https://huggingface.co/Hooshaai)**:
-  1. **BERT Attention Zoo (`tahamajs/bert-{slug}-sst2`)**: 110 physical attention keys transplanted onto `bert-base-uncased` and healed on SST-2.
-  2. **BERT Compressor Zoo (`tahamajs/bert-comp-{slug}-sst2`)**: 82 compression engines evaluated across 4 rank sweeps ($r \in \{8, 16, 32, 64\}$) on SST-2.
-  3. **Qwen2.5-0.5B Attention Zoo (`tahamajs/qwen2.5-0.5b-{slug}-wikitext2`)**: 110 physical attention keys distilled on WikiText-2 with offline teacher caching.
-  4. **Qwen2.5-0.5B Compressor Zoo (`tahamajs/qwen2.5-0.5b-comp-{slug}-wikitext2`)**: 82 compression engines evaluated on WikiText-2.
-  5. **LLaVA-Qwen-0.5B Multimodal VLM Zoo (`tahamajs/llava-qwen-0.5b-{slug}-scienceqa`)**: 110 attention mechanisms transplanted into language decoder on ScienceQA.
-  6. **TinyLlama-1.1B Attention Zoo (`tahamajs/tinyllama-1.1b-{slug}-wikitext2`)**: 110 attention mechanisms evaluated on WikiText-2.
-- **[📦 Modular Surgical Delta Storage & Universal Hub Loader](#23-master-multi-zoo-distillation-ecosystem-all-6-zoos-modular-delta-storage--universal-hub-loader)**: Download and run any surgeried checkpoint in seconds with `load_surgeried_model("tahamajs/bert-flash_attention-sst2")` or `load_surgeried_model("tahamajs/llava-qwen-0.5b-chunk_gla-scienceqa")`, saving ~10–40 MB per model instead of gigabytes of duplicate weights.
+  1. **BERT Attention Zoo (`Hooshaai/bert-{slug}-sst2`)**: 110 physical attention keys transplanted onto `bert-base-uncased` and healed on SST-2.
+  2. **BERT Compressor Zoo (`Hooshaai/bert-comp-{slug}-sst2`)**: 82 compression engines evaluated across 4 rank sweeps ($r \in \{8, 16, 32, 64\}$) on SST-2.
+  3. **Qwen2.5-0.5B Attention Zoo (`Hooshaai/qwen2.5-0.5b-{slug}-wikitext2`)**: 110 physical attention keys distilled on WikiText-2 with offline teacher caching.
+  4. **Qwen2.5-0.5B Compressor Zoo (`Hooshaai/qwen2.5-0.5b-comp-{slug}-wikitext2`)**: 82 compression engines evaluated on WikiText-2.
+  5. **LLaVA-Qwen-0.5B Multimodal VLM Zoo (`Hooshaai/llava-qwen-0.5b-{slug}-scienceqa`)**: 110 attention mechanisms transplanted into language decoder on ScienceQA.
+  6. **TinyLlama-1.1B Attention Zoo (`Hooshaai/tinyllama-1.1b-{slug}-wikitext2`)**: 110 attention mechanisms evaluated on WikiText-2.
+- **[📦 Modular Surgical Delta Storage & Universal Hub Loader](#23-master-multi-zoo-distillation-ecosystem-all-6-zoos-modular-delta-storage--universal-hub-loader)**: Download and run any surgeried checkpoint in seconds with `load_surgeried_model("Hooshaai/bert-flash_attention-sst2")` or `load_surgeried_model("Hooshaai/llava-qwen-0.5b-chunk_gla-scienceqa")`, saving ~10–40 MB per model instead of gigabytes of duplicate weights.
 
 ---
 
@@ -1182,7 +1182,7 @@ from neuralops.hub import load_surgeried_model
 # Example 1: Loading Surgically Modified BERT on SST-2
 # Reconstructs 'bert-base-uncased' and injects FlashAttention-3 delta weights (~12 MB download):
 bert_model, tokenizer = load_surgeried_model(
-    "tahamajs/bert-flash_attention-sst2",
+    "Hooshaai/bert-flash_attention-sst2",
     device="cuda" if torch.cuda.is_available() else "cpu",
     task="text-classification",
 )
@@ -1195,7 +1195,7 @@ print("BERT SST-2 Prediction:", logits.argmax(dim=-1).item())
 # Freezes heavy SigLIP vision tower (~400 MB) & language embeddings; transplants decoder attention
 # layers to ChunkGLA and applies surgical delta weights (~32 MB download):
 vlm_model, processor = load_surgeried_model(
-    "tahamajs/llava-qwen-0.5b-chunk_gla-scienceqa",
+    "Hooshaai/llava-qwen-0.5b-chunk_gla-scienceqa",
     device="cuda" if torch.cuda.is_available() else "cpu",
 )
 print("VLM Architecture successfully loaded with subquadratic ChunkGLA decoder!")
@@ -2620,12 +2620,12 @@ The six multi-zoos span distinct mathematical regimes, token dynamics, and archi
 
 | Zoo Name | Base Foundation Backbone | Parameters | Target Dataset | Scope & Combinations | Primary Evaluation Metric | Ledger Storage Path | Hugging Face Hub Pattern |
 | :--- | :--- | :---: | :--- | :---: | :--- | :--- | :--- |
-| **1. BERT Attention Zoo** | `bert-base-uncased` | 110M | GLUE SST-2 (and WikiText-2) | 110 physical attention mechanisms | Downstream Accuracy (%) & MLM-PPL | `results/bert_attention_zoo/metrics.jsonl` | `tahamajs/bert-{slug}-sst2` |
-| **2. BERT Compressor Zoo** | `bert-base-uncased` (fine-tuned) | 110M | GLUE SST-2 | 82 engines $\times$ 4 ranks ($r \in \{8, 16, 32, 64\}$) = **328 models** | Parameter Reduction Ratio $R$ & Recovered Accuracy (%) | `results/bert_compressor_zoo/multirank_lora_ledger.jsonl` | `tahamajs/bert-comp-{slug}-sst2` |
-| **3. Qwen2.5-0.5B Attention Zoo** | `Qwen/Qwen2.5-0.5B` | 490M | WikiText-2 ($S=512$) | 110 physical attention mechanisms | Autoregressive Causal Perplexity ($\text{PPL}$) | `results/qwen_attention_zoo/metrics.jsonl` | `tahamajs/qwen2.5-0.5b-{slug}-wikitext2` |
-| **4. Qwen2.5-0.5B Compressor Zoo** | `Qwen/Qwen2.5-0.5B` | 490M | WikiText-2 | 82 canonical compression engines | Post-Compression $\text{PPL}$ & Token Throughput | `results/qwen_compressor_zoo/metrics.jsonl` | `tahamajs/qwen2.5-0.5b-comp-{slug}-wikitext2` |
-| **5. LLaVA-Qwen-0.5B Multimodal Zoo** | `llava-hf/llava-interleave-qwen-0.5b-hf` | 550M | ScienceQA (Image + Text QA) | 110 attention mechanisms in language decoder | Multimodal Task Accuracy (%) & Generation BLEU | `results/vlm_llava_scienceqa_zoo/metrics.jsonl` | `tahamajs/llava-qwen-0.5b-{slug}-scienceqa` |
-| **6. TinyLlama-1.1B Attention Zoo** | `TinyLlama/TinyLlama_v1.1` | 1.1B | WikiText-2 | 110 physical attention mechanisms | Causal Autoregressive $\text{PPL}$ & Memory Footprint | `results/tinyllama_1.1b_zoo/metrics.jsonl` | `tahamajs/tinyllama-1.1b-{slug}-wikitext2` |
+| **1. BERT Attention Zoo** | `bert-base-uncased` | 110M | GLUE SST-2 (and WikiText-2) | 110 physical attention mechanisms | Downstream Accuracy (%) & MLM-PPL | `results/bert_attention_zoo/metrics.jsonl` | `Hooshaai/bert-{slug}-sst2` |
+| **2. BERT Compressor Zoo** | `bert-base-uncased` (fine-tuned) | 110M | GLUE SST-2 | 82 engines $\times$ 4 ranks ($r \in \{8, 16, 32, 64\}$) = **328 models** | Parameter Reduction Ratio $R$ & Recovered Accuracy (%) | `results/bert_compressor_zoo/multirank_lora_ledger.jsonl` | `Hooshaai/bert-comp-{slug}-sst2` |
+| **3. Qwen2.5-0.5B Attention Zoo** | `Qwen/Qwen2.5-0.5B` | 490M | WikiText-2 ($S=512$) | 110 physical attention mechanisms | Autoregressive Causal Perplexity ($\text{PPL}$) | `results/qwen_attention_zoo/metrics.jsonl` | `Hooshaai/qwen2.5-0.5b-{slug}-wikitext2` |
+| **4. Qwen2.5-0.5B Compressor Zoo** | `Qwen/Qwen2.5-0.5B` | 490M | WikiText-2 | 82 canonical compression engines | Post-Compression $\text{PPL}$ & Token Throughput | `results/qwen_compressor_zoo/metrics.jsonl` | `Hooshaai/qwen2.5-0.5b-comp-{slug}-wikitext2` |
+| **5. LLaVA-Qwen-0.5B Multimodal Zoo** | `llava-hf/llava-interleave-qwen-0.5b-hf` | 550M | ScienceQA (Image + Text QA) | 110 attention mechanisms in language decoder | Multimodal Task Accuracy (%) & Generation BLEU | `results/vlm_llava_scienceqa_zoo/metrics.jsonl` | `Hooshaai/llava-qwen-0.5b-{slug}-scienceqa` |
+| **6. TinyLlama-1.1B Attention Zoo** | `TinyLlama/TinyLlama_v1.1` | 1.1B | WikiText-2 | 110 physical attention mechanisms | Causal Autoregressive $\text{PPL}$ & Memory Footprint | `results/tinyllama_1.1b_zoo/metrics.jsonl` | `Hooshaai/tinyllama-1.1b-{slug}-wikitext2` |
 
 ---
 
@@ -2682,7 +2682,7 @@ from neuralops.hub import load_surgeried_model
 # -------------------------------------------------------------------------
 # Reconstructs 'bert-base-uncased' and injects FlashAttention-3 delta weights (~12 MB download):
 bert_model, tokenizer = load_surgeried_model(
-    "tahamajs/bert-flash_attention-sst2",
+    "Hooshaai/bert-flash_attention-sst2",
     device="cuda" if torch.cuda.is_available() else "cpu",
     task="text-classification",
 )
@@ -2697,7 +2697,7 @@ print(f"Predicted class: {logits.argmax(dim=-1).item()}")
 # Automatically loads frozen SigLIP vision tower from Hugging Face, transplants
 # the language decoder to ChunkGLA, and binds delta weights (~32 MB download):
 vlm_model, processor = load_surgeried_model(
-    "tahamajs/llava-qwen-0.5b-chunk_gla-scienceqa",
+    "Hooshaai/llava-qwen-0.5b-chunk_gla-scienceqa",
     device="cuda" if torch.cuda.is_available() else "cpu",
 )
 print("Multimodal VLM loaded with subquadratic ChunkGLA attention decoder!")
@@ -2706,7 +2706,7 @@ print("Multimodal VLM loaded with subquadratic ChunkGLA attention decoder!")
 # Example 3: Loading Generative Causal LM (Qwen2.5-0.5B with Gated DeltaNet)
 # -------------------------------------------------------------------------
 qwen_model, tokenizer = load_surgeried_model(
-    "tahamajs/qwen2.5-0.5b-gated_delta_net-wikitext2",
+    "Hooshaai/qwen2.5-0.5b-gated_delta_net-wikitext2",
     device="cuda" if torch.cuda.is_available() else "cpu",
     task="causal-lm",
 )
@@ -2785,11 +2785,11 @@ The following canonical models are hosted under the [Hooshaai](https://huggingfa
 
 | Repository / Model ID | Base Backbone | Replaced Attention / Engine | Compression / Sparsity Method | Parameters | Download & Model Card |
 | :--- | :--- | :--- | :--- | :---: | :--- |
-| `tahamajs/bert-flash_attention-sst2` | `bert-base-uncased` | `flash_attention3` | IO-Aware Tile Attention | 110M | [🤗 Model Card](https://huggingface.co/tahamajs/bert-flash_attention-sst2) |
-| `tahamajs/bert-gated_delta_net-sst2` | `bert-base-uncased` | `gated_delta_net` | Delta Recurrence ($r=64$) | 110M | [🤗 Model Card](https://huggingface.co/tahamajs/bert-gated_delta_net-sst2) |
-| `tahamajs/llava-qwen-0.5b-chunk_gla-scienceqa` | `llava-interleave-qwen-0.5b` | `chunk_gla` | Chunk-Parallel Gated Linear Attn | 550M | [🤗 Model Card](https://huggingface.co/tahamajs/llava-qwen-0.5b-chunk_gla-scienceqa) |
-| `tahamajs/qwen2.5-0.5b-gated_delta_net-wikitext2` | `Qwen2.5-0.5B` | `gated_delta_net` | Subquadratic DeltaNet ($r=64$) | 490M | [🤗 Model Card](https://huggingface.co/tahamajs/qwen2.5-0.5b-gated_delta_net-wikitext2) |
-| `tahamajs/tinyllama-1.1b-cosformer-wikitext2` | `TinyLlama_v1.1` | `cosformer` | Cosine Reweighting Linear Scan | 1.1B | [🤗 Model Card](https://huggingface.co/tahamajs/tinyllama-1.1b-cosformer-wikitext2) |
+| `Hooshaai/bert-flash_attention-sst2` | `bert-base-uncased` | `flash_attention3` | IO-Aware Tile Attention | 110M | [🤗 Model Card](https://huggingface.co/Hooshaai/bert-flash_attention-sst2) |
+| `Hooshaai/bert-gated_delta_net-sst2` | `bert-base-uncased` | `gated_delta_net` | Delta Recurrence ($r=64$) | 110M | [🤗 Model Card](https://huggingface.co/Hooshaai/bert-gated_delta_net-sst2) |
+| `Hooshaai/llava-qwen-0.5b-chunk_gla-scienceqa` | `llava-interleave-qwen-0.5b` | `chunk_gla` | Chunk-Parallel Gated Linear Attn | 550M | [🤗 Model Card](https://huggingface.co/Hooshaai/llava-qwen-0.5b-chunk_gla-scienceqa) |
+| `Hooshaai/qwen2.5-0.5b-gated_delta_net-wikitext2` | `Qwen2.5-0.5B` | `gated_delta_net` | Subquadratic DeltaNet ($r=64$) | 490M | [🤗 Model Card](https://huggingface.co/Hooshaai/qwen2.5-0.5b-gated_delta_net-wikitext2) |
+| `Hooshaai/tinyllama-1.1b-cosformer-wikitext2` | `TinyLlama_v1.1` | `cosformer` | Cosine Reweighting Linear Scan | 1.1B | [🤗 Model Card](https://huggingface.co/Hooshaai/tinyllama-1.1b-cosformer-wikitext2) |
 | `Hooshaai/distilbert-base-fwsvd-rank64` | `distilbert-base-uncased` | `svd_linear_attention` | Fisher-Weighted SVD (`rank=64`) | 48.2M | [🤗 Model Card](https://huggingface.co/Hooshaai/distilbert-base-fwsvd-rank64) |
 | `Hooshaai/gpt2-medium-fwsvd-rank64` | `gpt2-medium` | `svd_linear_attention` | Fisher-Weighted SVD (`rank=64`) | 214M | [🤗 Model Card](https://huggingface.co/Hooshaai/gpt2-medium-fwsvd-rank64) |
 | `Hooshaai/roberta-base-fwsvd-rank32` | `roberta-base` | `svd_linear_attention` | Fisher-Weighted SVD (`rank=32`) | 82M | [🤗 Model Card](https://huggingface.co/Hooshaai/roberta-base-fwsvd-rank32) |

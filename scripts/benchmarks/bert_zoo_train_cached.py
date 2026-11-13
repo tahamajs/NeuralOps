@@ -508,7 +508,7 @@ class NeuralOpsBertForSequenceClassification(BertForSequenceClassification):
         logger.warning("[%s] Canonical benchmark saver warning: %s", attn_key, e)
 
     slug = attn_key.replace("_", "-")
-    repo_id = f"tahamajs/bert-{slug}-sst2"
+    repo_id = f"Hooshaai/bert-{slug}-sst2"
     card_md = generate_unified_model_card(
         zoo_type="bert_attention",
         mechanism_key=attn_key,

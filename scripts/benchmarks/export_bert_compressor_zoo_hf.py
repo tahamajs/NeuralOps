@@ -145,7 +145,7 @@ def build_compressor_readme(
     lora_healed = bool(showcase.get("lora_healed", False))
 
     slug = comp_key.replace("_", "-")
-    repo_id = f"tahamajs/bert-comp-{slug}-sst2"
+    repo_id = f"Hooshaai/bert-comp-{slug}-sst2"
 
     metrics = {
         "teacher_acc": TEACHER_BASELINE_ACC,
