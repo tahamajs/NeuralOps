@@ -162,7 +162,7 @@ typing-extensions==4.16.0
     #   torch
 tzdata==2026.6
     # via python-dateutil
-xxhash==4.0.2
+xxhash==4.1.0
     # via datasets
 yarl==1.25.1
     # via aiohttp
