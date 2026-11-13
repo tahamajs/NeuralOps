@@ -21,6 +21,7 @@ import logging
 import os
 import sys
 import time
+import uuid
 from pathlib import Path
 
 import torch
@@ -301,7 +302,8 @@ def main() -> int:
     out_dir = Path("results")
     out_dir.mkdir(parents=True, exist_ok=True)
     summary_path = out_dir / "automax_stress_latest.json"
-    with open(summary_path, "w", encoding="utf-8") as f:
+    tmp_path = summary_path.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    with tmp_path.open("w", encoding="utf-8") as f:
         json.dump(
             {
                 "device": device_name,
@@ -315,6 +317,7 @@ def main() -> int:
             f,
             indent=2,
         )
+    tmp_path.replace(summary_path)
     logger.info(f"Saved execution report to {summary_path}")
     return 0
 

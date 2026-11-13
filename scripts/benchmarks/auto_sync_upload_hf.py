@@ -37,7 +37,7 @@ def get_hf_token() -> str:
         token_path = Path.home() / ".cache" / "huggingface" / "token"
         if token_path.exists():
             token = token_path.read_text().strip()
-    return token or "YOUR_HF_TOKEN"
+    return token or ""
 
 
 def run_ssh(cmd: str) -> str:
@@ -101,7 +101,7 @@ def sync_and_upload_loop(
                     )
                     logger.info("[%s] Upload successful! Remote commit: %s", name, commit_info)
 
-                    # Mark remote success
+                    # Mark remote success atomically via POSIX mv
                     success_record = {
                         "status": "UPLOAD_SUCCESS",
                         "repo_id": repo_id,
@@ -109,7 +109,7 @@ def sync_and_upload_loop(
                         "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
                     }
                     record_json = json.dumps(success_record)
-                    run_ssh(f"echo '{record_json}' > {r_dir}/upload_success.json")
+                    run_ssh(f"echo '{record_json}' > {r_dir}/upload_success.json.tmp && mv {r_dir}/upload_success.json.tmp {r_dir}/upload_success.json")
 
                     # Purge remote heavy weights
                     run_ssh(f"rm -f {r_dir}/pytorch_model.bin {r_dir}/model.safetensors {r_dir}/optimizer.pt")

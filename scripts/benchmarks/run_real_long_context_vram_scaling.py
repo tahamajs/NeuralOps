@@ -18,9 +18,11 @@ import gc
 import json
 import logging
 import math
+import os
 import statistics
 import sys
 import time
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -259,8 +261,10 @@ def run_benchmark(output_file: Path, device_str: str = "cuda:0") -> None:
         )
 
     output_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_file, "w", encoding="utf-8") as f:
+    tmp_path = output_file.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    with tmp_path.open("w", encoding="utf-8") as f:
         json.dump(all_results, f, indent=2)
+    tmp_path.replace(output_file)
 
     logger.info("Successfully wrote benchmark results to %s", output_file)
 

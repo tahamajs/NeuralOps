@@ -697,7 +697,7 @@ def main() -> None:
                 batch_size=curr_bs,
                 shuffle=True,
                 drop_last=(len(train_ds) >= curr_bs),
-                pin_memory=False,
+                pin_memory=(device.type == "cuda"),
             )
             curr_val_loader = DataLoader(val_ds, batch_size=curr_bs, shuffle=False, pin_memory=(device.type == "cuda"))
             is_oom = False

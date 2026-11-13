@@ -139,9 +139,9 @@ def compute_6pillar_loss(
     # Supervised cross-entropy task loss
     loss_ce = F.cross_entropy(s_logits, labels)
 
-    # 1. Pillar 1: Logits Distillation
-    p_s = F.log_softmax(s_logits / temperature, dim=-1)
-    p_t = F.softmax(t_logits / temperature, dim=-1)
+    # 1. Pillar 1: Logits Distillation (Float32 exponentiation prevents FP16 underflow - DEF-027)
+    p_s = F.log_softmax((s_logits / temperature).float(), dim=-1)
+    p_t = F.softmax((t_logits / temperature).float(), dim=-1)
     loss_logits = F.kl_div(p_s, p_t, reduction="batchmean") * (temperature**2)
 
     # Extract hidden states
@@ -510,8 +510,11 @@ def main():
         if s >= min(160, len(train_loader)):
             break
         pw_optim.zero_grad(set_to_none=True)
-        out = teacher_model(input_ids=batch["input_ids"].to(device), attention_mask=batch["attention_mask"].to(device))
-        loss = F.cross_entropy(out.logits, batch["label"].to(device))
+        out = teacher_model(
+            input_ids=batch["input_ids"].to(device, non_blocking=True),
+            attention_mask=batch["attention_mask"].to(device, non_blocking=True),
+        )
+        loss = F.cross_entropy(out.logits, batch["label"].to(device, non_blocking=True))
         loss.backward()
         pw_optim.step()
 
@@ -602,13 +605,20 @@ def main():
         if device.type == "cuda":
             torch.cuda.empty_cache()
 
-        os.makedirs(os.path.dirname(args.out_json), exist_ok=True)
-        with open(args.out_json, "w", encoding="utf-8") as f:
+        out_json_p = Path(args.out_json)
+        out_json_p.parent.mkdir(parents=True, exist_ok=True)
+        tmp_json = out_json_p.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+        with tmp_json.open("w", encoding="utf-8") as f:
             json.dump(results, f, indent=2)
+        tmp_json.replace(out_json_p)
 
     import pandas as pd
     df = pd.DataFrame(results)
-    df.to_csv(args.out_csv, index=False)
+    out_csv_p = Path(args.out_csv)
+    out_csv_p.parent.mkdir(parents=True, exist_ok=True)
+    tmp_csv = out_csv_p.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+    df.to_csv(tmp_csv, index=False)
+    tmp_csv.replace(out_csv_p)
 
     print("\n" + "=" * 115)
     print(f"ATTENTION SURGERY & 6-PILLAR KD COMPLETE MATRIX (Teacher Baseline: Acc={base_acc:.2f}%, PPL={base_ppl:.2f})")

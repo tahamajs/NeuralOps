@@ -31,6 +31,7 @@ import random
 import re
 import sys
 import time
+import uuid
 from typing import Any, TypeVar
 
 MANDATORY_TAGS = [
@@ -506,7 +507,9 @@ def main() -> None:
         )
 
         if enhanced != orig_content:
-            readme_path.write_text(enhanced, encoding="utf-8")
+            tmp_readme = readme_path.with_suffix(f".tmp.{os.getpid()}_{uuid.uuid4().hex[:6]}")
+            tmp_readme.write_text(enhanced, encoding="utf-8")
+            tmp_readme.replace(readme_path)
             updated_count += 1
             logger.info("[%d/%d] Updated README.md locally for %s", idx, len(targets), model_dir.name)
 

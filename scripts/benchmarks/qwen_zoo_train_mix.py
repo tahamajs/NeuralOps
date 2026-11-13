@@ -539,8 +539,9 @@ def main() -> None:
         batch_size=args.batch_size,
         shuffle=True,
         drop_last=(len(train_dataset) >= args.batch_size),
+        pin_memory=(device.type == "cuda"),
     )
-    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False)
+    val_loader = DataLoader(val_dataset, batch_size=args.batch_size, shuffle=False, pin_memory=(device.type == "cuda"))
 
     uploader: Optional[AsyncHFHubUploader] = None
     if args.hf_upload:
@@ -600,12 +601,13 @@ def main() -> None:
                     batch_size=curr_bs,
                     shuffle=True,
                     drop_last=(len(train_dataset) >= curr_bs),
+                    pin_memory=(device.type == "cuda"),
                 )
             )
             curr_val_loader = (
                 val_loader
                 if curr_bs == args.batch_size
-                else DataLoader(val_dataset, batch_size=curr_bs, shuffle=False)
+                else DataLoader(val_dataset, batch_size=curr_bs, shuffle=False, pin_memory=(device.type == "cuda"))
             )
             if device.type == "cuda":
                 torch.cuda.reset_peak_memory_stats()
