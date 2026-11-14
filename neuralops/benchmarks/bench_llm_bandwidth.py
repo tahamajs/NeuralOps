@@ -17,6 +17,7 @@ import json
 import math
 import os
 import sys
+import warnings
 
 import torch
 import torch.nn.functional as F
@@ -41,13 +42,19 @@ QUICK_CONFIGS = [
 ]
 
 
-def flush_l2_cache(device="cuda", size_bytes=32 * 1024 * 1024 * 2):
+def flush_l2_cache(device="cuda", size_bytes=None):
     """Write a buffer larger than L2 to evict all cached data."""
     if not torch.cuda.is_available() or not str(device).startswith("cuda"):
         return
-    flush_buf = torch.empty(size_bytes, dtype=torch.uint8, device=device)
+    dev = torch.device(device)
+    if size_bytes is None:
+        try:
+            size_bytes = torch.cuda.get_device_properties(dev).L2_cache_size
+        except Exception:
+            size_bytes = DEFAULT_L2_CACHE_BYTES
+    flush_buf = torch.empty(size_bytes, dtype=torch.uint8, device=dev)
     flush_buf.zero_()
-    torch.cuda.synchronize()
+    torch.cuda.synchronize(dev)
     del flush_buf
 
 
@@ -136,6 +143,9 @@ def run_bandwidth_benchmark(
     """Run full LLM bandwidth benchmarking sweep."""
     if configs is None:
         configs = DEFAULT_CONFIGS
+
+    if device_str == "auto" or device_str is None:
+        device_str = "cuda:0" if torch.cuda.is_available() else "cpu"
 
     if "cuda" in device_str and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
@@ -403,7 +413,14 @@ def run_bandwidth_benchmark(
     return results
 
 
-def main():
+def build_parser() -> argparse.ArgumentParser:
+    """Construct argument parser for legacy bench_llm_bandwidth."""
+    warnings.warn(
+        "bench_llm_bandwidth CLI/argparse is deprecated and will be removed in v3.0.0. "
+        "Please use 'neuralops benchmark' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     parser = argparse.ArgumentParser(description="Realistic LLM Training Batch Configurations Benchmark")
     parser.add_argument(
         "--output", type=str, default="results/benchmark_4_kernels_corrected.csv", help="Path to save CSV output"
@@ -414,8 +431,8 @@ def main():
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda:0" if torch.cuda.is_available() else "cpu",
-        help="Device to execute benchmark",
+        default="auto",
+        help="Device to execute benchmark (default: 'auto')",
     )
     parser.add_argument(
         "--dtype",
@@ -431,7 +448,18 @@ def main():
     )
     parser.add_argument("--peak-bw", type=float, default=DEFAULT_PEAK_BW_GBPS, help="Hardware Peak Bandwidth in GB/s")
     parser.add_argument("--l2-cache-mb", type=float, default=32.0, help="Hardware L2 Cache size in MB")
-    args = parser.parse_args()
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    warnings.warn(
+        "bench_llm_bandwidth CLI/argparse is deprecated and will be removed in v3.0.0. "
+        "Please use 'neuralops benchmark' instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    parser = build_parser()
+    args = parser.parse_args(argv)
 
     configs = QUICK_CONFIGS if args.quick else DEFAULT_CONFIGS
     warmup = 2 if args.quick else args.warmup
