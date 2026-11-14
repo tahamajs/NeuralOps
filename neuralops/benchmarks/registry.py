@@ -339,27 +339,31 @@ class BenchmarkRegistry:
 
         # 5. Register meta benchmarks for the 12 OPERATIONAL_BENCHMARK_MODES
         for op_mode in OPERATIONAL_BENCHMARK_MODES:
-            meta_name = f"mode:{op_mode}"
+            meta_name = f"__meta__:{op_mode}"
             if meta_name not in BENCHMARK_REGISTRY:
                 spec = BenchmarkSpec(
                     canonical_name=meta_name,
-                    category="mode",
+                    category="meta",
                     target_name=op_mode,
                     requires_cuda=(op_mode in ("flash-compute", "distributed-mfu")),
-                    default_timeout_s=3600,
+                    default_timeout_s=7200,
                     metadata={"operational_mode": op_mode, "is_meta": True},
                 )
                 BENCHMARK_REGISTRY[meta_name] = spec
                 _BENCHMARK_METADATA[meta_name] = {
                     "name": meta_name,
-                    "category": "mode",
+                    "category": "meta",
                     "target_name": op_mode,
                     "mode": op_mode,
                     "hardware": "cuda" if spec.requires_cuda else "any",
-                    "description": f"Operational benchmark mode meta-runner: {op_mode}",
+                    "description": f"Meta-benchmark grouping all {op_mode} benchmarks",
                     "spec": spec,
                 }
-                # Also allow direct access via mode name if not already registered
+                # Also support mode:<name> and direct name if not already registered
+                alt_name = f"mode:{op_mode}"
+                if alt_name not in BENCHMARK_REGISTRY:
+                    BENCHMARK_REGISTRY[alt_name] = spec
+                    _BENCHMARK_METADATA[alt_name] = _BENCHMARK_METADATA[meta_name]
                 if op_mode not in BENCHMARK_REGISTRY:
                     BENCHMARK_REGISTRY[op_mode] = spec
                     _BENCHMARK_METADATA[op_mode] = _BENCHMARK_METADATA[meta_name]
@@ -374,12 +378,27 @@ def ensure_registry_populated() -> int:
     return BenchmarkRegistry.populate_canonical_benchmarks()
 
 
-# Idempotent lazy population helper is exposed via ensure_registry_populated()
-# Auto-populate canonical benchmarks on initial import if possible, without crashing on import error
-try:
-    BenchmarkRegistry.populate_canonical_benchmarks()
-except Exception as _init_exc:
-    LOG.warning("Initial benchmark registry population deferred: %s", _init_exc)
+def get_benchmark(name: str) -> Optional[Any]:
+    """Retrieve registered benchmark runner by name."""
+    ensure_registry_populated()
+    return BENCHMARK_REGISTRY.get(name)
+
+
+def list_benchmarks(mode: Optional[str] = None, hardware: Optional[str] = None) -> List[str]:
+    """List registered benchmark names, optionally filtered by mode or hardware."""
+    ensure_registry_populated()
+    results: List[str] = []
+    for name, meta in _BENCHMARK_METADATA.items():
+        if mode is not None and meta["mode"] not in (mode, "any", "all"):
+            continue
+        if hardware is not None and meta["hardware"] not in (hardware, "any", "all"):
+            continue
+        results.append(name)
+    return sorted(results)
+
+
+# Module-scope call is completely removed for zero import-time side effects
+# Call ensure_registry_populated() explicitly when access to BENCHMARK_REGISTRY is needed.
 
 
 __all__ = [
