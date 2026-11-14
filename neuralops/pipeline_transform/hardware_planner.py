@@ -188,6 +188,11 @@ def estimate_resources(
     plan_or_recipe: Union[ExecutionPlan, Recipe, Dict[str, Any]],
     hardware_profile: Optional[Union[str, HardwareProfile, Dict[str, Any]]] = None,
     base_parameters: Optional[int] = None,
+    batch_size: Optional[int] = None,
+    seq_len: Optional[int] = None,
+    hidden_dim: Optional[int] = None,
+    num_layers: Optional[int] = None,
+    **kwargs: Any,
 ) -> ResourceEstimate:
     """Estimate peak VRAM, transformation latency, FLOP delta, and parameter count."""
     hw_prof, confidence, warnings = _resolve_hardware_profile(hardware_profile)
@@ -266,15 +271,18 @@ def estimate_resources(
         if "calibration_tokens" in cfg:
             calib_tokens = max(calib_tokens, int(cfg["calibration_tokens"]))
 
-    calib_batch = 2
-    calib_seq = max(128, calib_tokens // calib_batch)
+    eff_batch = batch_size if batch_size is not None else 2
+    eff_seq = seq_len if seq_len is not None else max(128, calib_tokens // eff_batch)
+    eff_hidden = hidden_dim if hidden_dim is not None else hidden_size
+    eff_layers = num_layers if num_layers is not None else num_layers
     bytes_per_elem = 2.0  # FP16
-    layer_activation_bytes = calib_batch * calib_seq * hidden_size * bytes_per_elem * 6.0
-    activation_vram_mb = (layer_activation_bytes * num_layers) / (1024 * 1024)
+    layer_activation_bytes = eff_batch * eff_seq * eff_hidden * bytes_per_elem * 6.0
+    activation_vram_mb = (layer_activation_bytes * eff_layers) / (1024 * 1024)
 
     # Baseline VRAM model:
     # Model weights (FP16: 2 bytes/param) + intermediate activation memory + scratch buffer
-    base_model_vram_mb = (params_before * 2.0) / (1024 * 1024)
+    weights_only_vram_mb = (params_before * 2.0) / (1024 * 1024)
+    base_model_vram_mb = weights_only_vram_mb
     peak_vram_mb = (base_model_vram_mb + activation_vram_mb) * 1.15
 
     for s in stages:
@@ -333,6 +341,8 @@ def estimate_resources(
         warnings=warnings,
         hardware_profile=hw_prof.to_dict(),
         activation_vram_mb=round(activation_vram_mb, 2),
+        weights_only_vram_mb=round(weights_only_vram_mb, 2),
+        estimated_peak_vram_mb=round(peak_vram_mb, 2),
     )
 
 
