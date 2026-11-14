@@ -3,6 +3,7 @@
 **Auditor:** Agent B2 (KD / Storage / Adapters Remediation Specialist)  
 **Date:** 2026-11-14  
 **Branch:** `fix/wave1-kd-storage`  
+**Commit:** `667d51d22e`  
 **Scope:** `neuralops/benchmarks/kd/**`, `neuralops/benchmarks/storage/**`, `neuralops/benchmarks/adapters/**`  
 
 ---
