@@ -667,7 +667,11 @@ class SGLangRadixStateAdapter:
             for l_idx, s in state.recurrent_state_cache.items():
                 if isinstance(s, torch.Tensor):
                     state_dict[l_idx] = s.detach().clone()
-            for l_idx, (k, _) in enumerate(state.key_cache):
+            for l_idx, item in enumerate(state.key_cache):
+                if isinstance(item, tuple):
+                    k = item[0]
+                else:
+                    k = item
                 if l_idx not in state_dict and isinstance(k, torch.Tensor) and k.numel() > 0:
                     state_dict[l_idx] = k.detach().clone()
             return state_dict
