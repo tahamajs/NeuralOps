@@ -62,6 +62,7 @@ def test_invalid_mode_handling() -> None:
     assert BenchmarkRegistry.is_valid_mode("nonexistent-mode") is False
 
     with pytest.raises(ValueError, match="Invalid benchmark mode"):
+
         @register_benchmark(name="invalid_mode_test", mode="nonexistent-mode")
         def _dummy() -> None:
             pass

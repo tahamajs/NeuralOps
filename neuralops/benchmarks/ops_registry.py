@@ -298,8 +298,7 @@ def _compressor_operation(name: str, *, compressed: bool, state: dict[str, Any])
                 compressed_model = outcome[0] if isinstance(outcome, tuple) else outcome
             if not isinstance(compressed_model, nn.Module):
                 raise TypeError(
-                    f"{name} did not return a transformed nn.Module; "
-                    "use its model-specific/KV-cache benchmark contract"
+                    f"{name} did not return a transformed nn.Module; use its model-specific/KV-cache benchmark contract"
                 )
             state["compressed"] = compressed_model.to(device=x.device)
             before = sum(p.numel() for p in state["base"].parameters())

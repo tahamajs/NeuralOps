@@ -46,10 +46,12 @@ def test_discover_all_modules_handles_missing_attention_submodule(tmp_path: pyte
     with patch.object(discovery, "CATALOG_PATH", fake_catalog):
         with patch.dict(
             "sys.modules",
-            {"neuralops.core.registry": MagicMock(
-                ATTENTION_REGISTRY=mock_attention_registry,
-                COMPRESSOR_REGISTRY=mock_compressor_registry,
-            )},
+            {
+                "neuralops.core.registry": MagicMock(
+                    ATTENTION_REGISTRY=mock_attention_registry,
+                    COMPRESSOR_REGISTRY=mock_compressor_registry,
+                )
+            },
         ):
             modules = discover_all_modules()
             assert isinstance(modules, list)
@@ -81,10 +83,12 @@ def test_discover_all_modules_handles_missing_compressor_submodule(tmp_path: pyt
     with patch.object(discovery, "CATALOG_PATH", fake_catalog):
         with patch.dict(
             "sys.modules",
-            {"neuralops.core.registry": MagicMock(
-                ATTENTION_REGISTRY=mock_attention_registry,
-                COMPRESSOR_REGISTRY=mock_compressor_registry,
-            )},
+            {
+                "neuralops.core.registry": MagicMock(
+                    ATTENTION_REGISTRY=mock_attention_registry,
+                    COMPRESSOR_REGISTRY=mock_compressor_registry,
+                )
+            },
         ):
             modules = discover_all_modules()
             assert isinstance(modules, list)
@@ -95,6 +99,7 @@ def test_discover_all_modules_handles_missing_compressor_submodule(tmp_path: pyt
 
 def test_inspect_module_capabilities_robust_to_broken_objects() -> None:
     """Verify inspect_module_capabilities handles non-standard or broken classes without raising."""
+
     class BrokenInit:
         def __init__(self) -> None:
             pass
