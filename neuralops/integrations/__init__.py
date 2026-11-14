@@ -45,11 +45,14 @@ _EXPORTS = {
     "PagedKVCacheProtocol": ("protocols", "PagedKVCacheProtocol"),
     "ContinuousBatcherProtocol": ("protocols", "ContinuousBatcherProtocol"),
     "RadixTrieProtocol": ("protocols", "RadixTrieProtocol"),
+    "fla_is_available": ("fla", "fla_is_available"),
+    "require_fla": ("fla", "require_fla"),
 }
 _MODULES = {
     "capabilities",
     "compressed_tensors",
     "distributed_compile",
+    "fla",
     "hf_automodel",
     "protocols",
     "serving",
