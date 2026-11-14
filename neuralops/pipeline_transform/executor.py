@@ -129,12 +129,6 @@ def execute_plan(
             logger.debug("Failed creating pre-stage model deepcopy for validation: %s", exc)
 
         # 4. Apply operation
-        # Capture pre-mutation copy so validation gates compare against the real pre-state
-        try:
-            pre_copy = copy.deepcopy(model)
-        except Exception:
-            pre_copy = snapshot.restore_copy(model) if hasattr(snapshot, "restore_copy") else model
-
         t_stage_start = time.perf_counter()
         try:
             new_model, op_evidence = op_impl.apply(model, stage.config)
@@ -165,11 +159,7 @@ def execute_plan(
         stage_val_ctx.setdefault("baseline_parameters", params_before)
         val_before = pre_stage_model if pre_stage_model is not None else baseline_model
         val_result = run_validation_gates(
-<<<<<<< HEAD
-            model_before=pre_copy,
-=======
             model_before=val_before,
->>>>>>> fix/benchmarks-remediation
             model_after=new_model,
             profile=val_profile,
             context=stage_val_ctx,

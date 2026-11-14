@@ -420,9 +420,6 @@ def apply_mla_attention_surgery(
             hidden_dim=spec.embed_dim,
             **kwargs,
         )
-<<<<<<< HEAD
-        spec.parent_module.register_module(spec.attr_name, mla_bridge)
-=======
         attr = spec.attr_name
         if isinstance(spec.parent_module, (dict, nn.ModuleDict)):
             spec.parent_module[attr] = mla_bridge
@@ -437,7 +434,6 @@ def apply_mla_attention_surgery(
             setattr(spec.parent_module, attr, mla_bridge)
         else:
             setattr(spec.parent_module, spec.module_path.split(".")[-1], mla_bridge)
->>>>>>> fix/benchmarks-remediation
     return model
 
 

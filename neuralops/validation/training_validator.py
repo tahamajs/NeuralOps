@@ -27,10 +27,6 @@ class ValidationStatus(dict):
     def status(self) -> str:
         return self.get("status", "PASSED")
 
-    @property
-    def passed(self) -> bool:
-        return bool(self.get("passed", False))
-
     def __bool__(self) -> bool:
         return bool(self.get("passed", False))
 
@@ -47,10 +43,7 @@ class TrainingValidator:
         lr: float = 1e-3,
         device: str = "cpu",
     ) -> ValidationStatus:
-<<<<<<< HEAD
-=======
         """Test whether model can overfit on a small batch of data."""
->>>>>>> fix/benchmarks-remediation
         small_batch = {k: v[:n_samples].to(device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
         optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
         losses = []

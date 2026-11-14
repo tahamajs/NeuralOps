@@ -88,17 +88,6 @@ class ConflictDetector:
     def _build_graph(self) -> None:
         for idx, op_spec in enumerate(self.recipe.operations):
             st_id = op_spec.id or f"stage_{idx}"
-<<<<<<< HEAD
-            if op_spec.type not in OPERATION_REGISTRY:
-                raise KeyError(f"Operation '{op_spec.type}' is not registered in OPERATION_REGISTRY")
-            versions = OPERATION_REGISTRY[op_spec.type]
-            op_val = versions.get(op_spec.version)
-            if op_val is None:
-                raise KeyError(
-                    f"Operation '{op_spec.type}' version '{op_spec.version}' is not registered in OPERATION_REGISTRY"
-                )
-            op_instance = op_val() if isinstance(op_val, type) else op_val
-=======
             op_versions = OPERATION_REGISTRY.get(op_spec.type)
             if op_versions is None or op_spec.version not in op_versions:
                 self.missing_operations.append((st_id, op_spec.type, op_spec.version))
@@ -106,7 +95,6 @@ class ConflictDetector:
             else:
                 op_val = op_versions[op_spec.version]
                 op_instance = op_val() if isinstance(op_val, type) else op_val
->>>>>>> fix/benchmarks-remediation
 
             reqs = set(getattr(op_instance, "requires", []))
             prods = set(getattr(op_instance, "produces", []))

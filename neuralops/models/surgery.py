@@ -524,8 +524,6 @@ def adapt_decoder_attention_forward(
     return (attn_out, attn_weights, past_kv)
 
 
-<<<<<<< HEAD
-=======
 def apply_backbone_surgery_hooks(
     model: nn.Module,
     model_type: str = "llama",
@@ -585,7 +583,6 @@ def apply_backbone_surgery_hooks(
     )
     return tagged_names
 
->>>>>>> fix/benchmarks-remediation
 
 class SubspaceAnchorWrapper(nn.Module):
     def __init__(self, base_layer: nn.Module, surg_layer: nn.Module, alpha: float = 0.25):
@@ -1098,26 +1095,11 @@ def _heal_replaced_model_impl(
         if not in_list or not tgt_list:
             continue
 
-        orig_param_dtypes = {p: p.dtype for p in s_mod.parameters()}
-        orig_buffer_dtypes = {b: b.dtype for b in s_mod.buffers()}
-        common_dtype = torch.float32
-
-        for p in s_mod.parameters():
-            p.data = p.data.to(device=target_dev, dtype=common_dtype)
-        for b in s_mod.buffers():
-            b.data = b.data.to(device=target_dev, dtype=common_dtype)
-
-        H_in = in_list[0].to(device=target_dev, dtype=common_dtype)
-        Y_tgt = tgt_list[0].to(device=target_dev, dtype=common_dtype)
+        H_in = in_list[0].to(target_dev)
+        Y_tgt = tgt_list[0].to(target_dev)
 
         trainable_params = [p for p in s_mod.parameters() if p.numel() > 0]
         if not trainable_params:
-            for p in s_mod.parameters():
-                if p in orig_param_dtypes:
-                    p.data = p.data.to(orig_param_dtypes[p])
-            for b in s_mod.buffers():
-                if b in orig_buffer_dtypes:
-                    b.data = b.data.to(orig_buffer_dtypes[b])
             continue
 
         target_in_dtype = _detect_surg_input_dtype(s_mod)
@@ -1137,18 +1119,7 @@ def _heal_replaced_model_impl(
 
         with torch.no_grad():
             s_mod.eval()
-<<<<<<< HEAD
-            try:
-                pred0 = s_mod(H_in)
-            except Exception:
-                try:
-                    pred0 = s_mod(hidden_states=H_in)
-                except Exception:
-                    pred0 = s_mod(H_in, H_in, H_in)
-            pred0_val = pred0[0] if isinstance(pred0, tuple) else pred0
-=======
             pred0_val = _call_surg_module(s_mod, H_in, target_in_dtype)
->>>>>>> fix/benchmarks-remediation
             pred0_f = pred0_val.float()
 
             if pred0_f.shape != Y_tgt.shape:
@@ -1183,23 +1154,11 @@ def _heal_replaced_model_impl(
         for step in range(steps):
             optimizer.zero_grad()
             batch_idx = step % len(in_list)
-            H_in_step = in_list[batch_idx].to(device=target_dev, dtype=common_dtype)
-            Y_tgt_step = tgt_list[batch_idx % len(tgt_list)].to(device=target_dev, dtype=common_dtype)
+            H_in_step = in_list[batch_idx].to(target_dev)
+            Y_tgt_step = tgt_list[batch_idx % len(tgt_list)].to(target_dev)
             denom_mse_step = float(torch.norm(Y_tgt_step, p="fro").item() ** 2 + 1e-6)
 
-<<<<<<< HEAD
-            try:
-                pred = s_mod(H_in_step)
-            except Exception:
-                try:
-                    pred = s_mod(hidden_states=H_in_step)
-                except Exception:
-                    pred = s_mod(H_in_step, H_in_step, H_in_step)
-
-            pred_val = pred[0] if isinstance(pred, tuple) else pred
-=======
             pred_val = _call_surg_module(s_mod, H_in_step, target_in_dtype)
->>>>>>> fix/benchmarks-remediation
             pred_f = pred_val.float()
 
             if pred_f.shape != Y_tgt_step.shape:
@@ -1265,18 +1224,7 @@ def _heal_replaced_model_impl(
         s_mod.eval()
 
         with torch.no_grad():
-<<<<<<< HEAD
-            try:
-                pred_final = s_mod(H_in)
-            except Exception:
-                try:
-                    pred_final = s_mod(hidden_states=H_in)
-                except Exception:
-                    pred_final = s_mod(H_in, H_in, H_in)
-            pred_final_val = pred_final[0] if isinstance(pred_final, tuple) else pred_final
-=======
             pred_final_val = _call_surg_module(s_mod, H_in, target_in_dtype)
->>>>>>> fix/benchmarks-remediation
             pred_final_f = pred_final_val.float()
 
             if pred_final_f.shape != Y_tgt.shape:
@@ -1310,13 +1258,6 @@ def _heal_replaced_model_impl(
 
         for p in trainable_params:
             p.requires_grad = False
-
-        for p in s_mod.parameters():
-            if p in orig_param_dtypes:
-                p.data = p.data.to(orig_param_dtypes[p])
-        for b in s_mod.buffers():
-            if b in orig_buffer_dtypes:
-                b.data = b.data.to(orig_buffer_dtypes[b])
 
         per_layer_stats[layer_name] = {
             "initial_mse": init_mse,
@@ -1592,25 +1533,6 @@ def __getattr__(name: str) -> Any:
 
         return getattr(_uc, name)
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
-
-
-def apply_backbone_surgery_hooks(
-    model: nn.Module,
-    model_type: str = "llama",
-    **kwargs: Any,
-) -> None:
-    """Legacy backward-compatibility shim for applying backbone surgery hooks.
-
-    Deprecated: Surgery is now performed transactionally via replace_attention.
-    """
-    import warnings
-
-    warnings.warn(
-        "apply_backbone_surgery_hooks is deprecated and will be removed in v2.2. "
-        "Surgery is now handled transactionally via replace_attention.",
-        DeprecationWarning,
-        stacklevel=2,
-    )
 
 
 __all__ = [

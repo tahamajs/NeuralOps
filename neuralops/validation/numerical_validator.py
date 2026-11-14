@@ -24,20 +24,6 @@ class NumericalValidator:
 
     @staticmethod
     def check_finite(tensor: torch.Tensor, name: str) -> ValidationStatus:
-<<<<<<< HEAD
-        nan_count = int(torch.isnan(tensor).sum().item()) if isinstance(tensor, torch.Tensor) else 0
-        inf_count = int(torch.isinf(tensor).sum().item()) if isinstance(tensor, torch.Tensor) else 0
-        passed = nan_count == 0 and inf_count == 0
-        return ValidationStatus(
-            {
-                "status": "passed" if passed else "failed",
-                "passed": passed,
-                "name": name,
-                "nan_count": nan_count,
-                "inf_count": inf_count,
-            }
-        )
-=======
         if not isinstance(tensor, torch.Tensor):
             return ValidationStatus(
                 {
@@ -69,7 +55,6 @@ class NumericalValidator:
         if error:
             data["error"] = error
         return ValidationStatus(data)
->>>>>>> fix/benchmarks-remediation
 
     @staticmethod
     def check_range(

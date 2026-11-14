@@ -110,23 +110,10 @@ class NeuralOpsBlock(nn.Module):
 
         normed_hidden_states = self.input_layernorm(hidden_states)
 
-<<<<<<< HEAD
-        attn_kwargs = kwargs
-        if kwargs and hasattr(self.self_attn, "forward"):
-            try:
-                import inspect
-
-                attn_sig = inspect.signature(self.self_attn.forward)
-                if not any(p.kind == inspect.Parameter.VAR_KEYWORD for p in attn_sig.parameters.values()):
-                    attn_kwargs = {k: v for k, v in kwargs.items() if k in attn_sig.parameters}
-            except (TypeError, ValueError):
-                attn_kwargs = kwargs
-=======
         if self._attn_accepts_var_kwargs:
             attn_kwargs = kwargs
         else:
             attn_kwargs = {k: v for k, v in kwargs.items() if k in self._attn_param_names}
->>>>>>> fix/benchmarks-remediation
 
         attn_outputs = self.self_attn(
             normed_hidden_states,

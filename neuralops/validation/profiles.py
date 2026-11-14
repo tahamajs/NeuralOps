@@ -127,10 +127,6 @@ class EmpiricalBenchmarkGate(Gate):
                 duration_seconds=time.perf_counter() - t0,
             )
 
-<<<<<<< HEAD
-        raise NotImplementedError(
-            "EmpiricalBenchmarkGate evaluation is not implemented yet; empirical evaluation must be performed through the benchmark suite."
-=======
         active_model = model_after if model_after is not None else model
         base_model = model_before if model_before is not None else baseline_model
 
@@ -193,7 +189,6 @@ class EmpiricalBenchmarkGate(Gate):
             duration_seconds=time.perf_counter() - t0,
             details={"score": score, "baseline_score": base_score},
             evidence_dict={"score": score, "baseline_score": base_score},
->>>>>>> fix/benchmarks-remediation
         )
 
 

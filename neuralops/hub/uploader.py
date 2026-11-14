@@ -281,56 +281,12 @@ class AsyncHFHubUploader:
         *,
         repo_id: Optional[str] = None,
         zoo_type: Optional[str] = None,
-<<<<<<< HEAD
-=======
         folder_path: Optional[str | Path] = None,
->>>>>>> fix/benchmarks-remediation
         mechanism_name: Optional[str] = None,
         **kwargs: Any,
     ) -> concurrent.futures.Future[Any]:
         """Submit a completed checkpoint folder for background upload and cleanup.
 
-<<<<<<< HEAD
-        Supports both standard signature:
-            submit_upload(attn_key, staging_dir, metrics, *, repo_id=..., zoo_type=...)
-        and caller pattern:
-            submit_upload(ckpt_dir, repo_id, mechanism_name=key)
-        """
-        is_caller_pattern = False
-        if mechanism_name is not None:
-            is_caller_pattern = True
-        elif isinstance(attn_key, Path):
-            is_caller_pattern = True
-        elif isinstance(attn_key, str):
-            try:
-                p = Path(attn_key)
-                if p.is_dir() or "/" in attn_key or "\\" in attn_key:
-                    if staging_dir is None or not (
-                        isinstance(staging_dir, Path) or (isinstance(staging_dir, str) and Path(staging_dir).is_dir())
-                    ):
-                        is_caller_pattern = True
-            except OSError:
-                pass
-
-        if is_caller_pattern:
-            final_staging_dir = Path(attn_key) if attn_key is not None else Path(".")
-            final_attn_key = mechanism_name or kwargs.get("key") or final_staging_dir.name
-            final_repo_id = repo_id or (str(staging_dir) if isinstance(staging_dir, str) else None)
-            final_metrics = metrics if isinstance(metrics, dict) else (kwargs.get("metrics") or {})
-        else:
-            final_attn_key = str(attn_key) if attn_key is not None else (mechanism_name or "unknown")
-            final_staging_dir = Path(staging_dir) if staging_dir is not None else Path(".")
-            final_repo_id = repo_id
-            final_metrics = metrics if isinstance(metrics, dict) else (kwargs.get("metrics") or {})
-
-        future = self.executor.submit(
-            self._worker_upload_and_cleanup,
-            final_attn_key,
-            final_staging_dir,
-            final_metrics,
-            final_repo_id,
-            zoo_type or kwargs.get("zoo_type"),
-=======
         Supports both canonical and legacy call signatures:
           1. submit_upload(attn_key, staging_dir, metrics, repo_id=..., zoo_type=...)
           2. submit_upload(folder_path, repo_id, mechanism_name=...)
@@ -380,7 +336,6 @@ class AsyncHFHubUploader:
             resolved_metrics,
             resolved_repo_id,
             resolved_zoo_type,
->>>>>>> fix/benchmarks-remediation
         )
         self.futures.append(future)
         return future
@@ -394,7 +349,6 @@ class AsyncHFHubUploader:
         zoo_type: Optional[str] = None,
     ) -> dict[str, Any]:
         """Background worker uploading directory and deleting heavy weights."""
-        staging_dir.mkdir(parents=True, exist_ok=True)
         if not self.token:
             err_msg = "HF_TOKEN is unset — skipping remote upload. Weights preserved."
             logger.warning("[%s] %s", attn_key, err_msg)

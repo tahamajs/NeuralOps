@@ -166,34 +166,6 @@ class NeuralOpsModel(NeuralOpsPreTrainedModel):
                     except (IndexError, TypeError):
                         past_layer_kv = None
 
-            layer_kwargs = {}
-            if kwargs:
-                try:
-                    import inspect
-
-                    sig = inspect.signature(decoder_layer.forward)
-                    has_var_keyword = any(
-                        p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
-                    )
-                    if has_var_keyword:
-                        if hasattr(decoder_layer, "self_attn") and hasattr(decoder_layer.self_attn, "forward"):
-                            attn_sig = inspect.signature(decoder_layer.self_attn.forward)
-                            if not any(
-                                p.kind == inspect.Parameter.VAR_KEYWORD for p in attn_sig.parameters.values()
-                            ):
-                                layer_kwargs = {k: v for k, v in kwargs.items() if k in attn_sig.parameters}
-                            else:
-                                layer_kwargs = dict(kwargs)
-                        else:
-                            layer_kwargs = dict(kwargs)
-                    else:
-                        layer_kwargs = {k: v for k, v in kwargs.items() if k in sig.parameters}
-                except (TypeError, ValueError):
-                    layer_kwargs = dict(kwargs)
-
-            for explicit_k in ("attention_mask", "position_ids", "past_key_value", "output_attentions", "use_cache"):
-                layer_kwargs.pop(explicit_k, None)
-
             layer_outputs = decoder_layer(
                 hidden_states,
                 attention_mask=attention_mask,
@@ -305,10 +277,6 @@ class NeuralOpsForCausalLM(NeuralOpsPreTrainedModel, GenerationMixin):
 
     @staticmethod
     def _reorder_cache(past_key_values: Any, beam_idx: torch.Tensor) -> Any:
-<<<<<<< HEAD
-        if hasattr(past_key_values, "reorder_cache") and callable(past_key_values.reorder_cache):
-            return past_key_values.reorder_cache(beam_idx)
-=======
         if past_key_values is None:
             return None
         if hasattr(past_key_values, "reorder_cache"):
@@ -316,7 +284,6 @@ class NeuralOpsForCausalLM(NeuralOpsPreTrainedModel, GenerationMixin):
         if isinstance(past_key_values, UnifiedHybridCache):
             return past_key_values.reorder_cache(beam_idx)
 
->>>>>>> fix/benchmarks-remediation
         reordered_past = ()
         for layer_past in past_key_values:
             if layer_past is None:

@@ -46,17 +46,11 @@ class NeuralOpsRMSNorm(nn.Module):
             except (RuntimeError, ImportError) as e:
                 logger.debug("Triton rmsnorm failed: %s, falling back to PyTorch reference", e)
         input_dtype = hidden_states.dtype
-<<<<<<< HEAD
-        hidden_states_f = hidden_states.to(torch.float32)
-        variance = torch.rsqrt(hidden_states_f.pow(2).mean(-1, keepdim=True) + self.variance_epsilon)
-        return ((hidden_states_f * variance).to(input_dtype)) * self.weight.to(input_dtype)
-=======
         hidden_states = hidden_states.to(torch.float32)
         variance = hidden_states.pow(2).mean(-1, keepdim=True)
         hidden_states = hidden_states * torch.rsqrt(variance + self.variance_epsilon)
         weight = self.weight.to(device=hidden_states.device, dtype=input_dtype)
         return (weight * hidden_states.to(input_dtype)).to(input_dtype)
->>>>>>> fix/benchmarks-remediation
 
 
 def build_norm_layer(norm_type: str, hidden_size: int, eps: float = 1e-6) -> nn.Module:

@@ -111,9 +111,6 @@ class MasterTransformerPipeline:
             Compressed nn.Module with factorized linear layers.
         """
         logger.info("Executing Stage 2: SVD Low-Rank Compression with ratio %.2f", rank_ratio)
-<<<<<<< HEAD
-        raise NotImplementedError("execute_stage_svd is not yet implemented.")
-=======
         compressor = DirectSVDCompressor(
             model,
             rank_ratio=rank_ratio,
@@ -123,7 +120,6 @@ class MasterTransformerPipeline:
         compressed_model, stats = compressor.compress()
         logger.info("Stage 2 SVD compression completed: %s", stats)
         return compressed_model
->>>>>>> fix/benchmarks-remediation
 
     def execute_stage_prune(
         self,
@@ -142,14 +138,10 @@ class MasterTransformerPipeline:
             Pruned nn.Module.
         """
         logger.info("Executing Stage 3: Structured Pruning with sparsity %.2f", sparsity)
-<<<<<<< HEAD
-        raise NotImplementedError("execute_stage_prune is not yet implemented.")
-=======
         compressor = WandaCompressor(model, sparsity=sparsity, **kwargs)
         pruned_model, stats = compressor.compress()
         logger.info("Stage 3 pruning completed: %s", stats)
         return pruned_model
->>>>>>> fix/benchmarks-remediation
 
     def execute_stage_quantize(
         self,
@@ -169,9 +161,6 @@ class MasterTransformerPipeline:
             NotImplementedError: If quant_bits is not supported (only 8 and 4 supported).
         """
         logger.info("Executing Stage 4: Quantization to %d bits", self.quant_bits)
-<<<<<<< HEAD
-        raise NotImplementedError("execute_stage_quantize is not yet implemented.")
-=======
         if self.quant_bits == 8:
             scale_type = kwargs.pop("scale_type", "per_tensor")
             fp8_format = kwargs.pop("fp8_format", "e4m3")
@@ -189,7 +178,6 @@ class MasterTransformerPipeline:
             raise NotImplementedError(
                 f"Quantization to {self.quant_bits} bits is not supported. Supported bit widths: 4, 8."
             )
->>>>>>> fix/benchmarks-remediation
 
     def execute_stage_export(
         self,

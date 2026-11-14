@@ -91,7 +91,10 @@ class GLAModel(PreTrainedModel):
         self.ln_f = nn.LayerNorm(config.hidden_size, eps=1e-5)
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
-<<<<<<< HEAD
+    def can_generate(self) -> bool:
+        """GLAModel does not support autoregressive generation mixin."""
+        return False
+
     def generate(self, *args: Any, **kwargs: Any) -> Any:
         raise NotImplementedError("Autoregressive generation for GLAHFModel is not implemented yet.")
 
@@ -109,11 +112,6 @@ class GLAModel(PreTrainedModel):
             "use_cache": False,
             **kwargs,
         }
-=======
-    def can_generate(self) -> bool:
-        """GLAModel does not support autoregressive generation mixin."""
-        return False
->>>>>>> fix/benchmarks-remediation
 
     def forward(
         self,

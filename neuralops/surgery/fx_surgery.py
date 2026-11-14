@@ -214,24 +214,15 @@ def causal_prefix_scan(
     decay: Optional[float] = None,
     chunk_size: int = 128,
 ) -> torch.Tensor:
-<<<<<<< HEAD
-    """Causal linear prefix recurrence via chunked associative scan.
-=======
     """Causal linear prefix recurrence via chunkwise parallel associative scan.
->>>>>>> fix/benchmarks-remediation
 
     Computes S_t = sum_{i=1}^t phi(K_i)^T V_i, ensuring strict lower-triangular
     dependency where future tokens have zero gradient contribution to past representations.
     Supports exponential state decay gamma in (0, 1) according to Law 7.
     Accumulates in FP32 for numerical stability when inputs are FP16 or BF16.
-<<<<<<< HEAD
-    Uses chunked scan (chunk size 128) to avoid O(T*D^2) memory footprint and maintain
-    bounded peak memory (< 50MB for T=8192).
-=======
 
     Uses O(C^2 + D^2) bounded chunk memory scaling instead of allocating an O(T * D^2)
     5D outer-product tensor across the entire sequence length T.
->>>>>>> fix/benchmarks-remediation
     """
     orig_dtype = q_phi.dtype
     is_fp16 = orig_dtype in (torch.float16, torch.bfloat16)
@@ -239,22 +230,6 @@ def causal_prefix_scan(
     k_calc = k_phi.float() if is_fp16 else k_phi
     v_calc = v.float() if is_fp16 else v
 
-<<<<<<< HEAD
-    b, h, t, d = q_calc.shape
-    e = v_calc.shape[-1]
-
-    out = torch.empty((b, h, t, e), device=q_calc.device, dtype=q_calc.dtype)
-
-    s_state = torch.zeros((b, h, d, e), device=q_calc.device, dtype=q_calc.dtype)
-    z_state = torch.zeros((b, h, d), device=q_calc.device, dtype=q_calc.dtype)
-
-    has_decay = decay is not None and 0.0 < decay < 1.0
-    log_gamma = math.log(decay) if has_decay else 0.0
-
-    for start in range(0, t, chunk_size):
-        end = min(start + chunk_size, t)
-        c = end - start
-=======
     is_3d = q_calc.dim() == 3
     if is_3d:
         q_calc = q_calc.unsqueeze(1)
@@ -296,62 +271,12 @@ def causal_prefix_scan(
     for start in range(0, t, c_size):
         end = min(start + c_size, t)
         length = end - start
->>>>>>> fix/benchmarks-remediation
 
         q_c = q_calc[:, :, start:end, :]
         k_c = k_calc[:, :, start:end, :]
         v_c = v_calc[:, :, start:end, :]
 
         if has_decay:
-<<<<<<< HEAD
-            pos = torch.arange(c, device=q_calc.device, dtype=q_calc.dtype)
-            inter_decay = torch.exp((pos + 1) * log_gamma).view(1, 1, c, 1)
-
-            rel_pos = pos.unsqueeze(1) - pos.unsqueeze(0)
-            causal_mask = rel_pos >= 0
-            intra_decay_matrix = torch.where(causal_mask, torch.exp(rel_pos * log_gamma), torch.zeros_like(rel_pos))
-            intra_decay_matrix = intra_decay_matrix.view(1, 1, c, c)
-
-            out_inter = torch.einsum("bhcd,bhde->bhce", q_c, s_state) * inter_decay
-            denom_inter = torch.einsum("bhcd,bhd->bhc", q_c, z_state).unsqueeze(-1) * inter_decay
-
-            a_intra = torch.matmul(q_c, k_c.transpose(-1, -2)) * intra_decay_matrix
-            out_intra = torch.matmul(a_intra, v_c)
-            denom_intra = torch.sum(a_intra, dim=-1, keepdim=True)
-
-            out_c = out_inter + out_intra
-            denom_c = denom_inter + denom_intra + eps
-            out[:, :, start:end, :] = out_c / denom_c
-
-            decay_chunk_end = math.exp(c * log_gamma)
-            k_decay_to_end = torch.exp((c - 1 - pos) * log_gamma).view(1, 1, c, 1)
-            k_c_decayed = k_c * k_decay_to_end
-            delta_s = torch.einsum("bhcd,bhce->bhde", k_c_decayed, v_c)
-            delta_z = torch.sum(k_c_decayed, dim=2)
-
-            s_state = s_state * decay_chunk_end + delta_s
-            z_state = z_state * decay_chunk_end + delta_z
-        else:
-            out_inter = torch.einsum("bhcd,bhde->bhce", q_c, s_state)
-            denom_inter = torch.einsum("bhcd,bhd->bhc", q_c, z_state).unsqueeze(-1)
-
-            causal_mask = torch.tril(torch.ones((c, c), device=q_calc.device, dtype=torch.bool))
-            a_intra = torch.matmul(q_c, k_c.transpose(-1, -2))
-            a_intra = torch.where(causal_mask, a_intra, torch.zeros_like(a_intra))
-            out_intra = torch.matmul(a_intra, v_c)
-            denom_intra = torch.sum(a_intra, dim=-1, keepdim=True)
-
-            out_c = out_inter + out_intra
-            denom_c = denom_inter + denom_intra + eps
-            out[:, :, start:end, :] = out_c / denom_c
-
-            delta_s = torch.einsum("bhcd,bhce->bhde", k_c, v_c)
-            delta_z = torch.sum(k_c, dim=2)
-            s_state = s_state + delta_s
-            z_state = z_state + delta_z
-
-    return out.to(orig_dtype) if is_fp16 else out
-=======
             idx = torch.arange(length, device=device, dtype=dtype)
             gamma_t = torch.pow(float(decay), idx)
             inv_gamma_t = torch.pow(float(decay), -idx)
@@ -402,7 +327,6 @@ def causal_prefix_scan(
     if is_3d:
         res = res.squeeze(1)
     return res.to(orig_dtype) if is_fp16 else res
->>>>>>> fix/benchmarks-remediation
 
 
 def bidirectional_associative_scan(

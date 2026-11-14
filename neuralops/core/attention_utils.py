@@ -31,24 +31,10 @@ logger = logging.getLogger(__name__)
 
 
 def inject_attention(*args: Any, **kwargs: Any) -> Any:
-<<<<<<< HEAD
-    """Convenience alias for replace_attention."""
-    from neuralops.api import replace_attention
-
-    return replace_attention(*args, **kwargs)
-
-
-def replace_attention(*args: Any, **kwargs: Any) -> Any:
-    """Convenience alias for replace_attention."""
-    from neuralops.api import replace_attention as _ra
-
-    return _ra(*args, **kwargs)
-=======
     """Drop-in replace attention layers, delegating lazily to neuralops.core.replace_attention."""
     from neuralops.core.replace_attention import replace_attention
 
     return replace_attention(*args, **kwargs)
->>>>>>> fix/benchmarks-remediation
 
 
 def available_attention_types() -> list[str]:
