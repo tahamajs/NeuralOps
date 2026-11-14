@@ -76,6 +76,7 @@ def _autocast_context(device: str = "cuda", enabled: bool = True, dtype: torch.d
             pass
     return contextlib.nullcontext()
 
+
 try:
     from neuralops.evaluation.eval_patcher import apply_module_to_model
 except ImportError:

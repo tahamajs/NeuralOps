@@ -16,6 +16,7 @@ Manages:
   - Unified Hugging Face model card generation
   - Metrics recording and optional background upload dispatch
 """
+
 from __future__ import annotations
 
 import datetime
@@ -275,7 +276,17 @@ def summarize_attention_doc(attn_key: str) -> str:
     raw_doc = inspect.getdoc(cls) if cls is not None else ""
     if not raw_doc:
         return f"Specialized attention mechanism `{attn_key}` from the NeuralOps ATTENTION_REGISTRY."
-    for marker in ("Attributes:", "Args:", "Parameters:", "Returns:", "Raises:", "Example:", "Examples:", "Note:", "Notes:"):
+    for marker in (
+        "Attributes:",
+        "Args:",
+        "Parameters:",
+        "Returns:",
+        "Raises:",
+        "Example:",
+        "Examples:",
+        "Note:",
+        "Notes:",
+    ):
         idx = raw_doc.find(marker)
         if idx != -1:
             raw_doc = raw_doc[:idx]

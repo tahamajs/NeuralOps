@@ -127,7 +127,11 @@ class RulerAdapter:
 
         if self.tokenizer:
             tok_out = self.tokenizer(haystack_filler)
-            t_ids = tok_out["input_ids"] if isinstance(tok_out, dict) or hasattr(tok_out, "__getitem__") else tok_out.input_ids
+            t_ids = (
+                tok_out["input_ids"]
+                if isinstance(tok_out, dict) or hasattr(tok_out, "__getitem__")
+                else tok_out.input_ids
+            )
             tokens_per_filler = max(len(t_ids), 1)
         else:
             tokens_per_filler = 15

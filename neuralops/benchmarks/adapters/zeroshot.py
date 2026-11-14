@@ -189,7 +189,11 @@ class ZeroShotAdapter:
         enc_full = self.tokenizer(full_text, return_tensors="pt")
         inputs = {k: v.to(self.device) for k, v in enc_full.items() if k in ("input_ids", "attention_mask")}
         enc_prompt = self.tokenizer(prompt, return_tensors="pt")
-        prompt_ids = enc_prompt["input_ids"] if isinstance(enc_prompt, dict) or hasattr(enc_prompt, "__getitem__") else enc_prompt.input_ids
+        prompt_ids = (
+            enc_prompt["input_ids"]
+            if isinstance(enc_prompt, dict) or hasattr(enc_prompt, "__getitem__")
+            else enc_prompt.input_ids
+        )
         prompt_len = prompt_ids.shape[1]
         input_ids = inputs["input_ids"]
 

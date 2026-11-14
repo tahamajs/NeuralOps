@@ -156,6 +156,7 @@ def test_zoo_orchestrator_submit_upload_arguments(tmp_path: Path):
     orchestrator.uploader = mock_uploader
 
     test_res = {"accuracy": 92.5}
+
     def mock_train(key, ckpt_dir):
         return dict(test_res)
 
