@@ -775,7 +775,7 @@ Establish an incontrovertible physical silicon baseline on the Sharif HPC cluste
 #### Existing Subsystem Code Reuse
 - `neuralops/core/registry.py`: Canonical symbol registry `ATTENTION_REGISTRY`
 - `neuralops/trainer/smart_gpu_trainer.py`: Hardware introspection `GPUMemoryManager.get_device_info()`
-- `scripts/hpc/job_bert_131_wikitext_hf_zoo.pbs`: Torque PBS cluster submission wrapper
+- `scripts/benchmarks/run_bert_zoo_orchestrator.py`: Torque PBS cluster submission wrapper
 
 #### Forensic Execution Protocol
 1. **Host & GPU Verification:** Confirm active allocation on node `GPU-3090-1`. Physical inspection via `nvidia-smi` must confirm 24,576 MB GDDR6X, driver version $\ge 525.60$, and zero foreign processes on the allocated device.
@@ -3239,12 +3239,6 @@ def load_pretrained_bert(
 
 ```bash
 #!/bin/bash
-#PBS -N bert_131_wikitext_zoo
-#PBS -q N3090
-#PBS -l nodes=1:ppn=8
-#PBS -l walltime=14:00:00
-#PBS -j oe
-#PBS -o /home/tahamajlesi.ut/NeuralOps/results/bert_attention_zoo/job_execution.log
 
 set -euo pipefail
 

@@ -175,7 +175,6 @@ nav:
       - Model Compression: guides/model_compression.md
       - Kernel Dispatch: guides/kernel_dispatch.md
       - Production Serving: guides/production_serving.md
-      - HPC Cluster Execution: HPC_GPU_MASTER_GUIDE.md
   - Visualizer & Dashboards:
       - Architecture & Telemetry Dashboard: dashboard.html
       - 3D Attention Lab & Atlas: visualizer/index.html
@@ -198,11 +197,18 @@ nav:
       - API Index: API_REFERENCE.md
       - Core Python API: api/api.md
       - 131 Attention Mechanisms: api/attentions.md
-      - 72 Compression Engines: api/compression.md
+      - 82 Compression Engines: api/compression.md
       - Kernels & 3-Level Dispatch: api/kernels.md
       - Serving Integrations: api/integrations.md
       - Results Ledger & Provenance: api/results_ledger.md
       - CLI Reference: api/cli_reference.md
+  - Technical Specifications (v2.1.0):
+      - 82-Compressor Zoo Catalog: COMPRESSOR_ZOO_CATALOG.md
+      - 115 Attention Mechanisms Taxonomy: ATTENTION_TAXONOMY_CATALOG.md
+      - Modular Surgical Delta Specification: MODULAR_SURGICAL_DELTA_SPEC.md
+      - Offline Teacher Representation Caching: OFFLINE_TEACHER_CACHING_GUIDE.md
+      - 5-Format Unified Persistence: BENCHMARK_PERSISTENCE_SPEC.md
+      - CUDA & Triton Systems Architecture: KERNEL_SYSTEMS_GUIDE.md
   - Tutorials:
       - 01 Quickstart: tutorials/01_quickstart.md
       - 02 Roofline Analysis: tutorials/02_roofline.md

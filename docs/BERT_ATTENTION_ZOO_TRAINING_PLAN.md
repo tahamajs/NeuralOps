@@ -322,17 +322,10 @@ neuralops hub train-zoo --minutes-per-module 5.0 --upload-hf --hf-org Hooshaai
 
 ## 10. Sharif HPC Production PBS Execution Job
 
-File: `scripts/hpc/job_bert_131_wikitext_hf_zoo.pbs`
+File: `scripts/benchmarks/run_bert_zoo_orchestrator.py`
 
 ```bash
 #!/bin/bash
-#PBS -N bert_131_wikitext_zoo
-#PBS -q N3090
-#PBS -l nodes=1:ppn=8:gpus=1
-#PBS -l mem=48gb
-#PBS -l walltime=14:00:00
-#PBS -j oe
-#PBS -o /home/tahamajlesi.ut/NeuralOps/results/bert_attention_zoo/job_execution.log
 
 set -euo pipefail
 
