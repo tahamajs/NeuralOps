@@ -61,12 +61,12 @@ class EventSink:
             try:
                 listener(event)
             except Exception as e:
-                logger.debug(f"Global listener failed on event {topic}: {e}")
+                logger.warning(f"Listener failed on event {topic}: {type(e).__name__}: {e}", exc_info=True)
 
         for listener in self._listeners.get(topic, []):
             try:
                 listener(event)
             except Exception as e:
-                logger.debug(f"Listener failed on event {topic}: {e}")
+                logger.warning(f"Listener failed on event {topic}: {type(e).__name__}: {e}", exc_info=True)
 
         return event

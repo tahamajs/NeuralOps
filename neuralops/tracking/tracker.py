@@ -72,9 +72,13 @@ class ExperimentTracker:
         resolved_log_dir = log_dir
         resolved_backend = backend
 
-        if hasattr(backend, "run_dir"):
+        if "run_dir" in kwargs:
+            resolved_log_dir = kwargs["run_dir"]
+        elif hasattr(backend, "run_dir"):
             resolved_log_dir = backend.run_dir
             resolved_backend = kwargs.get("backend", LOCAL_BACKEND)
+        elif hasattr(resolved_log_dir, "run_dir"):
+            resolved_log_dir = resolved_log_dir.run_dir
         elif isinstance(backend, Path):
             resolved_log_dir = str(backend)
             resolved_backend = kwargs.get("backend", LOCAL_BACKEND)
@@ -82,11 +86,6 @@ class ExperimentTracker:
             if os.path.exists(backend) or "/" in backend or "\\" in backend:
                 resolved_log_dir = backend
                 resolved_backend = kwargs.get("backend", LOCAL_BACKEND)
-
-        if hasattr(resolved_log_dir, "run_dir"):
-            resolved_log_dir = resolved_log_dir.run_dir
-        if "run_dir" in kwargs:
-            resolved_log_dir = kwargs["run_dir"]
 
         if isinstance(experiment_name, dict):
             config_dict = experiment_name
@@ -153,7 +152,6 @@ class ExperimentTracker:
                     )
                 )
 
-        self._tracker: BaseTracker = self._trackers[0] if self._trackers else LocalTracker(self.log_dir)
         self._current_step = 0
         self._lock = threading.Lock()
         self._closed = False

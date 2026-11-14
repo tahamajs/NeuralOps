@@ -110,48 +110,10 @@ class TGIRequestBatch:
             evicted.append(r_id)
         return evicted
 
-    def step(self, model: nn.Module) -> Dict[str, int]:
-        """Assembles active slot tokens, executes forward step, appends generated tokens.
-
-        Returns:
-            Mapping of request_id to newly generated token id.
-        """
-        if not self.active_slots:
-            return {}
-
-        active_ids = self.active_request_ids()
-        if not active_ids:
-            return {}
-
-        batched_tokens, req_ids, _ = self.assemble_decode_batch(active_ids)
-        if batched_tokens.numel() == 0:
-            return {}
-
-        outputs = _call_model(model, batched_tokens)
-        logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
-
-        next_tokens = torch.argmax(logits, dim=-1)
-        step_results: Dict[str, int] = {}
-
-        for idx, req_id in enumerate(req_ids):
-            slot = self.active_slots[req_id]
-            tok = int(next_tokens[idx].item())
-            slot.generated_ids.append(tok)
-            step_results[req_id] = tok
-
-            is_max = len(slot.generated_ids) >= slot.max_new_tokens
-            is_eos = slot.eos_token_id is not None and tok == slot.eos_token_id
-
-            if is_max or is_eos:
-                slot.finished = True
-                slot.finish_reason = "eos" if is_eos else "max_tokens"
-                slot.stream_queue.put((tok, f"<{tok}>", True))
-                slot.stream_queue.put(None)
-            else:
-                slot.stream_queue.put((tok, f"<{tok}>", False))
-
-        self.evict_completed_slots()
-        return step_results
+    # Dynamic request stepping and forward execution are managed by
+    # TGIServingAdapter (via decode_step / prefill), which properly preserves
+    # context and KV-cache rather than passing uncontextualized single tokens.
+    # TGIRequestBatch is dedicated to slot management and batch tensor assembly.
 
     def add(self, request: TGIRequest) -> None:
         if request.request_id in self.active_slots or request.request_id in self.completed_slots:
@@ -226,6 +188,10 @@ class TGIRequestBatch:
             - seq_lens: List[int] of unpadded sequence lengths.
             - max_len: Maximum unpadded sequence length across active requests.
         """
+        if padding_side == "right":
+            logger.warning(
+                "Right padding detected for causal LM batch. Generation quality may be affected. Use padding_side='left' for autoregressive generation."
+            )
         active = [s for s in self.active_slots.values() if not s.finished and s.input_ids is not None]
         if not active:
             return {
@@ -571,16 +537,13 @@ class TGIServingAdapter:
         sampled = torch.multinomial(probs, num_samples=1)
         return int(sampled.item())
 
-    def continuous_batching_generate(
+    def generate_sequential(
         self,
         prompts: List[Union[str, List[int], torch.Tensor]],
         max_new_tokens: int = 16,
         **kwargs: Any,
     ) -> List[str]:
-        """
-        High-level blocking API: Submits multiple prompts, executes continuous
-        batching until all sequences terminate, and returns list of completions.
-        """
+        """Processes requests sequentially — see create_openai_serving_app for true batched serving."""
         slots = []
         for i, p in enumerate(prompts):
             req_id = f"req_{int(time.time() * 1000)}_{self._total_requests}_{i}"
@@ -601,6 +564,23 @@ class TGIServingAdapter:
                 text = "".join(self._decode_token(t) for t in s.generated_ids)
             completions.append(text)
         return completions
+
+    def continuous_batching_generate(
+        self,
+        prompts: List[Union[str, List[int], torch.Tensor]],
+        max_new_tokens: int = 16,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Processes requests sequentially — see create_openai_serving_app for true batched serving."""
+        import warnings
+
+        warnings.warn(
+            "continuous_batching_generate is deprecated and will be removed in a future release; "
+            "use generate_sequential instead (or see create_openai_serving_app for true batched serving).",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.generate_sequential(prompts, max_new_tokens=max_new_tokens, **kwargs)
 
     def streaming_generate(
         self,
@@ -735,8 +715,7 @@ class TGIServingAdapter:
             from fastapi.responses import StreamingResponse
         except ImportError:
             raise ImportError(
-                "FastAPI is required to run the standalone TGI server hook. "
-                "Install with: pip install fastapi uvicorn"
+                "FastAPI is required to run the standalone TGI server hook. Install with: pip install fastapi uvicorn"
             )
 
         app = FastAPI(title="NeuralOps TGI Serving Adapter", version="1.4.2")
@@ -763,7 +742,7 @@ class TGIServingAdapter:
 
                 raise HTTPException(status_code=400, detail="parameters must be a JSON object")
             max_new = params.get("max_new_tokens", 16)
-            completions = self.continuous_batching_generate([prompt], max_new_tokens=max_new)
+            completions = self.generate_sequential([prompt], max_new_tokens=max_new)
             return {"generated_text": completions[0]}
 
         @app.post("/generate_stream")

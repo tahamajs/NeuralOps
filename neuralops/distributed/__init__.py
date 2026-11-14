@@ -35,6 +35,7 @@ from neuralops.distributed.tensor_parallel import (
     RowParallelSVDLinear,
     SimulatedTPGroup,
     TensorParallelRecurrentAttention,
+    all_reduce,
     copy_to_model_parallel_region,
     reduce_from_model_parallel_region,
 )
@@ -55,6 +56,7 @@ __all__ = [
     "RowParallelSVDLinear",
     "ColumnParallelSVDLinear",
     "TensorParallelRecurrentAttention",
+    "all_reduce",
     "copy_to_model_parallel_region",
     "reduce_from_model_parallel_region",
     "compute_chunk_prefix_scan",

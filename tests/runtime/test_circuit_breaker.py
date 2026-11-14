@@ -30,18 +30,18 @@ def test_circuit_breaker_fsm_transitions_and_trip():
     fsm = CircuitBreakerFSM(cooldown_seconds=0.050)
     assert fsm.state == CircuitState.NORMAL
 
-    # First failure: NORMAL -> DEGRADED
+    # First failure: NORMAL -> DEGRADED (failure_threshold=1, resets failure_count to 0 upon transition)
     state = fsm.record_failure("CUDA kernel failure")
     assert state == CircuitState.DEGRADED
     assert fsm.state == CircuitState.DEGRADED
-    assert fsm.failure_count == 1
+    assert fsm.failure_count == 0
     assert fsm.total_trips == 0
 
     # Second failure: DEGRADED -> TRIPPED
     state = fsm.record_failure("Triton JIT compilation error")
     assert state == CircuitState.TRIPPED
     assert fsm.state == CircuitState.TRIPPED
-    assert fsm.failure_count == 2
+    assert fsm.failure_count == 0
     assert fsm.total_trips == 1
 
 
@@ -72,7 +72,7 @@ def test_circuit_breaker_force_reset():
     fsm.record_failure("Failure 1")
     fsm.record_failure("Failure 2")
     assert fsm.state == CircuitState.TRIPPED
-    assert fsm.failure_count == 2
+    assert fsm.failure_count == 0
 
     fsm.force_reset()
     assert fsm.state == CircuitState.NORMAL

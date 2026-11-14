@@ -90,7 +90,7 @@ class _CopyToModelParallelRegion(torch.autograd.Function):
     def backward(ctx: Any, grad_output: torch.Tensor) -> tuple[torch.Tensor, None, None]:
         if ctx.enabled:
             if not dist.is_initialized():
-                raise RuntimeError("Tensor-parallel input-gradient reduction requires initialized " "torch.distributed")
+                raise RuntimeError("Tensor-parallel input-gradient reduction requires initialized torch.distributed")
             grad_output = grad_output.contiguous().clone()
             dist.all_reduce(grad_output, group=ctx.group)
         return grad_output, None, None
@@ -139,6 +139,69 @@ def reduce_from_model_parallel_region(
     if enabled is None:
         enabled = dist.is_initialized() and dist.get_world_size(group=group) > 1
     return _ReduceFromModelParallelRegion.apply(input, group, enabled)
+
+
+def all_reduce(
+    tensor: torch.Tensor,
+    group: Any = None,
+    op: Any = "sum",
+) -> torch.Tensor:
+    """All-reduce tensor across process group with ReduceOp.AVG fallback for older PyTorch/NCCL.
+
+    Args:
+        tensor: Input tensor to reduce in-place.
+        group: Process group (defaults to global group).
+        op: Reduction operation ('sum', 'avg', 'mean', etc. or dist.ReduceOp).
+
+    Returns:
+        Reduced tensor.
+    """
+    if isinstance(group, SimulatedTPGroup):
+        raise TypeError("SimulatedTPGroup cannot be used for collective operations")
+
+    if not dist.is_initialized():
+        raise RuntimeError("Tensor-parallel all-reduce requires initialized torch.distributed")
+
+    world_size = dist.get_world_size(group=group)
+    if world_size <= 1:
+        return tensor
+
+    is_avg = False
+    if isinstance(op, str):
+        op_lower = op.lower()
+        if op_lower in ("mean", "avg"):
+            is_avg = True
+        elif op_lower in ("sum", "add"):
+            reduce_op = dist.ReduceOp.SUM
+        elif op_lower == "max":
+            reduce_op = dist.ReduceOp.MAX
+        elif op_lower == "min":
+            reduce_op = dist.ReduceOp.MIN
+        elif op_lower in ("product", "prod"):
+            reduce_op = dist.ReduceOp.PRODUCT
+        else:
+            raise ValueError(f"Unsupported reduction operator: {op}")
+    elif hasattr(dist, "ReduceOp") and op == getattr(dist.ReduceOp, "AVG", None):
+        is_avg = True
+    else:
+        reduce_op = op
+
+    if is_avg:
+        if hasattr(dist.ReduceOp, "AVG"):
+            try:
+                dist.all_reduce(tensor, op=dist.ReduceOp.AVG, group=group)
+                return tensor
+            except Exception:
+                dist.all_reduce(tensor, op=dist.ReduceOp.SUM, group=group)
+                tensor.div_(world_size)
+                return tensor
+        else:
+            dist.all_reduce(tensor, op=dist.ReduceOp.SUM, group=group)
+            tensor.div_(world_size)
+            return tensor
+
+    dist.all_reduce(tensor, op=reduce_op, group=group)
+    return tensor
 
 
 class RankParallelSVDLinear(nn.Module):
@@ -237,7 +300,7 @@ class RowParallelSVDLinear(nn.Module):
     def forward(self, x_local: torch.Tensor) -> torch.Tensor:
         _require_tp_group(self.tp_size, self.process_group, self.tp_rank)
         if x_local.shape[-1] != self.local_in_features:
-            raise ValueError(f"expected local input width {self.local_in_features}, " f"got {x_local.shape[-1]}")
+            raise ValueError(f"expected local input width {self.local_in_features}, got {x_local.shape[-1]}")
         bottleneck_local = self.v_proj(x_local)
 
         bottleneck = reduce_from_model_parallel_region(bottleneck_local, self.process_group, enabled=self.tp_size > 1)
@@ -401,7 +464,7 @@ class RowParallelLinear(nn.Module):
         _require_tp_group(self.tp_size, self.process_group, self.tp_rank)
         if self.input_is_parallel:
             if x.shape[-1] != self.local_in_features:
-                raise ValueError(f"expected local input width {self.local_in_features}, " f"got {x.shape[-1]}")
+                raise ValueError(f"expected local input width {self.local_in_features}, got {x.shape[-1]}")
         elif x.shape[-1] != self.in_features:
             raise ValueError(f"expected full input width {self.in_features}, got {x.shape[-1]}")
         if not self.input_is_parallel and self.tp_size > 1:
@@ -539,4 +602,5 @@ __all__ = [
     "TensorParallelRecurrentAttention",
     "copy_to_model_parallel_region",
     "reduce_from_model_parallel_region",
+    "all_reduce",
 ]

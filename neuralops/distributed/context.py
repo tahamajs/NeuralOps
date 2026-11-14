@@ -18,7 +18,11 @@ from typing import Any
 import torch
 import torch.distributed as dist
 
-from neuralops.distributed.errors import E_DIST_COMM_FAILED, DistributedError
+from neuralops.distributed.errors import (
+    E_DIST_COMM_FAILED,
+    E_DIST_INIT_FAILED,
+    DistributedError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +34,7 @@ class DistributedContext:
         self,
         backend: str = "nccl",
         init_if_available: bool = True,
+        allow_single_device_fallback: bool = False,
     ) -> None:
         self.available_gpus: int = torch.cuda.device_count() if torch.cuda.is_available() else 0
         self.world_size: int = 1
@@ -37,8 +42,15 @@ class DistributedContext:
         self.local_rank: int = 0
         self.backend: str = backend
         self._initialized_by_us: bool = False
+        self.allow_single_device_fallback: bool = allow_single_device_fallback
 
         if not dist.is_available():
+            if (
+                not allow_single_device_fallback
+                and init_if_available
+                and ("RANK" in os.environ and "WORLD_SIZE" in os.environ)
+            ):
+                raise DistributedError("torch.distributed is not available.", code=E_DIST_INIT_FAILED)
             logger.warning("torch.distributed is not available. Falling back to single-device mode.")
             return
 
@@ -63,6 +75,11 @@ class DistributedContext:
                     self.local_rank = int(os.environ.get("LOCAL_RANK", self.rank))
                     self.backend = chosen_backend
                 except Exception as e:
+                    if not allow_single_device_fallback:
+                        raise DistributedError(
+                            f"Failed to initialize distributed process group: {e}",
+                            code=E_DIST_INIT_FAILED,
+                        ) from e
                     logger.warning(
                         "Failed to initialize distributed process group: %s. Falling back to single-device mode.", e
                     )
@@ -101,10 +118,11 @@ class DistributedContext:
             return tensor
 
         op_lower = op.lower()
+        is_avg = False
         if op_lower in ("sum", "add"):
             reduce_op = dist.ReduceOp.SUM
         elif op_lower in ("mean", "avg"):
-            reduce_op = dist.ReduceOp.AVG
+            is_avg = True
         elif op_lower == "max":
             reduce_op = dist.ReduceOp.MAX
         elif op_lower == "min":
@@ -115,6 +133,20 @@ class DistributedContext:
             raise DistributedError(f"Unsupported reduction operator: {op}", code=E_DIST_COMM_FAILED)
 
         try:
+            if is_avg:
+                if hasattr(dist.ReduceOp, "AVG"):
+                    try:
+                        dist.all_reduce(tensor, op=dist.ReduceOp.AVG)
+                        return tensor
+                    except Exception:
+                        dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
+                        tensor.div_(self.world_size)
+                        return tensor
+                else:
+                    dist.all_reduce(tensor, op=dist.ReduceOp.SUM)
+                    tensor.div_(self.world_size)
+                    return tensor
+
             dist.all_reduce(tensor, op=reduce_op)
             return tensor
         except Exception as e:
