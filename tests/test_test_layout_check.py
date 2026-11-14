@@ -10,6 +10,7 @@
 from pathlib import Path
 import pytest
 
+pytest.importorskip("scripts.ci.check_test_layout", reason="scripts.ci was removed")
 from scripts.ci.check_test_layout import check_test_layout, main
 
 

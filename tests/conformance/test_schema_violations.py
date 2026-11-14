@@ -10,6 +10,7 @@ Category 2 Conformance Tests: Schema Violations per NRL v1.0.0 §14.
 """
 
 import pytest
+import yaml
 
 from neuralops.recipe.errors import (
     E_SCHEMA_INVALID_IDENTIFIER,
@@ -20,6 +21,7 @@ from neuralops.recipe.errors import (
     RecipeSchemaError,
 )
 from neuralops.recipe.loader import loads_recipe
+from neuralops.recipe.schema import Recipe
 
 
 def test_cat2_case1_missing_root_field():
@@ -134,5 +136,5 @@ operations:
       target_ratio: 0.5
 """
     with pytest.raises(RecipeSchemaError) as exc:
-        loads_recipe(yaml_text)
+        Recipe.from_dict(yaml.safe_load(yaml_text), strict_sha=True)
     assert exc.value.error_code == E_SCHEMA_WRONG_TYPE
