@@ -6,7 +6,9 @@ import sys
 from typing import Any, Dict, List, Optional
 
 
-def setup_plan_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentParser:
+def setup_plan_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> argparse.ArgumentParser:
     """Setup parser for plan subcommand."""
     parser = subparsers.add_parser("plan", help="Dry-run and estimate execution grid")
     parser.add_argument("--config", type=str, default=None, help="Path to YAML benchmark configuration file")

@@ -38,7 +38,7 @@ QUICK_PRECISIONS = [
 
 
 def measure_benchmark(
-    device_str: str = "cuda:0",
+    device_str: str = "cuda" if torch.cuda.is_available() else "cpu",
     precisions_list: list = None,
     warmup: int = 5,
     repeat: int = 20,
@@ -353,7 +353,7 @@ def main():
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda:0" if torch.cuda.is_available() else "cpu",
+        default="cuda" if torch.cuda.is_available() else "cpu",
         help="Device to execute benchmark",
     )
     parser.add_argument("--warmup", type=int, default=5, help="Warmup iterations")

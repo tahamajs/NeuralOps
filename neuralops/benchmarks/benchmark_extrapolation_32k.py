@@ -89,7 +89,7 @@ def run_extrapolation_benchmark(
         seq_lens = DEFAULT_SEQ_LENS
 
     if device_str == "auto" or device_str is None:
-        device_str = "cuda:0" if torch.cuda.is_available() else "cpu"
+        device_str = "cuda" if torch.cuda.is_available() else "cpu"
 
     if "cuda" in device_str and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")

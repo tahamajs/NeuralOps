@@ -232,7 +232,7 @@ def run_single_kd_session(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Exhaustive Per-Module 2-Minute KD Benchmark")
-    parser.add_argument("--device", default="cuda:0" if torch.cuda.is_available() else "cpu")
+    parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument(
         "--max-duration", type=float, default=120.0, help="Max duration per module in seconds (default: 120s = 2 min)"
     )

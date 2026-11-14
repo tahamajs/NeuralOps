@@ -100,7 +100,7 @@ _REGISTRY_POPULATED: bool = False
 _POPULATING: bool = False
 
 
-class _LazyBenchmarkRegistry(dict):
+class _LazyBenchmarkRegistry(Dict[Any, Any]):
     """Dictionary proxy that lazily populates canonical benchmarks on read access."""
 
     def _ensure(self) -> None:
@@ -153,8 +153,10 @@ class _LazyBenchmarkRegistry(dict):
         return super().__repr__()
 
 
-# Canonical benchmark registry mapping benchmark name to benchmark entry (class, callable, or metadata dict)
-BENCHMARK_REGISTRY: Dict[str, Union[Type[BaseBenchmark], Callable[..., Any], Dict[str, Any]]] = _LazyBenchmarkRegistry()
+# Canonical benchmark registry mapping benchmark name to benchmark entry (class, callable, metadata dict, or BenchmarkSpec)
+BENCHMARK_REGISTRY: Dict[str, Union[Type[BaseBenchmark], Callable[..., Any], Dict[str, Any], BenchmarkSpec]] = (
+    _LazyBenchmarkRegistry()
+)
 
 # Detailed metadata index for registered benchmarks
 _BENCHMARK_METADATA: Dict[str, Dict[str, Any]] = _LazyBenchmarkRegistry()
@@ -260,7 +262,7 @@ class BenchmarkRegistry:
 
             modules = discover_all_modules()
             for m in modules:
-                cat = getattr(m, "type", None) or getattr(m, "module_type", "attention")
+                cat = str(getattr(m, "type", None) or getattr(m, "module_type", "attention"))
                 canon_name = f"{cat}:{m.name}"
                 spec = BenchmarkSpec(
                     canonical_name=canon_name,
@@ -421,7 +423,7 @@ def ensure_registry_populated() -> int:
     return BenchmarkRegistry.populate_canonical_benchmarks()
 
 
-def get_registry() -> Dict[str, Union[Type[BaseBenchmark], Callable[..., Any], Dict[str, Any]]]:
+def get_registry() -> Dict[str, Union[Type[BaseBenchmark], Callable[..., Any], Dict[str, Any], BenchmarkSpec]]:
     """Retrieve canonical BENCHMARK_REGISTRY, ensuring lazy population."""
     ensure_registry_populated()
     return BENCHMARK_REGISTRY

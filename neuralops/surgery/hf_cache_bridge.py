@@ -631,6 +631,15 @@ class RadixTreeNode:
         """Deterministic SHA-256 prefix hash of this node's token chunk."""
         return _compute_prefix_hash(self.token_chunk)
 
+    @property
+    def recurrent_state(self) -> Optional[Dict[int, torch.Tensor]]:
+        """Alias for prefix_state storing recurrent state per layer."""
+        return self.prefix_state
+
+    @recurrent_state.setter
+    def recurrent_state(self, val: Optional[Dict[int, torch.Tensor]]) -> None:
+        self.prefix_state = val
+
     def is_leaf(self) -> bool:
         return len(self.children) == 0
 
@@ -667,11 +676,7 @@ class SGLangRadixStateAdapter:
             for l_idx, s in state.recurrent_state_cache.items():
                 if isinstance(s, torch.Tensor):
                     state_dict[l_idx] = s.detach().clone()
-            for l_idx, item in enumerate(state.key_cache):
-                if isinstance(item, tuple):
-                    k = item[0]
-                else:
-                    k = item
+            for l_idx, k in enumerate(state.key_cache):
                 if l_idx not in state_dict and isinstance(k, torch.Tensor) and k.numel() > 0:
                     state_dict[l_idx] = k.detach().clone()
             return state_dict
@@ -964,10 +969,7 @@ def wrap_model_for_generation(model: torch.nn.Module) -> torch.nn.Module:
     Wraps model's prepare_inputs_for_generation or injects NeuralOpsHybridHFCache
     whenever model.generate() is called.
     """
-    if (
-        hasattr(model, "prepare_inputs_for_generation")
-        and not getattr(model, "_neuralops_hf_cache_bridge", False)
-    ):
+    if hasattr(model, "prepare_inputs_for_generation") and not getattr(model, "_neuralops_hf_cache_bridge", False):
         orig_prep = model.prepare_inputs_for_generation
 
         def _patched_prep(input_ids: torch.Tensor, **kwargs: Any) -> Dict[str, Any]:
@@ -1249,82 +1251,12 @@ def export_tensorrt_engine(
     **kwargs: Any,
 ) -> Path:
     """
-    Serializes a model or attention layer to an authentic TensorRT execution engine artifact.
-
-    Enforces AGENTS.md §6.1 Zero-Fake Artifact Rule:
-    Never writes placeholder files, text stubs, or mock binaries with '.trt' or '.engine' extensions.
-    If TensorRT / CUDA runtime is unavailable or engine compilation fails, raises RuntimeError immediately.
-
-    Args:
-        model: PyTorch module or neural attention layer to export.
-        output_path: Destination filesystem path for serialized engine (e.g. model.engine or model.trt).
-        sample_inputs: Representative input tensor tuple for ONNX tracing.
-        max_workspace_size: Maximum GPU memory scratchpad budget in bytes.
-        fp16: Enable FP16 precision builder flag.
-
-    Returns:
-        Path to authentic compiled TensorRT engine file.
+    Serializes a model or attention layer to a TensorRT execution engine artifact.
 
     Raises:
-        RuntimeError: If TensorRT/CUDA is unavailable, export fails, or zero-fake rule prevents placeholder generation.
+        NotImplementedError: TensorRT export requires ONNX intermediate; not implemented.
     """
-    target_path = Path(output_path).resolve()
-
-    target_path.parent.mkdir(parents=True, exist_ok=True)
-
-    if target_path.exists() and target_path.stat().st_size == 0:
-        target_path.unlink()
-
-    if not torch.cuda.is_available():
-        raise RuntimeError(
-            f"TensorRT engine export failed for {model.__class__.__name__}: "
-            "CUDA GPU hardware is not available on this host. "
-            "Per AGENTS.md §6.1, NeuralOps strictly refuses to write placeholder '.trt'/'.engine' artifacts."
-        )
-
-    try:
-        import tensorrt as trt
-    except ImportError as exc:
-        raise RuntimeError(
-            f"TensorRT engine export failed for {model.__class__.__name__}: "
-            "The 'tensorrt' Python package is not installed or importable. "
-            "Per AGENTS.md §6.1, NeuralOps strictly refuses to write placeholder '.trt'/'.engine' artifacts."
-        ) from exc
-
-    try:
-        logger_trt = trt.Logger(trt.Logger.WARNING)
-        builder = trt.Builder(logger_trt)
-        network_flags = 1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
-        network = builder.create_network(network_flags)
-        config = builder.create_builder_config()
-        if hasattr(config, "set_memory_pool_limit"):
-            config.set_memory_pool_limit(trt.MemoryPoolType.kWORKSPACE, max_workspace_size)
-        elif hasattr(config, "max_workspace_size"):
-            config.max_workspace_size = max_workspace_size
-
-        if fp16 and builder.platform_has_fast_fp16:
-            config.set_flag(trt.BuilderFlag.FP16)
-
-        serialized_engine = builder.build_serialized_network(network, config)
-        if serialized_engine is None:
-            raise RuntimeError(
-                f"TensorRT engine export failed: builder.build_serialized_network returned None for {model.__class__.__name__}."
-            )
-
-        with open(target_path, "wb") as f:
-            f.write(serialized_engine)
-
-        return target_path
-
-    except Exception as exc:
-        if target_path.exists():
-            target_path.unlink()
-        if isinstance(exc, RuntimeError):
-            raise
-        raise RuntimeError(
-            f"TensorRT engine compilation failed for {model.__class__.__name__}: {exc}. "
-            "Per AGENTS.md §6.1, NeuralOps strictly refuses to produce fake artifacts."
-        ) from exc
+    raise NotImplementedError("TensorRT export requires ONNX intermediate; not implemented")
 
 
 HFCacheBridge = NeuralOpsHybridHFCache

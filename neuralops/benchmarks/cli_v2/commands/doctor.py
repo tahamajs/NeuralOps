@@ -6,7 +6,9 @@ import sys
 from typing import Any, Dict, List, Optional
 
 
-def setup_doctor_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentParser:
+def setup_doctor_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> argparse.ArgumentParser:
     """Setup parser for doctor subcommand."""
     parser = subparsers.add_parser("doctor", help="Run comprehensive diagnostics on environment")
     parser.add_argument("--json", action="store_true", help="Format output as JSON")
