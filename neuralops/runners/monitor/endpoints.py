@@ -104,11 +104,15 @@ def stop_current_run() -> dict[str, Any]:
             "gpu",
             'taskkill /F /FI "COMMANDLINE eq *run_quality_sweep*"',
         ]
-        subprocess.run(
+        res = subprocess.run(
             cmd,
             shell=False,
             timeout=3,
+            capture_output=True,
+            text=True,
         )
+        if res.returncode != 0:
+            return {"success": False, "error": f"Command returned exit code {res.returncode}: {res.stderr.strip()}"}
         return {"success": True, "message": "GPU run halted successfully."}
     except Exception as e:
         return {"success": False, "error": str(e)}

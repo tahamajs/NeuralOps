@@ -15,8 +15,14 @@ from pathlib import Path
 
 
 def get_project_root() -> Path:
-    """Returns the absolute path to the project root directory (uni/Project)."""
-    return Path(__file__).resolve().parent.parent.parent.parent
+    """Returns the absolute path to the project root directory."""
+    root = Path(__file__).resolve().parent.parent.parent
+    if (root / "pyproject.toml").exists():
+        return root
+    for p in root.parents:
+        if (p / "pyproject.toml").exists():
+            return p
+    return root
 
 
 def get_datasets_dir() -> Path:

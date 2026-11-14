@@ -15,6 +15,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 def load_config(config_path: str | Path | None = None, **kwargs: Any) -> Any:
     """Delegate configuration loading to canonical neuralops.config.loader.load_config."""
     from neuralops.config.loader import load_config as _canonical_load_config
