@@ -101,24 +101,9 @@ class BenchmarkConfig:
         return self.batch_size * self.grad_accum_steps
 
     def compute_hash(self) -> str:
-        """Compute SHA256 configuration hash to verify run consistency.
-
-        Returns
-        -------
-        str
-            Hex digest representing configuration settings affecting models/data.
-        """
-        payload = {
-            "task": self.task,
-            "teacher": self.teacher,
-            "kd_steps": self.kd_steps,
-            "kd_lr": self.kd_lr,
-            "temperature": self.temperature,
-            "alpha": self.alpha,
-            "max_length": self.max_length,
-            "rank": self.rank,
-        }
-        encoded = json.dumps(payload, sort_keys=True).encode("utf-8")
+        """Compute SHA256 configuration hash across all fields to verify run consistency."""
+        payload = asdict(self)
+        encoded = json.dumps(payload, sort_keys=True, default=str).encode("utf-8")
         return hashlib.sha256(encoded).hexdigest()[:16]
 
     def to_dict(self) -> dict[str, Any]:

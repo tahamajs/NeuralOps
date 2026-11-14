@@ -114,6 +114,10 @@ class KDRunner:
         """Handle SIGINT gracefully by recording state and exiting cleanly."""
         logger.warning("Caught interrupt signal! Persisting state before termination...")
         self.interrupted = True
+        try:
+            self._atomic_save_state(self.state)
+        except Exception as e:
+            logger.error("Failed to save state on interrupt: %s", e)
 
     def _get_git_commit(self) -> str:
         """Retrieve current git commit hash if available."""
@@ -410,6 +414,7 @@ class KDRunner:
 
             trainable = [p for p in student.parameters() if p.requires_grad]
             if not trainable:
+                logger.warning("No attention modules found; training all student params")
                 for p in student.parameters():
                     p.requires_grad = True
                 trainable = [p for p in student.parameters() if p.requires_grad]
