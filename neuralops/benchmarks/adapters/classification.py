@@ -221,6 +221,8 @@ class ClassificationAdapter:
                     num_labels=getattr(self.dataset_meta, "num_labels", 2) or 2,
                 )
                 teacher_model.eval()
+                for p in teacher_model.parameters():
+                    p.requires_grad = False
 
             train_metrics = train_with_training_type(
                 model=self.model,
