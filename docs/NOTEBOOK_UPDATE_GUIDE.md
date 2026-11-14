@@ -1,6 +1,6 @@
 # NeuralOps Notebook Standard & Update Guide
 
-This document defines the architectural and coding standards for all 26 Jupyter demonstration notebooks in the `notebooks/` directory of the NeuralOps repository.
+This document defines the architectural and coding standards for all 94 Jupyter demonstration notebooks in the `notebooks/` directory of the NeuralOps repository.
 
 ---
 
@@ -26,7 +26,7 @@ The very first cell of every notebook must be a Markdown cell titled `# Prerequi
 
 - **Compute Target**: CPU-compatible (Standard execution) / GPU-accelerated (Triton & CUDA Kernels)
 - **Minimum VRAM**: 4 GB (when running on CUDA)
-- **External Dependencies**: `torch >= 2.1`, `neuralops >= 2.0.1`, `transformers`
+- **External Dependencies**: `torch >= 2.1`, `neuralops >= 2.1.0`, `transformers`
 - **Offline Safe**: Yes — utilizes offline synthetic token generators.
 ```
 

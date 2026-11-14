@@ -1,6 +1,6 @@
-# NeuralOps Recipe Format Guide (v1.0.0)
+# NeuralOps Recipe Format Guide (v2.1.0)
 
-This document provides a practical, user-facing guide to authoring, validating, and executing **NeuralOps Recipe Language (NRL) v1.0.0** recipes.
+This document provides a practical, user-facing guide to authoring, validating, and executing **NeuralOps Recipe Language (NRL) v1.0.0** recipes in **NeuralOps v2.1.0**.
 
 ---
 
@@ -135,6 +135,157 @@ The hashing engine:
 4. Normalizes text to Unicode NFC format.
 
 Two recipes differing only by indentation, comments, or key order will compute **identical** recipe hashes.
+
+---
+
+## 4.1 Declarative JSON/YAML Dual-Surface Representation
+
+NRL recipes support complete format interchangeability between YAML (human-authoring surface) and JSON (wire/canonical surface):
+
+```yaml
+# YAML Surface (Human authoring, supports comments)
+apiVersion: "neuralops/v1"
+kind: "Recipe"
+metadata:
+  name: "llama3-chunk-gla-surgery"
+  version: "1.0.0"
+  description: "Transplant attention to Chunk-GLA with 82-compressor AWQ quantization."
+model:
+  source: "meta-llama/Llama-3.1-8B"
+  dtype: "bfloat16"
+  revision: "48d6d03e9243bc50049a22e4da60f796a74a4785"
+  family: "llama"
+operations:
+  - id: "transplant-attn"
+    type: "attention.replace"
+    version: "1.0.0"
+    config:
+      target: "chunk_gla"
+      head_dim: 128
+      chunk_size: 64
+  - id: "quantize-mlp"
+    type: "weights.quantize"
+    version: "1.0.0"
+    config:
+      bits: 8
+      method: "fp8"
+      group_size: 128
+    depends_on: ["transplant-attn"]
+validation:
+  profile: "numerical"
+  policy: "fail_fast"
+execution:
+  device: "cuda"
+  seed: 42
+  rollback: true
+artifacts:
+  output_dir: "./output/llama3-gla"
+  save_model: true
+  save_report: true
+  format: "safetensors"
+```
+
+Equivalently in JSON:
+
+```json
+{
+  "apiVersion": "neuralops/v1",
+  "kind": "Recipe",
+  "metadata": {
+    "name": "llama3-chunk-gla-surgery",
+    "version": "1.0.0",
+    "description": "Transplant attention to Chunk-GLA with 82-compressor AWQ quantization."
+  },
+  "model": {
+    "source": "meta-llama/Llama-3.1-8B",
+    "dtype": "bfloat16",
+    "revision": "48d6d03e9243bc50049a22e4da60f796a74a4785",
+    "family": "llama"
+  },
+  "operations": [
+    {
+      "id": "transplant-attn",
+      "type": "attention.replace",
+      "version": "1.0.0",
+      "config": {
+        "target": "chunk_gla",
+        "head_dim": 128,
+        "chunk_size": 64
+      }
+    },
+    {
+      "id": "quantize-mlp",
+      "type": "weights.quantize",
+      "version": "1.0.0",
+      "config": {
+        "bits": 8,
+        "method": "fp8",
+        "group_size": 128
+      },
+      "depends_on": ["transplant-attn"]
+    }
+  ],
+  "validation": {
+    "profile": "numerical",
+    "policy": "fail_fast"
+  },
+  "execution": {
+    "device": "cuda",
+    "seed": 42,
+    "rollback": true
+  },
+  "artifacts": {
+    "output_dir": "./output/llama3-gla",
+    "save_model": true,
+    "save_report": true,
+    "format": "safetensors"
+  }
+}
+```
+
+The loader (`neuralops.recipe.load_recipe`) auto-detects YAML vs JSON, validates duplicate keys (`E_PARSE_DUP_KEY`), and verifies syntax down to exact line and column numbers.
+
+---
+
+## 4.2 Atomic Transaction Rollback Protocol
+
+NeuralOps execution is transactional and guaranteed safe against model corruption:
+
+```text
+       ┌────────────────┐
+       │ Operation Start │
+       └───────┬────────┘
+               ▼
+       ┌────────────────┐
+       │ Capture Atomic │  (Captures mutated paths: parameters, buffers,
+       │   Snapshot     │   submodules, config, and RNG state)
+       └───────┬────────┘
+               ▼
+       ┌────────────────┐
+       │ Apply Mutation │  (Execute operation: transplant, compress, etc.)
+       └───────┬────────┘
+               ▼
+       ┌────────────────┐
+       │ Run Validation │
+       │     Gates      │
+       └───────┬────────┘
+               │
+      Passes ──┴── Fails
+        │            │
+        ▼            ▼
+┌──────────────┐   ┌────────────────────────────────────────┐
+│ Commit Stage │   │ Rollback Triggered:                    │
+│   Evidence   │   │  - Restore weights, buffers, modules   │
+└──────────────┘   │  - Restore config & RNG state          │
+                   │  - Abort execution with PipelineError  │
+                   │  - Zero memory leaks, zero corruption  │
+                   └────────────────────────────────────────┘
+```
+
+1. **Selective Snapshot Scope:** Only parameters, buffers, and submodules declared in `op.declares_mutations` (or `stage.config["target"]`) are snapshotted, preserving memory.
+2. **SafeTensors Disk Spilling:** For multi-billion parameter models, snapshots can spill to disk (`spill_to_disk=True`) using SafeTensors format to avoid host RAM OOM.
+3. **Atomic Rollback Invariant:** If any validation gate fails (or an unhandled kernel error occurs), `restore(model, snapshot)` restores the pre-stage checkpoint bit-for-bit. Never does a corrupted intermediate state leak to subsequent stages or terminal export.
+4. **Failure Notification:** Raises `PipelineError` with exact error codes, the failing gate name, and remediation suggestions.
 
 ---
 

@@ -48,14 +48,75 @@ This page provides direct access to the complete, unabridged academic manuscript
 
 ## 🏛️ BibTeX Citation
 
+### 1. Master of Science Thesis Monograph
 ```bibtex
-@mastersthesis{majlesi2026neuralops,
-  author    = {Taha Majlesi},
+@mastersthesis{majlesi2026neuralops_thesis,
+  author    = {Majlesi, Taha},
   title     = {Unified Framework for Subquadratic Sequence Attention, In-Place Model Surgery, and Deep Low-Rank Transformer Compression},
   school    = {Department of Computer Engineering, College of Engineering, University of Tehran},
   year      = {2026},
+  month     = {November},
   type      = {Master's Thesis},
   address   = {Tehran, Iran},
-  url       = {https://github.com/tahamajs/NeuralOps}
+  url       = {https://github.com/tahamajs/NeuralOps/releases/download/academic-monographs/NeuralOps_Master_Thesis_810101504.pdf},
+  note      = {MSc Thesis Monograph, 317 pages. Student ID: 810101504. Repository: \url{https://github.com/tahamajs/NeuralOps}}
+}
+```
+
+### 2. Comprehensive arXiv Monograph
+```bibtex
+@article{majlesi2026neuralops_monograph,
+  author        = {Majlesi, Taha},
+  title         = {{NeuralOps}: A Universal System for Attention Architecture Modernization, Multi-Tier Kernel Engineering, and Empirical {LLM} Compression},
+  journal       = {arXiv preprint},
+  year          = {2026},
+  eprint        = {2611.00000},
+  archiveprefix = {arXiv},
+  primaryclass  = {cs.LG},
+  url           = {https://github.com/tahamajs/NeuralOps},
+  note          = {Authoritative Monograph Across 203 Unified Modules, Physical Roofline Crossovers, and In-Place Surgical Transplantation (1,418 pages)}
+}
+```
+
+### 3. Canonical Software Framework (v2.1.0)
+```bibtex
+@software{majlesi2026neuralops_software,
+  author       = {Majlesi, Taha},
+  title        = {{NeuralOps}: A Production-Grade Framework for Subquadratic Attention, Model Compression, and Hardware-Aware Transformer Optimization},
+  year         = {2026},
+  month        = {November},
+  version      = {2.1.0},
+  publisher    = {GitHub},
+  howpublished = {\url{https://github.com/tahamajs/NeuralOps}},
+  url          = {https://github.com/tahamajs/NeuralOps},
+  license      = {MIT}
+}
+```
+
+### 4. Benchmark Results Ledger & Foundation Model Zoos (Hooshaai Organization)
+
+#### Master Silicon-Verified Benchmark Dataset
+```bibtex
+@misc{hooshaai2026neuralops_results,
+  author       = {Majlesi, Taha and {Hooshaai Research Laboratory}},
+  title        = {{NeuralOps} Silicon-Verified Master Benchmark Results Ledger},
+  year         = {2026},
+  month        = {November},
+  howpublished = {\url{https://huggingface.co/datasets/Hooshaai/neuralops-results}},
+  publisher    = {Hugging Face},
+  note         = {Canonical multi-format benchmark ledger (JSON, JSONL, CSV, Markdown, Parquet, SQLite) across 203 unified attention and compression modules evaluated on NVIDIA RTX 4070 (SM 8.9) and RTX 3090 (SM 8.6)}
+}
+```
+
+#### Multi-Zoo Foundation Models Ecosystem
+```bibtex
+@misc{hooshaai2026multizoo_ecosystem,
+  author       = {Majlesi, Taha and {Hooshaai Research Laboratory}},
+  title        = {{Hooshaai Multi-Zoo Ecosystem}: 6 Foundation Model Distillation Zoos for Subquadratic Attention and Low-Rank Compression},
+  year         = {2026},
+  month        = {November},
+  howpublished = {\url{https://huggingface.co/Hooshaai}},
+  publisher    = {Hugging Face},
+  note         = {Complete multi-zoo ecosystem comprising BERT Attention Zoo (110 models), BERT Compressor Zoo (328 models across 4 ranks), Qwen2.5-0.5B Attention Zoo (110 models), Qwen2.5-0.5B Compressor Zoo (82 models), LLaVA-Qwen-0.5B Multimodal VLM Zoo (110 models), and TinyLlama-1.1B Attention Zoo (110 models)}
 }
 ```

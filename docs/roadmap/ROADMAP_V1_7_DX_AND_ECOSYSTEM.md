@@ -396,23 +396,23 @@ NeuralOps provides an interactive suite of browser-based visualizers built with 
 
 To drive massive adoption, users should be able to download pre-transplanted, pre-healed foundation models that run subquadratic attention immediately.
 
-#### Official NeuralOps Hugging Face Organization (`hf.co/NeuralOps`):
+#### Official NeuralOps Hugging Face Organization (`hf.co/Hooshaai`):
 
 | Model Checkpoint | Base Architecture | Surgery / Compression Applied | Primary Benchmark Advantage |
 | :--- | :--- | :--- | :--- |
-| **`NeuralOps/Llama-3-8B-ChunkGLA-Hybrid`** | Meta-Llama-3-8B | Layers 2–29 replaced with Chunk GLA; layers 0, 1, 30, 31 retained as quadratic Softmax | **$3.4\times$ Decode Speedup**, $512\times$ KV memory reduction, 98.4% accuracy retention |
-| **`NeuralOps/Qwen-2.5-7B-HNC-SVD-50`** | Qwen-2.5-7B | 50% parameter reduction via Hierarchical Nuclear-Conditioned SVD + Covariance Whitening | **$1.8\times$ Prefill Acceleration**, fits in 8GB VRAM |
-| **`NeuralOps/Mistral-7B-RetNet-Hybrid`** | Mistral-7B-v0.3 | Hybrid Multi-Scale Retention (MSR) with causal decay | **$4.1\times$ Long-Context Memory Reduction** at 64k tokens |
-| **`NeuralOps/Gemma-2-9B-Mamba2-Hybrid`** | Gemma-2-9B | Selective State Space (SSD) Mamba-2 hybrid layers | **Linear $\mathcal{O}(L)$ scaling**, zero attention quadratic memory barrier |
+| **`Hooshaai/Llama-3-8B-ChunkGLA-Hybrid`** | Meta-Llama-3-8B | Layers 2–29 replaced with Chunk GLA; layers 0, 1, 30, 31 retained as quadratic Softmax | **$3.4\times$ Decode Speedup**, $512\times$ KV memory reduction, 98.4% accuracy retention |
+| **`Hooshaai/Qwen-2.5-7B-HNC-SVD-50`** | Qwen-2.5-7B | 50% parameter reduction via Hierarchical Nuclear-Conditioned SVD + Covariance Whitening | **$1.8\times$ Prefill Acceleration**, fits in 8GB VRAM |
+| **`Hooshaai/Mistral-7B-RetNet-Hybrid`** | Mistral-7B-v0.3 | Hybrid Multi-Scale Retention (MSR) with causal decay | **$4.1\times$ Long-Context Memory Reduction** at 64k tokens |
+| **`Hooshaai/Gemma-2-9B-Mamba2-Hybrid`** | Gemma-2-9B | Selective State Space (SSD) Mamba-2 hybrid layers | **Linear $\mathcal{O}(L)$ scaling**, zero attention quadratic memory barrier |
 
 #### Zero-Effort Download & Execution:
 ```python
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # Download and run in 2 lines with standard Transformers!
-tokenizer = AutoTokenizer.from_pretrained("NeuralOps/Llama-3-8B-ChunkGLA-Hybrid")
+tokenizer = AutoTokenizer.from_pretrained("Hooshaai/Llama-3-8B-ChunkGLA-Hybrid")
 model = AutoModelForCausalLM.from_pretrained(
-    "NeuralOps/Llama-3-8B-ChunkGLA-Hybrid",
+    "Hooshaai/Llama-3-8B-ChunkGLA-Hybrid",
     torch_dtype="auto",
     device_map="auto",
     trust_remote_code=True,
@@ -462,7 +462,7 @@ The Developer Experience, Usability, and Ecosystem strategy is organized into th
 - **Deliverables:**
   - Setup `cibuildwheel` matrix on GitHub Actions for CUDA 12.1, 12.4, 12.8 and ROCm 6.2.
   - Launch interactive web Pareto tradeoff explorer in `docs/visualizer/pareto.html`.
-  - Publish `NeuralOps/Llama-3-8B-ChunkGLA-Hybrid` and `NeuralOps/Qwen-2.5-7B-HNC-SVD-50` to Hugging Face Hub.
+  - Publish `Hooshaai/Llama-3-8B-ChunkGLA-Hybrid` and `Hooshaai/Qwen-2.5-7B-HNC-SVD-50` to Hugging Face Hub.
 - **Quality Gates:**
   - Clean pip installation smoke test: `pip install "neuralops[cuda,serving]"` in clean isolated virtual environment.
   - Hugging Face `from_pretrained(..., trust_remote_code=True)` test passes and achieves expected perplexity envelope.

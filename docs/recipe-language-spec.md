@@ -707,7 +707,7 @@ NeuralOps maintains three distinct, independent versioning streams:
 2. **Operation Contract Version (`type: name, version: X.Y.Z`):**
    Governed by individual operation definitions. A breaking parameter change in `weights.compress` increments its major version (`2.0.0`) without bumping the language version.
 3. **Library Package Version (`neuralops.__version__`):**
-   The runtime software release (e.g., `1.9.0`), independent of recipe contracts. A recipe does not pin the library package version.
+   The runtime software release (e.g., `2.1.0`), independent of recipe contracts. A recipe does not pin the library package version.
 
 ---
 

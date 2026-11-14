@@ -2,7 +2,7 @@
 
 **Canonical Source of Truth:** `notebooks/` (94 unique Jupyter notebooks)
 **Compatibility Symlink:** `notebooks/extended -> .`
-**Current Release Alignment:** NeuralOps v2.0.6
+**Current Release Alignment:** NeuralOps v2.1.0
 
 ---
 
