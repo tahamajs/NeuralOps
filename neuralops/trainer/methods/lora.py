@@ -138,10 +138,14 @@ def apply_lora(model, config) -> None:
     _apply_adapters(model, config.lora_r, config.lora_alpha, config.lora_dropout, "lora")
 
 
-@register_method("dora")
-def apply_dora(model, config) -> None:
-    """Apply dora."""
-    _apply_adapters(model, config.lora_r, config.lora_alpha, config.lora_dropout, "dora")
+__all__ = [
+    "LoRALinear",
+    "DoRALinear",
+    "DisLoRALinear",
+    "apply_lora",
+    "apply_dora",
+    "apply_dislora",
+]
 
 
 @register_method("dislora")

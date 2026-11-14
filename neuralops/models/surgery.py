@@ -1035,6 +1035,58 @@ def _heal_replaced_model_impl(
     init_coss = []
     final_coss = []
 
+    def _detect_surg_input_dtype(mod: nn.Module) -> torch.dtype:
+        for attr in ("q_proj", "qkv_proj", "in_proj", "W_q", "query", "k_proj", "v_proj"):
+            sub = getattr(mod, attr, None)
+            if isinstance(sub, nn.Module):
+                sub_dts = [p.dtype for p in sub.parameters() if p.is_floating_point()]
+                if sub_dts:
+                    return sub_dts[0]
+        for p in mod.parameters():
+            if p.is_floating_point():
+                return p.dtype
+        for b in mod.buffers():
+            if b.is_floating_point():
+                return b.dtype
+        return torch.float32
+
+    def _call_surg_module(mod: nn.Module, x_in: torch.Tensor, in_dt: torch.dtype) -> torch.Tensor:
+        x_step = x_in.to(in_dt)
+        attempts = [
+            lambda: mod(x_step),
+            lambda: mod(hidden_states=x_step),
+            lambda: mod(x_step, x_step, x_step),
+            lambda: adapt_decoder_attention_forward(mod, x_step)[0],
+        ]
+        res = None
+        last_exc: Optional[Exception] = None
+        for att in attempts:
+            try:
+                res = att()
+                break
+            except (TypeError, RuntimeError) as e_att:
+                last_exc = e_att
+                continue
+        if res is None:
+            for alt_dt in (torch.float32, torch.float16, torch.bfloat16):
+                if alt_dt == in_dt:
+                    continue
+                try:
+                    x_alt = x_in.to(alt_dt)
+                    res = mod(x_alt)
+                    break
+                except Exception:
+                    try:
+                        res = mod(hidden_states=x_alt)
+                        break
+                    except Exception:
+                        continue
+        if res is None:
+            if last_exc is not None:
+                raise last_exc
+            raise RuntimeError(f"Failed to forward surgical module {type(mod).__name__}")
+        return res[0] if isinstance(res, tuple) else res
+
     for layer_name, _, s_mod in layer_pairs:
         in_list = cached_inputs.get(layer_name, [])
         tgt_list = cached_targets.get(layer_name, [])
@@ -1047,20 +1099,34 @@ def _heal_replaced_model_impl(
         trainable_params = [p for p in s_mod.parameters() if p.numel() > 0]
         if not trainable_params:
             continue
+
+        target_in_dtype = _detect_surg_input_dtype(s_mod)
+
+        # Harmonize mixed-dtype parameters inside s_mod if inconsistent
+        s_float_dts = {p.dtype for p in s_mod.parameters() if p.is_floating_point()}
+        if len(s_float_dts) > 1:
+            for p in s_mod.parameters():
+                if p.is_floating_point() and p.dtype != target_in_dtype:
+                    p.data = p.data.to(target_in_dtype)
+            for b in s_mod.buffers():
+                if b.is_floating_point() and b.dtype != target_in_dtype:
+                    b.data = b.data.to(target_in_dtype)
+
         for p in trainable_params:
             p.requires_grad = True
 
         with torch.no_grad():
             s_mod.eval()
-            try:
-                pred0 = s_mod(H_in.to(p.dtype))
-            except Exception:
-                try:
-                    pred0 = s_mod(hidden_states=H_in.to(p.dtype))
-                except Exception:
-                    pred0 = s_mod(H_in.to(p.dtype), H_in.to(p.dtype), H_in.to(p.dtype))
-            pred0_val = pred0[0] if isinstance(pred0, tuple) else pred0
+            pred0_val = _call_surg_module(s_mod, H_in, target_in_dtype)
             pred0_f = pred0_val.float()
+
+            if pred0_f.shape != Y_tgt.shape:
+                if pred0_f.numel() == Y_tgt.numel():
+                    pred0_f = pred0_f.reshape_as(Y_tgt)
+                elif pred0_f.ndim == Y_tgt.ndim and pred0_f.shape[:-1] == Y_tgt.shape[:-1]:
+                    min_dim = min(pred0_f.shape[-1], Y_tgt.shape[-1])
+                    pred0_f = pred0_f[..., :min_dim]
+                    Y_tgt = Y_tgt[..., :min_dim]
 
             denom_mse = float(torch.norm(Y_tgt, p="fro").item() ** 2 + 1e-6)
             init_mse = float(torch.norm(pred0_f - Y_tgt, p="fro").item() ** 2 / denom_mse)
@@ -1089,16 +1155,16 @@ def _heal_replaced_model_impl(
             Y_tgt_step = tgt_list[batch_idx % len(tgt_list)].to(target_dev)
             denom_mse_step = float(torch.norm(Y_tgt_step, p="fro").item() ** 2 + 1e-6)
 
-            try:
-                pred = s_mod(H_in_step.to(p.dtype))
-            except Exception:
-                try:
-                    pred = s_mod(hidden_states=H_in_step.to(p.dtype))
-                except Exception:
-                    pred = s_mod(H_in_step.to(p.dtype), H_in_step.to(p.dtype), H_in_step.to(p.dtype))
-
-            pred_val = pred[0] if isinstance(pred, tuple) else pred
+            pred_val = _call_surg_module(s_mod, H_in_step, target_in_dtype)
             pred_f = pred_val.float()
+
+            if pred_f.shape != Y_tgt_step.shape:
+                if pred_f.numel() == Y_tgt_step.numel():
+                    pred_f = pred_f.reshape_as(Y_tgt_step)
+                elif pred_f.ndim == Y_tgt_step.ndim and pred_f.shape[:-1] == Y_tgt_step.shape[:-1]:
+                    min_dim = min(pred_f.shape[-1], Y_tgt_step.shape[-1])
+                    pred_f = pred_f[..., :min_dim]
+                    Y_tgt_step = Y_tgt_step[..., :min_dim]
 
             loss_fro = torch.norm(pred_f - Y_tgt_step, p="fro") ** 2 / denom_mse_step
             loss_cos = (
@@ -1137,15 +1203,16 @@ def _heal_replaced_model_impl(
         s_mod.eval()
 
         with torch.no_grad():
-            try:
-                pred_final = s_mod(H_in.to(p.dtype))
-            except Exception:
-                try:
-                    pred_final = s_mod(hidden_states=H_in.to(p.dtype))
-                except Exception:
-                    pred_final = s_mod(H_in.to(p.dtype), H_in.to(p.dtype), H_in.to(p.dtype))
-            pred_final_val = pred_final[0] if isinstance(pred_final, tuple) else pred_final
+            pred_final_val = _call_surg_module(s_mod, H_in, target_in_dtype)
             pred_final_f = pred_final_val.float()
+
+            if pred_final_f.shape != Y_tgt.shape:
+                if pred_final_f.numel() == Y_tgt.numel():
+                    pred_final_f = pred_final_f.reshape_as(Y_tgt)
+                elif pred_final_f.ndim == Y_tgt.ndim and pred_final_f.shape[:-1] == Y_tgt.shape[:-1]:
+                    min_dim = min(pred_final_f.shape[-1], Y_tgt.shape[-1])
+                    pred_final_f = pred_final_f[..., :min_dim]
+                    Y_tgt = Y_tgt[..., :min_dim]
 
             final_mse = float(torch.norm(pred_final_f - Y_tgt, p="fro").item() ** 2 / denom_mse)
             final_cos = (
