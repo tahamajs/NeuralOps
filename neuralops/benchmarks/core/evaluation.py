@@ -190,11 +190,32 @@ def measure_resources(
     throughput = total_tokens / max(total_time, 1e-8)
     latency_ms_per_token = (total_time / max(total_tokens, 1)) * 1000.0
 
+    frag_stats = get_memory_fragmentation(device if isinstance(device, str) else str(device))
+
     return {
         "peak_vram_mb": float(peak_vram_mb),
         "latency_ms_per_token": float(latency_ms_per_token),
         "throughput_tok_per_sec": float(throughput),
+        **frag_stats,
     }
+
+
+def get_memory_fragmentation(device: str = "cuda:0") -> dict[str, float]:
+    """Measure GPU reserved vs allocated memory and fragmentation ratio."""
+    if not torch.cuda.is_available() or str(device).startswith("cpu"):
+        return {"reserved_mb": 0.0, "allocated_mb": 0.0, "fragmentation_ratio": 0.0}
+    try:
+        stats = torch.cuda.memory_stats(device)
+        reserved = stats.get("reserved_bytes.all.current", 0)
+        allocated = stats.get("allocated_bytes.all.current", 0)
+        frag = (reserved - allocated) / max(reserved, 1)
+        return {
+            "reserved_mb": float(reserved / (1024 * 1024)),
+            "allocated_mb": float(allocated / (1024 * 1024)),
+            "fragmentation_ratio": float(max(0.0, frag)),
+        }
+    except Exception:
+        return {"reserved_mb": 0.0, "allocated_mb": 0.0, "fragmentation_ratio": 0.0}
 
 
 def measure_peak_memory_mb(device: str | torch.device = "cpu") -> float:
@@ -238,4 +259,5 @@ __all__ = [
     "measure_resources",
     "measure_latency_and_throughput",
     "measure_peak_memory_mb",
+    "get_memory_fragmentation",
 ]

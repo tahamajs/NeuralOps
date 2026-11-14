@@ -103,17 +103,24 @@ class AbstractBaseBenchmark(ABC):
         except Exception:
             return torch.device("cpu")
 
-    def flush_l2_cache(self, size_mb: int = 40) -> None:
-        """Flush GPU L2 cache by reading through an isolated memory buffer."""
-        if self.device.type == "cuda" and torch.cuda.is_available():
+    def flush_l2_cache(self, size_mb: int | None = None) -> None:
+        """Flush GPU L2 cache dynamically querying hardware L2 size."""
+        if self.device.type != "cuda" or not torch.cuda.is_available():
+            return
+        if size_mb is None:
             try:
-                num_elements = (size_mb * 1024 * 1024) // 4
-                dummy = torch.empty(num_elements, dtype=torch.float32, device=self.device)
-                dummy.zero_()
-                torch.cuda.synchronize(self.device)
-                del dummy
+                l2_bytes = torch.cuda.get_device_properties(self.device).L2_cache_size
+                size_mb = max(32, int(l2_bytes / (1024 * 1024)) + 16)
             except Exception:
-                pass
+                size_mb = 64
+        try:
+            num_elements = (size_mb * 1024 * 1024) // 4
+            dummy = torch.empty(num_elements, dtype=torch.float32, device=self.device)
+            dummy.zero_()
+            torch.cuda.synchronize(self.device)
+            del dummy
+        except Exception:
+            pass
 
     def measure_latency(
         self,
