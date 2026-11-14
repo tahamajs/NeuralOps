@@ -15,6 +15,8 @@ eagerly importing native CUDA packages at import time.
 from __future__ import annotations
 
 import importlib
+import sys
+import types
 from typing import Any
 
 from neuralops.ops.cuda._map import _KERNEL_SYMBOL_MAP, _SPECIAL_MAP, CUDA_KERNEL_CATALOG
@@ -230,6 +232,27 @@ def __dir__() -> list[str]:
 __all__ = sorted(
     list(_KERNEL_SYMBOL_MAP.keys()) + list(_SPECIAL_MAP.keys()) + ["CUDA_KERNEL_CATALOG", "list_cuda_kernels"]
 )
+
+
+class _CUDAModule(types.ModuleType):
+    """Custom module type prioritizing operator symbols over submodule package objects.
+
+    When submodules (e.g. `neuralops.ops.cuda.moe_routing`) are imported directly, Python's
+    import subsystem attaches the submodule object into `sys.modules['neuralops.ops.cuda'].__dict__`.
+    This wrapper intercepts attribute access so that mapped operator functions are returned
+    instead of the submodule package.
+    """
+
+    def __getattribute__(self, name: str) -> Any:
+        val = super().__getattribute__(name)
+        if isinstance(val, types.ModuleType) and name in _KERNEL_SYMBOL_MAP:
+            rel_mod, attr_name = _KERNEL_SYMBOL_MAP[name]
+            if hasattr(val, attr_name):
+                return getattr(val, attr_name)
+        return val
+
+
+sys.modules[__name__].__class__ = _CUDAModule
 
 if "annotations" in globals():
     del annotations

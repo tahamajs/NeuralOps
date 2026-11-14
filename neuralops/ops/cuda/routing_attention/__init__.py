@@ -45,7 +45,11 @@ def routing_attention_forward(
     return out.to(dtype=q.dtype)
 
 
+routing_attention = routing_attention_forward
+
+
 __all__ = [
+    "routing_attention",
     "routing_attention_forward",
     "RoutingAttentionFunction",
     "routing_attention_ref",
