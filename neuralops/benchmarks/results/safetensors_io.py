@@ -152,6 +152,7 @@ def load_surgerized_safetensors(
     path: Path | str,
     device: str = "cpu",
     framework: str = "pt",
+    strict: bool = True,
 ) -> Tuple[Dict[str, Any], Dict[str, str]]:
     """Load weights and embedded provenance metadata from a SafeTensors file.
 
@@ -196,7 +197,10 @@ def load_surgerized_safetensors(
                     tensors[k] = f.get_tensor(k)
             return tensors, metadata
         except Exception as primary_exc:
-            # If PyTorch was requested but failed (e.g. torch not installed or CPU fallback), try np
+            # If PyTorch was requested and strict=True, fail closed
+            if framework_clean == "pt" and strict:
+                raise primary_exc
+            # If PyTorch was requested but failed (and not strict), try np
             if framework_clean == "pt":
                 try:
                     with safe_open(str(target), framework="np") as f:

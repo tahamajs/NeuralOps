@@ -44,10 +44,19 @@ class Deduplicator:
         return {}
 
     def save_index(self) -> None:
-        """Persist index to disk."""
+        """Persist index to disk with file locking."""
+        import fcntl
+
         try:
-            with open(self.index_file, "w", encoding="utf-8") as fp:
-                json.dump(self._index, fp, indent=2)
+            with open(self.index_file, "a+", encoding="utf-8") as fp:
+                try:
+                    fcntl.flock(fp.fileno(), fcntl.LOCK_EX)
+                    fp.seek(0)
+                    fp.truncate()
+                    json.dump(self._index, fp, indent=2)
+                    fp.flush()
+                finally:
+                    fcntl.flock(fp.fileno(), fcntl.LOCK_UN)
         except Exception as e:
             LOG.warning("Could not persist run_index.json: %s", e)
 

@@ -49,15 +49,23 @@ class BenchmarkSweepResumer:
 
         try:
             with open(self.journal_path, "r", encoding="utf-8") as fp:
-                for line in fp:
+                for line_num, line in enumerate(fp, 1):
                     line = line.strip()
                     if not line:
                         continue
                     try:
                         record = json.loads(line)
                         self._run_entries.append(record)
+                    except json.JSONDecodeError as jde:
+                        LOG.warning(
+                            "Failed to parse JSON in %s line %d: %s",
+                            self.journal_path,
+                            line_num,
+                            jde,
+                        )
+                        continue
 
-                        event = record.get("event", "")
+                    event = record.get("event", "")
                         run_id = record.get("run_id", "")
                         status = record.get("status", "")
 

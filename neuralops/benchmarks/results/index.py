@@ -159,6 +159,21 @@ class ResultsIndex:
     def _best_from_list(self, results: List[BenchmarkResult], metric: str) -> Optional[BenchmarkResult]:
         if not results:
             return None
+        if not any(
+            (r.metrics and metric in r.metrics) or (r.resources and metric in r.resources)
+            for r in results
+        ):
+            all_metrics = set()
+            for r in results:
+                if r.metrics:
+                    all_metrics.update(r.metrics.keys())
+                if r.resources:
+                    all_metrics.update(r.resources.keys())
+            raise ValueError(
+                f"Metric '{metric}' not found in any results. "
+                f"Available metrics: {sorted(all_metrics)}"
+            )
+
         is_lower_better = metric.lower() in ("perplexity", "loss", "latency_ms", "duration_s", "peak_vram_mb")
 
         def score_fn(res: BenchmarkResult) -> float:
