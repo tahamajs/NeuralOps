@@ -47,6 +47,7 @@ def finetune_classification(
 
     set_seed(42 if seed is None else seed)
     model.train()
+    trainable_params = [p for p in model.parameters() if p.requires_grad]
     opt_lower = (optimizer_name or "adamw").lower()
     if opt_lower == "muon":
         from neuralops.trainer.optimizers.muon import create_muon_adamw_optimizer
@@ -152,9 +153,20 @@ def finetune_classification(
         )
 
         for batch in pbar:
-            input_ids = batch[0].to(device)
-            attention_mask = batch[1].to(device)
-            labels = batch[2].to(device)
+            if isinstance(batch, dict):
+                input_ids = batch["input_ids"].to(device)
+                attention_mask = batch.get("attention_mask")
+                attention_mask = attention_mask.to(device) if attention_mask is not None else torch.ones_like(input_ids)
+                lbl = batch.get("labels") if "labels" in batch else batch.get("label")
+                labels = lbl.to(device) if lbl is not None else None
+            elif isinstance(batch, (tuple, list)):
+                input_ids = batch[0].to(device)
+                attention_mask = batch[1].to(device) if len(batch) > 1 else torch.ones_like(input_ids)
+                labels = batch[2].to(device) if len(batch) > 2 else None
+            else:
+                input_ids = batch.to(device)
+                attention_mask = torch.ones_like(input_ids)
+                labels = None
 
             optimizer.zero_grad()
             if amp_enabled:
