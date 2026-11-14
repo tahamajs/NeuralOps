@@ -6,7 +6,9 @@ import sys
 from typing import Any, Dict, List, Optional
 
 
-def setup_results_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentParser:
+def setup_results_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> argparse.ArgumentParser:
     """Setup parser for results subcommand."""
     parser = subparsers.add_parser("results", help="Inspect and query benchmark results")
     parser.add_argument("--output-dir", type=str, default="results", help="Output directory to inspect")

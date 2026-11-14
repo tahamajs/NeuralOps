@@ -6,7 +6,9 @@ import sys
 from typing import Any, Dict, List, Optional
 
 
-def setup_ui_parser(subparsers: argparse._SubParsersAction) -> argparse.ArgumentParser:
+def setup_ui_parser(
+    subparsers: argparse._SubParsersAction[argparse.ArgumentParser],
+) -> argparse.ArgumentParser:
     """Setup parser for ui subcommand."""
     parser = subparsers.add_parser("ui", help="Launch NeuralOps Web UI dashboard")
     parser.add_argument("--port", type=int, default=8080, help="Server port (default: 8080)")
