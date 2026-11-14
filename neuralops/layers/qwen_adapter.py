@@ -12,6 +12,7 @@ Adapts any NeuralOps attention module into a drop-in replacement for
 Hugging Face Qwen2Attention / Qwen2DecoderLayer, standardizing forward signature,
 causal mask conversion, GQA (14:2) weight expansion, and O(1) recurrent state decoding.
 """
+
 from __future__ import annotations
 
 import logging
@@ -98,7 +99,9 @@ class QwenAttentionAdapter(nn.Module):
                             setattr(self.core, alias, identity)
                         except AttributeError:
                             continue
-                logger.debug("Single-o_proj Contract: Bypassed %s with nn.Identity() in %s", attr_name, type(self.core).__name__)
+                logger.debug(
+                    "Single-o_proj Contract: Bypassed %s with nn.Identity() in %s", attr_name, type(self.core).__name__
+                )
                 break
 
     def _inherit_weights(self, source_attn: nn.Module) -> None:
@@ -106,6 +109,7 @@ class QwenAttentionAdapter(nn.Module):
         Transplants weights from Qwen2Attention with automatic GQA (14:2) expansion.
         Supports both raw nn.Linear and LoRALinear wrappers cleanly.
         """
+
         def _unwrap_proj(mod: Any) -> nn.Module | None:
             if mod is None:
                 return None
@@ -134,7 +138,9 @@ class QwenAttentionAdapter(nn.Module):
                     target_k.weight.data.copy_(k_src.weight.data)
                     if target_k.bias is not None and k_src.bias is not None:
                         target_k.bias.data.copy_(k_src.bias.data)
-                elif target_k.weight.shape == (self.embed_dim, self.embed_dim) and k_src.weight.shape[0] < self.embed_dim:
+                elif (
+                    target_k.weight.shape == (self.embed_dim, self.embed_dim) and k_src.weight.shape[0] < self.embed_dim
+                ):
                     # GQA expansion: repeat KV heads to match query heads (e.g. 2 heads -> 14 heads, repeat factor 7)
                     repeat_factor = self.num_heads // self.num_kv_heads
                     kv_heads = self.num_kv_heads
@@ -151,12 +157,12 @@ class QwenAttentionAdapter(nn.Module):
                     if target_k.bias is not None and k_src.bias is not None:
                         src_b = k_src.bias.data
                         expanded_b = (
-                            src_b.view(kv_heads, h_dim)
-                            .repeat_interleave(repeat_factor, dim=0)
-                            .reshape(self.embed_dim)
+                            src_b.view(kv_heads, h_dim).repeat_interleave(repeat_factor, dim=0).reshape(self.embed_dim)
                         )
                         target_k.bias.data.copy_(expanded_b)
-                    logger.debug("Transplanted Key projection with GQA (14:2) repeat_interleave factor %d", repeat_factor)
+                    logger.debug(
+                        "Transplanted Key projection with GQA (14:2) repeat_interleave factor %d", repeat_factor
+                    )
 
             # 3. Value projection (GQA expansion if target is MHA)
             target_v = _unwrap_proj(getattr(self.core, "v_proj", None))
@@ -165,7 +171,9 @@ class QwenAttentionAdapter(nn.Module):
                     target_v.weight.data.copy_(v_src.weight.data)
                     if target_v.bias is not None and v_src.bias is not None:
                         target_v.bias.data.copy_(v_src.bias.data)
-                elif target_v.weight.shape == (self.embed_dim, self.embed_dim) and v_src.weight.shape[0] < self.embed_dim:
+                elif (
+                    target_v.weight.shape == (self.embed_dim, self.embed_dim) and v_src.weight.shape[0] < self.embed_dim
+                ):
                     repeat_factor = self.num_heads // self.num_kv_heads
                     kv_heads = self.num_kv_heads
                     h_dim = self.head_dim
@@ -181,12 +189,12 @@ class QwenAttentionAdapter(nn.Module):
                     if target_v.bias is not None and v_src.bias is not None:
                         src_b = v_src.bias.data
                         expanded_b = (
-                            src_b.view(kv_heads, h_dim)
-                            .repeat_interleave(repeat_factor, dim=0)
-                            .reshape(self.embed_dim)
+                            src_b.view(kv_heads, h_dim).repeat_interleave(repeat_factor, dim=0).reshape(self.embed_dim)
                         )
                         target_v.bias.data.copy_(expanded_b)
-                    logger.debug("Transplanted Value projection with GQA (14:2) repeat_interleave factor %d", repeat_factor)
+                    logger.debug(
+                        "Transplanted Value projection with GQA (14:2) repeat_interleave factor %d", repeat_factor
+                    )
 
             # 4. Output projection (896, 896)
             if o_src is not None and isinstance(o_src, nn.Linear):
@@ -206,6 +214,7 @@ class QwenAttentionAdapter(nn.Module):
                         logger.debug("Initialized Qwen retention gate bias %s to [2.0, 3.0]", gate_attr)
 
         except Exception as e:
+            # allowed-swallow: Qwen weight inheritance is best-effort across arbitrary core attention modules
             logger.debug("Qwen weight inheritance partial or skipped: %s", e)
 
     def forward(
@@ -271,9 +280,12 @@ class QwenAttentionAdapter(nn.Module):
         # Check dimension alignment
         if context.shape[-1] != self.embed_dim:
             if not hasattr(self, "_dim_proj"):
-                self._dim_proj = nn.Linear(
+                dim_proj = nn.Linear(
                     context.shape[-1], self.embed_dim, bias=False, device=context.device, dtype=context.dtype
                 )
+                self.add_module("_dim_proj", dim_proj)
+            if self._dim_proj.weight.device != context.device or self._dim_proj.weight.dtype != context.dtype:
+                self._dim_proj = self._dim_proj.to(device=context.device, dtype=context.dtype)
             context = self._dim_proj(context)
 
         # Single-o_proj Contract: apply canonical output projection strictly once
