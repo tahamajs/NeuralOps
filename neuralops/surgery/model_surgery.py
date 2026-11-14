@@ -123,8 +123,12 @@ class ModelSurgery:
             logger.warning("AutoModel.from_pretrained failed (%s); trying torch.load fallback", e)
             try:
                 model = torch.load(model_name_or_path, map_location="cpu", weights_only=True)
-            except Exception:
-                model = torch.load(model_name_or_path, map_location="cpu", weights_only=False)
+            except (TypeError, Exception) as load_err:
+                try:
+                    # Fallback for PyTorch < 2.0 without weights_only parameter
+                    model = torch.load(model_name_or_path, map_location="cpu")
+                except Exception as inner_e:
+                    raise RuntimeError(f"Failed to load model from {model_name_or_path}: {inner_e}") from inner_e
 
         return cls(model=model)
 
