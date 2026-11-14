@@ -24,11 +24,35 @@ class NumericalValidator:
 
     @staticmethod
     def check_finite(tensor: torch.Tensor, name: str) -> ValidationStatus:
-        if torch.isnan(tensor).any():
-            raise ValueError(f"NaN in {name}")
-        if torch.isinf(tensor).any():
-            raise ValueError(f"Inf in {name}")
-        return ValidationStatus({"status": "passed", "passed": True, "name": name})
+        if not isinstance(tensor, torch.Tensor):
+            return ValidationStatus({
+                "status": "failed",
+                "passed": False,
+                "name": name,
+                "error": f"Expected torch.Tensor, got {type(tensor).__name__}",
+                "has_nan": False,
+                "has_inf": False,
+            })
+        has_nan = bool(torch.isnan(tensor).any().item())
+        has_inf = bool(torch.isinf(tensor).any().item())
+        passed = not (has_nan or has_inf)
+        error = None
+        if has_nan:
+            error = f"NaN in {name}"
+        elif has_inf:
+            error = f"Inf in {name}"
+
+        status = "passed" if passed else "failed"
+        data = {
+            "status": status,
+            "passed": passed,
+            "name": name,
+            "has_nan": has_nan,
+            "has_inf": has_inf,
+        }
+        if error:
+            data["error"] = error
+        return ValidationStatus(data)
 
     @staticmethod
     def check_range(

@@ -33,26 +33,57 @@ class SpeedValidator:
         warmup: int = 3,
         iters: int = 10,
     ) -> ValidationStatus:
+        """Run benchmark iterations and compute step time and throughput."""
         model.train()
         optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
+
+        def _forward_step() -> None:
+            out = model(**batch)
+            if hasattr(out, "loss") and out.loss is not None:
+                loss = out.loss
+            elif isinstance(out, (tuple, list)) and len(out) > 0:
+                loss = out[0]
+            elif isinstance(out, torch.Tensor):
+                loss = out
+            else:
+                loss = getattr(out, "logits", out)
+            if isinstance(loss, torch.Tensor) and loss.requires_grad:
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+
         for _ in range(warmup):
-            out = model(**batch)
-            loss = out.loss if hasattr(out, "loss") else out[0]
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
-        if torch.cuda.is_available() and device.startswith("cuda"):
-            torch.cuda.synchronize()
-        t0 = time.time()
-        for _ in range(iters):
-            out = model(**batch)
-            loss = out.loss if hasattr(out, "loss") else out[0]
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
-        if torch.cuda.is_available() and device.startswith("cuda"):
-            torch.cuda.synchronize()
-        dt = (time.time() - t0) / iters
+            _forward_step()
+
+        is_cuda = torch.cuda.is_available() and str(device).startswith("cuda")
+
+        if is_cuda:
+            dev = torch.device(device)
+            # Rule 2.3 — L2 Cache Flush before timing
+            try:
+                l2_bytes = torch.cuda.get_device_properties(dev).L2_cache_size
+                buffer = torch.empty(l2_bytes // 4, dtype=torch.int32, device=dev)
+                buffer.zero_()
+                torch.cuda.synchronize(dev)
+            except Exception:
+                pass
+
+            # Rule 2.2 — CUDA Timing with Events
+            start_event = torch.cuda.Event(enable_timing=True)
+            end_event = torch.cuda.Event(enable_timing=True)
+            start_event.record()
+            for _ in range(iters):
+                _forward_step()
+            end_event.record()
+            torch.cuda.synchronize(dev)
+            elapsed_ms = start_event.elapsed_time(end_event)
+            dt = (elapsed_ms / 1000.0) / max(1, iters)
+        else:
+            t0 = time.perf_counter()
+            for _ in range(iters):
+                _forward_step()
+            dt = (time.perf_counter() - t0) / max(1, iters)
+
         bs = batch["input_ids"].size(0) if ("input_ids" in batch and hasattr(batch["input_ids"], "size")) else 1
         throughput = (bs / dt) if dt > 0 else 0.0
 

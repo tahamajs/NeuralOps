@@ -90,6 +90,9 @@ def init(
         if deterministic:
             torch.backends.cudnn.deterministic = True
             torch.backends.cudnn.benchmark = False
+    elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        if deterministic:
+            torch.use_deterministic_algorithms(True)
 
     return config
 

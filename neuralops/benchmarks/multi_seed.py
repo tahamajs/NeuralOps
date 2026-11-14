@@ -248,7 +248,7 @@ class MultiSeedConfig:
     dry_run: bool = False
 
     def __post_init__(self) -> None:
-        if self.preset and self.preset in SEED_PRESETS:
+        if self.preset and self.preset in SEED_PRESETS and (not self.seeds or self.seeds == list(TIER1_CANONICAL_SEEDS)):
             self.seeds = list(SEED_PRESETS[self.preset])
 
 

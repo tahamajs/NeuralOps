@@ -87,6 +87,7 @@ std::vector<torch::Tensor> mamba2_block_fwd(
     int D = u.size(1);
     int L = u.size(2);
     int N = B_mat.size(1);
+    TORCH_CHECK(N <= 64, "mamba2_block_fwd: state dimension N must be <= 64, got ", N);
 
     auto out = torch::empty_like(u);
     auto final_state = torch::empty({B, D, N}, u.options());

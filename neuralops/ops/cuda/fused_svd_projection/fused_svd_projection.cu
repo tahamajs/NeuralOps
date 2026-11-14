@@ -49,12 +49,6 @@ __global__ void __launch_bounds__(256) fused_svd_projection_fwd_kernel(
     const bool has_res,
     const bool has_bias
 ) {
-    // 2D thread block: 16 x 16 threads (256 threads)
-    // Tiling M dimension with TILE_SIZE=32, D_out dimension with TILE_SIZE=32
-    // Pad column dimension to 33 floats to guarantee conflict-free bank access
-    __shared__ float s_X[TILE_SIZE][TILE_SIZE + 1];
-    __shared__ float s_U[TILE_SIZE][TILE_SIZE + 1];
-
     const int m = blockIdx.x * blockDim.x + threadIdx.x;
     if (m >= M) return;
 

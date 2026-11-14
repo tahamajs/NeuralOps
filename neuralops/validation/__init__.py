@@ -14,7 +14,7 @@ from .data_validator import DataValidator
 from .memory_validator import MemoryTracker
 from .model_validator import ModelValidator
 from .numerical_validator import NumericalValidator
-from .profiles import ValidationProfile, get_gates_for_profile
+from .profiles import EmpiricalBenchmarkGate, ValidationProfile, get_gates_for_profile
 from .recipe_validator import (
     E_GATE_ERROR,
     E_GATE_FATAL,
@@ -63,6 +63,7 @@ __all__ = [
     "Gate",
     "GateResult",
     "GateSeverity",
+    "EmpiricalBenchmarkGate",
     "ValidationProfile",
     "ValidationResult",
     "get_gates_for_profile",

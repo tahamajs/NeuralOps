@@ -23,5 +23,3 @@ __all__ = [
     "WANDB_BACKEND",
     "MLFLOW_BACKEND",
 ]
-
-from neuralops.tracking import backends, callbacks, tracker

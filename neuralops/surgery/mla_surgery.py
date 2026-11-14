@@ -95,6 +95,12 @@ def apply_rotary_pos_emb(
     if cos is None or sin is None:
         return x
     d = x.shape[-1]
+    if cos.shape[-1] == d // 2:
+        cos = torch.cat([cos, cos], dim=-1)
+        sin = torch.cat([sin, sin], dim=-1)
+    elif cos.shape[-1] == d and not torch.allclose(cos[..., : d // 2], cos[..., d // 2 :]):
+        cos = torch.cat([cos[..., : d // 2], cos[..., : d // 2]], dim=-1)
+        sin = torch.cat([sin[..., : d // 2], sin[..., : d // 2]], dim=-1)
     x1 = x[..., : d // 2]
     x2 = x[..., d // 2 :]
     rotated = torch.cat([-x2, x1], dim=-1)

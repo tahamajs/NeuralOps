@@ -32,20 +32,22 @@ __global__ void __launch_bounds__(256) paged_recurrent_step_kernel(
     const int h = bh % H;
     const int d2 = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (b >= B || h >= H || d2 >= D) return;
+    if (b >= B || h >= H) return;
 
     const int64_t phys_page = (max_pages > 1) ? block_tables[b * max_pages + page_slot] : block_tables[b];
     const int page_stride = H * D * D;
     const int head_stride = D * D;
 
-    // Vectorized read of q, k into shared memory buffer
+    // Vectorized read of q, k into shared memory buffer across all threads in block
     __shared__ float s_q[256];
     __shared__ float s_k[256];
-    if (threadIdx.x < D) {
-        s_q[threadIdx.x] = to_float(q[(b * H + h) * D + threadIdx.x]);
-        s_k[threadIdx.x] = to_float(k[(b * H + h) * D + threadIdx.x]);
+    for (int i = threadIdx.x; i < D && i < 256; i += blockDim.x) {
+        s_q[i] = to_float(q[(b * H + h) * D + i]);
+        s_k[i] = to_float(k[(b * H + h) * D + i]);
     }
     __syncthreads();
+
+    if (d2 >= D) return;
 
     float out_val = 0.0f;
     const float v_val = to_float(v[(b * H + h) * D + d2]);
@@ -85,6 +87,7 @@ torch::Tensor paged_recurrent_step_fwd(
     const int B = q.size(0);
     const int H = q.size(1);
     const int D = q.size(2);
+    TORCH_CHECK(D <= 256, "paged_recurrent_step requires head dimension D <= 256, got ", D);
     const int max_pages = (block_tables.dim() > 1) ? block_tables.size(1) : 1;
 
     auto out = torch::empty_like(q);

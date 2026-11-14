@@ -74,6 +74,7 @@ class Gate(ABC):
         required: bool = True,
         config: Optional[Dict[str, Any]] = None,
         severity: GateSeverity = GateSeverity.ERROR,
+        **kwargs: Any,
     ) -> None:
         if name:
             self.name = name
