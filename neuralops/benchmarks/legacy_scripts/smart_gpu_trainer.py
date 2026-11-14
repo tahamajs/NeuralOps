@@ -20,6 +20,7 @@ Maximizes GPU throughput with:
 from __future__ import annotations
 
 import argparse
+import logging
 import math
 import sys
 import time
@@ -31,6 +32,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from neuralops.trainer.distillation.multi_level_kd import LogitDistillationLoss
+
+logger = logging.getLogger(__name__)
 
 
 class SmartGPUTrainer:
@@ -105,15 +108,16 @@ class SmartGPUTrainer:
                 enabled=(self.amp_dtype == torch.float16 and self.device.type == "cuda"),
             )
         else:
-            self.scaler = torch.cuda.amp.GradScaler(
-                enabled=(self.amp_dtype == torch.float16 and self.device.type == "cuda")
+            self.scaler = torch.amp.GradScaler(
+                "cuda",
+                enabled=(self.amp_dtype == torch.float16 and self.device.type == "cuda"),
             )
 
         if use_compile and hasattr(torch, "compile"):
             try:
                 self.student = torch.compile(self.student)
-            except Exception:
-                pass
+            except Exception as exc:  # allowed-swallow: torch.compile may not be supported on this backend
+                logger.warning("torch.compile skipped: %s", exc)
 
         self.logit_loss_fn = LogitDistillationLoss(mode="forward_kl", temperature=2.0)
 

@@ -18,6 +18,8 @@ from __future__ import annotations
 import argparse
 import sys
 
+import torch
+
 from neuralops.benchmarks.benchmark_all_26_comprehensive import main as _canonical_main
 
 
