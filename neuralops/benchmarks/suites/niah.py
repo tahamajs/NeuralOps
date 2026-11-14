@@ -73,76 +73,7 @@ class NeedleInAHaystackBenchmark(AbstractBaseBenchmark):
         depth: float,
         **kwargs: Any,
     ) -> Dict[str, float]:
-        self.flush_l2_cache()
-
-        state_dim = 64
-        needle_pos = max(0, min(int(ctx_len * depth), ctx_len - 1))
-        dtype = torch.float32
-
-        try:
-            key = torch.randn(1, 1, state_dim, device=self.device, dtype=dtype)
-            haystack = torch.randn(1, ctx_len, state_dim, device=self.device, dtype=dtype)
-            needle = key + 0.001 * torch.randn_like(key)
-            haystack[:, needle_pos : needle_pos + 1, :] = needle
-
-            def eval_retrieval() -> int:
-                scores = torch.matmul(haystack, key.transpose(-1, -2)).squeeze(-1)
-                return int(torch.argmax(scores, dim=-1).item())
-
-            latency_ms, _ = self.measure_latency(eval_retrieval, warmup=1, repeat=3)
-            predicted_pos = eval_retrieval()
-            success = abs(predicted_pos - needle_pos) <= 2
-            accuracy = 1.0 if success else 0.0
-
-            self.tracker.log_metric("niah_retrieval_accuracy", accuracy, step=step)
-            self.tracker.log_metric("niah_latency_ms", latency_ms, step=step)
-
-            result_entry = {
-                "step": step,
-                "mechanism_or_kernel": f"niah_ctx{ctx_len}_depth{int(depth * 100)}",
-                "batch_size": 1,
-                "seq_len": ctx_len,
-                "dtype": "fp32",
-                "depth_pct": depth,
-                "latency_ms": latency_ms,
-                "latency_p50_ms": latency_ms,
-                "latency_p90_ms": latency_ms,
-                "latency_p99_ms": latency_ms,
-                "retrieval_accuracy": accuracy,
-                "predicted_pos": predicted_pos,
-                "actual_pos": needle_pos,
-                "tflops": 0.0,
-                "peak_vram_mb": 0.0,
-                "status": "PASS",
-            }
-            self.results_table.append(result_entry)
-            return {"accuracy": accuracy, "latency_ms": latency_ms}
-
-        except Exception as e:
-            logger.warning("NIAH iteration failed at ctx=%d, depth=%.2f: %s", ctx_len, depth, e)
-            self.results_table.append(
-                {
-                    "step": step,
-                    "mechanism_or_kernel": f"niah_ctx{ctx_len}_depth{int(depth * 100)}",
-                    "batch_size": 1,
-                    "seq_len": ctx_len,
-                    "dtype": "fp32",
-                    "depth_pct": depth,
-                    "latency_ms": 0.0,
-                    "latency_p50_ms": 0.0,
-                    "latency_p90_ms": 0.0,
-                    "latency_p99_ms": 0.0,
-                    "retrieval_accuracy": 0.0,
-                    "predicted_pos": -1,
-                    "actual_pos": needle_pos,
-                    "tflops": 0.0,
-                    "peak_vram_mb": 0.0,
-                    "status": f"FAILED_RUNTIME: {e}",
-                }
-            )
-            self.tracker.log_metric("niah_retrieval_accuracy", 0.0, step=step)
-            self.tracker.log_metric("niah_latency_ms", 0.0, step=step)
-            return {"accuracy": 0.0, "latency_ms": 0.0}
+        raise NotImplementedError("NIAH requires real model; not implemented")
 
     def run(self) -> None:
         step = 0

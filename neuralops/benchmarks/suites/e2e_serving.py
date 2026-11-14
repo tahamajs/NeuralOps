@@ -49,74 +49,7 @@ class ServingBenchmark(AbstractBaseBenchmark):
         gen_len: int = 32,
         **kwargs: Any,
     ) -> Dict[str, float]:
-        self.flush_l2_cache()
-
-        dim = 64
-
-        # Prefill simulation
-        def prefill() -> Any:
-            x = torch.randn(batch_size, prompt_len, dim, device=self.device)
-            return torch.matmul(x, x.transpose(-1, -2))
-
-        # Decode simulation
-        def decode_step() -> Any:
-            t = torch.randn(batch_size, 1, dim, device=self.device)
-            return t * 2.0
-
-        try:
-            ttft_ms, _ = self.measure_latency(prefill, warmup=1, repeat=2)
-            itl_ms, _ = self.measure_latency(decode_step, warmup=1, repeat=gen_len)
-
-            total_tokens = batch_size * gen_len
-            total_time_s = (ttft_ms + itl_ms * gen_len) / 1000.0
-            throughput = _sanitize_float(total_tokens / max(total_time_s, 1e-6))
-
-            self.tracker.log_metric("ttft_ms", ttft_ms, step=step)
-            self.tracker.log_metric("throughput_tokens_per_sec", throughput, step=step)
-
-            result_entry = {
-                "step": step,
-                "mechanism_or_kernel": "serving_simulation",
-                "batch_size": batch_size,
-                "seq_len": prompt_len + gen_len,
-                "dtype": "fp32",
-                "latency_ms": ttft_ms,
-                "latency_p50_ms": ttft_ms,
-                "latency_p90_ms": ttft_ms,
-                "latency_p99_ms": ttft_ms,
-                "ttft_ms": ttft_ms,
-                "itl_ms": itl_ms,
-                "throughput_tokens_per_sec": throughput,
-                "tflops": 0.0,
-                "peak_vram_mb": 0.0,
-                "status": "PASS",
-            }
-            self.results_table.append(result_entry)
-            return {"ttft_ms": ttft_ms, "throughput_tokens_per_sec": throughput}
-
-        except Exception as e:
-            logger.warning("Serving simulation error: %s", e)
-            self.results_table.append(
-                {
-                    "step": step,
-                    "mechanism_or_kernel": "serving_simulation",
-                    "batch_size": batch_size,
-                    "seq_len": prompt_len + gen_len,
-                    "dtype": "fp32",
-                    "latency_ms": 0.0,
-                    "latency_p50_ms": 0.0,
-                    "latency_p90_ms": 0.0,
-                    "latency_p99_ms": 0.0,
-                    "ttft_ms": 0.0,
-                    "itl_ms": 0.0,
-                    "throughput_tokens_per_sec": 0.0,
-                    "tflops": 0.0,
-                    "peak_vram_mb": 0.0,
-                    "status": f"FAILED_RUNTIME: {e}",
-                }
-            )
-            self.tracker.log_metric("ttft_ms", 0.0, step=step)
-            return {"ttft_ms": 0.0, "throughput_tokens_per_sec": 0.0}
+        raise NotImplementedError("e2e_serving requires real serving framework; not implemented")
 
     def run(self) -> None:
         step = 0
