@@ -90,20 +90,20 @@ def test_latex_table_generator_from_sqlite(tmp_path):
 def test_headless_non_tty_fallback(tmp_path, capsys):
     """Verify that CLI components fall back gracefully without Rich errors in non-TTY (PBS job) mode."""
     # 1. Test terminal_ui banner in headless mode
-    with patch("neuralops.cli.terminal_ui.HAS_RICH", False):
+    with patch("neuralops.benchmarks.terminal_ui.HAS_RICH", False):
         print_banner()
         out = capsys.readouterr().out
         assert "NeuralOps CLI" in out
 
     # 2. Test terminal_ui help in headless mode
-    with patch("neuralops.cli.terminal_ui.HAS_RICH", False):
+    with patch("neuralops.benchmarks.terminal_ui.HAS_RICH", False):
         print_hf_style_help()
         out = capsys.readouterr().out
         assert "Usage: neuralops" in out
         assert "Commands:" in out
 
     # 3. Test interactive UI without rich falling back to help
-    with patch("neuralops.cli.terminal_ui.HAS_RICH", False):
+    with patch("neuralops.benchmarks.terminal_ui.HAS_RICH", False):
         run_interactive_ui()
         out = capsys.readouterr().out
         assert "Interactive mode requires 'rich'. Falling back to standard help." in out
