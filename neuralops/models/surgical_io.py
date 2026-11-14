@@ -438,6 +438,7 @@ def save_surgical_delta(
     unless explicitly requested via ``surgeried_prefixes`` or ``trained_param_names``.
     """
     path = Path(save_dir)
+    pre_existing = set(p.name for p in path.iterdir()) if path.exists() else set()
     path.mkdir(parents=True, exist_ok=True)
 
     manifest = extract_surgical_manifest(model)
@@ -502,6 +503,9 @@ def save_surgical_delta(
     if remove_full_weights:
         for heavy_name in ("pytorch_model.bin", "model.safetensors", "surgical_model_state.pt", "optimizer.pt"):
             if heavy_name == weights_filename:
+                continue
+            if heavy_name in pre_existing:
+                logger.warning("Skipping deletion of pre-existing heavy file: %s", path / heavy_name)
                 continue
             heavy_path = path / heavy_name
             if heavy_path.exists():
@@ -819,6 +823,25 @@ def load_surgical_checkpoint(
     load_res = base_model.load_state_dict(state_dict, strict=effective_strict)
     if is_delta_ckpt and strict and getattr(load_res, "unexpected_keys", None):
         logger.warning("Unexpected keys in delta checkpoint %s: %s", loaded_file, load_res.unexpected_keys)
+
+    if not effective_strict:
+        critical_targets = {"lm_head.weight", "classifier.weight", "score.weight", "pooler.dense.weight"}
+        missing_keys = getattr(load_res, "missing_keys", [])
+        if not is_delta_ckpt:
+            missing_critical = [
+                k for k in missing_keys
+                if k in critical_targets or any(k.endswith(f".{ct}") for ct in critical_targets)
+            ]
+        else:
+            trained_heads = set(manifest.get("non_attention_sites", {}).get("trained_head", []))
+            trained_names = set(manifest.get("trained_param_names", []))
+            missing_critical = [
+                k for k in missing_keys
+                if (k in critical_targets or any(k.endswith(f".{ct}") for ct in critical_targets))
+                and (any(k == h or k.startswith(f"{h}.") for h in trained_heads) or k in trained_names)
+            ]
+        if missing_critical:
+            raise RuntimeError(f"Missing critical parameters during checkpoint load: {missing_critical}")
 
     if target_device is not None:
         base_model.to(device=target_device)
