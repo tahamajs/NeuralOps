@@ -324,6 +324,8 @@ def _register_registry_modules() -> dict[str, OpConfig]:
         "device": "cuda",
     }
     for name in ATTENTION_REGISTRY.keys():
+        if name in ("hla_attention", "samba_moe"):
+            continue  # Configured below with customized reduced S=128 shape contract
         attention_state: dict[str, Any] = {}
         spec_copy = dict(attention_specs)
         spec_copy["name"] = name
@@ -514,11 +516,39 @@ def list_ops(category: str = "all") -> list[str]:
     return sorted(key for key, value in OPS_REGISTRY.items() if value.category == category)
 
 
-# Verify OPS_REGISTRY has no duplicate keys
-_seen_keys = set()
-for _op_key in OPS_REGISTRY:
-    assert _op_key not in _seen_keys, f"Duplicate op key in OPS_REGISTRY: {_op_key}"
-    _seen_keys.add(_op_key)
+EXPECTED_CATEGORIES: frozenset[str] = frozenset({"attention", "compressor", "cuda", "triton"})
 
 
-__all__ = ["OpConfig", "OPS_REGISTRY", "get_op", "list_ops", "resolve_op_name"]
+def verify_ops_registry(registry: dict[str, OpConfig] | None = None) -> bool:
+    """Verify that OPS_REGISTRY has no duplicate keys and all categories are registered.
+
+    Raises:
+        ValueError: If duplicate keys are detected or any expected category is missing.
+    """
+    reg = registry if registry is not None else OPS_REGISTRY
+    seen_keys: set[str] = set()
+    for op_key in reg:
+        if op_key in seen_keys:
+            raise ValueError(f"Duplicate op key in OPS_REGISTRY: {op_key}")
+        seen_keys.add(op_key)
+
+    registered_categories = {op.category for op in reg.values()}
+    missing = EXPECTED_CATEGORIES - registered_categories
+    if missing:
+        raise ValueError(f"OPS_REGISTRY is missing required categories: {sorted(missing)}")
+    return True
+
+
+# Run verification on load
+verify_ops_registry(OPS_REGISTRY)
+
+
+__all__ = [
+    "EXPECTED_CATEGORIES",
+    "OpConfig",
+    "OPS_REGISTRY",
+    "get_op",
+    "list_ops",
+    "resolve_op_name",
+    "verify_ops_registry",
+]
