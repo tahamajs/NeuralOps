@@ -107,7 +107,6 @@ def ensure_populated() -> int:
     """
     global _REGISTRY_POPULATED
     if not _REGISTRY_POPULATED:
-        _REGISTRY_POPULATED = True
         return BenchmarkRegistry.populate_canonical_benchmarks()
     return dict.__len__(BENCHMARK_REGISTRY)
 
