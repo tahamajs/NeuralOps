@@ -23,7 +23,7 @@ from neuralops.benchmarks.benchmark_all_26_comprehensive import main as _canonic
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Compatibility wrapper for the canonical 26-kernel GPU benchmark")
-    parser.add_argument("--device", default="cuda:0")
+    parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--quick", action="store_true")
     parser.add_argument("--kernels", default=None)
     args = parser.parse_args()
