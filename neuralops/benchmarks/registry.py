@@ -96,11 +96,68 @@ class BaseBenchmark(ABC):
         raise NotImplementedError
 
 
+_REGISTRY_POPULATED: bool = False
+_POPULATING: bool = False
+
+
+class _LazyBenchmarkRegistry(dict):
+    """Dictionary proxy that lazily populates canonical benchmarks on read access."""
+
+    def _ensure(self) -> None:
+        global _POPULATING
+        if not _REGISTRY_POPULATED and not _POPULATING:
+            _POPULATING = True
+            try:
+                ensure_registry_populated()
+            finally:
+                _POPULATING = False
+
+    def __getitem__(self, key: Any) -> Any:
+        self._ensure()
+        return super().__getitem__(key)
+
+    def __contains__(self, key: Any) -> bool:
+        self._ensure()
+        return super().__contains__(key)
+
+    def __len__(self) -> int:
+        self._ensure()
+        return super().__len__()
+
+    def __iter__(self) -> Any:
+        self._ensure()
+        return super().__iter__()
+
+    def get(self, key: Any, default: Any = None) -> Any:
+        self._ensure()
+        return super().get(key, default)
+
+    def keys(self) -> Any:
+        self._ensure()
+        return super().keys()
+
+    def values(self) -> Any:
+        self._ensure()
+        return super().values()
+
+    def items(self) -> Any:
+        self._ensure()
+        return super().items()
+
+    def copy(self) -> dict[str, Any]:
+        self._ensure()
+        return super().copy()
+
+    def __repr__(self) -> str:
+        self._ensure()
+        return super().__repr__()
+
+
 # Canonical benchmark registry mapping benchmark name to benchmark entry (class, callable, or metadata dict)
-BENCHMARK_REGISTRY: Dict[str, Union[Type[BaseBenchmark], Callable[..., Any], Dict[str, Any]]] = {}
+BENCHMARK_REGISTRY: Dict[str, Union[Type[BaseBenchmark], Callable[..., Any], Dict[str, Any]]] = _LazyBenchmarkRegistry()
 
 # Detailed metadata index for registered benchmarks
-_BENCHMARK_METADATA: Dict[str, Dict[str, Any]] = {}
+_BENCHMARK_METADATA: Dict[str, Dict[str, Any]] = _LazyBenchmarkRegistry()
 
 
 def register_benchmark(
@@ -137,26 +194,6 @@ def register_benchmark(
         return target
 
     return decorator
-
-
-def get_benchmark(name: str) -> Optional[Any]:
-    """Retrieve registered benchmark runner by name."""
-    return BENCHMARK_REGISTRY.get(name)
-
-
-def list_benchmarks(mode: Optional[str] = None, hardware: Optional[str] = None) -> List[str]:
-    """List registered benchmark names, optionally filtered by mode or hardware."""
-    results: List[str] = []
-    for name, meta in _BENCHMARK_METADATA.items():
-        if mode is not None and meta["mode"] not in (mode, "any", "all"):
-            continue
-        if hardware is not None and meta["hardware"] not in (hardware, "any", "all"):
-            continue
-        results.append(name)
-    return sorted(results)
-
-
-_REGISTRY_POPULATED: bool = False
 
 
 class BenchmarkRegistry:
@@ -196,6 +233,12 @@ class BenchmarkRegistry:
     def is_valid_mode(mode: str) -> bool:
         """Validate if a mode is one of the 12 operational benchmark modes."""
         return mode in OPERATIONAL_BENCHMARK_MODES
+
+    @staticmethod
+    def get_registry() -> Dict[str, Any]:
+        """Return the canonical benchmark registry dict, populating if necessary."""
+        ensure_registry_populated()
+        return BENCHMARK_REGISTRY
 
     @staticmethod
     def populate_canonical_benchmarks() -> int:
@@ -378,6 +421,12 @@ def ensure_registry_populated() -> int:
     return BenchmarkRegistry.populate_canonical_benchmarks()
 
 
+def get_registry() -> Dict[str, Union[Type[BaseBenchmark], Callable[..., Any], Dict[str, Any]]]:
+    """Retrieve canonical BENCHMARK_REGISTRY, ensuring lazy population."""
+    ensure_registry_populated()
+    return BENCHMARK_REGISTRY
+
+
 def get_benchmark(name: str) -> Optional[Any]:
     """Retrieve registered benchmark runner by name."""
     ensure_registry_populated()
@@ -408,6 +457,7 @@ __all__ = [
     "BENCHMARK_REGISTRY",
     "register_benchmark",
     "get_benchmark",
+    "get_registry",
     "list_benchmarks",
     "ensure_registry_populated",
     "CANONICAL_BENCHMARK_MODELS",
