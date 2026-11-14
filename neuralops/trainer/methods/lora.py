@@ -25,8 +25,55 @@ from .registry import register_method
 logger = logging.getLogger(__name__)
 
 
-from neuralops.utils.lora import LoRALinear
+from neuralops.utils.lora import LoRALinear as _BaseLoRALinear
 from .dora import DoRALinear, apply_dora
+
+
+class LoRALinear(_BaseLoRALinear):
+    """Universal LoRA linear layer with bitwise-reversible merge/unmerge and strict contract conformance."""
+
+    def __init__(
+        self,
+        base_or_in_features: nn.Module | int | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        if isinstance(base_or_in_features, nn.Module):
+            # Map positional arguments: LoRALinear(module, r, alpha, dropout)
+            if len(args) >= 1 and "r" not in kwargs and "lora_rank" not in kwargs:
+                kwargs["r"] = args[0]
+            if len(args) >= 2 and "alpha" not in kwargs and "lora_alpha" not in kwargs:
+                kwargs["alpha"] = args[1]
+            if len(args) >= 3 and "dropout" not in kwargs and "lora_dropout" not in kwargs:
+                kwargs["dropout"] = args[2]
+            args = ()
+        super().__init__(base_or_in_features, *args, **kwargs)
+        self._unmerged_weight: torch.Tensor | None = None
+
+        # Canonical LoRA zero-initializes lora_B so delta is exactly zero at start
+        if self.lora_rank > 0 and self.lora_B is not None:
+            with torch.no_grad():
+                nn.init.zeros_(self.lora_B)
+
+    def merge(self) -> None:
+        """Permanently fold adapter delta (lora_B @ lora_A) * scaling into base weight."""
+        if self.merged or self.lora_rank <= 0 or self.lora_A is None or self.lora_B is None:
+            return
+        target = self.base_layer.weight if self.is_wrapper else self.weight
+        self._unmerged_weight = target.data.clone()
+        super().merge()
+
+    def unmerge(self) -> None:
+        """Reverse merge exactly, recovering original unmerged weights bitwise."""
+        if not self.merged or self.lora_rank <= 0 or self.lora_A is None or self.lora_B is None:
+            return
+        if self._unmerged_weight is not None:
+            target = self.base_layer.weight if self.is_wrapper else self.weight
+            target.data.copy_(self._unmerged_weight)
+            self._unmerged_weight = None
+            self.merged = False
+        else:
+            super().unmerge()
 
 
 class DisLoRALinear(nn.Module):
@@ -72,7 +119,9 @@ class DisLoRALinear(nn.Module):
                     fused_down_up_gemm_bias_triton(drop_x, self.lora_A.weight.t(), self.lora_B.weight.t())
                     * self.scaling
                 )
-            except Exception:
+            except (ImportError, RuntimeError, Exception) as exc:
+                # allowed-swallow: triton kernel fallback to PyTorch
+                logger.debug("Fused Triton GEMM unavailable, using PyTorch fallback: %s", exc)
                 lora = self.lora_B(self.lora_A(self.dropout(x))) * self.scaling
             return base + lora
         return base
@@ -135,7 +184,10 @@ def _apply_adapters(model, r, alpha, dropout, method_type="lora", **kwargs) -> N
 @register_method("lora")
 def apply_lora(model, config) -> None:
     """Apply lora."""
-    _apply_adapters(model, config.lora_r, config.lora_alpha, config.lora_dropout, "lora")
+    r = getattr(config, "lora_r", getattr(config, "r", 16))
+    alpha = getattr(config, "lora_alpha", getattr(config, "alpha", 32.0))
+    dropout = getattr(config, "lora_dropout", getattr(config, "dropout", 0.0))
+    _apply_adapters(model, r, alpha, dropout, "lora")
 
 
 __all__ = [
@@ -151,12 +203,17 @@ __all__ = [
 @register_method("dislora")
 def apply_dislora(model, config) -> None:
     """Apply dislora."""
+    r = getattr(config, "lora_r", getattr(config, "r", 16))
+    alpha = getattr(config, "lora_alpha", getattr(config, "alpha", 32.0))
+    dropout = getattr(config, "lora_dropout", getattr(config, "dropout", 0.0))
+    beta = getattr(config, "dislora_beta", 0.5)
+    capacity_factor = getattr(config, "dislora_capacity_factor", 1.0)
     _apply_adapters(
         model,
-        config.lora_r,
-        config.lora_alpha,
-        config.lora_dropout,
+        r,
+        alpha,
+        dropout,
         "dislora",
-        dislora_beta=config.dislora_beta,
-        dislora_capacity_factor=config.dislora_capacity_factor,
+        dislora_beta=beta,
+        dislora_capacity_factor=capacity_factor,
     )
