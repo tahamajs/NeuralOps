@@ -186,6 +186,7 @@ torch::Tensor lsh_attention_forward_cuda(
     int H = q.size(1);
     int L = q.size(2);
     int D = q.size(3);
+    TORCH_CHECK(D <= 256, "Head dimension D must be <= 256, got ", D);
 
     auto out = torch::empty_like(q);
 
