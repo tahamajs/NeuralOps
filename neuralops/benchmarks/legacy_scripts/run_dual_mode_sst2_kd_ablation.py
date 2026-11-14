@@ -165,7 +165,7 @@ def train_single_regime_kd(
 
     trainable_params = configure_parameter_gradients(student_model, freeze_backbone=freeze_backbone)
     optimizer = torch.optim.AdamW(trainable_params, lr=lr, weight_decay=0.01)
-    scaler = torch.cuda.amp.GradScaler(enabled=(device.type == "cuda"))
+    scaler = torch.amp.GradScaler("cuda", enabled=(device.type == "cuda"))
 
     step = 0
     train_iter = iter(train_loader)
@@ -185,7 +185,7 @@ def train_single_regime_kd(
 
         optimizer.zero_grad(set_to_none=True)
 
-        with torch.cuda.amp.autocast(enabled=(device.type == "cuda")):
+        with torch.amp.autocast("cuda", enabled=(device.type == "cuda")):
             with torch.no_grad():
                 t_out = teacher_model(input_ids=input_ids, attention_mask=attention_mask)
                 t_logits = t_out.logits if hasattr(t_out, "logits") else t_out[0]

@@ -24,16 +24,20 @@ def _load(path: Path) -> dict[str, Any]:
     return data
 
 
+class MetricNotFoundError(KeyError, ValueError):
+    """Raised when metric is not found in baseline or candidate."""
+
+
 def compare_results(baseline_path: Path, candidate_path: Path, metric: str, max_regression: float) -> dict[str, Any]:
     baseline = _load(baseline_path)
     candidate = _load(candidate_path)
     if metric not in baseline["metrics"]:
-        raise ValueError(
+        raise MetricNotFoundError(
             f"Metric '{metric}' not found in baseline. "
             f"Available: {sorted(baseline['metrics'].keys())}"
         )
     if metric not in candidate["metrics"]:
-        raise ValueError(
+        raise MetricNotFoundError(
             f"Metric '{metric}' not found in candidate. "
             f"Available: {sorted(candidate['metrics'].keys())}"
         )
