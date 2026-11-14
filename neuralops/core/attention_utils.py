@@ -29,16 +29,8 @@ from neuralops.core.utils.rope import _rotate_half, apply_rope_after_up_projecti
 logger = logging.getLogger(__name__)
 
 
-def replace_attention(*args: Any, **kwargs: Any) -> Any:
-    """Canonical attention surgery replacement delegate."""
-    from neuralops.api import replace_attention as _replace_attention
-
-    return _replace_attention(*args, **kwargs)
-
-
-def inject_attention(*args: Any, **kwargs: Any) -> Any:
-    """Alias for replace_attention."""
-    return replace_attention(*args, **kwargs)
+from neuralops.api import replace_attention
+inject_attention = replace_attention
 
 
 def available_attention_types() -> list[str]:

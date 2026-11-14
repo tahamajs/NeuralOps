@@ -1154,16 +1154,7 @@ def heal_replaced_model(
             parameter.requires_grad_(was_trainable)
 
 
-def replace_attention(*args: Any, **kwargs: Any) -> Any:
-    """Lazy delegation to neuralops.api.replace_attention to prevent circular imports."""
-    from neuralops.api import replace_attention as _ra
-    return _ra(*args, **kwargs)
-
-
-def transplant_attention(*args: Any, **kwargs: Any) -> Any:
-    """Lazy delegation to neuralops.api.transplant_attention to prevent circular imports."""
-    from neuralops.api import transplant_attention as _ta
-    return _ta(*args, **kwargs)
+from neuralops.api import replace_attention, transplant_attention
 
 
 def replace_attention_in_model(*args: Any, **kwargs: Any) -> Any:
