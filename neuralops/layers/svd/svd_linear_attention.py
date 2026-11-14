@@ -202,6 +202,13 @@ _AdaptableSVDLinear = SVDLinear
     supports_gqa=True,
 )
 @ATTENTION_REGISTRY.register(
+    "linear_attention",
+    is_alias=True,
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
     "svd_linear",
     is_alias=True,
     supports_causal=True,

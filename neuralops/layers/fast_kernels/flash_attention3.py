@@ -62,6 +62,13 @@ except ImportError:
     supports_bidirectional=True,
     supports_gqa=True,
 )
+@ATTENTION_REGISTRY.register(
+    "flash_attention",
+    is_alias=True,
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
 class FlashAttention3(BaseAttention):
     r"""FlashAttention-3 Multi-Head Exact Attention."""
 

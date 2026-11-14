@@ -777,31 +777,70 @@ def inject_dynamic_conv(
 __all__ = [
     "DynamicConvAttention",
     "LoRALinear",
+    "SlidingWindowAttention",
     "inject_dynamic_conv",
 ]
 
 
-class SlidingWindowAttention(nn.Module):
+@ATTENTION_REGISTRY.register(
+    "sliding_window",
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
+    "sliding_window_attention",
+    is_alias=True,
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+class SlidingWindowAttention(BaseAttention):
     """Production Sliding Window Attention layer attending strictly to local window context."""
 
     def __init__(
         self,
+        config: Any | None = None,
         window_size: int = 128,
         dim: int | None = None,
         num_heads: int = 4,
-        **kwargs,
+        **kwargs: Any,
     ):
-        super().__init__()
-        self.window_size = window_size
-        self.dim = dim
-        self.num_heads = num_heads
+        super().__init__(config=config if not isinstance(config, int) else None, **kwargs)
+        if isinstance(config, int):
+            self.window_size = config
+        else:
+            resolved_ws = (
+                kwargs.get("window_size")
+                or (getattr(config, "sliding_window", None) if config is not None else None)
+                or (getattr(config, "window_size", None) if config is not None else None)
+                or window_size
+            )
+            self.window_size = int(resolved_ws)
 
-        if dim is not None:
-            self.head_dim = dim // num_heads
-            self.q_proj = nn.Linear(dim, dim, bias=False)
-            self.k_proj = nn.Linear(dim, dim, bias=False)
-            self.v_proj = nn.Linear(dim, dim, bias=False)
-            self.out_proj = nn.Linear(dim, dim, bias=False)
+        resolved_dim = (
+            dim
+            or kwargs.get("hidden_size")
+            or kwargs.get("d_model")
+            or (getattr(config, "hidden_size", getattr(config, "dim", None)) if config is not None else None)
+        )
+        self.dim = int(resolved_dim) if resolved_dim is not None else None
+        self.hidden_size = self.dim
+
+        resolved_heads = (
+            kwargs.get("num_heads")
+            or kwargs.get("num_attention_heads")
+            or (getattr(config, "num_attention_heads", getattr(config, "num_heads", None)) if config is not None else None)
+            or num_heads
+        )
+        self.num_heads = int(resolved_heads)
+
+        if self.dim is not None:
+            self.head_dim = self.dim // self.num_heads
+            self.q_proj = nn.Linear(self.dim, self.dim, bias=False)
+            self.k_proj = nn.Linear(self.dim, self.dim, bias=False)
+            self.v_proj = nn.Linear(self.dim, self.dim, bias=False)
+            self.out_proj = nn.Linear(self.dim, self.dim, bias=False)
         else:
             self.head_dim = None
             self.q_proj = None
