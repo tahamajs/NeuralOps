@@ -259,7 +259,7 @@ def execute_single(
     start_time_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     start_t = time.perf_counter()
 
-    out_dir = kwargs.get("output_dir", "results")
+    out_dir = Path(kwargs.get("output_dir", "results"))
     run_logger, log_file, jsonl_file = setup_run_logger(out_dir, run_id, str(module))
     run_logger.info(
         "Beginning execution of run %s: module=%s, model=%s, dataset=%s, rank=%s, epochs=%s, batch_size=%s, task=%s",
