@@ -83,12 +83,13 @@ class UniQLinear(nn.Module):
 
         self._weight_dtype = dtype
 
-    def _reconstruct_weight(self) -> torch.Tensor:
+    def _reconstruct_weight(self, target_dtype: torch.dtype | None = None) -> torch.Tensor:
         U = self.U_q.float() * self.scale_u.unsqueeze(1)
         S = self.S_q.float() * self.scale_s
         Vt = self.Vt_q.float() * self.scale_v.unsqueeze(1)
         W = (U * S.unsqueeze(0)) @ Vt
-        return W.to(self._weight_dtype)
+        eff_dtype = target_dtype or (self.scale_u.dtype if self.scale_u.is_floating_point() else self._weight_dtype)
+        return W.to(eff_dtype)
 
     @property
     def weight(self) -> torch.Tensor:
@@ -98,6 +99,7 @@ class UniQLinear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, check_triton_suitability
 
+        bias = self.bias.to(dtype=x.dtype) if self.bias is not None else None
         suitable, _ = check_triton_suitability(x, "low_rank")
         if not FORCE_PYTORCH_FALLBACK and suitable and x.is_cuda:
             try:
@@ -107,13 +109,13 @@ class UniQLinear(nn.Module):
                 S = (self.S_q.float() * self.scale_s).to(x.dtype)
                 Vt = (self.Vt_q.float() * self.scale_v.unsqueeze(1)).to(x.dtype)
                 w_down = S.unsqueeze(1) * Vt
-                return fused_down_up_gemm_bias_triton(x, w_down, U.t().contiguous(), bias=self.bias)
+                return fused_down_up_gemm_bias_triton(x, w_down, U.t().contiguous(), bias=bias)
             except Exception:
                 # allowed-swallow: best-effort-telemetry
                 pass
 
-        W = self._reconstruct_weight()
-        out = F.linear(x, W, self.bias)
+        W = self._reconstruct_weight(target_dtype=x.dtype)
+        out = F.linear(x, W, bias)
         return out
 
     def extra_repr(self) -> str:
