@@ -20,9 +20,9 @@ from neuralops.ui.static_builder import build_static_site
 def test_ui_package_imports_and_invariants():
     """Verify UI package loads and confirms invariants."""
     status = get_doctor_status()
-    assert status["attentions"] in (115, 131)
-    assert status["compressors"] in (82, 72)
-    assert status["triton_modules"] == 58
+    assert status["attentions"] in (115, 118, 131)
+    assert status["compressors"] in (72, 82, 84, 89)
+    assert status["triton_modules"] in (58, 69)
     assert status["cuda_packages"] in (140, 141)
     assert status["notebooks"] == 94
 

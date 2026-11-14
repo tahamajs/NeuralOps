@@ -14,10 +14,47 @@ Implements argparse parser configuration and command handler for the NeuralOps W
 from __future__ import annotations
 
 import argparse
+import socket
 import sys
 import threading
 import webbrowser
 from typing import Optional
+
+
+def is_port_in_use(host: str, port: int) -> bool:
+    """Check if target host:port is already bound by another process.
+
+    Args:
+        host: IP address or hostname to check.
+        port: TCP port number.
+
+    Returns:
+        True if the port is in use, False if it is available.
+    """
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.settimeout(0.5)
+        try:
+            sock.bind((host, port))
+            return False
+        except OSError:
+            return True
+
+
+def find_available_port(host: str, start_port: int, max_attempts: int = 50) -> int:
+    """Find the next available TCP port on host starting from start_port.
+
+    Args:
+        host: Bind host IP or address.
+        start_port: Initial port number to inspect.
+        max_attempts: Maximum number of sequential ports to probe.
+
+    Returns:
+        First open port number found, or start_port if none open within max_attempts.
+    """
+    for p in range(start_port, start_port + max_attempts):
+        if not is_port_in_use(host, p):
+            return p
+    return start_port
 
 
 def _add_ui_arguments(parser: argparse.ArgumentParser) -> None:
@@ -139,6 +176,16 @@ def cmd_ui(args: argparse.Namespace) -> int:
             return 1
 
     url = f"http://{host}:{port}"
+    if is_port_in_use(host, port):
+        free_port = find_available_port(host, port + 1)
+        print(
+            f"[WARNING] Port {port} is already in use on {host}. "
+            f"Automatically switching to available port: {free_port}",
+            file=sys.stderr,
+        )
+        port = free_port
+        url = f"http://{host}:{port}"
+
     print(f"Starting NeuralOps Web UI server on {url} ...")
 
     if not no_browser and not share:
@@ -175,6 +222,15 @@ def cmd_ui(args: argparse.Namespace) -> int:
         )
     except KeyboardInterrupt:
         print("\nNeuralOps Web UI stopped cleanly.")
+    except OSError as exc:
+        if exc.errno in (48, 98):
+            print(
+                f"[ERROR] Port {port} on {host} is in use: {exc}. Please select an alternate port with --port.",
+                file=sys.stderr,
+            )
+            return 1
+        print(f"Error starting NeuralOps Web UI listener: {exc}", file=sys.stderr)
+        return 1
     except Exception as exc:
         print(f"Error starting NeuralOps Web UI: {exc}", file=sys.stderr)
         return 1
@@ -185,4 +241,9 @@ def cmd_ui(args: argparse.Namespace) -> int:
     return 0
 
 
-__all__ = ["build_ui_parser", "cmd_ui"]
+__all__ = [
+    "build_ui_parser",
+    "cmd_ui",
+    "is_port_in_use",
+    "find_available_port",
+]

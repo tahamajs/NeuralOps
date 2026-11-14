@@ -60,6 +60,7 @@ class NeedleInAHaystackEvaluator:
         needle_depths: Optional[List[float]] = None,
         passkey_digits: int = 5,
         device: torch.device | str = "cuda",
+        seed: int = 42,
     ) -> None:
         """Execute init routine."""
         self.model = model
@@ -67,7 +68,14 @@ class NeedleInAHaystackEvaluator:
         self.context_lengths = context_lengths or [256, 512, 1024, 2048]
         self.needle_depths = needle_depths or [0.1, 0.3, 0.5, 0.7, 0.9]
         self.passkey_digits = passkey_digits
-        self.device = torch.device(device if torch.cuda.is_available() and device == "cuda" else "cpu")
+        self.seed = seed
+        if isinstance(device, str):
+            if device == "cuda" and not torch.cuda.is_available():
+                self.device = torch.device("cpu")
+            else:
+                self.device = torch.device(device)
+        else:
+            self.device = device
         self._cached_paragraph_tokens: Optional[List[int]] = None
 
     def _get_pretokenized_haystack_pool(self) -> List[int]:
@@ -95,6 +103,12 @@ class NeedleInAHaystackEvaluator:
         Runs evaluation over the 2D grid of context lengths and needle depths.
         Returns accuracy grid and average target perplexity.
         """
+        random.seed(self.seed)
+        np.random.seed(self.seed)
+        torch.manual_seed(self.seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(self.seed)
+
         self.model.eval()
         self.model.to(self.device)
 
@@ -113,16 +127,21 @@ class NeedleInAHaystackEvaluator:
                     q_tokens = self.tokenizer.encode(prompt_question, add_special_tokens=False)
 
                     target_haystack_len = max(ctx_len - len(needle_tokens) - len(q_tokens), 32)
+                    max_pos = getattr(getattr(self.model, "config", None), "max_position_embeddings", 1024) or 1024
+                    max_allowed = max_pos - (self.passkey_digits + 4)
+                    target_haystack_len = min(
+                        target_haystack_len, max(32, max_allowed - len(needle_tokens) - len(q_tokens))
+                    )
+
                     pool = self._get_pretokenized_haystack_pool()
                     repeats = (target_haystack_len // len(pool)) + 1
                     haystack_tokens = (pool * repeats)[:target_haystack_len]
 
                     insert_idx = int(len(haystack_tokens) * depth)
                     full_tokens = haystack_tokens[:insert_idx] + needle_tokens + haystack_tokens[insert_idx:] + q_tokens
-                    max_pos = getattr(getattr(self.model, "config", None), "max_position_embeddings", 1024)
-                    max_allowed = max_pos - (self.passkey_digits + 4)
                     if len(full_tokens) > max_allowed:
-                        full_tokens = full_tokens[:max_allowed]
+                        excess = len(full_tokens) - max_allowed
+                        full_tokens = full_tokens[excess:]
 
                     input_ids = torch.tensor([full_tokens], device=self.device)
 
@@ -132,6 +151,8 @@ class NeedleInAHaystackEvaluator:
                             logits = self.model(out)
                             if hasattr(logits, "logits"):
                                 logits = logits.logits
+                            elif isinstance(logits, (tuple, list)):
+                                logits = logits[0]
                             next_tok = torch.argmax(logits[:, -1, :], dim=-1, keepdim=True)
                             out = torch.cat([out, next_tok], dim=-1)
 
@@ -154,11 +175,18 @@ class NeedleInAHaystackEvaluator:
                 grid_accuracy[i, j] = acc
                 logger.info("Context %d, Depth %.1f: Acc=%.2f%%", ctx_len, depth, acc * 100)
 
+        acc_2048 = None
+        if 2048 in self.context_lengths:
+            idx_2048 = self.context_lengths.index(2048)
+            acc_2048 = float(np.mean(grid_accuracy[idx_2048, :]))
+
         return {
             "context_lengths": self.context_lengths,
             "needle_depths": self.needle_depths,
             "accuracy_grid": grid_accuracy.tolist(),
             "mean_retrieval_accuracy": float(np.mean(grid_accuracy)),
+            "accuracy_at_2048": acc_2048,
+            "seed": self.seed,
             "records": results_records,
         }
 

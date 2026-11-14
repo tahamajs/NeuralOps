@@ -32,3 +32,31 @@ def test_apply_module_to_model_baseline():
     m, _ = build_model_instance("bert", hidden_size=64, num_layers=1, num_heads=2)
     m_patched, ratio = apply_module_to_model(m, "baseline")
     assert ratio == 1.0
+
+
+def test_apply_module_to_model_attention():
+    """Verify applying an attention module patches model and returns valid ratio."""
+    m, _ = build_model_instance("bert", hidden_size=64, num_layers=1, num_heads=2)
+    m_patched, ratio = apply_module_to_model(m, "adaptive_span_attention", module_type="attention", rank=8)
+    assert m_patched is not None
+    assert isinstance(ratio, float)
+    assert ratio > 0.0
+
+    dummy_input = torch.randint(0, 100, (2, 16))
+    out = m_patched(dummy_input)
+    assert hasattr(out, "logits")
+    assert out.logits.shape == (2, 2)
+
+
+def test_apply_module_to_model_compressor():
+    """Verify applying a compressor module patches model and returns valid ratio."""
+    m, _ = build_model_instance("bert", hidden_size=64, num_layers=1, num_heads=2)
+    m_patched, ratio = apply_module_to_model(m, "direct_svd", module_type="compressor", rank=8)
+    assert m_patched is not None
+    assert isinstance(ratio, float)
+    assert ratio > 0.0
+
+    dummy_input = torch.randint(0, 100, (2, 16))
+    out = m_patched(dummy_input)
+    assert hasattr(out, "logits")
+    assert out.logits.shape == (2, 2)
