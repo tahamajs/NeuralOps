@@ -173,7 +173,7 @@ def main():
     print("  NeuralOps VRAM-Saturating Multi-Benchmark Parallel Orchestrator")
     print("=" * 88)
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     total_gb, _, _, free_gb = get_vram_info(device)
     print(f"Target Hardware : {torch.cuda.get_device_name(device)}")
     print(f"Total VRAM       : {total_gb:.2f} GB | Free Headroom: {free_gb:.2f} GB")

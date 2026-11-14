@@ -842,50 +842,46 @@ class ProgressiveActivationManager:
 
     def record_teacher_activation(self, layer_idx: int, activation: torch.Tensor) -> None:
         """
-        Records teacher activation for layer_idx.
-        If matching student activation was already processed and evicted for previous layer,
-        evicts previous layer activations.
+        Records teacher activation for layer_idx and coordinates progressive discarding.
 
         Symmetrical dual-stream detachment (Phase 026): teacher activation is strictly detached.
         """
         t_rep = activation.detach()
 
-        # If student activation for layer_idx - 1 was already matched and cleared,
-        # we can safely discard layer_idx - 1 activations
-        if (layer_idx - 1) not in self._student_activations:
+        # If matching student activation is already waiting, update CKA and discard both
+        if layer_idx in self._student_activations:
+            s_rep = self._student_activations.pop(layer_idx)
+            self._update_layer_cka(layer_idx, s_rep, t_rep)
+            # Both student and teacher for layer_idx have been aligned and evicted,
+            # discard layer_idx - 1 activations
             self.discard_layer(layer_idx - 1)
+        else:
+            self._teacher_activations[layer_idx] = t_rep
 
-        self._teacher_activations[layer_idx] = t_rep
         current_active = len(self._teacher_activations) + len(self._student_activations)
         if current_active > self._max_active_layers:
             self._max_active_layers = current_active
 
-        # If matching student activation is already waiting, update CKA and discard both
-        if layer_idx in self._student_activations:
-            s_rep = self._student_activations.pop(layer_idx)
-            t_rep = self._teacher_activations.pop(layer_idx)
-            self._update_layer_cka(layer_idx, s_rep, t_rep)
-
     def record_student_activation(self, layer_idx: int, activation: torch.Tensor) -> None:
         """
-        Records student activation for layer_idx.
+        Records student activation for layer_idx and coordinates progressive discarding.
         Preserves student autograd gradient tape.
         """
         s_rep = activation  # grad tape preserved
 
-        if (layer_idx - 1) not in self._teacher_activations:
-            self.discard_layer(layer_idx - 1)
-
-        self._student_activations[layer_idx] = s_rep
-        current_active = len(self._teacher_activations) + len(self._student_activations)
-        if current_active > self._max_active_layers:
-            self._max_active_layers = current_active
-
         # If matching teacher activation is already waiting, update CKA and discard both
         if layer_idx in self._teacher_activations:
             t_rep = self._teacher_activations.pop(layer_idx)
-            s_rep = self._student_activations.pop(layer_idx)
             self._update_layer_cka(layer_idx, s_rep, t_rep)
+            # Both student and teacher for layer_idx have been aligned and evicted,
+            # discard layer_idx - 1 activations
+            self.discard_layer(layer_idx - 1)
+        else:
+            self._student_activations[layer_idx] = s_rep
+
+        current_active = len(self._teacher_activations) + len(self._student_activations)
+        if current_active > self._max_active_layers:
+            self._max_active_layers = current_active
 
     def _update_layer_cka(self, layer_idx: int, s_rep: torch.Tensor, t_rep: torch.Tensor) -> None:
         """Internal helper to update layer CKA accumulator with dual-stream detachment."""
