@@ -13,6 +13,7 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -21,6 +22,8 @@ import torch.nn.functional as F
 
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
+
+logger = logging.getLogger(__name__)
 
 _MODULE = None
 
@@ -69,8 +72,11 @@ def paged_kv_compact_triton_ref(k_in, v_in, keep_indices):
                 BLOCK_D=D,
             )
             return [k_out, v_out]
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(
+            "paged_kv_evict accelerated kernel failed: %s; falling back to PyTorch reference",
+            e,
+        )
     return paged_kv_compact_pytorch_ref(k_in, v_in, keep_indices)
 
 
