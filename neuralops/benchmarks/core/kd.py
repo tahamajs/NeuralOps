@@ -260,7 +260,12 @@ def build_teacher_cache(
     cache_path: Path | str,
     device: str | torch.device = "cuda",
 ) -> Path:
-    """Cache teacher output activations and logits to disk to accelerate distillation."""
+    """Cache teacher output activations and logits to disk to accelerate distillation.
+
+    .. warning::
+        Cached logits are serialized using `torch.save()`. When loading, always ensure
+        the file originates from a trusted local cache directory.
+    """
     p = Path(cache_path)
     p.parent.mkdir(parents=True, exist_ok=True)
     teacher.eval()
