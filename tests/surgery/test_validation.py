@@ -24,7 +24,9 @@ def test_validation_checks_pass():
 
     assert report.is_safe
     assert len(report.checks) == 5
-    assert all(c.passed for c in report.checks)
+    assert all(c.passed for c in report.checks if c.name != "quality_probe")
+    quality_check = next(c for c in report.checks if c.name == "quality_probe")
+    assert quality_check.passed is None
 
     del SURGERY_REGISTRY["val_op"]
 
@@ -38,10 +40,12 @@ def test_validation_conflicting_surgeries_fail():
     def val_mlp2(model):
         return model
 
-    conflicting_recipe = SurgeryRecipe([
-        SurgeryOp(name="val_mlp1", params={}),
-        SurgeryOp(name="val_mlp2", params={}),
-    ])
+    conflicting_recipe = SurgeryRecipe(
+        [
+            SurgeryOp(name="val_mlp1", params={}),
+            SurgeryOp(name="val_mlp2", params={}),
+        ]
+    )
 
     report = validate_before_surgery(None, conflicting_recipe)
     assert not report.is_safe

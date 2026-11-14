@@ -1692,7 +1692,7 @@ class UniversalSurgeryDirector:
         Returns a structured dictionary audit report with per-law verdicts.
         Raises RuntimeError if any mandatory invariant check fails and strict=True.
         """
-        laws: Dict[str, bool] = {}
+        laws: Dict[str, Union[bool, str]] = {}
         violations: List[str] = []
 
         # Law 1: QK-Norm Preservation
@@ -1716,8 +1716,8 @@ class UniversalSurgeryDirector:
         else:
             laws["Law_2_Softcapping"] = True
 
-        # Law 3: Zero-Bleed Padding Mask Sanitization
-        laws["Law_3_Zero_Bleed_Padding"] = True
+        # Law 3: Zero-Bleed Padding Mask Sanitization (cannot be statically proven)
+        laws["Law_3_Zero_Bleed_Padding"] = "UNVERIFIED"
 
         # Law 4: Static Cross-Attention Caching in Encoder-Decoder
         if self.profile.is_encoder_decoder:
@@ -1731,8 +1731,8 @@ class UniversalSurgeryDirector:
         else:
             laws["Law_4_Static_Cross_Attention"] = True
 
-        # Law 5: RoPE Pre-Projection Alignment
-        laws["Law_5_RoPE_Pre_Projection"] = True
+        # Law 5: RoPE Pre-Projection Alignment (cannot be statically proven)
+        laws["Law_5_RoPE_Pre_Projection"] = "UNVERIFIED"
 
         # Law 6: Decoupled Latent State Routing (DeepSeek MLA)
         if self.profile.family == "deepseek_mla":
@@ -1747,8 +1747,8 @@ class UniversalSurgeryDirector:
         else:
             laws["Law_6_Decoupled_Latent_Router"] = True
 
-        # Law 7: Causal State Monotonicity & Exponential State Decay
-        laws["Law_7_Causal_Monotonicity_State_Decay"] = True
+        # Law 7: Causal State Monotonicity & Exponential State Decay (cannot be statically proven)
+        laws["Law_7_Causal_Monotonicity_State_Decay"] = "UNVERIFIED"
 
         # Law 8: Tied Embeddings Preservation
         if self.profile.has_tied_embeddings:
@@ -1759,31 +1759,28 @@ class UniversalSurgeryDirector:
         else:
             laws["Law_8_Tied_Embeddings"] = True
 
-        # Law 9: FP32 Accumulation Guard
-        laws["Law_9_FP32_Accumulation"] = True
+        # Law 9: FP32 Accumulation Guard (cannot be statically proven)
+        laws["Law_9_FP32_Accumulation"] = "UNVERIFIED"
 
         # Law 10: Master Universal Surgery Integration
         laws["Law_10_Master_Integration"] = isinstance(self.model, nn.Module)
         laws["Law_10_Master_Universal_Certification"] = isinstance(self.model, nn.Module) and len(violations) == 0
 
-        passed_ten = sum(
-            1
-            for k in (
-                "Law_1_QK_Norm",
-                "Law_2_Softcapping",
-                "Law_3_Zero_Bleed_Padding",
-                "Law_4_Static_Cross_Attention",
-                "Law_5_RoPE_Pre_Projection",
-                "Law_6_Decoupled_Latent_Router",
-                "Law_7_Causal_Monotonicity_State_Decay",
-                "Law_8_Tied_Embeddings",
-                "Law_9_FP32_Accumulation",
-                "Law_10_Master_Integration",
-            )
-            if laws.get(k, False)
+        target_laws = (
+            "Law_1_QK_Norm",
+            "Law_2_Softcapping",
+            "Law_3_Zero_Bleed_Padding",
+            "Law_4_Static_Cross_Attention",
+            "Law_5_RoPE_Pre_Projection",
+            "Law_6_Decoupled_Latent_Router",
+            "Law_7_Causal_Monotonicity_State_Decay",
+            "Law_8_Tied_Embeddings",
+            "Law_9_FP32_Accumulation",
+            "Law_10_Master_Integration",
         )
+        passed_ten = sum(1 for k in target_laws if laws.get(k) is True)
 
-        all_passed = len(violations) == 0 and passed_ten == 10
+        all_passed = len(violations) == 0 and passed_ten == 10 and all(laws.get(k) is True for k in target_laws)
 
         report: Dict[str, Any] = {
             "model_family": self.profile.family,

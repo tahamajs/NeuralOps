@@ -97,6 +97,8 @@ class ResourceEstimate:
     flops_delta_pct: float
     estimated_svd_time_seconds: float
     likely_needs_finetuning: bool
+    weights_only_vram_mb: float = 0.0
+    estimated_peak_vram_mb: float = 0.0
     confidence: str = "medium"  # "high", "medium", "low"
     warnings: List[str] = field(default_factory=list)
     hardware_profile: Optional[Dict[str, Any]] = None
@@ -104,6 +106,8 @@ class ResourceEstimate:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "peak_vram_mb": self.peak_vram_mb,
+            "weights_only_vram_mb": self.weights_only_vram_mb,
+            "estimated_peak_vram_mb": self.estimated_peak_vram_mb,
             "total_time_seconds": self.total_time_seconds,
             "parameters_before": self.parameters_before,
             "parameters_after": self.parameters_after,
@@ -182,6 +186,12 @@ def estimate_resources(
     plan_or_recipe: Union[ExecutionPlan, Recipe, Dict[str, Any]],
     hardware_profile: Optional[Union[str, HardwareProfile, Dict[str, Any]]] = None,
     base_parameters: Optional[int] = None,
+    batch_size: int = 1,
+    seq_len: int = 2048,
+    hidden_dim: Optional[int] = None,
+    num_layers: Optional[int] = None,
+    factor: float = 2.0,
+    **kwargs: Any,
 ) -> ResourceEstimate:
     """Estimate peak VRAM, transformation latency, FLOP delta, and parameter count."""
     hw_prof, confidence, warnings = _resolve_hardware_profile(hardware_profile)
@@ -241,8 +251,55 @@ def estimate_resources(
 
     # Baseline VRAM model:
     # Model weights (FP16: 2 bytes/param) + Optimizer/Activations/Peak scratch space
-    base_model_vram_mb = (params_before * 2.0) / (1024 * 1024)
+    weights_only_vram_mb = (params_before * 2.0) / (1024 * 1024)
+    base_model_vram_mb = weights_only_vram_mb
     peak_vram_mb = base_model_vram_mb * 1.15
+
+    # Infer architecture dimensions for activation memory heuristic
+    if hidden_dim is not None:
+        hidden = hidden_dim
+    elif params_before >= 60_000_000_000:
+        hidden = 8192
+    elif params_before >= 30_000_000_000:
+        hidden = 6656
+    elif params_before >= 10_000_000_000:
+        hidden = 5120
+    elif params_before >= 6_000_000_000:
+        hidden = 4096
+    elif params_before >= 2_000_000_000:
+        hidden = 2560
+    elif params_before >= 900_000_000:
+        hidden = 2048
+    elif params_before >= 300_000_000:
+        hidden = 1024
+    else:
+        hidden = 768
+
+    if num_layers is not None:
+        layers = num_layers
+    elif params_before >= 60_000_000_000:
+        layers = 80
+    elif params_before >= 30_000_000_000:
+        layers = 60
+    elif params_before >= 10_000_000_000:
+        layers = 40
+    elif params_before >= 6_000_000_000:
+        layers = 32
+    elif params_before >= 2_000_000_000:
+        layers = 28
+    elif params_before >= 900_000_000:
+        layers = 24
+    elif params_before >= 300_000_000:
+        layers = 24
+    else:
+        layers = 12
+
+    # Activation memory heuristic: B * T * hidden * layers * 2 * factor
+    b = kwargs.get("b", kwargs.get("B", batch_size))
+    t = kwargs.get("t", kwargs.get("T", seq_len))
+    act_factor = kwargs.get("activation_factor", factor)
+    activation_bytes = b * t * hidden * layers * 2 * act_factor
+    activation_vram_mb = activation_bytes / (1024 * 1024)
 
     for s in stages:
         op_type = getattr(s, "operation_type", getattr(s, "type", "unknown"))
@@ -280,15 +337,19 @@ def estimate_resources(
     param_delta_pct = ((params_after - params_before) / max(1, params_before)) * 100.0
     flops_delta_pct = param_delta_pct * 0.95  # FLOPs track parameter reductions in transformer layers
 
+    estimated_peak_vram_mb = peak_vram_mb + activation_vram_mb
+
     # Check against hardware profile VRAM limit
     hw_vram_mb = hw_prof.vram_gb * 1024.0
-    if peak_vram_mb > hw_vram_mb:
+    if estimated_peak_vram_mb > hw_vram_mb:
         warnings.append(
-            f"Estimated peak VRAM ({peak_vram_mb:.0f} MB) exceeds available device VRAM ({hw_vram_mb:.0f} MB) on {hw_prof.name}."
+            f"Estimated peak VRAM ({estimated_peak_vram_mb:.0f} MB) exceeds available device VRAM ({hw_vram_mb:.0f} MB) on {hw_prof.name}."
         )
 
     return ResourceEstimate(
-        peak_vram_mb=round(peak_vram_mb, 2),
+        peak_vram_mb=round(estimated_peak_vram_mb, 2),
+        weights_only_vram_mb=round(weights_only_vram_mb, 2),
+        estimated_peak_vram_mb=round(estimated_peak_vram_mb, 2),
         total_time_seconds=round(max(total_time, 0.1), 2),
         parameters_before=params_before,
         parameters_after=params_after,
