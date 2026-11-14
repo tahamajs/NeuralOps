@@ -83,7 +83,10 @@ class AttentionBenchmark(AbstractBaseBenchmark):
             "fp32": torch.float32,
             "float32": torch.float32,
         }
-        return mapping.get(dtype_str.lower(), torch.float32)
+        val = mapping.get(dtype_str.lower())
+        if val is None:
+            raise ValueError(f"Unknown dtype '{dtype_str}'. Supported: {sorted(mapping.keys())}")
+        return val
 
     def run_iteration(
         self,
