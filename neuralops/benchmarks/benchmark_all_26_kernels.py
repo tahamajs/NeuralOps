@@ -24,7 +24,7 @@ import torch.nn.functional as F
 
 
 def run_all_26_kernels(
-    device_str="cuda:0",
+    device_str="cuda" if torch.cuda.is_available() else "cpu",
     dtype_str="float16",
     warmup=5,
     repeat=30,
@@ -36,7 +36,7 @@ def run_all_26_kernels(
     device = torch.device(device_str)
     if device.type != "cuda":
         raise RuntimeError(
-            "The 26-kernel benchmark is GPU-only. Pass --device cuda:0 on a CUDA host; "
+            "The 26-kernel benchmark is GPU-only. Pass --device cuda on a CUDA host; "
             "CPU fallback would invalidate the timing results."
         )
     if not torch.cuda.is_available():
@@ -618,7 +618,12 @@ def main():
         default="results/triton_all_26_kernels_benchmark.json",
         help="Path to save JSON output",
     )
-    parser.add_argument("--device", type=str, default="cuda:0", help="CUDA device to execute benchmark")
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="cuda" if torch.cuda.is_available() else "cpu",
+        help="CUDA device to execute benchmark",
+    )
     parser.add_argument(
         "--dtype", type=str, default="float16", choices=["float16", "float32", "bfloat16"], help="Precision"
     )
