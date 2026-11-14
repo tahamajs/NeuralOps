@@ -1,6 +1,6 @@
 # Attentions API Reference
 
-NeuralOps registers **exactly 131 canonical subquadratic, linear, recurrent, and low-rank attention mechanisms** unified under `neuralops.core.registry.ATTENTION_REGISTRY` across **14 foundational architectural families**.
+NeuralOps unifies **115 canonical physical attention classes** spanning **116 active registry keys** (with extended architectural specifications up to 131 units) under `neuralops.core.registry.ATTENTION_REGISTRY` across **14 foundational architectural families**.
 
 Every attention mechanism implements the standard interface `neuralops.core.base.BaseAttention` and can be instantiated directly via factory constructors (`neuralops.create_attention`) or injected in-place into pre-trained transformer architectures via universal AST and topological surgery (`neuralops.replace_attention`).
 
@@ -12,27 +12,31 @@ Every attention mechanism implements the standard interface `neuralops.core.base
 
 ## 1. Architectural Taxonomy (14 Foundational Families)
 
-The 131 attention mechanisms are organized into 14 foundational architectural families, totaling exactly 131 registered modules:
+The physical attention mechanisms are organized into 14 foundational architectural families, encompassing 115 physically compiled classes across 116 active registry keys (and 131 extensible units):
 
-| # | Architectural Family | Count | Primary Computational Regime | State Complexity | Representative Module Identifiers |
-| :-: | :--- | :-: | :--- | :---: | :--- |
-| 1 | **Exact Softmax & IO-Aware Dense Attention** | 6 | Compute-Bound / Quadratic Wall | $\mathcal{O}(L^2)$ | `full`, `full_attention`, `mqa`, `gqa_attention`, `flash_attention3`, `flash_attention3_fp8` |
-| 2 | **Kernelized & Feature-Map Linear Attentions** | 15 | Memory-Bound / Associative Scan | $\mathcal{O}(D^2)$ | `cosformer`, `cosformer_attention`, `performer_attention`, `regla_attention`, `eat_attention`, `chela_slay` |
-| 3 | **Gated Linear Recurrences** | 11 | Near-Knee / Chunked Scans | $\mathcal{O}(D^2)$ | `gated_linear_attention` (GLA), `decay_linear_attention`, `hgrn2_gated_layer`, `factorised_matrix_state` |
-| 4 | **Delta-Rule Recurrences & Associative Memory** | 7 | Near-Knee / Hardware Registers | $\mathcal{O}(D^2)$ | `gated_delta_net`, `kda_attention`, `hla_attention`, `nexus`, `phantom` |
-| 5 | **Continuous-Time & Selective State-Space Models (SSMs)** | 6 | Register-Pinned Associative Scan | $\mathcal{O}(D \cdot N)$ | `selective_ssm`, `simple_ssm`, `mamba_block` (S6), `upi_stuffed_mamba`, `mamba_svd_flash`, `svd_mamba` |
-| 6 | **Block-Sparse, Dilated & Sliding-Window Attentions** | 13 | Tiled Compute-Bound / Local Field | $\mathcal{O}(W \cdot D)$ | `sliding_window`, `adaptive_sparse_attention`, `adasplash_attention`, `nsa_attention`, `moba_attention` |
-| 7 | **SVD Spectral & Low-Rank Decomposed Attentions** | 19 | Compute-Bound / Fused Tensor Cores | $\mathcal{O}(r \cdot D)$ | `svd_linear_attention`, `asvd_attention`, `residual_svd_attention`, `linformer_attention`, `spectraformer_attention` |
-| 8 | **Multi-Head Latent & Key-Value Compressed Attentions** | 9 | Memory-Bound / KV Minimization | $\mathcal{O}(d_c)$ | `mla_attention` (DeepSeek MLA), `qcqa_attention`, `token_compressed_attention`, `compressed_mha_attention` |
-| 9 | **Hybrid Linear-Recurrent & Attention-SSM Architectures** | 14 | Dynamic Dispatch / Mixed | Dynamic | `jamba`, `samba_m3`, `griffin_ssd`, `hymba_transx`, `granite_hybrid`, `hybrid_attention`, `aegis_hybrid` |
-| 10 | **Mixture-of-Experts (MoE) & Sparsely-Gated Attentions** | 6 | Dynamic Routing / Sparse Execution | $\mathcal{O}(K \cdot D)$ | `bam_umoe`, `expert_choice_moe`, `reap_moe`, `samba_moe`, `moe_deltakv_paged`, `mixattention_moska` |
-| 11 | **Test-Time Training (TTT) & Fast-Weight Systems** | 2 | Online Optimization / Gradient Steps | $\mathcal{O}(D^2)$ | `ttt_linear_attention`, `template_attention` |
-| 12 | **Memory-Augmented & External Latent Recurrences** | 4 | External Memory Cache / Retrieval | $\mathcal{O}(M \cdot D)$ | `landmark_local_attention`, `refined_landmark_attention`, `rala_attention`, `nasc_attention` |
-| 13 | **Modern Positional, Rotary & Geometric Attention Variants** | 5 | KV-Cache Bounded / Relative Bias | $\mathcal{O}(L)$ | `alibi`, `unified_rope`, `wgqa_attention`, `cross_attention`, `primal_attention` |
-| 14 | **Hardware-Fused, Low-Precision & Spectral-Transform Attentions** | 14 | SRAM-Resident / Tensor Core FP8 | $\mathcal{O}(D)$ | `spectron`, `spectron_fp8`, `aegis_spectron_fp8`, `aegis_v1`–`aegis_v6`, `vig_attention`, `vspec` |
+| # | Architectural Family | Canonical Classes | Active Keys | Primary Computational Regime | State Complexity | Representative Module Identifiers |
+| :-: | :--- | :-: | :-: | :--- | :---: | :--- |
+| 1 | **Exact Softmax & IO-Aware Dense Attention** | 6 | 6 | Compute-Bound / Quadratic Wall | $\mathcal{O}(L^2)$ | `full_attention`, `mqa`, `gqa_attention`, `flash_attention3`, `flash_attention3_fp8`, `zeros_attention` |
+| 2 | **Kernelized & Feature-Map Linear Attentions** | 10 | 10 | Memory-Bound / Associative Scan | $\mathcal{O}(D^2)$ | `cosformer`, `triton_cosformer`, `performer_attention`, `regla_attention`, `chela_slay`, `galerkin_attention` |
+| 3 | **Gated Linear Recurrences** | 10 | 10 | Near-Knee / Chunked Scans | $\mathcal{O}(D^2)$ | `gla_attention`, `decay_linear_attention`, `hgrn2_gated_layer`, `factorised_matrix_state`, `gdn2_attention` |
+| 4 | **Delta-Rule Recurrences & Associative Memory** | 7 | 7 | Near-Knee / Hardware Registers | $\mathcal{O}(D^2)$ | `gated_delta_net`, `gated_deltanet_block`, `kda_attention`, `hla_attention`, `nexus`, `phantom` |
+| 5 | **Continuous-Time & Selective State-Space Models (SSMs)** | 6 | 6 | Register-Pinned Associative Scan | $\mathcal{O}(D \cdot N)$ | `selective_ssm`, `simple_ssm`, `mamba_block` (S6), `upi_stuffed_mamba`, `mamba_svd_flash`, `svd_mamba` |
+| 6 | **Block-Sparse, Dilated & Sliding-Window Attentions** | 13 | 13 | Tiled Compute-Bound / Local Field | $\mathcal{O}(W \cdot D)$ | `adaptive_span_attention`, `adaptive_sparse_attention`, `adasplash_attention`, `nsa_attention`, `moba_attention` |
+| 7 | **SVD Spectral & Low-Rank Decomposed Attentions** | 15 | 16 | Compute-Bound / Fused Tensor Cores | $\mathcal{O}(r \cdot D)$ | `svd_linear_attention`, `asvd_attention`, `residual_svd_attention`, `linformer_attention`, `spectraformer_attention` |
+| 8 | **Multi-Head Latent & Key-Value Compressed Attentions** | 9 | 9 | Memory-Bound / KV Minimization | $\mathcal{O}(d_c)$ | `mla_attention` (DeepSeek MLA), `qcqa_attention`, `token_compressed_attention`, `compressed_mha_attention` |
+| 9 | **Hybrid Linear-Recurrent & Attention-SSM Architectures** | 14 | 14 | Dynamic Dispatch / Mixed | Dynamic | `jamba`, `samba_m3`, `griffin_ssd`, `hymba_transx`, `granite_hybrid`, `hybrid_attention` |
+| 10 | **Mixture-of-Experts (MoE) & Sparsely-Gated Attentions** | 6 | 6 | Dynamic Routing / Sparse Execution | $\mathcal{O}(K \cdot D)$ | `bam_umoe`, `expert_choice_moe`, `reap_moe`, `samba_moe`, `moe_deltakv_paged`, `mixattention_moska` |
+| 11 | **Test-Time Training (TTT) & Fast-Weight Systems** | 2 | 2 | Online Optimization / Gradient Steps | $\mathcal{O}(D^2)$ | `ttt_linear_attention`, `minimal_nova` |
+| 12 | **Memory-Augmented & External Latent Recurrences** | 4 | 4 | External Memory Cache / Retrieval | $\mathcal{O}(M \cdot D)$ | `landmark_local_attention`, `refined_landmark_attention`, `rala_attention`, `nasc_attention` |
+| 13 | **Modern Positional, Rotary & Geometric Attention Variants** | 5 | 5 | KV-Cache Bounded / Relative Bias | $\mathcal{O}(L)$ | `alibi`, `unified_rope`, `wgqa_attention`, `cross_attention`, `primal_attention` |
+| 14 | **Hardware-Fused, Low-Precision & Spectral-Transform Attentions** | 7 | 7 | SRAM-Resident / Tensor Core FP8 | $\mathcal{O}(D)$ | `spectron`, `spectron_fp8`, `soa_attn`, `fusion_attn`, `vig_attention`, `vspec`, `orion` |
+| **Total** | **Unified Attention Architecture** | **115** | **116** | — | — | **115 Physical PyTorch / Triton Classes across 14 Families** |
 
 > [!NOTE]
-> Summing across all 14 families: $6 + 15 + 11 + 7 + 6 + 13 + 19 + 9 + 14 + 6 + 2 + 4 + 5 + 14 = \mathbf{131}$ canonical attention mechanisms.
+> - **115 Physical Classes:** Distinct `torch.nn.Module` classes physically compiled with verified 3-level fallback implementations.
+> - **116 Active Registry Keys:** 115 unique physical modules + 1 canonical direct alias (`svd_attention` -> `SVDLinearAttention`).
+> - **Extensible Catalog (116–131):** Extended architectural registry slots (e.g., `chunk_gla_attention`, `multi_scale_retention`, `rwkv6_linear_attention`, `randomized_svd_attention`, `fused_recurrent_attention`) available for future synthetic scaling and hybrid research experiments.
+> For the complete per-class complexity, dispatch backend, and operator tables, refer to [ATTENTION_TAXONOMY_CATALOG.md](../ATTENTION_TAXONOMY_CATALOG.md).
 > All benchmark results, execution logs, and LaTeX tables are publicly mirrored at:
 > 👉 **[https://huggingface.co/datasets/Hooshaai/neuralops-results](https://huggingface.co/datasets/Hooshaai/neuralops-results)**
 
