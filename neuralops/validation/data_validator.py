@@ -11,46 +11,67 @@ Dataset Validator
 Validates dataset schemas, tokenization integrity, and sequence lengths prior to training.
 """
 
+from __future__ import annotations
+
 import logging
 from collections import Counter
+from typing import Any, Dict, List, Optional
 
-LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class DataValidator:
-    def __init__(self, dataset_name, config_name=None):
+    """Validates dataset loading, split sizes, and label distributions."""
+
+    def __init__(self, dataset_name: str, config_name: Optional[str] = None) -> None:
         self.dataset_name = dataset_name
         self.config_name = config_name
-        self.errors = []
-        self.warnings = []
+        self.errors: List[str] = []
+        self.warnings: List[str] = []
 
-    def validate(self):
-        from datasets import load_dataset
-
-        print(f"\n=== Validating {self.dataset_name} ===")
+    def validate(self) -> bool:
+        """Run validation checks on the target dataset."""
+        logger.info("Validating dataset %s", self.dataset_name)
         try:
+            from datasets import load_dataset
+
             ds = load_dataset(self.dataset_name, self.config_name, trust_remote_code=True)
-            print(f"  ✅ Loaded: {dict(ds.num_rows)}")
+            if hasattr(ds, "num_rows"):
+                num_rows: Dict[str, int] = (
+                    ds.num_rows if isinstance(ds.num_rows, dict) else {"default": int(ds.num_rows)}
+                )
+            else:
+                num_rows = {"default": len(ds)}
+            logger.info("Loaded splits: %s", num_rows)
         except Exception as e:
             self.errors.append(f"Load failed: {e}")
-            print(f"  ❌ Load failed: {e}")
+            logger.error("Dataset load failed: %s", e)
             return False
 
-        for split, count in ds.num_rows.items():
+        for split, count in num_rows.items():
             if count == 0:
                 self.errors.append(f"Empty split: {split}")
             elif count < 10:
                 self.warnings.append(f"Tiny split: {split} ({count})")
 
-        if "label" in ds["train"].features:
-            labels = ds["train"]["label"]
+        train_split: Any = None
+        if hasattr(ds, "__getitem__"):
+            if isinstance(ds, dict) and "train" in ds:
+                train_split = ds["train"]
+            elif not isinstance(ds, dict):
+                train_split = ds
+
+        if train_split is not None and hasattr(train_split, "features") and "label" in train_split.features:
+            labels = train_split["label"]
             dist = Counter(labels)
-            print(f"  Label distribution: {dict(dist)}")
+            logger.info("Label distribution: %s", dict(dist))
             if len(dist) < 2:
                 self.errors.append(f"Only {len(dist)} class(es)!")
 
-        print(f"  Errors: {len(self.errors)}, Warnings: {len(self.warnings)}")
-        if self.warnings:
-            for w in self.warnings:
-                print(f"  ⚠️  {w}")
+        logger.info("Errors: %d, Warnings: %d", len(self.errors), len(self.warnings))
+        for w in self.warnings:
+            logger.warning("Dataset warning: %s", w)
         return len(self.errors) == 0
+
+
+__all__ = ["DataValidator"]

@@ -39,13 +39,16 @@ logger = logging.getLogger(__name__)
 # --- Seed Taxonomy & Presets ---
 TIER1_CANONICAL_SEEDS: tuple[int, ...] = (42, 123, 456)
 TIER2_ADVERSARIAL_SEEDS: tuple[int, ...] = (404, 777, 999)
+TIER2_EXTENDED_SEEDS: tuple[int, ...] = TIER2_ADVERSARIAL_SEEDS
 DUAL_TIER_SEEDS: tuple[int, ...] = TIER1_CANONICAL_SEEDS + TIER2_ADVERSARIAL_SEEDS
 ENTERPRISE_5_SEEDS: tuple[int, ...] = (42, 1337, 2026, 31415, 99999)
 CANONICAL_7_SEEDS: tuple[int, ...] = (42, 100, 200, 300, 404, 777, 999)
 
 SEED_PRESETS: dict[str, tuple[int, ...]] = {
     "canonical3": TIER1_CANONICAL_SEEDS,
+    "tier1": TIER1_CANONICAL_SEEDS,
     "adversarial3": TIER2_ADVERSARIAL_SEEDS,
+    "tier2": TIER2_ADVERSARIAL_SEEDS,
     "dual_tier": DUAL_TIER_SEEDS,
     "enterprise5": ENTERPRISE_5_SEEDS,
     "canonical7": CANONICAL_7_SEEDS,
@@ -79,11 +82,14 @@ def format_latex_sd(mean: float, std: float, unit: str = "%", precision: int = 2
     mean_str = f"{mean:.{precision}f}"
     std_str = f"{std:.{precision}f}"
 
-    if unit == "%":
+    if unit in ("%", "\\%", r"\%"):
         return f"${mean_str} \\pm {std_str}\\%$"
-    elif unit in ("x", "\\times"):
+    elif unit in ("x", "\\times", r"\times", "\times"):
         return f"${mean_str} \\pm {std_str}\\times$"
     elif unit:
+        clean_unit = unit.strip()
+        if clean_unit.startswith(r"\text{") and clean_unit.endswith("}"):
+            return f"${mean_str} \\pm {std_str}{unit}$"
         return f"${mean_str} \\pm {std_str}\\text{{ {unit}}}$"
     else:
         return f"${mean_str} \\pm {std_str}$"
@@ -228,7 +234,7 @@ class MultiSeedConfig:
     """Configuration for multi-seed statistical significance benchmark."""
 
     modules: list[str] = field(default_factory=lambda: ["attention:full_attention"])
-    seeds: list[int] = field(default_factory=lambda: list(TIER1_CANONICAL_SEEDS))
+    seeds: Optional[list[int]] = None
     preset: Optional[str] = None
     baseline_module: Optional[str] = None
     batch_size: int = 1
@@ -240,7 +246,7 @@ class MultiSeedConfig:
     warmup: int = 5
     iters: int = 20
     flush_l2: bool = False
-    l2_cache_size_mb: int = 256
+    l2_cache_size_mb: Optional[int] = None
     alpha: float = 0.05
     n_boot: int = 1000
     output_dir: str = "results/multiseed"
@@ -248,8 +254,14 @@ class MultiSeedConfig:
     dry_run: bool = False
 
     def __post_init__(self) -> None:
-        if self.preset and self.preset in SEED_PRESETS:
-            self.seeds = list(SEED_PRESETS[self.preset])
+        if self.seeds is None:
+            preset_key = self.preset.lower().strip() if self.preset else None
+            if preset_key and preset_key in SEED_PRESETS:
+                self.seeds = list(SEED_PRESETS[preset_key])
+            else:
+                self.seeds = list(TIER1_CANONICAL_SEEDS)
+        else:
+            self.seeds = list(self.seeds)
 
 
 @dataclass

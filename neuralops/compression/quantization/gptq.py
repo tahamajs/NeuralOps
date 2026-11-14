@@ -59,8 +59,9 @@ class GPTQQuantizer:
         """Quantize column i and propagate error across subsequent unquantized columns."""
         w = W[:, i]
         q_max = 2 ** (self.bits - 1) - 1 if self.sym else 2**self.bits - 1
+        q_min = -(2 ** (self.bits - 1)) if self.sym else 0
         scale = (w.abs().max() / max(q_max, 1)).clamp(min=1e-8)
-        q = torch.round(w / scale).clamp(-(2 ** (self.bits - 1)), q_max)
+        q = torch.round(w / scale).clamp(q_min, q_max)
         w_q = q * scale
 
         h_ii = H_inv[i, i].clamp(min=1e-8)

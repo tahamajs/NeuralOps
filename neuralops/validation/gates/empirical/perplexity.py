@@ -221,7 +221,7 @@ class PerplexityGate(Gate):
             if rel_inc > float(max_inc):
                 passed = False
                 reasons.append(
-                    f"Perplexity increase +{rel_inc*100:.2f}% exceeds maximum allowed +{float(max_inc)*100:.1f}% "
+                    f"Perplexity increase +{rel_inc * 100:.2f}% exceeds maximum allowed +{float(max_inc) * 100:.1f}% "
                     f"(baseline={base_ppl:.2f}, post={ppl:.2f})"
                 )
 

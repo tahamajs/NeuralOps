@@ -29,8 +29,11 @@ from neuralops.core.utils.rope import _rotate_half, apply_rope_after_up_projecti
 logger = logging.getLogger(__name__)
 
 
-from neuralops.api import replace_attention
-inject_attention = replace_attention
+def inject_attention(*args: Any, **kwargs: Any) -> Any:
+    """Drop-in replace attention layers, delegating lazily to neuralops.core.replace_attention."""
+    from neuralops.core.replace_attention import replace_attention
+
+    return replace_attention(*args, **kwargs)
 
 
 def available_attention_types() -> list[str]:

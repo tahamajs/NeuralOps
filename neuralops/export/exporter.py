@@ -136,8 +136,9 @@ def export_model(
 
             try:
                 save_model(model, str(out_path / "model.safetensors"), metadata={"format": "pt"})
-            except TypeError:
-                save_file(model.state_dict(), str(out_path / "model.safetensors"), metadata={"format": "pt"})
+            except Exception:
+                st_dict = {k: v.detach().cpu().clone().contiguous() for k, v in model.state_dict().items()}
+                save_file(st_dict, str(out_path / "model.safetensors"), metadata={"format": "pt"})
         except ImportError as imp_err:
             logger.debug("safetensors not available (%s); falling back to pytorch_model.bin", imp_err)
             torch.save(model.state_dict(), out_path / "pytorch_model.bin")
@@ -554,9 +555,6 @@ def load_model(
         allow_remote_base_model=allow_remote_base_model,
         strict=strict,
     )
-    return model
-    """Convenience function to load and return the reconstructed NeuralOps model instance directly."""
-    model, _ = load_exported_model(export_dir, base_model=base_model)
     return model
 
 

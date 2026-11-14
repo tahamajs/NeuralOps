@@ -248,6 +248,7 @@ def pytest_collection_modifyitems(config, items):
                 "test_monitor_single_server",
                 "test_serving_canonical",
                 "test_shard_placeholder",
+                "test_cli_cuda_visible_devices",
                 "test_changelog_sync",
                 "test_notebook_catalog",
                 "test_hardware_probe",

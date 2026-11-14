@@ -111,7 +111,11 @@ class TGIRequestBatch:
         return evicted
 
     def step(self, model: nn.Module) -> Dict[str, int]:
-        """Assembles active slot tokens, executes forward step, appends generated tokens.
+        """Executes one autoregressive generation step across active request slots.
+
+        Performs full prompt prefill for newly admitted requests (initializing past KV cache)
+        and conditioned single-token decoding for ongoing requests, preserving complete
+        prompt context and autoregressive causality.
 
         Returns:
             Mapping of request_id to newly generated token id.
@@ -123,19 +127,38 @@ class TGIRequestBatch:
         if not active_ids:
             return {}
 
-        batched_tokens, req_ids, _ = self.assemble_decode_batch(active_ids)
-        if batched_tokens.numel() == 0:
-            return {}
-
-        outputs = _call_model(model, batched_tokens)
-        logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
-
-        next_tokens = torch.argmax(logits, dim=-1)
         step_results: Dict[str, int] = {}
+        for req_id in active_ids:
+            slot = self.active_slots.get(req_id)
+            if not slot or slot.finished or slot.input_ids is None:
+                continue
 
-        for idx, req_id in enumerate(req_ids):
-            slot = self.active_slots[req_id]
-            tok = int(next_tokens[idx].item())
+            device = slot.input_ids.device
+            if not slot.generated_ids and slot.past_kv is None:
+                # Prefill step: process full input prompt to initialize KV cache
+                inp = slot.input_ids.unsqueeze(0)
+                outputs = _call_model(model, inp, use_cache=True)
+                logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
+                slot.past_kv = getattr(outputs, "past_key_values", None)
+            elif slot.past_kv is not None:
+                # Decode step with cached KV
+                last_tok = slot.generated_ids[-1] if slot.generated_ids else int(slot.input_ids[-1].item())
+                inp = torch.tensor([[last_tok]], dtype=torch.long, device=device)
+                outputs = _call_model(model, inp, past_key_values=slot.past_kv, use_cache=True)
+                logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
+                slot.past_kv = getattr(outputs, "past_key_values", None)
+            else:
+                # Fallback for models without KV-cache support: pass full sequence context
+                full_ids = torch.cat(
+                    [
+                        slot.input_ids,
+                        torch.tensor(slot.generated_ids, dtype=torch.long, device=device),
+                    ]
+                )
+                outputs = _call_model(model, full_ids.unsqueeze(0))
+                logits = outputs.logits[:, -1, :] if hasattr(outputs, "logits") else outputs[:, -1, :]
+
+            tok = int(torch.argmax(logits, dim=-1).item())
             slot.generated_ids.append(tok)
             step_results[req_id] = tok
 
@@ -226,6 +249,10 @@ class TGIRequestBatch:
             - seq_lens: List[int] of unpadded sequence lengths.
             - max_len: Maximum unpadded sequence length across active requests.
         """
+        if padding_side == "right":
+            logger.warning(
+                "Right padding detected for causal LM batch. Generation quality may be affected. Use padding_side='left' for autoregressive generation."
+            )
         active = [s for s in self.active_slots.values() if not s.finished and s.input_ids is not None]
         if not active:
             return {
@@ -571,15 +598,15 @@ class TGIServingAdapter:
         sampled = torch.multinomial(probs, num_samples=1)
         return int(sampled.item())
 
-    def continuous_batching_generate(
+    def generate_sequential(
         self,
         prompts: List[Union[str, List[int], torch.Tensor]],
         max_new_tokens: int = 16,
         **kwargs: Any,
     ) -> List[str]:
-        """
-        High-level blocking API: Submits multiple prompts, executes continuous
-        batching until all sequences terminate, and returns list of completions.
+        """Processes requests sequentially with iteration-level dynamic slot scheduling.
+
+        For high-concurrency batched production serving, see create_openai_serving_app.
         """
         slots = []
         for i, p in enumerate(prompts):
@@ -601,6 +628,26 @@ class TGIServingAdapter:
                 text = "".join(self._decode_token(t) for t in s.generated_ids)
             completions.append(text)
         return completions
+
+    def continuous_batching_generate(
+        self,
+        prompts: List[Union[str, List[int], torch.Tensor]],
+        max_new_tokens: int = 16,
+        **kwargs: Any,
+    ) -> List[str]:
+        """Processes requests sequentially with iteration-level dynamic slot scheduling.
+
+        Deprecated: Use generate_sequential instead (or see create_openai_serving_app for true batched serving).
+        """
+        import warnings
+
+        warnings.warn(
+            "continuous_batching_generate is deprecated and will be removed in a future release; "
+            "use generate_sequential instead (or see create_openai_serving_app for true batched serving).",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.generate_sequential(prompts, max_new_tokens=max_new_tokens, **kwargs)
 
     def streaming_generate(
         self,
@@ -763,7 +810,7 @@ class TGIServingAdapter:
 
                 raise HTTPException(status_code=400, detail="parameters must be a JSON object")
             max_new = params.get("max_new_tokens", 16)
-            completions = self.continuous_batching_generate([prompt], max_new_tokens=max_new)
+            completions = self.generate_sequential([prompt], max_new_tokens=max_new)
             return {"generated_text": completions[0]}
 
         @app.post("/generate_stream")

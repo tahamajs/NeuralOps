@@ -107,6 +107,7 @@ def test_b3_profile_structural_runs_only_l1_gates():
 def test_b3_profile_production_runs_all_gates_and_skips_unavailable_empirical():
     """Verify run_validation_gates with profile=PRODUCTION runs all gates and marks unavailable empirical skipped=True."""
     import copy
+
     m_before = SimpleDummyNet()
     m_after = copy.deepcopy(m_before)
 

@@ -70,9 +70,15 @@ class LocalTracker(BaseTracker):
     Artifacts are stored in log_dir (or log_dir/artifacts if present).
     """
 
-    def __init__(self, log_dir: str, experiment_name: str = "experiment") -> None:
+    def __init__(
+        self,
+        log_dir: str,
+        experiment_name: str = "experiment",
+        keep_in_memory: bool = False,
+    ) -> None:
         self.log_dir = str(log_dir)
         self.experiment_name = experiment_name
+        self._keep_in_memory = keep_in_memory
         os.makedirs(self.log_dir, exist_ok=True)
         self.metrics_file = os.path.join(self.log_dir, "metrics.jsonl")
         self.params_file = os.path.join(self.log_dir, "params.json")
@@ -87,7 +93,8 @@ class LocalTracker(BaseTracker):
             "step": step,
             "timestamp": datetime.now().isoformat(),
         }
-        self.metrics.append(entry)
+        if self._keep_in_memory:
+            self.metrics.append(entry)
         with open(self.metrics_file, "a", encoding="utf-8") as f:
             f.write(json.dumps(entry) + "\n")
             f.flush()
@@ -209,14 +216,18 @@ class WandBTracker(BaseTracker):
 
     def log_metric(self, name: str, value: float, step: int | None = None) -> None:
         """Log metric."""
-        self.run.log({name: value, "step": step} if step is not None else {name: value})
+        if step is not None:
+            self.run.log({name: value}, step=step)
+        else:
+            self.run.log({name: value})
 
     def log_metrics(self, metrics: dict[str, float], step: int | None = None) -> None:
         """Log multiple metrics at once."""
         data = {**metrics}
         if step is not None:
-            data["step"] = step
-        self.run.log(data)
+            self.run.log(data, step=step)
+        else:
+            self.run.log(data)
 
     def log_params(self, params: dict[str, Any]) -> None:
         """Log params."""
@@ -249,7 +260,14 @@ class MLflowTracker(BaseTracker):
         if tracking_uri:
             mlflow.set_tracking_uri(tracking_uri)
         mlflow.set_experiment(experiment_name)
-        self.run = mlflow.start_run()
+        existing = mlflow.active_run()
+        if existing is not None:
+            logger.warning("Reusing existing active MLflow run: %s", existing.info.run_id)
+            self.run = existing
+            self._created_here = False
+        else:
+            self.run = mlflow.start_run()
+            self._created_here = True
 
     def log_metric(self, name: str, value: float, step: int | None = None) -> None:
         """Log metric."""
@@ -287,4 +305,5 @@ class MLflowTracker(BaseTracker):
         """Close."""
         import mlflow
 
-        mlflow.end_run()
+        if getattr(self, "_created_here", True):
+            mlflow.end_run()
