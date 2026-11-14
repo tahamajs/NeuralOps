@@ -2844,6 +2844,15 @@ def main(argv: list[str] | None = None) -> int:
       - Full traceback is suppressed by default for clean UX; printed only when --verbose is active.
       - Library modules must use named loggers; user-facing terminal CLI output uses print/console.
     """
+    import warnings
+
+    warnings.warn(
+        "neuralops.benchmarks.cli is deprecated and will be removed in a future release. "
+        "Please use neuralops.benchmarks.cli_v2 instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     parser = _build_parser()
 
     raw_args = sys.argv[1:] if argv is None else argv
