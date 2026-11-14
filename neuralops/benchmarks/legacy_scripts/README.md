@@ -60,7 +60,7 @@ For scripting and automation, prefer the canonical package CLI:
 
 ```bash
 # Run all benchmarkable operations
-python3 -m neuralops.benchmarks.cli run --backend auto --device cuda:0 --output results/benchmark.csv
+python3 -m neuralops.benchmarks.cli run --backend auto --device cuda --output results/benchmark.csv
 
 # Measure generation latency and decoding speed
 python3 -m neuralops.benchmarks.generation_speed --model gpt2 --gen-len 64

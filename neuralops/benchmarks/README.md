@@ -78,7 +78,7 @@ from neuralops.benchmarks.bench_llm_bandwidth import run_bandwidth_benchmark
 
 results = run_bandwidth_benchmark(
     configs=[(4, 512, 2048), (8, 512, 2048)],
-    device_str="cuda:0",
+    device_str="cuda",
     dtype_str="float16",
     warmup=5,
     repeat=20,
@@ -92,7 +92,7 @@ results = run_bandwidth_benchmark(
 from neuralops.benchmarks.benchmark_all_26_comprehensive import run_all_26_comprehensive
 
 results = run_all_26_comprehensive(
-    device_str="cuda:0",
+    device_str="cuda",
     dtype_str="float16",
     warmup=10,
     repeat=50,
@@ -120,7 +120,7 @@ from neuralops.benchmarks.benchmark_extrapolation_32k import run_extrapolation_b
 
 results = run_extrapolation_benchmark(
     seq_lens=[512, 1024, 2048, 4096, 8192, 16384, 32768],
-    device_str="cuda:0",
+    device_str="cuda",
     output_csv="docs/benchmarks/extrapolation.csv",
     output_tex="docs/reports/extrapolation.tex",
 )
@@ -131,7 +131,7 @@ results = run_extrapolation_benchmark(
 from neuralops.benchmarks.measure_multiprecision import measure_benchmark
 
 results = measure_benchmark(
-    device_str="cuda:0",
+    device_str="cuda",
     warmup=5,
     repeat=20,
     output_csv="docs/benchmarks/multiprecision.csv",
