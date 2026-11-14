@@ -1,0 +1,50 @@
+{
+  "version": "2.1.0",
+  "verified_commands": [
+    {
+      "command": "pip install neuralops",
+      "exit_code": 0,
+      "description": "Standard PyPI distribution package installation"
+    },
+    {
+      "command": "pip install -e \".[dev]\"",
+      "exit_code": 0,
+      "description": "Editable developer install with test and tooling dependencies"
+    },
+    {
+      "command": "neuralops info",
+      "exit_code": 0,
+      "description": "Inspect framework runtime environment and component counts"
+    },
+    {
+      "command": "neuralops doctor",
+      "exit_code": 0,
+      "description": "Audit hardware accelerator, CUDA drivers, and kernel toolchains"
+    },
+    {
+      "command": "neuralops run --benchmark attention:cosformer --dry-run",
+      "exit_code": 0,
+      "description": "Dry-run execution plan for specific attention mechanism"
+    },
+    {
+      "command": "neuralops benchmark list",
+      "exit_code": 0,
+      "description": "List all 369 registered benchmarks across mathematical families"
+    },
+    {
+      "command": "neuralops matrix --plan",
+      "exit_code": 0,
+      "description": "Plan multi-dimensional sweep grid across shapes and precisions"
+    },
+    {
+      "command": "neuralops serve --help",
+      "exit_code": 0,
+      "description": "Continuous batching and paged KV-cache inference serving CLI"
+    },
+    {
+      "command": "neuralops compress --help",
+      "exit_code": 0,
+      "description": "Model compression and low-rank SVD CLI"
+    }
+  ]
+}
