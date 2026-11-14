@@ -1,0 +1,55 @@
+version: "1.0.0"
+benchmark_suite: "attention"
+name: "attention_standard_sweep"
+description: "Standard multidimensional grid sweep across attention mechanisms"
+tag: "standard_attention"
+output_root_directory: "results/benchmarks"
+
+hardware:
+  device: "${CUDA_VISIBLE_DEVICES:-cuda:0}"
+  backend_preference: "auto"
+  enforce_deterministic: false
+  allow_tf32: true
+  memory_fraction_limit: null
+
+tracking:
+  enabled: true
+  enable_tensorboard: true
+  enable_local_jsonl: true
+  log_frequency_steps: 1
+  capture_gpu_telemetry: true
+  telemetry_sample_interval_ms: 250
+  tensorboard_flush_secs: 10
+  export_formats:
+    - "jsonl"
+    - "csv"
+    - "summary"
+
+attention_sweep:
+  mechanisms:
+    - "all"
+  batch_sizes:
+    - 1
+    - 4
+    - 16
+  sequence_lengths:
+    - 512
+    - 1024
+    - 2048
+    - 4096
+    - 8192
+  head_dimensions:
+    - 64
+    - 128
+  num_heads: 32
+  num_kv_heads: null
+  dtypes:
+    - "fp16"
+    - "bf16"
+  causal_modes:
+    - true
+    - false
+  warmup_iterations: 10
+  benchmark_iterations: 50
+
+custom_parameters: {}

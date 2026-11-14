@@ -65,6 +65,8 @@ cuda = [
     "triton>=2.3.0; sys_platform == 'linux'",
 ]
 
+gpu = ["neuralops[cuda]"]
+
 rocm = ["neuralops[core]"]
 mps = ["neuralops[core]"]
 cpu = ["neuralops[core]"]
