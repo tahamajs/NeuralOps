@@ -86,7 +86,7 @@ def _make_grad_scaler(device: torch.device, enabled: bool = True, init_scale: fl
         from torch.amp import GradScaler
         return GradScaler("cuda", enabled=enabled, init_scale=init_scale)
     except Exception:
-        from torch.cuda.amp import GradScaler  # fallback for ancient PyTorch
+        from torch.amp import GradScaler  # fallback for ancient PyTorch
         return GradScaler(enabled=enabled, init_scale=init_scale)
 
 

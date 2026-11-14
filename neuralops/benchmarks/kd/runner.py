@@ -52,7 +52,7 @@ def _make_grad_scaler(device: str = "cuda", enabled: bool = True, init_scale: fl
         except (TypeError, ValueError):
             pass
     try:
-        from torch.cuda.amp import GradScaler
+        from torch.amp import GradScaler
         return GradScaler(enabled=enabled, init_scale=init_scale)
     except Exception:
         from torch.amp import GradScaler
@@ -68,7 +68,7 @@ def _autocast_context(device: str = "cuda", enabled: bool = True, dtype: torch.d
             pass
     if hasattr(torch, "cuda") and hasattr(torch.cuda, "amp") and hasattr(torch.cuda.amp, "autocast"):
         try:
-            return torch.cuda.amp.autocast(enabled=enabled, dtype=dtype)
+            return torch.amp.autocast("cuda", enabled=enabled, dtype=dtype)
         except (TypeError, ValueError):
             pass
     return contextlib.nullcontext()

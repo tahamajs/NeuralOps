@@ -436,7 +436,7 @@ def build_or_load_causal_teacher_cache(
                             end = min(start + cur_bs, n_samples)
                             in_ids = sub_chunks[start:end].to(device=device, dtype=torch.long, non_blocking=True)
                             att_m = torch.ones_like(in_ids, dtype=torch.long)
-                            with (torch.cuda.amp.autocast(dtype=torch.float16) if device.type == "cuda" else contextlib.nullcontext()):
+                            with (torch.amp.autocast("cuda", dtype=torch.float16) if device.type == "cuda" else contextlib.nullcontext()):
                                 out = teacher(
                                     input_ids=in_ids,
                                     attention_mask=att_m,
@@ -681,7 +681,7 @@ def build_or_load_vlm_teacher_cache(
                                 dtype=torch.float16 if device.type == "cuda" else torch.float32,
                                 non_blocking=True,
                             )
-                            with (torch.cuda.amp.autocast(dtype=torch.float16) if device.type == "cuda" else contextlib.nullcontext()):
+                            with (torch.amp.autocast("cuda", dtype=torch.float16) if device.type == "cuda" else contextlib.nullcontext()):
                                 out = teacher(
                                     input_ids=in_ids,
                                     attention_mask=att_m,
