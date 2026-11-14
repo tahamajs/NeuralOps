@@ -234,8 +234,13 @@ def cmd_transplant(args: argparse.Namespace) -> int:
             try:
                 with open(sample_text, "r", encoding="utf-8") as f:
                     sample_text = f.read(4096)
-            except Exception:
-                pass
+            except OSError as e:
+                # allowed-swallow: fallback-to-raw-calibration-text
+                import logging
+
+                logging.getLogger("NeuralOps.CLI.Surgery").debug(
+                    "Could not read calibration text file %s: %s", sample_text, e
+                )
         encoded = tokenizer(sample_text or "The quick brown fox jumps over the lazy dog.", return_tensors="pt")
         calibration_inputs = {
             key: value.to(device) for key, value in encoded.items() if isinstance(value, torch.Tensor)
