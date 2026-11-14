@@ -79,6 +79,7 @@ def test_d2_warns_on_cpu_or_missing_device():
 
     # Calling without specifying hardware profile on non-CUDA machine
     import torch
+
     if not torch.cuda.is_available():
         est = estimate_resources(recipe)
         assert any("assume" in w.lower() for w in est.warnings)

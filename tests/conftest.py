@@ -264,6 +264,7 @@ def pytest_collection_modifyitems(config, items):
                 "test_memory_fragmentation",
                 "test_cuda_ops_no_fake",
                 "test_triton_ops_all_kernels",
+                "test_triton_sample",
                 "test_timing_correct",
                 "test_cli_cuda_visible_devices",
             )

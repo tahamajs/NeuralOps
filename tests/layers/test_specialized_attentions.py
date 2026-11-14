@@ -37,7 +37,7 @@ from neuralops.layers.hybrid.regla_attention import ReGLAAttention
 from neuralops.layers.hybrid.split_head_hybrid_attention import SplitHeadHybridAttention
 from neuralops.layers.hybrid.tri_branch_hybrid_attention import TriBranchHybridAttention
 from neuralops.layers.linear.cosformer import CosformerAttention
-from neuralops.layers.linear.gla_attention import GatedLinearAttention
+from neuralops.layers.linear.gla_attention import GLAttention, GatedLinearAttention
 
 # MLA & Surgery
 from neuralops.layers.modern.mla_attention import MLAAttention
@@ -53,7 +53,7 @@ from neuralops.layers.ssm.hymba_transx import HymbaTransXBlock
 from neuralops.layers.ssm.jamba import Jamba2Block
 from neuralops.layers.ssm.jamba_info import JambaInfoBlock
 from neuralops.layers.ssm.samba_m3 import SAMBAM3Block
-from neuralops.layers.ssm.samba_moe import SambaMoE
+from neuralops.layers.ssm.samba_moe import SambaMoE, SambaMoEBlock
 from neuralops.surgery.mla_surgery import (
     DeepSeekMLASurgeryBridge,
     DualStreamLatentState,

@@ -497,7 +497,7 @@ def test_extended_kernels_sampling():
     )
     from neuralops.ops.triton.sliding_window import (
         sliding_window_attention,
-        sliding_window_pytorch_ref,
+        sliding_window_pytorch,
     )
 
     # cur_linear
@@ -533,7 +533,7 @@ def test_extended_kernels_sampling():
 
     # sliding_window
     sw_out = sliding_window_attention(q, k, v, window_size=8)
-    sw_ref = sliding_window_pytorch_ref(q, k, v, window_size=8)
+    sw_ref = sliding_window_pytorch(q, k, v, window_size=8)
     assert not torch.isnan(sw_out).any()
     assert (sw_out - sw_ref).abs().max().item() < 1e-5
 
@@ -557,14 +557,18 @@ def test_extended_kernels_sampling():
     assert (ret_out - ret_ref).abs().max().item() < 1e-5
 
     # fms_scan
-    u_fms = torch.randn(2, 4, 16, 32)
-    f_fms = torch.sigmoid(torch.randn(2, 4, 16, 32))
-    assert not torch.isnan(fms_scan_triton(u_fms, f_fms)).any()
-    assert (fms_scan_triton(u_fms, f_fms) - fms_scan_pytorch(u_fms, f_fms)).abs().max().item() < 1e-5
+    q_fms = torch.randn(2, 4, 16, 32)
+    k_fms = torch.randn(2, 4, 16, 32)
+    v_fms = torch.randn(2, 4, 16, 32)
+    decay_fms = torch.sigmoid(torch.randn(4))
+    fms_out = fms_scan_triton(q_fms, k_fms, v_fms, decay_fms)
+    fms_ref = fms_scan_pytorch(q_fms, k_fms, v_fms, decay_fms)
+    assert not torch.isnan(fms_out).any()
+    assert (fms_out - fms_ref).abs().max().item() < 1e-5
 
     # hgrn2_scan
-    x_h = torch.randn(2, 4, 16, 32)
-    g_h = torch.sigmoid(torch.randn(2, 4, 16, 32))
+    x_h = torch.randn(2, 16, 32)
+    g_h = torch.sigmoid(torch.randn(2, 16, 32))
     assert not torch.isnan(hgrn2_scan_triton(x_h, g_h)).any()
     assert (hgrn2_scan_triton(x_h, g_h) - hgrn2_scan_pytorch(x_h, g_h)).abs().max().item() < 1e-5
 
@@ -579,8 +583,8 @@ def test_extended_kernels_sampling():
 
 def test_autotuner_and_sram_budgets():
     """Verify SRAM budget estimation, safe autotuning filtering, and constants."""
-    assert BLOCK_SIZE == 128
-    assert MAX_TRITON_SEQ_LEN == 8192
+    assert BLOCK_SIZE == 64
+    assert MAX_TRITON_SEQ_LEN == 16384
     assert 64 in SUPPORTED_HEAD_DIMS
 
     # Estimate SRAM bytes

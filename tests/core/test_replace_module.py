@@ -29,14 +29,18 @@ class SimpleContainer(nn.Module):
 class NestedComposite(nn.Module):
     def __init__(self):
         super().__init__()
-        self.layers = nn.ModuleList([
-            nn.Linear(16, 16),
-            nn.Linear(16, 16),
-        ])
-        self.dict_blocks = nn.ModuleDict({
-            "attn": nn.Linear(16, 16),
-            "mlp": nn.Linear(16, 16),
-        })
+        self.layers = nn.ModuleList(
+            [
+                nn.Linear(16, 16),
+                nn.Linear(16, 16),
+            ]
+        )
+        self.dict_blocks = nn.ModuleDict(
+            {
+                "attn": nn.Linear(16, 16),
+                "mlp": nn.Linear(16, 16),
+            }
+        )
         self.sub = SimpleContainer()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:

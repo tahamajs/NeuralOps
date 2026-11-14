@@ -42,10 +42,12 @@ class TwoLayerTestNet(nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.config = type("Config", (), {"hidden_size": 64, "num_hidden_layers": 2})()
-        self.intermediate = nn.ModuleDict({
-            "dense1": nn.Linear(64, 64),
-            "dense2": nn.Linear(64, 64),
-        })
+        self.intermediate = nn.ModuleDict(
+            {
+                "dense1": nn.Linear(64, 64),
+                "dense2": nn.Linear(64, 64),
+            }
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         h = self.intermediate["dense1"](x)
