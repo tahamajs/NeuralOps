@@ -122,6 +122,7 @@ class BenchmarkConfig:
 
         if not isinstance(self.device, str) or not re.match(r"^(cuda(:\d+)?|cpu|mps)$", self.device.strip().lower()):
             raise ValueError(f"Invalid device '{self.device}'. Must match '^(cuda(:\\d+)?|cpu|mps)$'")
+        self.validate_device()
 
     def resolve_torch_dtype(self) -> Any:
         """Resolve canonical precision string to torch.dtype."""
@@ -135,14 +136,28 @@ class BenchmarkConfig:
         return mapping[self.precision]
 
     def validate_device(self) -> None:
-        """Fail closed if CUDA device is requested but unavailable."""
+        """Validate device string, including CUDA index."""
         import torch
 
-        if self.device.startswith("cuda") and not torch.cuda.is_available():
-            raise RuntimeError(
-                f"CUDA device '{self.device}' was requested, but CUDA is unavailable on this host. "
-                "Failing closed to prevent invalid latency/throughput artifacts."
-            )
+        device = self.device.strip().lower()
+        if device.startswith("cuda"):
+            if not torch.cuda.is_available():
+                raise RuntimeError(
+                    f"Device '{self.device}' requested but CUDA is unavailable. "
+                    f"torch.cuda.is_available()={torch.cuda.is_available()}"
+                )
+            idx = 0
+            if ":" in device:
+                try:
+                    idx = int(device.split(":")[1])
+                except (ValueError, IndexError):
+                    raise RuntimeError(f"Invalid CUDA device index in '{self.device}'")
+            n_gpus = torch.cuda.device_count()
+            if idx >= n_gpus:
+                raise RuntimeError(
+                    f"Device index {idx} out of range. "
+                    f"Only {n_gpus} GPU(s) available: {list(range(n_gpus))}"
+                )
 
     def to_dict(self) -> dict[str, Any]:
         """Convert config to dictionary representation without secret credentials.

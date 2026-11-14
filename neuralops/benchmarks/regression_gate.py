@@ -27,8 +27,16 @@ def _load(path: Path) -> dict[str, Any]:
 def compare_results(baseline_path: Path, candidate_path: Path, metric: str, max_regression: float) -> dict[str, Any]:
     baseline = _load(baseline_path)
     candidate = _load(candidate_path)
-    if metric not in baseline["metrics"] or metric not in candidate["metrics"]:
-        raise KeyError(f"Metric {metric!r} is missing from baseline or candidate")
+    if metric not in baseline["metrics"]:
+        raise ValueError(
+            f"Metric '{metric}' not found in baseline. "
+            f"Available: {sorted(baseline['metrics'].keys())}"
+        )
+    if metric not in candidate["metrics"]:
+        raise ValueError(
+            f"Metric '{metric}' not found in candidate. "
+            f"Available: {sorted(candidate['metrics'].keys())}"
+        )
     baseline_value = baseline["metrics"][metric]
     candidate_value = candidate["metrics"][metric]
     if not isinstance(baseline_value, (int, float)) or not isinstance(candidate_value, (int, float)):
