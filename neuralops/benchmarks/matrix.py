@@ -111,21 +111,55 @@ class ColdCacheFlusher:
     """Manages L2 cache eviction protocol by allocating a buffer larger than hardware L2 capacity."""
 
     def __init__(self, device: torch.device, size_mb: int = 256) -> None:
+        if isinstance(device, str):
+            device = torch.device(device)
         self.device = device
         self.size_mb = size_mb
         self._buffer: Optional[torch.Tensor] = None
         if device.type == "cuda" and torch.cuda.is_available():
             try:
-                num_elements = (size_mb * 1024 * 1024) // 4
+                l2_bytes = 0
+                if hasattr(torch.cuda, "get_device_properties"):
+                    try:
+                        props = torch.cuda.get_device_properties(device)
+                        l2_bytes = getattr(props, "L2_cache_size", 0)
+                    except Exception:
+                        l2_bytes = 0
+                if l2_bytes and l2_bytes > 0:
+                    num_elements = l2_bytes // 4
+                else:
+                    num_elements = (size_mb * 1024 * 1024) // 4
                 self._buffer = torch.empty(num_elements, dtype=torch.int32, device=device)
             except Exception as e:
-                logger.debug("ColdCacheFlusher buffer allocation skipped: %s", e)
+                logger.debug("ColdCacheFlusher CUDA buffer allocation skipped: %s", e)
                 self._buffer = None
+        elif device.type == "mps":
+            mps_available = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+            if mps_available or not hasattr(torch.backends, "mps"):
+                try:
+                    num_elements = (size_mb * 1024 * 1024) // 4
+                    self._buffer = torch.empty(num_elements, dtype=torch.int32, device=device)
+                    if hasattr(torch, "mps") and hasattr(torch.mps, "synchronize"):
+                        try:
+                            torch.mps.synchronize()
+                        except Exception:
+                            pass
+                except Exception as e:
+                    logger.debug("ColdCacheFlusher MPS buffer allocation skipped: %s", e)
+                    self._buffer = None
 
     def flush(self) -> None:
         """Evict device cache lines."""
         if self._buffer is not None:
             self._buffer.zero_()
+            if self.device.type == "cuda" and torch.cuda.is_available():
+                torch.cuda.synchronize(self.device)
+            elif self.device.type == "mps":
+                if hasattr(torch, "mps") and hasattr(torch.mps, "synchronize"):
+                    try:
+                        torch.mps.synchronize()
+                    except Exception:
+                        pass
 
 
 class BenchmarkMatrixOrchestrator:

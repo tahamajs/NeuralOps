@@ -249,7 +249,8 @@ class MultiSeedConfig:
 
     def __post_init__(self) -> None:
         if self.preset and self.preset in SEED_PRESETS:
-            self.seeds = list(SEED_PRESETS[self.preset])
+            if list(self.seeds) == list(TIER1_CANONICAL_SEEDS):
+                self.seeds = list(SEED_PRESETS[self.preset])
 
 
 @dataclass
