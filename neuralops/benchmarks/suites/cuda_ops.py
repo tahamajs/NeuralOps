@@ -89,8 +89,7 @@ class CudaOpsBenchmark(AbstractBaseBenchmark):
             # Determine best available callable
             target_fn = adapter._cuda_fn or adapter._triton_fn or adapter._pytorch_ref_fn
             if target_fn is None:
-                # Mock execution function if no implementation is installed
-                target_fn = lambda *a, **k: a[0] * 1.0
+                raise RuntimeError(f"No backend available for kernel '{kernel_name}'")
 
             def call_kernel() -> Any:
                 return target_fn(*args, **kw)
