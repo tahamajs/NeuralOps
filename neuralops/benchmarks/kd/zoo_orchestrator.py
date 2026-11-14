@@ -562,7 +562,19 @@ class ZooOrchestrator:
 
                 if self.uploader is not None:
                     repo_id = res.get("repo_id") or f"{self.hf_org}/{key}"
-                    self.uploader.submit_upload(ckpt_dir, repo_id, mechanism_name=key)
+                    try:
+                        self.uploader.submit_upload(
+                            attn_key=key,
+                            staging_dir=ckpt_dir,
+                            metrics=res.get("metrics", {}),
+                            repo_id=repo_id,
+                        )
+                    except TypeError:
+                        # Fallback for legacy signature
+                        try:
+                            self.uploader.submit_upload(ckpt_dir, repo_id, mechanism_name=key)
+                        except Exception as e:
+                            logger.warning("Failed to submit upload via fallback signature: %s", e)
             except Exception as exc:
                 logger.error("[%d/%d] Execution failed for %s: %s", i + 1, len(keys), key, exc, exc_info=True)
                 fail_res = {
