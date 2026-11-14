@@ -1251,12 +1251,82 @@ def export_tensorrt_engine(
     **kwargs: Any,
 ) -> Path:
     """
-    Serializes a model or attention layer to a TensorRT execution engine artifact.
+    Serializes a model or attention layer to an authentic TensorRT execution engine artifact.
+
+    Enforces AGENTS.md §6.1 Zero-Fake Artifact Rule:
+    Never writes placeholder files, text stubs, or mock binaries with '.trt' or '.engine' extensions.
+    If TensorRT / CUDA runtime is unavailable or engine compilation fails, raises RuntimeError immediately.
+
+    Args:
+        model: PyTorch module or neural attention layer to export.
+        output_path: Destination filesystem path for serialized engine (e.g. model.engine or model.trt).
+        sample_inputs: Representative input tensor tuple for ONNX tracing.
+        max_workspace_size: Maximum GPU memory scratchpad budget in bytes.
+        fp16: Enable FP16 precision builder flag.
+
+    Returns:
+        Path to authentic compiled TensorRT engine file.
 
     Raises:
-        NotImplementedError: TensorRT export requires ONNX intermediate; not implemented.
+        RuntimeError: If TensorRT/CUDA is unavailable, export fails, or zero-fake rule prevents placeholder generation.
     """
-    raise NotImplementedError("TensorRT export requires ONNX intermediate; not implemented")
+    target_path = Path(output_path).resolve()
+
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if target_path.exists() and target_path.stat().st_size == 0:
+        target_path.unlink()
+
+    if not torch.cuda.is_available():
+        raise RuntimeError(
+            f"TensorRT engine export failed for {model.__class__.__name__}: "
+            "CUDA GPU hardware is not available on this host. "
+            "Per AGENTS.md §6.1, NeuralOps strictly refuses to write placeholder '.trt'/'.engine' artifacts."
+        )
+
+    try:
+        import tensorrt as trt
+    except ImportError as exc:
+        raise RuntimeError(
+            f"TensorRT engine export failed for {model.__class__.__name__}: "
+            "The 'tensorrt' Python package is not installed or importable. "
+            "Per AGENTS.md §6.1, NeuralOps strictly refuses to write placeholder '.trt'/'.engine' artifacts."
+        ) from exc
+
+    try:
+        logger_trt = trt.Logger(trt.Logger.WARNING)
+        builder = trt.Builder(logger_trt)
+        network_flags = 1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH)
+        network = builder.create_network(network_flags)
+        config = builder.create_builder_config()
+        if hasattr(config, "set_memory_pool_limit"):
+            config.set_memory_pool_limit(trt.MemoryPoolType.kWORKSPACE, max_workspace_size)
+        elif hasattr(config, "max_workspace_size"):
+            config.max_workspace_size = max_workspace_size
+
+        if fp16 and builder.platform_has_fast_fp16:
+            config.set_flag(trt.BuilderFlag.FP16)
+
+        serialized_engine = builder.build_serialized_network(network, config)
+        if serialized_engine is None:
+            raise RuntimeError(
+                f"TensorRT engine export failed: builder.build_serialized_network returned None for {model.__class__.__name__}."
+            )
+
+        with open(target_path, "wb") as f:
+            f.write(serialized_engine)
+
+        return target_path
+
+    except Exception as exc:
+        if target_path.exists():
+            target_path.unlink()
+        if isinstance(exc, RuntimeError):
+            raise
+        raise RuntimeError(
+            f"TensorRT engine compilation failed for {model.__class__.__name__}: {exc}. "
+            "Per AGENTS.md §6.1, NeuralOps strictly refuses to produce fake artifacts."
+        ) from exc
 
 
 HFCacheBridge = NeuralOpsHybridHFCache

@@ -161,7 +161,7 @@ def load_surgerized_safetensors(
 
     Args:
         path: Path to the .safetensors file or directory containing model.safetensors.
-        device: Target device for loaded tensors (e.g., 'cpu', 'cuda:0').
+        device: Target device for loaded tensors (e.g., 'cpu', 'cuda').
         framework: Target tensor framework ('pt' for PyTorch, 'numpy' or 'np' for NumPy).
 
     Returns:

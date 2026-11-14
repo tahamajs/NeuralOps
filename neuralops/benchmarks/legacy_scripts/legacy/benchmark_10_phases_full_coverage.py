@@ -41,7 +41,7 @@ def benchmark_op(name, fn, *args, repeat=25, warmup=5):
         return (time.perf_counter() - t0) * 1000.0 / repeat
 
 
-def run_suite(device: str = "cuda:0" if torch.cuda.is_available() else "cpu"):
+def run_suite(device: str = "cuda" if torch.cuda.is_available() else "cpu"):
     results = []
 
     # Phase 1: fused_rope
