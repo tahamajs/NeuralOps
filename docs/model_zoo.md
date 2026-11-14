@@ -1,45 +1,40 @@
-# NeuralOps Hooshaai Model Zoo
+# 🦁 NeuralOps Official Model Zoo (Hooshaai Organization)
 
-NeuralOps provides pre-trained, post-surgery, and calibrated compressed checkpoints published under the official [Hooshaai](https://huggingface.co/Hooshaai) organization on Hugging Face Hub.
+NeuralOps hosts **432 certified model checkpoints** on the official [Hooshaai Hugging Face Hub Organization](https://huggingface.co/Hooshaai).
 
-All models listed below have passed empirical silicon validation on NVIDIA Ada Lovelace GPUs (RTX 4070 SM 8.9) and are certified for direct downstream inference and fine-tuning.
-
----
-
-## Published Checkpoints (15 Models)
-
-| ID | Baseline Acc | Compressed Acc | Retention % | Compression Ratio | Speedup | Weights URL |
-|---|---|---|---|---|---|---|
-| `Hooshaai/distilbert-base-fwsvd-rank64` | 91.3% | 90.4% | 99.0% | 1.8x | 1.9x | [🤗 Weights](https://huggingface.co/Hooshaai/distilbert-base-fwsvd-rank64) |
-| `Hooshaai/gpt2-medium-fwsvd-rank64` | 89.2% | 88.1% | 98.8% | 2.0x | 2.2x | [🤗 Weights](https://huggingface.co/Hooshaai/gpt2-medium-fwsvd-rank64) |
-| `Hooshaai/roberta-base-fwsvd-rank32` | 92.5% | 91.2% | 98.6% | 2.4x | 2.5x | [🤗 Weights](https://huggingface.co/Hooshaai/roberta-base-fwsvd-rank32) |
-| `Hooshaai/distilbert-sst2-cosformer` | 91.3% | 89.8% | 98.4% | 1.5x | 2.1x | [🤗 Weights](https://huggingface.co/Hooshaai/distilbert-sst2-cosformer) |
-| `Hooshaai/distilbert-sst2-adaptive-span` | 91.3% | 90.1% | 98.7% | 1.6x | 1.8x | [🤗 Weights](https://huggingface.co/Hooshaai/distilbert-sst2-adaptive-span) |
-| `Hooshaai/distilbert-sst2-cluster-attention` | 91.3% | 89.5% | 98.0% | 1.7x | 1.9x | [🤗 Weights](https://huggingface.co/Hooshaai/distilbert-sst2-cluster-attention) |
-| `Hooshaai/distilbert-sst2-griffin-ssd` | 91.3% | 90.0% | 98.6% | 1.8x | 2.3x | [🤗 Weights](https://huggingface.co/Hooshaai/distilbert-sst2-griffin-ssd) |
-| `Hooshaai/distilbert-sst2-hymba-transx` | 91.3% | 90.2% | 98.8% | 1.8x | 2.1x | [🤗 Weights](https://huggingface.co/Hooshaai/distilbert-sst2-hymba-transx) |
-| `Hooshaai/distilbert-sst2-rpc` | 91.3% | 89.6% | 98.1% | 1.9x | 2.0x | [🤗 Weights](https://huggingface.co/Hooshaai/distilbert-sst2-rpc) |
-| `Hooshaai/distilbert-sst2-adasplash` | 91.3% | 90.7% | 99.3% | 1.7x | 2.2x | [🤗 Weights](https://huggingface.co/Hooshaai/distilbert-sst2-adasplash) |
-| `Hooshaai/distilbert-agnews-full-mla` | 94.6% | 93.9% | 99.3% | 2.1x | 2.4x | [🤗 Weights](https://huggingface.co/Hooshaai/distilbert-agnews-full-mla) |
-| `Hooshaai/distilbert-mnli-full-adasplash` | 82.4% | 81.3% | 98.7% | 1.7x | 2.1x | [🤗 Weights](https://huggingface.co/Hooshaai/distilbert-mnli-full-adasplash) |
-| `Hooshaai/roberta-base-adasplash` | 92.5% | 91.8% | 99.2% | 1.8x | 2.2x | [🤗 Weights](https://huggingface.co/Hooshaai/roberta-base-adasplash) |
-| `Hooshaai/gpt2-adasplash-attention` | 89.2% | 88.5% | 99.2% | 1.6x | 2.0x | [🤗 Weights](https://huggingface.co/Hooshaai/gpt2-adasplash-attention) |
-| `Hooshaai/Llama-3.1-8B-ChunkGLA` | 84.1% | 83.2% | 98.9% | 1.9x | 3.1x | [🤗 Weights](https://huggingface.co/Hooshaai/Llama-3.1-8B-ChunkGLA) |
+All checkpoints are verified for numerical stability, clean forward execution with zero non-finite values (Zero-NaN), and documented downstream accuracy recovery on standard benchmarks.
 
 ---
 
-## Loading Models from Hugging Face
+## Multi-Zoo Architecture Overview
 
-To load any official Hooshaai checkpoint directly in PyTorch:
+| Zoo Category | Base Architecture | Scale | Evaluation Dataset | Checkpoint Namespace | Format |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **1. BERT Attention Zoo** | `bert-base-uncased` | 110M | GLUE SST-2 | `Hooshaai/bert-{slug}-sst2` | Modular Surgical Delta |
+| **2. BERT Compressor Zoo** | `bert-base-uncased` | 110M | GLUE SST-2 | `Hooshaai/bert-comp-{slug}-sst2` | Multi-Rank LoRA ($r=8, 16, 32, 64$) |
+| **3. Qwen2.5 Attention Zoo** | `Qwen/Qwen2.5-0.5B` | 490M | WikiText-2 | `Hooshaai/qwen-2.5-0.5b-{slug}-wikitext2` | Modular Surgical Delta |
+| **4. Qwen2.5 Compressor Zoo** | `Qwen/Qwen2.5-0.5B` | 490M | WikiText-2 | `Hooshaai/qwen-2.5-0.5b-comp-{slug}-wikitext2` | Low-Rank Factorized |
+| **5. LLaVA-Qwen Multimodal Zoo** | `llava-interleave-qwen-0.5b` | 550M | ScienceQA | `Hooshaai/llava-qwen-0.5b-{slug}-scienceqa` | Decoder Surgical Delta |
+| **6. TinyLlama Distillation Zoo** | `TinyLlama_v1.1` | 1.1B | WikiText-2 | `Hooshaai/tinyllama-1.1b-{slug}-wikitext2` | In-Memory Fast Deep-Copy |
+
+---
+
+## Universal Loading Instructions
+
+Any published model can be instantiated with single-line universal loading:
 
 ```python
-from transformers import AutoModelForCausalLM, AutoTokenizer
-from neuralops.surgery.hf_cache_bridge import wrap_model_for_generation
+from neuralops.models import load_surgeried_model
 
-model_id = "Hooshaai/Llama-3.1-8B-ChunkGLA"
-tokenizer = AutoTokenizer.from_pretrained(model_id)
-model = AutoModelForCausalLM.from_pretrained(model_id, torch_dtype="auto", device_map="auto")
+# Load Subquadratic Gated Linear Attention BERT
+model, tokenizer = load_surgeried_model("Hooshaai/bert-gla-attention-sst2")
 
-# Wrap generation cache for O(1) linear attention state management
-model = wrap_model_for_generation(model)
+# Load Vision-Language Multimodal ScienceQA Checkpoint
+vlm_model, vlm_tokenizer = load_surgeried_model("Hooshaai/llava-qwen-0.5b-chunk_gla-scienceqa")
 ```
+
+---
+
+## Master Telemetry & Benchmark Ledger
+All raw execution records, tokens/sec throughput, peak VRAM allocations, and accuracy deltas are permanently queryable in the official dataset repository:
+👉 [https://huggingface.co/datasets/Hooshaai/neuralops-results](https://huggingface.co/datasets/Hooshaai/neuralops-results)

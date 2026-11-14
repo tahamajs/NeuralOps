@@ -67,3 +67,15 @@ from neuralops.ops.pytorch import gdn_scan_pytorch, fused_rmsnorm_pytorch
 In prior releases, three parallel CLI parsers existed (`neuralops.benchmarks.cli`, `neuralops.cli.main`, and `neuralops.cli.core.app`).
 - **Canonical Entrypoint**: All CLI invocations, entry points, and console scripts now route solely to `neuralops.benchmarks.cli:main`.
 - **Deprecated Shims**: `neuralops.cli.main` and `neuralops.cli.core.app` are deprecated backward-compatibility shims that emit `DeprecationWarning` and delegate directly to `neuralops.benchmarks.cli:main`. They will be removed in v3.0.0.
+
+
+---
+
+## 🚀 Migrating to NeuralOps v2.1.0
+
+### Key Breaking Changes & Contract Updates
+1. **Default Hugging Face Hub Organization:** All hub operations, models, and loaders now default to the official organization namespace: `Hooshaai` (previously personal user account).
+2. **Serving Security Defaults:** `neuralops serve` now strictly binds to `127.0.0.1` by default and enforces token authorization.
+3. **Trust Remote Code Protocol:** `trust_remote_code` defaults strictly to `False` in all pipeline and CLI invocations. Explicit `--trust-remote-code` or `NEURALOPS_TRUST_REMOTE_CODE=1` is required to execute external hub code.
+4. **Benchmark Command Hierarchy:** `neuralops benchmark` is now a dedicated command group (`run`, `plan`, `list`, `info`, `compare`, `resume`) replacing legacy overloaded aliases.
+5. **Decoupled Cluster Execution:** Legacy cluster batch execution scripts (`scripts/hpc/`) have been retired in favor of native multi-GPU Python CLI orchestration (`neuralops matrix`, `neuralops benchmark run`).
