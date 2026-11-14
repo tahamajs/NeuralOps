@@ -144,6 +144,9 @@ class Conv1DLinearAdapter(nn.Module):
 class UniversalArchitectureScanner:
     """Intelligent structural scanner discovering attention blocks across all 5 topological patterns."""
 
+    def __init__(self, model: Optional[nn.Module] = None) -> None:
+        self.model = model
+
     @staticmethod
     def is_conv1d(module: nn.Module) -> bool:
         """Check if module is a HuggingFace Conv1D projection."""
@@ -305,7 +308,7 @@ class UniversalArchitectureScanner:
         raise ValueError(f"Cannot extract weight and bias from module {linear_or_conv}")
 
     @classmethod
-    def scan(cls, model: nn.Module) -> List[AttentionTargetSpec]:
+    def _scan_impl(cls, model: nn.Module) -> List[AttentionTargetSpec]:
         """
         Recursively scan any nn.Module and return all identified attention blocks.
         Guarantees that replacing the target module preserves surrounding LayerNorm and residuals.
@@ -340,8 +343,16 @@ class UniversalArchitectureScanner:
                 target.extra_metadata = {}
             target.extra_metadata["layer_idx"] = target.layer_idx
 
-        targets.sort(key=lambda s: (s.layer_idx if s.layer_idx is not None else 0))
+        targets.sort(key=lambda s: s.layer_idx if s.layer_idx is not None else 0)
         return targets
+
+    class _ScanMethod:
+        def __get__(self, instance: Any, owner: Any = None) -> Any:
+            if instance is not None:
+                return lambda model=None: owner._scan_impl(model if model is not None else instance.model)
+            return owner._scan_impl
+
+    scan = _ScanMethod()
 
     @classmethod
     def find_attention_targets(cls, model: nn.Module) -> List[AttentionTargetSpec]:
@@ -498,7 +509,7 @@ class UniversalArchitectureScanner:
             num_heads = getattr(module, "num_heads", getattr(module, "n_head", 12))
             if num_heads <= 0 or split_dim % num_heads:
                 raise ValueError(
-                    f"Invalid fused QKV dimensions at {path!r}: " f"qkv_width={total_qkv_out}, num_heads={num_heads}"
+                    f"Invalid fused QKV dimensions at {path!r}: qkv_width={total_qkv_out}, num_heads={num_heads}"
                 )
             head_dim = split_dim // num_heads
 
@@ -790,7 +801,7 @@ class ModelScanner:
                 target.extra_metadata = {}
             target.extra_metadata["layer_idx"] = target.layer_idx
 
-        targets.sort(key=lambda s: (s.layer_idx if s.layer_idx is not None else 0))
+        targets.sort(key=lambda s: s.layer_idx if s.layer_idx is not None else 0)
         return targets
 
     @classmethod

@@ -20,7 +20,7 @@ import tempfile
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 import torch
 import torch.nn as nn
@@ -60,6 +60,9 @@ class Snapshot:
     rng_state: Optional[Dict[str, Any]] = None
     disk_path: Optional[str] = None
     _temp_dir: Optional[str] = None
+    initial_param_names: Set[str] = field(default_factory=set)
+    initial_buffer_names: Set[str] = field(default_factory=set)
+    initial_module_names: Set[str] = field(default_factory=set)
 
     def size_bytes(self) -> int:
         """Calculate total memory size in bytes of captured tensors."""
@@ -105,6 +108,12 @@ class Snapshot:
         restore(model, self)
         return model
 
+    def restore_copy(self, model: nn.Module) -> nn.Module:
+        """Create an independent copy of model in the snapshotted state."""
+        cloned = copy.deepcopy(model)
+        restore(cloned, self)
+        return cloned
+
 
 def capture(
     model: nn.Module,
@@ -130,6 +139,10 @@ def capture(
     params: Dict[str, torch.Tensor] = {}
     buffers: Dict[str, torch.Tensor] = {}
     submodules: Dict[str, nn.Module] = {}
+
+    initial_param_names: Set[str] = {name for name, _ in model.named_parameters()}
+    initial_buffer_names: Set[str] = {name for name, _ in model.named_buffers()}
+    initial_module_names: Set[str] = {name for name, _ in model.named_modules() if name}
 
     # Capture matching parameters
     for name, param in model.named_parameters():
@@ -222,6 +235,9 @@ def capture(
         rng_state=rng_state,
         disk_path=disk_path,
         _temp_dir=temp_dir_to_track,
+        initial_param_names=initial_param_names,
+        initial_buffer_names=initial_buffer_names,
+        initial_module_names=initial_module_names,
     )
 
 
@@ -244,6 +260,41 @@ def restore(model: nn.Module, snapshot: Snapshot) -> None:
     """
     try:
         device = next(model.parameters()).device if list(model.parameters()) else torch.device("cpu")
+
+        # 0. Clean up orphaned submodules, parameters, and buffers added during mutation
+        if snapshot.initial_module_names is not None:
+            current_module_names = [name for name, _ in model.named_modules() if name]
+            for name in sorted(current_module_names, key=lambda x: x.count("."), reverse=True):
+                if name not in snapshot.initial_module_names:
+                    try:
+                        parent, attr = _get_parent_and_attr(model, name)
+                        if hasattr(parent, attr):
+                            if isinstance(parent, (nn.ModuleList, nn.Sequential, list)) and attr.isdigit():
+                                del parent[int(attr)]
+                            else:
+                                delattr(parent, attr)
+                    except Exception as exc:
+                        logger.debug("Orphaned submodule deletion failed for '%s': %s", name, exc)
+
+        if snapshot.initial_param_names is not None:
+            for name, _ in list(model.named_parameters()):
+                if name not in snapshot.initial_param_names:
+                    try:
+                        parent, attr = _get_parent_and_attr(model, name)
+                        if hasattr(parent, attr):
+                            delattr(parent, attr)
+                    except Exception as exc:
+                        logger.debug("Orphaned parameter deletion failed for '%s': %s", name, exc)
+
+        if snapshot.initial_buffer_names is not None:
+            for name, _ in list(model.named_buffers()):
+                if name not in snapshot.initial_buffer_names:
+                    try:
+                        parent, attr = _get_parent_and_attr(model, name)
+                        if hasattr(parent, attr):
+                            delattr(parent, attr)
+                    except Exception as exc:
+                        logger.debug("Orphaned buffer deletion failed for '%s': %s", name, exc)
 
         # 1. Restore structural submodule mutations
         if "" in snapshot.submodules:

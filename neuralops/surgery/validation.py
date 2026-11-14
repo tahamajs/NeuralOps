@@ -26,7 +26,7 @@ class CheckResult:
     """Detailed result of an individual surgery verification check."""
 
     name: str  # "architecture_compat" | "forward_pass" | "output_sanity" | "quality_probe" | "recipe_compat"
-    passed: bool
+    passed: bool | None
     details: str
     measured: dict[str, Any] = field(default_factory=dict)
     estimated: dict[str, Any] = field(default_factory=dict)
@@ -40,13 +40,14 @@ class ValidationReport:
     checks: list[CheckResult] = field(default_factory=list)
     estimated_vram_reduction_mb: float | None = None
     estimated_latency_change_pct: float | None = None
+    requires_empirical_validation: bool = True
     warnings: list[str] = field(default_factory=list)
     recommendations: list[str] = field(default_factory=list)
 
     @property
     def errors(self) -> list[str]:
         """Aggregate error messages from all failed validation checks."""
-        return [c.details for c in self.checks if not c.passed]
+        return [c.details for c in self.checks if c.passed is False]
 
 
 def validate_before_surgery(
@@ -206,28 +207,29 @@ def validate_before_surgery(
         )
     )
 
-    # 5. Quality probe
-    quality_passed = True
-    quality_details = f"Quality budget {quality_budget:.2%} respected"
+    # 5. Quality probe (requires empirical validation on hardware)
+    quality_passed = None
+    quality_details = "Quality probe requires empirical validation on target hardware."
     checks.append(
         CheckResult(
             name="quality_probe",
             passed=quality_passed,
             details=quality_details,
-            measured={"perplexity_delta": 0.0},
-            estimated={"vram_reduction_pct": 20.0},
+            measured={},
+            estimated={},
         )
     )
 
-    is_safe = all(c.passed for c in checks)
+    is_safe = all(c.passed is True for c in checks if c.passed is not None)
     if not is_safe:
         warnings_list.append("One or more validation gates failed. Review check details before proceeding.")
 
     return ValidationReport(
         is_safe=is_safe,
         checks=checks,
-        estimated_vram_reduction_mb=256.0,
-        estimated_latency_change_pct=-15.0,
+        estimated_vram_reduction_mb=None,
+        estimated_latency_change_pct=None,
+        requires_empirical_validation=True,
         warnings=warnings_list,
         recommendations=recommendations,
     )

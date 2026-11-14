@@ -415,10 +415,10 @@ def apply_mla_attention_surgery(
             latent_kv_dim=latent_kv_dim,
             decoupled_rope_dim=decoupled_rope_dim,
             decay=decay,
-            hidden_dim=spec.hidden_dim,
+            hidden_dim=spec.embed_dim,
             **kwargs,
         )
-        spec.parent_module.register_module(spec.child_name, mla_bridge)
+        spec.parent_module.register_module(spec.attr_name, mla_bridge)
     return model
 
 

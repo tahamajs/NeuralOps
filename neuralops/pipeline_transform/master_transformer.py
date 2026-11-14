@@ -63,17 +63,17 @@ class MasterTransformerPipeline:
     def execute_stage_svd(self, model: nn.Module, rank_ratio: float = 0.5) -> nn.Module:
         """Stage 2: SVD Low-Rank Compression."""
         logger.info("Executing Stage 2: SVD Low-Rank Compression with ratio %.2f", rank_ratio)
-        return model
+        raise NotImplementedError("execute_stage_svd is not yet implemented.")
 
     def execute_stage_prune(self, model: nn.Module, sparsity: float = 0.25) -> nn.Module:
         """Stage 3: Structured 2:4 Sparsity / Pruning."""
         logger.info("Executing Stage 3: Structured Pruning with sparsity %.2f", sparsity)
-        return model
+        raise NotImplementedError("execute_stage_prune is not yet implemented.")
 
     def execute_stage_quantize(self, model: nn.Module) -> nn.Module:
         """Stage 4: Outlier-Aware Quantization (W8A8/FP8)."""
         logger.info("Executing Stage 4: Quantization to %d bits", self.quant_bits)
-        return model
+        raise NotImplementedError("execute_stage_quantize is not yet implemented.")
 
     def execute_stage_export(self, model: nn.Module, output_dir: str = "results/artifacts") -> Dict[str, str]:
         """Stage 5: Serving Export to SafeTensors and Manifest."""

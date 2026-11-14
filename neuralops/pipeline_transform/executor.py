@@ -11,6 +11,7 @@ Transactional Pipeline Execution Engine with Per-Stage Validation and Rollback.
 
 from __future__ import annotations
 
+import copy
 import logging
 import platform
 import time
@@ -119,6 +120,12 @@ def execute_plan(
         params_before = sum(p.numel() for p in model.parameters())
 
         # 4. Apply operation
+        # Capture pre-mutation copy so validation gates compare against the real pre-state
+        try:
+            pre_copy = copy.deepcopy(model)
+        except Exception:
+            pre_copy = snapshot.restore_copy(model) if hasattr(snapshot, "restore_copy") else model
+
         t_stage_start = time.perf_counter()
         try:
             new_model, op_evidence = op_impl.apply(model, stage.config)
@@ -148,7 +155,7 @@ def execute_plan(
         stage_val_ctx = dict(stage.config)
         stage_val_ctx.setdefault("baseline_parameters", params_before)
         val_result = run_validation_gates(
-            model_before=model,
+            model_before=pre_copy,
             model_after=new_model,
             profile=val_profile,
             context=stage_val_ctx,
