@@ -37,18 +37,20 @@ operations:
 def test_build_evidence_and_render_report(tmp_path):
     recipe = loads_recipe(SAMPLE_RECIPE)
     res = PipelineResult(
+        final_model=None,
         success=True,
-        model=None,
         stage_records=[
             StageRecord(
+                operation_name="weights.compress",
+                duration=0.15,
+                memory_before=1000,
+                memory_after=500,
                 stage_id="step-1",
-                operation_type="weights.compress",
                 success=True,
                 evidence={"compression_ratio": 0.49, "modules_compressed": 4},
-                duration_seconds=0.15,
             )
         ],
-        duration_seconds=0.18,
+        total_time=0.18,
     )
 
     ev = build_evidence(recipe, res, seed=42)

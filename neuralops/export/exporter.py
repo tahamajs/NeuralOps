@@ -501,12 +501,29 @@ def load_exported_model(
             f"No weights file (model.safetensors or pytorch_model.bin) found in export directory: {export_dir}"
         )
 
-    incompatible = model.load_state_dict(state_dict, strict=strict)
-    if incompatible.missing_keys or incompatible.unexpected_keys:
+    incompatible = model.load_state_dict(state_dict, strict=False)
+    # Check if any missing key is truly missing (and not a tied parameter in the target model)
+    true_missing = []
+    if incompatible.missing_keys:
+        model_dict = dict(model.named_parameters(remove_duplicate=False))
+        model_dict.update(dict(model.named_buffers(remove_duplicate=False)))
+        for k in incompatible.missing_keys:
+            param = model_dict.get(k)
+            tied = False
+            if param is not None:
+                # Check if another parameter sharing the same underlying tensor was loaded from state_dict
+                for other_name, other_param in model_dict.items():
+                    if other_name != k and other_name in state_dict and param.data_ptr() == other_param.data_ptr():
+                        tied = True
+                        break
+            if not tied:
+                true_missing.append(k)
+
+    if true_missing or incompatible.unexpected_keys:
         msg = (
             f"State dict mismatch loading exported model from '{export_dir}': "
-            f"{len(incompatible.missing_keys)} missing keys, {len(incompatible.unexpected_keys)} unexpected keys. "
-            f"Missing: {incompatible.missing_keys[:5]}, Unexpected: {incompatible.unexpected_keys[:5]}"
+            f"{len(true_missing)} missing keys, {len(incompatible.unexpected_keys)} unexpected keys. "
+            f"Missing: {true_missing[:5]}, Unexpected: {incompatible.unexpected_keys[:5]}"
         )
         if strict:
             raise RuntimeError(msg)

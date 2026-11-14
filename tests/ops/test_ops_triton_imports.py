@@ -49,6 +49,9 @@ def test_all_autograd_triton_imports_resolve():
                 for target in node.targets:
                     if isinstance(target, ast.Name):
                         symbols.add(target.id)
+            elif isinstance(node, ast.AnnAssign):
+                if isinstance(node.target, ast.Name):
+                    symbols.add(node.target.id)
             elif isinstance(node, ast.ImportFrom):
                 for alias in node.names:
                     asname = alias.asname or alias.name

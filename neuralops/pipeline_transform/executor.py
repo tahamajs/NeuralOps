@@ -229,12 +229,10 @@ def execute_recipe(
     """Compile and execute a Recipe against a model."""
     from neuralops.pipeline_transform.planner import plan_recipe
 
-    plan = plan_recipe(recipe, model=model)
+    plan = plan_recipe(recipe, model)
     return execute_plan(
         plan=plan,
         model=model,
-        baseline_model=baseline_model,
-        enable_rollback=enable_rollback,
     )
 
 

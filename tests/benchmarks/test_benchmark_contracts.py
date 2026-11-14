@@ -39,7 +39,9 @@ def test_canonical_config_roundtrip(tmp_path: Path):
 
 def test_canonical_config_loads_accelerator_preset():
     repo_root = Path(__file__).resolve().parent.parent.parent
-    config_path = repo_root / "benchmarks" / "configs" / "quick_cuda.json"
+    config_path = repo_root / "neuralops" / "benchmarks" / "configs" / "quick_cuda.json"
+    if not config_path.exists():
+        config_path = repo_root / "benchmarks" / "configs" / "quick_cuda.json"
     config = CanonicalConfig.from_file(config_path)
 
     assert config.device == "cuda"

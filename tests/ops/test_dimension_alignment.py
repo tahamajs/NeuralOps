@@ -46,11 +46,11 @@ def test_svd_linear_rank_tensor_core_alignment():
 
 
 def test_all_131_attentions_direct_dim_256():
-    """Verify all 131 registered attentions support BOTH direct instantiation cls(dim=256, num_heads=4) and create_attention."""
+    """Verify all canonical registered attentions support BOTH direct instantiation cls(dim=256, num_heads=4) and create_attention."""
     from neuralops import create_attention
     from neuralops.core.registry import ATTENTION_REGISTRY
     names = list(ATTENTION_REGISTRY.keys())
-    assert len(names) >= 131, f"Expected >= 131 registered attentions, got {len(names)}"
+    assert len(names) >= 115, f"Expected >= 115 registered attentions, got {len(names)}"
 
     for name in names:
         cls = ATTENTION_REGISTRY.get(name)

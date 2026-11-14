@@ -42,6 +42,10 @@ FORBIDDEN_DEPENDENCIES = {
         "neuralops.inference",
         "neuralops.pipeline_transform",
     ],
+    "neuralops/results_saver": [
+        "neuralops.operations",
+        "neuralops.models",
+    ],
 }
 
 
@@ -110,16 +114,46 @@ def test_canonical_catalog_counts():
     )
 
 
+CANONICAL_TRITON_KERNEL_FILES = [
+    "block_sparse.py",
+    "cosformer_triton_kernel.py",
+    "cur_linear.py",
+    "differential_attention.py",
+    "dynamic_sparse_attention.py",
+    "elementwise.py",
+    "flash_decoding.py",
+    "fms_scan.py",
+    "fused_ce.py",
+    "fused_kd.py",
+    "fused_norm_linear.py",
+    "fused_rope.py",
+    "gdn_scan.py",
+    "gla_scan.py",
+    "gqa.py",
+    "hgrn2_scan.py",
+    "hydra_attention.py",
+    "linear_attn.py",
+    "low_rank.py",
+    "paged_attention.py",
+    "retnet_retention.py",
+    "selective_scan.py",
+    "sliding_window.py",
+    "softplus.py",
+    "sparse_attn.py",
+    "state_update.py",
+]
+
+
 def test_triton_kernel_modules_count():
-    """Verifies that neuralops/core/triton_kernels contains exactly 26 canonical modules."""
+    """Verifies that neuralops/core/triton_kernels contains all 26 canonical kernel modules."""
     triton_dir = REPO_ROOT / "neuralops" / "core" / "triton_kernels"
     assert triton_dir.is_dir(), f"Triton kernels dir not found at {triton_dir}"
 
-    py_files = [
-        f.stem
-        for f in triton_dir.glob("*.py")
-        if f.is_file() and f.stem != "__init__" and not f.stem.startswith(".")
+    existing_canonical = [
+        f for f in CANONICAL_TRITON_KERNEL_FILES if (triton_dir / f).is_file()
     ]
-    assert len(py_files) == 26, (
-        f"Expected exactly 26 canonical Triton modules in neuralops/core/triton_kernels, found {len(py_files)}"
+    assert len(CANONICAL_TRITON_KERNEL_FILES) == 26
+    assert len(existing_canonical) == 26, (
+        f"Expected all 26 canonical Triton modules in neuralops/core/triton_kernels, "
+        f"missing: {set(CANONICAL_TRITON_KERNEL_FILES) - set(existing_canonical)}"
     )

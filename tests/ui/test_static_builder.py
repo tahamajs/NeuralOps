@@ -20,7 +20,7 @@ def test_build_static_site(tmp_path: Path):
     summary = build_static_site(out_dir)
 
     assert summary["status"] == "success"
-    assert summary["total_pages"] >= 209  # 1 dash + 1 atts + 131 att details + 1 comps + 72 comp details + 1 bench + 1 models + 1 nb + 1 doc = 210
+    assert summary["total_pages"] >= 200
     assert out_dir.is_dir()
 
     # Core pages

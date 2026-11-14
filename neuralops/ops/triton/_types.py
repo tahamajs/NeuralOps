@@ -559,6 +559,7 @@ def gqa_pytorch_fallback(
 
 __all__ = [
     "BLOCK_SIZE",
+    "FORCE_PYTORCH_FALLBACK",
     "HAS_TRITON",
     "MAX_TRITON_SEQ_LEN",
     "SUPPORTED_HEAD_DIMS",

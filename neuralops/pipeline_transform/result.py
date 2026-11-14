@@ -101,6 +101,18 @@ class PipelineResult:
     total_time: float = 0.0
     success: bool = True
     error: Optional[str] = None
+    rolled_back: bool = False
+
+    @property
+    def model(self) -> nn.Module:
+        return self.final_model
+
+    @property
+    def validation(self) -> Optional[ValidationResult]:
+        for s in reversed(self.stage_records):
+            if s.validation_result is not None:
+                return s.validation_result
+        return None
 
     def to_dict(self) -> Dict[str, Any]:
         return {

@@ -349,7 +349,10 @@ def test_hf_roundtrip_still_works(tmp_path: Path):
 
 def test_onnx_export_still_works(tmp_path: Path):
     """Verify ONNX export generates a valid checked ONNX protobuf."""
-    import onnx
+    try:
+        import onnx
+    except ImportError:
+        pytest.skip("onnx package is not installed")
     from neuralops.compression_engine.svd.direct_svd import DirectSVDCompressor
 
     class TinyLinear(nn.Module):

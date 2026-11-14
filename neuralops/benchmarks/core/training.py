@@ -240,7 +240,7 @@ def train_kd(
     """Execute Knowledge Distillation training loop (thin wrapper delegating to canonical trainer.distillation:distill)."""
     from neuralops.trainer.distillation.multi_level_kd import distill as _canonical_distill
 
-    return _canonical_distill(
+    res = _canonical_distill(
         student=student,
         teacher=teacher,
         train_loader=train_loader,
@@ -256,6 +256,9 @@ def train_kd(
         seed=seed,
         **kwargs,
     )
+    if isinstance(res, dict) and "training_type" not in res:
+        res["training_type"] = "kd"
+    return res
 
 
 def recovery_finetune(
