@@ -2838,11 +2838,7 @@ def _dispatch(args: argparse.Namespace) -> int:
 def main(argv: list[str] | None = None) -> int:
     """Canonical CLI main entrypoint and template for NeuralOps command-line tools.
 
-    Design Pattern & Logging Policy (F-97):
-      - Formatted error messages to stderr (or Rich console) with actionable hints.
-      - Stable exit codes: 0 for success, 1 for benchmark/execution errors, 130 for SIGINT.
-      - Full traceback is suppressed by default for clean UX; printed only when --verbose is active.
-      - Library modules must use named loggers; user-facing terminal CLI output uses print/console.
+    Delegates to NeuralOps CLI v2 (neuralops.benchmarks.cli_v2.main.main) with DeprecationWarning.
     """
     import warnings
 
@@ -2853,85 +2849,7 @@ def main(argv: list[str] | None = None) -> int:
         stacklevel=2,
     )
 
-    parser = _build_parser()
+    from neuralops.benchmarks.cli_v2.main import main as v2_main
 
-    raw_args = sys.argv[1:] if argv is None else argv
-    if not raw_args or raw_args == ["-h"] or raw_args == ["--help"]:
-        try:
-            from neuralops.cli.terminal_ui import print_hf_style_help
+    return v2_main(argv)
 
-            print_hf_style_help()
-            return 0
-        except Exception:
-            # allowed-swallow: best-effort-telemetry
-            pass
-
-    args = parser.parse_args(argv)
-
-    if getattr(args, "install_completion", None):
-        print(generate_completion_script(args.install_completion))
-        return 0
-
-    if not args.subcommand:
-        parser.print_help()
-
-        return 0
-
-    try:
-        ret = _dispatch(args)
-        return 0 if ret is None else ret
-    except KeyboardInterrupt:
-        if HAS_RICH and console is not None:
-            console.print("\n[yellow]Execution interrupted by user.[/]")
-        else:
-            print("\nExecution interrupted by user.", file=sys.stderr)
-        return 130
-    except FileNotFoundError as e:
-        print_cli_error(
-            f"File or checkpoint not found: {e}",
-            hint="Verify that the model path, checkpoint file, or dataset path exists.",
-        )
-        return 1
-    except KeyError as e:
-        print_cli_error(
-            f"Unrecognized module, layer, or key: {e}",
-            hint="Run 'neuralops list' to see all 131 attention mechanisms and 72 compressors.",
-        )
-        return 1
-    except Exception as e:
-        err_type = type(e).__name__
-        err_msg = str(e)
-        if "OutOfMemoryError" in err_type or "CUDA out of memory" in err_msg:
-            print_cli_error(
-                "CUDA Out of Memory during execution.",
-                hint="Try reducing --batch-size, enabling --mixed-precision fp16/bf16, or increasing --grad-accum-steps.",
-            )
-            return 1
-        full_err_msg = f"{err_msg} {str(getattr(e, '__cause__', '') or '')}"
-        is_arch_mismatch = (
-            "architecture" in full_err_msg.lower()
-            or "unsupported model" in full_err_msg.lower()
-            or "could not locate" in full_err_msg.lower()
-            or ("dimension" in full_err_msg.lower() and "mismatch" in full_err_msg.lower())
-            or ("shape" in full_err_msg.lower() and "mismatch" in full_err_msg.lower())
-            or "unknown attention module" in full_err_msg.lower()
-            or "not registered in attention_registry" in full_err_msg.lower()
-        )
-        if is_arch_mismatch:
-            print_cli_error(
-                f"Architecture mismatch: {e}",
-                hint="Verify that the target model architecture is supported and compatible with the selected attention/compression module.",
-                title="Architecture Mismatch",
-            )
-            return 1
-        if getattr(args, "verbose", False):
-            import traceback
-
-            traceback.print_exc()
-        diag = diagnose_error(e, auto_format=False)
-        print_cli_error(f"Execution failed ({err_type}): {e}", hint=diag)
-        return 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())

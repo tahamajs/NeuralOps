@@ -23,6 +23,7 @@ def setup_plan_parser(
     parser.add_argument("--rank", type=int, default=64, help="Rank for low-rank attention/compressor")
     parser.add_argument("--ranks", type=str, default=None, help="Comma-separated ranks")
     parser.add_argument("--yes", action="store_true", help="Confirm execution without prompt")
+    parser.add_argument("--json", action="store_true", help="Output plan details as JSON")
     return parser
 
 
@@ -54,6 +55,21 @@ def handle_plan(args: argparse.Namespace) -> int:
     total_runs = mod_count * models_count * datasets_count * ranks_count
     est_seconds = total_runs * 180
     est_hours = est_seconds / 3600.0
+
+    if getattr(args, "json", False):
+        import json
+
+        plan_data = {
+            "modules": mod_count,
+            "target_models": models_count,
+            "datasets": datasets_count,
+            "ranks": ranks_count,
+            "total_runs": total_runs,
+            "estimated_seconds": est_seconds,
+            "estimated_hours": est_hours,
+        }
+        print(json.dumps(plan_data, indent=2))
+        return 0
 
     print("═════════════════════════════════════════════════════")
     print("Benchmark Plan Summary (v2):")
