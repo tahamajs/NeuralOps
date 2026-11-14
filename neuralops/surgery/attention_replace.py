@@ -19,7 +19,7 @@ from typing import Any
 
 import torch.nn as nn
 
-from neuralops.core._attention_surgery import (
+from neuralops.models.surgery import (
     FUSED_QKV_REGEX,
     PROJ_REGEX_PATTERNS,
     _copy_projection_weights,

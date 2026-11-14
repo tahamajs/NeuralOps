@@ -36,9 +36,10 @@ Key Engineering Standards & Invariants:
 
 from __future__ import annotations
 
+import inspect
 import logging
 import re
-from typing import Any, Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -203,13 +204,7 @@ def _instantiate_replacement(
         call_kwargs.setdefault("hidden_size", hidden_size)
 
     if new_attention_cls is not None:
-        try:
-            return new_attention_cls(old_module=target_module, **call_kwargs)
-        except TypeError:
-            try:
-                return new_attention_cls(**call_kwargs)
-            except TypeError:
-                return new_attention_cls()
+        return _safe_call_factory(new_attention_cls, target_module, call_kwargs)
 
     if attention_key is not None:
         from neuralops.core.registry import ATTENTION_REGISTRY
@@ -217,15 +212,50 @@ def _instantiate_replacement(
         fn = ATTENTION_REGISTRY.get(attention_key)
         if fn is None:
             raise ValueError(f"Attention key '{attention_key}' not found in ATTENTION_REGISTRY.")
-        try:
-            return fn(old_module=target_module, **call_kwargs)
-        except TypeError:
-            try:
-                return fn(**call_kwargs)
-            except TypeError:
-                return fn()
+        return _safe_call_factory(fn, target_module, call_kwargs)
 
     raise ValueError("Either 'attention_key' or 'new_attention_cls' must be provided.")
+
+
+def _safe_call_factory(
+    factory: Union[type, Callable[..., nn.Module]],
+    target_module: nn.Module,
+    kwargs: Dict[str, Any],
+) -> nn.Module:
+    """Invokes factory with appropriate arguments matching its signature,
+
+    without silently swallowing internal TypeErrors raised within the factory itself.
+    """
+    try:
+        sig = inspect.signature(factory)
+    except (ValueError, TypeError):
+        sig = None
+
+    if sig is not None:
+        params = sig.parameters
+        has_var_kw = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in params.values())
+        filtered_kwargs = dict(kwargs) if has_var_kw else {k: v for k, v in kwargs.items() if k in params}
+
+        if "old_module" in params or has_var_kw:
+            filtered_kwargs["old_module"] = target_module
+        elif "target_module" in params:
+            filtered_kwargs["target_module"] = target_module
+
+        return factory(**filtered_kwargs)
+
+    try:
+        return factory(old_module=target_module, **kwargs)
+    except TypeError as e:
+        tb = e.__traceback__
+        if tb is not None and tb.tb_next is not None:
+            raise
+        try:
+            return factory(**kwargs)
+        except TypeError as e2:
+            tb2 = e2.__traceback__
+            if tb2 is not None and tb2.tb_next is not None:
+                raise
+            return factory()
 
 
 def replace_attention_recursive(

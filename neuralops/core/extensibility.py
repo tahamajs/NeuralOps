@@ -208,7 +208,7 @@ def validate_module_contract(
     from neuralops.analysis.inspector import inspect_architecture
     from neuralops.models.surgical_io import load_surgical_checkpoint, save_surgical_checkpoint
 
-    target_dev = torch.device(device or ("cuda:0" if torch.cuda.is_available() else "cpu"))
+    target_dev = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
     results: Dict[str, Any] = {
         "module": str(module_or_name),
         "device": str(target_dev),

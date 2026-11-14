@@ -14,11 +14,14 @@ Model loading, parameter freezing, weight inspection, and buffer verification he
 from __future__ import annotations
 
 from contextlib import contextmanager
+import logging
 import math
 from typing import Any
 
 import torch
 import torch.nn as nn
+
+logger = logging.getLogger(__name__)
 
 
 def run_calibration_forward(
@@ -60,8 +63,8 @@ def copy_attention_weights(
         try:
             dst_module.copy_weights(src_module)
             return
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Dedicated copy_weights failed, falling back: %s", exc)
 
     if source_map is None:
         source_map = ATTENTION_WEIGHT_MAP

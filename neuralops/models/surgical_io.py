@@ -430,7 +430,7 @@ def save_surgical_delta(
     operations: Optional[list[Dict[str, Any]]] = None,
     metadata: Optional[Dict[str, Any]] = None,
     half_precision: bool = True,
-    remove_full_weights: bool = True,
+    remove_full_weights: bool = False,
 ) -> Dict[str, Any]:
     """Save strictly the surgical delta parameters/buffers and enriched manifest.
 
@@ -505,6 +505,7 @@ def save_surgical_delta(
                 continue
             heavy_path = path / heavy_name
             if heavy_path.exists():
+                logger.warning("remove_full_weights=True: removing legacy full-weight artifact %s", heavy_path)
                 heavy_path.unlink()
 
     saved_bytes = weights_path.stat().st_size if weights_path.exists() else 0
@@ -604,9 +605,16 @@ def load_surgical_checkpoint(
         if category == "lora_adapter":
             try:
                 existing = base_model.get_submodule(module_path)
-            except AttributeError:
+            except (AttributeError, KeyError):
                 existing = None
-            if existing is not None and hasattr(existing, "lora_A") and hasattr(existing, "lora_B"):
+
+            if existing is None:
+                if strict:
+                    raise KeyError(f"Target module path '{module_path}' for LoRA adapter not found in base_model")
+                logger.warning("Target module path '%s' for LoRA adapter not found in base_model; skipping", module_path)
+                continue
+
+            if hasattr(existing, "lora_A") and hasattr(existing, "lora_B"):
                 continue
 
             rank = int(info.get("rank") or 8)
@@ -618,25 +626,24 @@ def load_surgical_checkpoint(
                 except (ImportError, AttributeError, ModuleNotFoundError):
                     cls = None
 
-            if existing is not None:
-                if cls is not None:
-                    try:
-                        new_sub = cls(existing, r=rank)
-                    except TypeError:
-                        new_sub = cls(existing)
-                elif "lora_A.weight" in (info.get("param_shapes") or {}) and isinstance(existing, nn.Linear):
-                    from neuralops.trainer.methods.lora import LoRALinear
+            if cls is not None:
+                try:
+                    new_sub = cls(existing, r=rank)
+                except TypeError:
+                    new_sub = cls(existing)
+            elif "lora_A.weight" in (info.get("param_shapes") or {}) and isinstance(existing, nn.Linear):
+                from neuralops.trainer.methods.lora import LoRALinear
 
-                    new_sub = LoRALinear(existing, r=rank)
-                else:
-                    from neuralops.hub.surgery_loader import _LoRALinearAdapter
+                new_sub = LoRALinear(existing, r=rank)
+            else:
+                from neuralops.hub.surgery_loader import _LoRALinearAdapter
 
-                    scaling_val = info.get("scaling")
-                    alpha_val = float(scaling_val) * rank if scaling_val is not None else 16.0
-                    new_sub = _LoRALinearAdapter(existing, r=rank, alpha=alpha_val)
-                if target_device is not None:
-                    new_sub = new_sub.to(target_device)
-                replace_module(base_model, module_path, new_sub)
+                scaling_val = info.get("scaling")
+                alpha_val = float(scaling_val) * rank if scaling_val is not None else 16.0
+                new_sub = _LoRALinearAdapter(existing, r=rank, alpha=alpha_val)
+            if target_device is not None:
+                new_sub = new_sub.to(target_device)
+            replace_module(base_model, module_path, new_sub)
             continue
 
         try:
@@ -749,7 +756,12 @@ def load_surgical_checkpoint(
 
             if target_device is not None:
                 new_sub = new_sub.to(target_device)
-            replace_module(base_model, module_path, new_sub)
+            try:
+                replace_module(base_model, module_path, new_sub)
+            except (AttributeError, KeyError, IndexError) as e_replace:
+                if strict:
+                    raise KeyError(f"Failed to replace module at '{module_path}': {e_replace}") from e_replace
+                logger.warning("Failed to replace module at '%s': %s", module_path, e_replace)
 
         elif category == "compressed_linear":
             in_f = info.get("in_features") or 768
@@ -776,7 +788,16 @@ def load_surgical_checkpoint(
 
             if target_device is not None:
                 new_sub = new_sub.to(target_device)
-            replace_module(base_model, module_path, new_sub)
+            try:
+                replace_module(base_model, module_path, new_sub)
+            except (AttributeError, KeyError, IndexError) as e_replace:
+                if strict:
+                    raise KeyError(f"Failed to replace compressed linear at '{module_path}': {e_replace}") from e_replace
+                logger.warning("Failed to replace compressed linear at '%s': %s", module_path, e_replace)
+        else:
+            if strict:
+                raise ValueError(f"Unknown surgical submodule category '{category}' at '{module_path}'")
+            logger.warning("Unknown surgical submodule category '%s' at '%s'; skipping", category, module_path)
 
     candidate_names: list[str] = []
     manifest_weights = manifest.get("weights_file")
@@ -817,8 +838,42 @@ def load_surgical_checkpoint(
     )
     effective_strict = False if is_delta_ckpt else strict
     load_res = base_model.load_state_dict(state_dict, strict=effective_strict)
-    if is_delta_ckpt and strict and getattr(load_res, "unexpected_keys", None):
-        logger.warning("Unexpected keys in delta checkpoint %s: %s", loaded_file, load_res.unexpected_keys)
+
+    if is_delta_ckpt:
+        if load_res.unexpected_keys:
+            if strict:
+                raise RuntimeError(
+                    f"Failed to load surgical checkpoint: {len(load_res.unexpected_keys)} unexpected keys in "
+                    f"{loaded_file.name} did not match any parameter in base_model: {load_res.unexpected_keys}"
+                )
+            logger.warning("Unexpected keys in delta checkpoint %s: %s", loaded_file.name, load_res.unexpected_keys)
+
+        if strict:
+            surgical_prefixes = set(submodules_info.keys())
+            for p in manifest.get("surgeried_prefixes", []):
+                if p:
+                    surgical_prefixes.add(str(p).rstrip("."))
+            for n in manifest.get("trained_param_names", []):
+                if n:
+                    surgical_prefixes.add(str(n))
+
+            missing_surgical = [
+                k
+                for k in load_res.missing_keys
+                if k in surgical_prefixes or any(k.startswith(p + ".") for p in surgical_prefixes)
+            ]
+            if missing_surgical:
+                raise RuntimeError(
+                    f"Failed to load surgical checkpoint: {len(missing_surgical)} expected surgical parameters "
+                    f"were missing from checkpoint {loaded_file.name}: {missing_surgical}"
+                )
+
+        loaded_keys_count = len(state_dict) - len(load_res.unexpected_keys)
+        if len(state_dict) > 0 and loaded_keys_count == 0:
+            raise RuntimeError(
+                f"Failed to load surgical checkpoint: 0 out of {len(state_dict)} tensors from "
+                f"{loaded_file.name} could be loaded into base_model."
+            )
 
     if target_device is not None:
         base_model.to(device=target_device)

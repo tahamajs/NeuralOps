@@ -28,6 +28,14 @@ except ImportError:
     triton_dispatch = None
 
 
+class LoRAParameter(nn.Parameter):
+    """Parameter proxy providing a .weight property for seamless Module/Parameter compatibility."""
+
+    @property
+    def weight(self) -> LoRAParameter:
+        return self
+
+
 class LoRALinear(nn.Module):
     r"""
     Universal LoRA linear layer:
@@ -45,7 +53,7 @@ class LoRALinear(nn.Module):
         lora_alpha: float = 32.0,
         lora_dropout: float = 0.0,
         dropout: float | None = None,
-        freeze_base: bool = False,
+        freeze_base: bool | None = None,
         merge_weights: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
@@ -73,11 +81,16 @@ class LoRALinear(nn.Module):
         self.lora_dropout = nn.Dropout(p=effective_dropout) if effective_dropout > 0.0 else nn.Identity()
         self.merged = False
         self.merge_weights = merge_weights
-        self.freeze_base = freeze_base
+
+        is_wrapper = isinstance(base_or_in_features, nn.Module)
+        if freeze_base is None:
+            self.freeze_base = is_wrapper
+        else:
+            self.freeze_base = bool(freeze_base)
 
         factory_kwargs = {"device": device, "dtype": dtype}
 
-        if isinstance(base_or_in_features, nn.Module):
+        if is_wrapper:
             self.base_layer = base_or_in_features
             in_feat = getattr(self.base_layer, "in_features", None)
             out_feat = getattr(self.base_layer, "out_features", None)
@@ -106,14 +119,14 @@ class LoRALinear(nn.Module):
                 self.register_parameter("bias", None)
 
         if self.lora_rank > 0 and self.in_features and self.out_features:
-            self.lora_A = nn.Parameter(torch.empty((self.lora_rank, self.in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((self.out_features, self.lora_rank), **factory_kwargs))
+            self.lora_A = LoRAParameter(torch.empty((self.lora_rank, self.in_features), **factory_kwargs))
+            self.lora_B = LoRAParameter(torch.empty((self.out_features, self.lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
         self.reset_parameters()
-        if freeze_base:
+        if self.freeze_base:
             self.freeze_base_weights()
 
     def reset_parameters(self) -> None:
@@ -232,4 +245,4 @@ class LoRALinear(nn.Module):
         return res
 
 
-__all__ = ["LoRALinear"]
+__all__ = ["LoRALinear", "LoRAParameter"]

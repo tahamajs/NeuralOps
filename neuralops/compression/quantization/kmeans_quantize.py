@@ -309,6 +309,24 @@ class KMeansLinear(nn.Module):
     def weight(self) -> torch.Tensor:
         return self.get_weight()
 
+    @classmethod
+    def from_linear(
+        cls,
+        linear: nn.Module,
+        n_clusters: int = 256,
+        lora_r: int = 0,
+        lora_alpha: float = 1.0,
+        kmeans_seed: int = 0xCAFE,
+    ) -> KMeansLinear:
+        """Construct a KMeansLinear layer from an existing linear layer."""
+        return cls(
+            linear=linear,
+            n_clusters=n_clusters,
+            lora_r=lora_r,
+            lora_alpha=lora_alpha,
+            kmeans_seed=kmeans_seed,
+        )
+
     def train(self, mode: bool = True) -> KMeansLinear:
         super().train(mode)
         if mode:

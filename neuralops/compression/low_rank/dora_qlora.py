@@ -17,6 +17,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.peft.lora import LoRAParameter
+
 __all__ = [
     "merge_lora_into_linear",
     "extract_lora_from_diff",
@@ -118,26 +120,74 @@ class DoRALinear(nn.Module):
 
     def __init__(
         self,
-        in_features: int,
-        out_features: int,
+        base_or_in_features: nn.Module | int,
+        out_features: int | None = None,
         rank: int = 16,
         lora_alpha: float = 16.0,
         bias: bool = False,
+        r: int | None = None,
+        device: torch.device | None = None,
+        dtype: torch.dtype | None = None,
+        **kwargs: Any,
     ) -> None:
         super().__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.rank = rank
-        self.scaling = lora_alpha / max(rank, 1)
+        effective_r = kwargs.get("r", r if r is not None else rank)
+        self.rank = int(effective_r)
+        self.r = self.rank
+        self.lora_alpha = float(kwargs.get("alpha", lora_alpha))
+        self.alpha = self.lora_alpha
+        self.scaling = self.lora_alpha / max(self.rank, 1)
+        self.merged = False
+        self._orig_base_weight: torch.Tensor | None = None
 
-        self.base = nn.Linear(in_features, out_features, bias=bias)
-        self.base.weight.requires_grad = False
+        factory_kwargs = {"device": device, "dtype": dtype}
+
+        if isinstance(base_or_in_features, nn.Module):
+            self.base = base_or_in_features
+            in_f = getattr(self.base, "in_features", None)
+            out_f = getattr(self.base, "out_features", None)
+            if in_f is None and hasattr(self.base, "weight"):
+                out_f, in_f = self.base.weight.shape
+            self.in_features = int(in_f) if in_f is not None else 0
+            self.out_features = int(out_f) if out_f is not None else 0
+            self.base.weight.requires_grad = False
+            if getattr(self.base, "bias", None) is not None:
+                self.base.bias.requires_grad = False
+        else:
+            self.in_features = int(base_or_in_features)
+            self.out_features = int(out_features if out_features is not None else base_or_in_features)
+            self.base = nn.Linear(self.in_features, self.out_features, bias=bias, **factory_kwargs)
+            self.base.weight.requires_grad = False
 
         self.magnitude = nn.Parameter(self.base.weight.norm(dim=1, keepdim=True).clone())
-        self.lora_A = nn.Parameter(torch.randn(rank, in_features) * 0.01)
-        self.lora_B = nn.Parameter(torch.zeros(out_features, rank))
+        self.lora_A = LoRAParameter(torch.randn(self.rank, self.in_features, **factory_kwargs) * 0.01)
+        self.lora_B = LoRAParameter(torch.zeros(self.out_features, self.rank, **factory_kwargs))
+
+    def merge(self) -> None:
+        """In-place merge DoRA magnitude-scaled directional weight into base layer."""
+        if self.merged:
+            return
+        with torch.no_grad():
+            self._orig_base_weight = self.base.weight.data.clone()
+            W_dir = self.base.weight + (self.lora_B @ self.lora_A) * self.scaling
+            W_dir = W_dir / W_dir.norm(dim=1, keepdim=True).clamp(min=1e-6)
+            W_eff = self.magnitude * W_dir
+            self.base.weight.data.copy_(W_eff)
+            self.merged = True
+
+    def unmerge(self) -> None:
+        """Revert base layer weights back to original state."""
+        if not self.merged:
+            return
+        with torch.no_grad():
+            if self._orig_base_weight is not None:
+                self.base.weight.data.copy_(self._orig_base_weight)
+            self.merged = False
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if self.merged:
+            return F.linear(x, self.base.weight, self.base.bias)
+
         if x.is_cuda and not self.training:
             try:
                 from neuralops.ops.triton.low_rank import fused_down_up_gemm_bias_triton

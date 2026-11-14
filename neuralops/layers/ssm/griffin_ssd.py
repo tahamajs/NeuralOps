@@ -27,7 +27,7 @@ from neuralops.core.base import BaseAttention
 from neuralops.core.common import _env_flag, _env_float, _unpack_weight_bias
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.utils.gqa import repeat_kv
-from neuralops.layers.gated.gated_delta_net import LoRALinear
+from neuralops.core.peft.lora import LoRALinear
 
 logger = logging.getLogger(__name__)
 

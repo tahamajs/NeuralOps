@@ -527,15 +527,34 @@ def adapt_decoder_attention_forward(
 def apply_backbone_surgery_hooks(
     model: nn.Module,
     model_type: str = "llama",
-) -> None:
-    """
-    Hooks RoPE & GQA backbone decoders (LLaMA, Mistral, Qwen2) to ensure
-    injected modules handle position_embeddings, position_ids, and return tuples safely.
+    attach_forward_adapter: bool = False,
+) -> list[str]:
+    """Tag RoPE & GQA backbone decoders with compatibility metadata flags.
+
+    Inspects attention submodules of supported decoder families (LLaMA, Mistral, Qwen2)
+    and tags them with `supports_gqa = True` and `supports_rope = True` attributes for
+    routing and capability checks.
+
+    Note:
+        By default, this function performs metadata tagging and does not attach PyTorch
+        execution hooks. To wrap module execution with runtime argument adaptation
+        (handling position embeddings, position_ids, and return tuples), set
+        `attach_forward_adapter=True` or use `adapt_decoder_attention_forward` directly.
+
+    Args:
+        model: Target model or container module.
+        model_type: Backbone architecture family name (e.g. 'llama', 'mistral', 'qwen2').
+        attach_forward_adapter: If True, wraps each attention module's forward method
+            with `adapt_decoder_attention_forward`.
+
+    Returns:
+        List of tagged module names.
     """
     mtype = model_type.lower()
     if mtype not in ("llama", "mistral", "qwen", "qwen2", "qwen2_5", "qwen3_5"):
-        return
+        return []
 
+    tagged_names: list[str] = []
     for name, module in model.named_modules():
         leaf = name.split(".")[-1].lower()
         if leaf in ("self_attn", "attention", "attn"):
@@ -543,6 +562,26 @@ def apply_backbone_surgery_hooks(
                 module.supports_gqa = True
             if not hasattr(module, "supports_rope"):
                 module.supports_rope = True
+            if attach_forward_adapter and not getattr(module, "_has_surgery_adapter", False):
+                orig_forward = module.forward
+
+                def _make_adapted_forward(m: nn.Module, _fwd: Any) -> Any:
+                    def _adapted_forward(*args: Any, **kwargs: Any) -> Any:
+                        return adapt_decoder_attention_forward(m, *args, **kwargs)
+
+                    return _adapted_forward
+
+                module.forward = _make_adapted_forward(module, orig_forward)
+                module._has_surgery_adapter = True
+            tagged_names.append(name)
+
+    logger.debug(
+        "apply_backbone_surgery_hooks: tagged %d attention modules in %s model (adapter=%s)",
+        len(tagged_names),
+        model_type,
+        attach_forward_adapter,
+    )
+    return tagged_names
 
 
 class SubspaceAnchorWrapper(nn.Module):
@@ -553,13 +592,42 @@ class SubspaceAnchorWrapper(nn.Module):
         self.alpha = alpha
 
     def forward(self, *args: Any, **kwargs: Any) -> Any:
-        y_b = self.base(*args, **kwargs)
-        y_s = self.surg(*args, **kwargs)
+        base_dtype = next((p.dtype for p in self.base.parameters() if p.is_floating_point()), None)
+        surg_dtype = next((p.dtype for p in self.surg.parameters() if p.is_floating_point()), None)
+
+        def _cast_args(
+            a: tuple[Any, ...], kw: dict[str, Any], target_dt: Optional[torch.dtype]
+        ) -> tuple[tuple[Any, ...], dict[str, Any]]:
+            if target_dt is None:
+                return a, kw
+            new_a = tuple(
+                x.to(dtype=target_dt) if isinstance(x, torch.Tensor) and x.is_floating_point() else x for x in a
+            )
+            new_kw = {
+                k: v.to(dtype=target_dt) if isinstance(v, torch.Tensor) and v.is_floating_point() else v
+                for k, v in kw.items()
+            }
+            return new_a, new_kw
+
+        args_b, kwargs_b = _cast_args(args, kwargs, base_dtype)
+        args_s, kwargs_s = _cast_args(args, kwargs, surg_dtype)
+
+        y_b = self.base(*args_b, **kwargs_b)
+        y_s = self.surg(*args_s, **kwargs_s)
         vb = y_b[0] if isinstance(y_b, tuple) else y_b
         vs = y_s[0] if isinstance(y_s, tuple) else y_s
-        out = (1.0 - self.alpha) * vb + self.alpha * vs
+
+        if isinstance(vb, torch.Tensor) and isinstance(vs, torch.Tensor):
+            target_out_dtype = vb.dtype
+            out = (1.0 - self.alpha) * vb.float() + self.alpha * vs.float()
+            out = out.to(dtype=target_out_dtype)
+        else:
+            out = (1.0 - self.alpha) * vb + self.alpha * vs
+
         if isinstance(y_b, tuple):
             return (out,) + y_b[1:]
+        elif isinstance(y_s, tuple):
+            return (out,) + y_s[1:]
         return out
 
 
@@ -829,16 +897,48 @@ def _heal_replaced_model_impl(
             logger.debug("Ridge warm-start skipped or failed: %s", e_ridge)
 
     batches = []
+    teacher_dev = next(teacher_model.parameters()).device
+    teacher_float_dtype = next(
+        (p.dtype for p in teacher_model.parameters() if p.is_floating_point()),
+        torch.float32,
+    )
+
     if isinstance(calibration_inputs, dict):
-        batches.append({k: v.to(target_dev) for k, v in calibration_inputs.items()})
+        batches.append({
+            k: (
+                v.to(device=teacher_dev, dtype=teacher_float_dtype)
+                if v.is_floating_point()
+                else v.to(device=teacher_dev)
+            )
+            if isinstance(v, torch.Tensor)
+            else v
+            for k, v in calibration_inputs.items()
+        })
     elif isinstance(calibration_inputs, torch.Tensor):
-        batches.append(calibration_inputs.to(target_dev))
+        batches.append(
+            calibration_inputs.to(device=teacher_dev, dtype=teacher_float_dtype)
+            if calibration_inputs.is_floating_point()
+            else calibration_inputs.to(device=teacher_dev)
+        )
     elif isinstance(calibration_inputs, (list, tuple)):
         for item in calibration_inputs:
             if isinstance(item, dict):
-                batches.append({k: v.to(target_dev) for k, v in item.items()})
+                batches.append({
+                    k: (
+                        v.to(device=teacher_dev, dtype=teacher_float_dtype)
+                        if v.is_floating_point()
+                        else v.to(device=teacher_dev)
+                    )
+                    if isinstance(v, torch.Tensor)
+                    else v
+                    for k, v in item.items()
+                })
             elif isinstance(item, torch.Tensor):
-                batches.append(item.to(target_dev))
+                batches.append(
+                    item.to(device=teacher_dev, dtype=teacher_float_dtype)
+                    if item.is_floating_point()
+                    else item.to(device=teacher_dev)
+                )
 
     def _run_forward(m: nn.Module, b: Any) -> Any:
         if isinstance(b, dict):
@@ -1154,7 +1254,18 @@ def heal_replaced_model(
             parameter.requires_grad_(was_trainable)
 
 
-from neuralops.api import replace_attention, transplant_attention
+def replace_attention(*args: Any, **kwargs: Any) -> Any:
+    """Delegate to neuralops.api.replace_attention."""
+    from neuralops.api import replace_attention as _impl
+
+    return _impl(*args, **kwargs)
+
+
+def transplant_attention(*args: Any, **kwargs: Any) -> Any:
+    """Delegate to neuralops.api.transplant_attention."""
+    from neuralops.api import transplant_attention as _impl
+
+    return _impl(*args, **kwargs)
 
 
 def replace_attention_in_model(*args: Any, **kwargs: Any) -> Any:

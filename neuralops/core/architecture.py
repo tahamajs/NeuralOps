@@ -188,5 +188,5 @@ def get_classifier_head(model: nn.Module) -> nn.Module | None:
     if hasattr(model, "score"):
         return model.score
     if hasattr(model, "pre_classifier"):
-        return model.pre_classifier, model.classifier
+        return model.pre_classifier
     return None

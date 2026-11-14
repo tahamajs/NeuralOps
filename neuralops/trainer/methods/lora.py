@@ -26,42 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 from neuralops.utils.lora import LoRALinear
-
-
-class DoRALinear(nn.Module):
-    def __init__(self, linear: nn.Linear, r: int, alpha: float, dropout: float) -> None:
-        """Execute __init__ operation."""
-        super().__init__()
-        self.linear = linear
-        self.linear.weight.requires_grad = False
-        if linear.bias is not None:
-            linear.bias.requires_grad = False
-        self.r = r
-        if r > 0:
-            self.m = nn.Parameter(linear.weight.norm(p=2, dim=1, keepdim=True).squeeze(1))
-            self.lora_A = nn.Linear(linear.in_features, r, bias=False)
-            self.lora_B = nn.Linear(r, linear.out_features, bias=False)
-            kaiming_uniform_(self.lora_A.weight, a=math.sqrt(5))
-            zeros_(self.lora_B.weight)
-            self.scaling = alpha / r
-            # DoRA normalizes the complete effective weight. Input dropout
-            # would invalidate that weight decomposition.
-            self.dropout = nn.Identity()
-        else:
-            self.m = nn.Parameter(torch.ones(linear.out_features))
-            self.lora_A = self.lora_B = None
-            self.scaling = 1.0
-            self.dropout = nn.Identity()
-
-    def forward(self, x) -> Any:
-        """Forward pass — compute module output from inputs."""
-        if self.r <= 0:
-            return self.linear(x)
-        delta = self.lora_B.weight @ self.lora_A.weight
-        effective_weight = self.linear.weight + (self.scaling * delta)
-        direction = effective_weight / effective_weight.norm(p=2, dim=1, keepdim=True).clamp_min(1e-8)
-        effective_weight = self.m.unsqueeze(1) * direction
-        return F.linear(x, effective_weight, self.linear.bias)
+from .dora import DoRALinear, apply_dora
 
 
 class DisLoRALinear(nn.Module):
