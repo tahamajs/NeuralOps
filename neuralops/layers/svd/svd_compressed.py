@@ -20,7 +20,6 @@ except ImportError:
     preprocess_function = None
     get_num_labels_and_is_regression = None
     load_glue_local = None
-import argparse
 import logging
 import math
 import os
@@ -789,123 +788,6 @@ GLUE_TASK_KEYS: dict[str, tuple[str, str | None]] = {
     "rte": ("sentence1", "sentence2"),
     "wnli": ("sentence1", "sentence2"),
 }
-
-
-def main() -> None:
-    r"""Run full training workflow for SVDCompressedAttention on GLUE."""
-    parser = argparse.ArgumentParser(description="Train DistilBERT with Importance‑Aware SVD‑Compressed Attention")
-    parser.add_argument("--task", type=str, default="sst2")
-    parser.add_argument("--model", type=str, default="distilbert-base-uncased")
-    parser.add_argument("--output_dir", type=str, default="./svd_compressed_output")
-    parser.add_argument("--max_len", type=int, default=128)
-    parser.add_argument("--epochs", type=int, default=5)
-    parser.add_argument("--lr", type=float, default=1e-5)
-    parser.add_argument("--batch_size", type=int, default=16)
-    parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument(
-        "--budget_ratio",
-        type=float,
-        default=0.2,
-        help="Target fraction of original attention parameters (e.g. 0.2 = 20%)",
-    )
-    parser.add_argument("--dropout", type=float, default=0.1)
-    parser.add_argument(
-        "--add_sparse",
-        action="store_true",
-        help="Enable low‑rank + sparse decomposition (experimental)",
-    )
-    parser.add_argument(
-        "--sparsity",
-        type=float,
-        default=0.7,
-        help="Sparsity level for residual (if --add_sparse)",
-    )
-    args = parser.parse_args()
-
-    set_seed(args.seed)
-    os.makedirs(args.output_dir, exist_ok=True)
-
-    raw_datasets = load_glue_local(args.task)
-    tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=True, local_files_only=True)
-    num_labels, is_regression = get_num_labels_and_is_regression(args.task)
-    sent1_key, sent2_key = GLUE_TASK_KEYS[args.task]
-
-    tokenized = raw_datasets.map(
-        lambda ex: preprocess_function(ex, tokenizer, sent1_key, sent2_key, args.max_len, is_regression),
-        batched=True,
-        remove_columns=raw_datasets["train"].column_names,
-    )
-    train_dataset = tokenized["train"]
-    eval_dataset = tokenized.get("validation", tokenized.get("validation_matched"))
-    log.info(f"Train size: {len(train_dataset)}, Eval size: {len(eval_dataset)}")
-
-    config = AutoConfig.from_pretrained(args.model, local_files_only=True)
-    model = AutoModelForSequenceClassification.from_pretrained(args.model, config=config, local_files_only=True)
-
-    all_weights, all_names = gather_all_attention_weights(model)
-    original_total_params = sum(w.size for w in all_weights)
-    target_budget = int(original_total_params * args.budget_ratio)
-    log.info(
-        f"Original attention parameters: {original_total_params:,}, "
-        f"target budget ({args.budget_ratio * 100:.0f}%): {target_budget:,}"
-    )
-
-    rank_dict = lagrangian_rank_allocation(
-        weight_matrices=all_weights,
-        target_budget=target_budget,
-        layer_proj_names=all_names,
-    )
-    avg_rank = float(np.mean(list(rank_dict.values())))
-    log.info(f"Optimised ranks across layers: average rank = {avg_rank:.1f}")
-
-    inject_all_layers(
-        model,
-        rank_dict,
-        args.dropout,
-        add_sparse=args.add_sparse,
-        sparsity=args.sparsity,
-        config=config,
-    )
-    log.info("Injected importance‑aware SVD‑Compressed Attention.")
-
-    total_steps = (len(train_dataset) // args.batch_size) * args.epochs
-    warmup_steps = int(0.06 * total_steps)
-
-    training_args = TrainingArguments(
-        output_dir=os.path.join(args.output_dir, args.task),
-        num_train_epochs=args.epochs,
-        per_device_train_batch_size=args.batch_size,
-        per_device_eval_batch_size=args.batch_size * 2,
-        learning_rate=args.lr,
-        weight_decay=0.01,
-        lr_scheduler_type="linear",
-        warmup_steps=warmup_steps,
-        logging_steps=100,
-        eval_strategy="steps",
-        eval_steps=500,
-        save_strategy="steps",
-        save_steps=500,
-        load_best_model_at_end=True,
-        metric_for_best_model="accuracy",
-        greater_is_better=True,
-        remove_unused_columns=False,
-        fp16=False,
-        report_to="none",
-    )
-
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
-        compute_metrics=compute_metrics,
-        callbacks=[EarlyStoppingCallback(early_stopping_patience=3)],
-    )
-
-    log.info("Starting training with importance‑aware SVD‑Compressed Attention...")
-    trainer.train()
-    trainer.save_model(os.path.join(args.output_dir, args.task))
-    log.info("Training completed.")
 
 
 def inject_svd_compressed(
