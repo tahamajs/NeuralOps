@@ -131,7 +131,7 @@ def time_fn(fn, device="cuda", warmup=10, iters=30):
 
 def run_bandwidth_benchmark(
     configs=None,
-    device_str="cuda:0",
+    device_str="auto",
     dtype_str="float16",
     warmup=10,
     repeat=30,
@@ -145,7 +145,7 @@ def run_bandwidth_benchmark(
         configs = DEFAULT_CONFIGS
 
     if device_str == "auto" or device_str is None:
-        device_str = "cuda:0" if torch.cuda.is_available() else "cpu"
+        device_str = "cuda" if torch.cuda.is_available() else "cpu"
 
     if "cuda" in device_str and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
