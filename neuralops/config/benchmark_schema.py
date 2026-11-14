@@ -269,7 +269,12 @@ class BenchmarkRunConfig(BaseModel):
         """Instantiate BenchmarkRunConfig from a YAML file path or YAML document string."""
         import yaml
 
-        path = Path(path_or_yaml) if isinstance(path_or_yaml, str) and "\n" not in path_or_yaml else None
+        if isinstance(path_or_yaml, Path):
+            path = path_or_yaml
+        elif isinstance(path_or_yaml, str) and "\n" not in path_or_yaml:
+            path = Path(path_or_yaml)
+        else:
+            path = None
         if path is not None and path.is_file():
             with open(path, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
