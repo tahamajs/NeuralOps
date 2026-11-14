@@ -128,9 +128,7 @@ class ModelValidator:
         except Exception as e:
             self.errors.append(f"Backward failed: {e}")
 
-        n_nan_grads = sum(
-            1 for p in self.model.parameters() if p.grad is not None and torch.isnan(p.grad).any()
-        )
+        n_nan_grads = sum(1 for p in self.model.parameters() if p.grad is not None and torch.isnan(p.grad).any())
         if n_nan_grads > 0:
             self.errors.append(f"{n_nan_grads} params with NaN grads")
 

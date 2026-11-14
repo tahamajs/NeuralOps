@@ -87,15 +87,17 @@ class SpeedValidator:
         bs = batch["input_ids"].size(0) if ("input_ids" in batch and hasattr(batch["input_ids"], "size")) else 1
         throughput = (bs / dt) if dt > 0 else 0.0
 
-        return ValidationStatus({
-            "status": "passed",
-            "passed": True,
-            "step_time_ms": dt * 1000.0,
-            "throughput_samples_per_sec": throughput,
-            "dt": dt,
-            "iters": iters,
-            "batch_size": bs,
-        })
+        return ValidationStatus(
+            {
+                "status": "passed",
+                "passed": True,
+                "step_time_ms": dt * 1000.0,
+                "throughput_samples_per_sec": throughput,
+                "dt": dt,
+                "iters": iters,
+                "batch_size": bs,
+            }
+        )
 
 
 __all__ = ["SpeedValidator", "ValidationStatus"]

@@ -23,7 +23,6 @@ from neuralops.validation.gates.empirical import (
 
 
 class SimpleMLP(nn.Module):
-
     def __init__(self, in_features: int = 16, num_classes: int = 2) -> None:
         super().__init__()
         self.fc1 = nn.Linear(in_features, 32)
@@ -138,6 +137,7 @@ def test_c2_empirical_gates_fail_closed_in_production_without_data():
 
     # 3. PerplexityGate in production profile without data -> fails closed
     from neuralops.validation.gates.empirical import PerplexityGate
+
     ppl_gate = PerplexityGate()
     ppl_res = ppl_gate.run(model=model, context={"profile": "production"})
     assert ppl_res.passed is False
@@ -150,4 +150,3 @@ def test_c2_empirical_gates_fail_closed_in_production_without_data():
     assert niah_res.passed is False
     assert niah_res.skipped is False
     assert niah_res.error_code == "E_DATASET_MISSING"
-

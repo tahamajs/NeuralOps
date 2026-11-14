@@ -44,10 +44,7 @@ class TrainingValidator:
         device: str = "cpu",
     ) -> ValidationStatus:
         """Test whether model can overfit on a small batch of data."""
-        small_batch = {
-            k: v[:n_samples].to(device) if isinstance(v, torch.Tensor) else v
-            for k, v in batch.items()
-        }
+        small_batch = {k: v[:n_samples].to(device) if isinstance(v, torch.Tensor) else v for k, v in batch.items()}
         optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
         losses = []
         model.train()
@@ -63,23 +60,27 @@ class TrainingValidator:
                 loss = getattr(out, "logits", out)
 
             if not isinstance(loss, torch.Tensor):
-                return ValidationStatus({
-                    "status": "failed",
-                    "passed": False,
-                    "error": "Model output could not be converted to loss tensor",
-                })
+                return ValidationStatus(
+                    {
+                        "status": "failed",
+                        "passed": False,
+                        "error": "Model output could not be converted to loss tensor",
+                    }
+                )
 
             val = float(loss.item())
             losses.append(val)
             if not math.isfinite(val):
-                return ValidationStatus({
-                    "status": "failed",
-                    "passed": False,
-                    "error": f"Non-finite loss encountered during training: {val}",
-                    "initial_loss": losses[0] if losses else float("nan"),
-                    "final_loss": val,
-                    "steps": len(losses),
-                })
+                return ValidationStatus(
+                    {
+                        "status": "failed",
+                        "passed": False,
+                        "error": f"Non-finite loss encountered during training: {val}",
+                        "initial_loss": losses[0] if losses else float("nan"),
+                        "final_loss": val,
+                        "steps": len(losses),
+                    }
+                )
 
             loss.backward()
             optimizer.step()
@@ -89,15 +90,17 @@ class TrainingValidator:
         final_loss = losses[-1] if losses else 0.0
         passed = bool(final_loss < initial_loss * 0.5) if (losses and initial_loss > 0) else False
 
-        return ValidationStatus({
-            "status": "passed" if passed else "failed",
-            "passed": passed,
-            "initial_loss": initial_loss,
-            "final_loss": final_loss,
-            "reduction_ratio": (final_loss / initial_loss) if (initial_loss != 0) else 1.0,
-            "steps": steps,
-            "n_samples": n_samples,
-        })
+        return ValidationStatus(
+            {
+                "status": "passed" if passed else "failed",
+                "passed": passed,
+                "initial_loss": initial_loss,
+                "final_loss": final_loss,
+                "reduction_ratio": (final_loss / initial_loss) if (initial_loss != 0) else 1.0,
+                "steps": steps,
+                "n_samples": n_samples,
+            }
+        )
 
 
 __all__ = ["TrainingValidator", "ValidationStatus"]
