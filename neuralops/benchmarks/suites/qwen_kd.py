@@ -34,6 +34,15 @@ class QwenKDBenchmark(AbstractBaseBenchmark):
     def setup(self) -> None:
         custom = self.config.custom_parameters or {}
 
+        student = custom.get("student")
+        teacher = custom.get("teacher")
+        if student is None or teacher is None:
+            raise NotImplementedError(
+                "QwenKDBenchmark requires actual student and teacher models passed in custom_parameters"
+            )
+        self.student = student
+        self.teacher = teacher
+
         self.model_name = custom.get("model_name", "Qwen/Qwen2.5-0.5B")
         self.context_length = custom.get("context_length", 2048)
         self.kd_temperature = float(custom.get("kd_temperature", 2.0))
@@ -53,7 +62,88 @@ class QwenKDBenchmark(AbstractBaseBenchmark):
         stage: str,
         **kwargs: Any,
     ) -> Dict[str, float]:
-        raise NotImplementedError("qwen_kd requires real model; not implemented")
+        self.flush_l2_cache()
+
+        vocab_size = getattr(getattr(self.student, "config", None), "vocab_size", 200)
+        seq_len = min(self.context_length, 512)
+        batch_size = 1
+
+        input_ids = torch.randint(0, vocab_size, (batch_size, seq_len), device=self.device)
+        targets = torch.randint(0, vocab_size, (batch_size, seq_len), device=self.device)
+
+        try:
+
+            def kd_step() -> torch.Tensor:
+                with torch.no_grad():
+                    t_out = self.teacher(input_ids)
+                    t_logits = getattr(t_out, "logits", t_out)
+                s_out = self.student(input_ids)
+                s_logits = getattr(s_out, "logits", s_out)
+
+                t_scaled = t_logits / self.kd_temperature
+                s_scaled = s_logits / self.kd_temperature
+
+                kl_loss = F.kl_div(
+                    F.log_softmax(s_scaled, dim=-1),
+                    F.softmax(t_scaled, dim=-1),
+                    reduction="batchmean",
+                ) * (self.kd_temperature**2)
+
+                ce_loss = F.cross_entropy(s_logits.view(-1, s_logits.size(-1)), targets.view(-1))
+                total_loss = self.kd_alpha * kl_loss + (1.0 - self.kd_alpha) * ce_loss
+                return total_loss
+
+            latency_ms, _ = self.measure_latency(kd_step, warmup=1, repeat=3)
+            loss_val = _sanitize_float(kd_step().item())
+            ppl_val = _sanitize_float(min(float(torch.exp(torch.tensor(loss_val)).item()), 1e5))
+
+            self.tracker.log_metric("kd_loss", loss_val, step=step)
+            self.tracker.log_metric("latency_ms", latency_ms, step=step)
+
+            result_entry = {
+                "step": step,
+                "mechanism_or_kernel": f"qwen_kd_{stage}",
+                "batch_size": batch_size,
+                "seq_len": seq_len,
+                "dtype": "fp32",
+                "stage": stage,
+                "latency_ms": latency_ms,
+                "latency_p50_ms": latency_ms,
+                "latency_p90_ms": latency_ms,
+                "latency_p99_ms": latency_ms,
+                "kd_loss": loss_val,
+                "perplexity": ppl_val,
+                "tflops": 0.0,
+                "peak_vram_mb": 0.0,
+                "status": "PASS",
+            }
+            self.results_table.append(result_entry)
+            return {"kd_loss": loss_val, "latency_ms": latency_ms}
+
+        except Exception as e:
+            logger.warning("Qwen KD iteration failed at stage %s: %s", stage, e)
+            self.results_table.append(
+                {
+                    "step": step,
+                    "mechanism_or_kernel": f"qwen_kd_{stage}",
+                    "batch_size": batch_size,
+                    "seq_len": seq_len,
+                    "dtype": "fp32",
+                    "stage": stage,
+                    "latency_ms": 0.0,
+                    "latency_p50_ms": 0.0,
+                    "latency_p90_ms": 0.0,
+                    "latency_p99_ms": 0.0,
+                    "kd_loss": 0.0,
+                    "perplexity": 0.0,
+                    "tflops": 0.0,
+                    "peak_vram_mb": 0.0,
+                    "status": f"FAILED_RUNTIME: {e}",
+                }
+            )
+            self.tracker.log_metric("kd_loss", 0.0, step=step)
+            self.tracker.log_metric("latency_ms", 0.0, step=step)
+            return {"kd_loss": 0.0, "latency_ms": 0.0}
 
     def run(self) -> None:
         step = 0

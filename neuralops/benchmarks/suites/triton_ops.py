@@ -58,8 +58,26 @@ class TritonOpsBenchmark(AbstractBaseBenchmark):
         self.start_time = time.time()
         self.results_table: List[Dict[str, Any]] = []
 
-    def _prepare_inputs(self, kernel_name: str) -> Tuple[Tuple[Any, ...], Callable[..., Any]]:
-        dtype = torch.float16 if (self.device.type == "cuda" and torch.cuda.is_available()) else torch.float32
+    @staticmethod
+    def _resolve_torch_dtype(dtype_str: str) -> torch.dtype:
+        mapping = {
+            "fp16": torch.float16,
+            "float16": torch.float16,
+            "bf16": torch.bfloat16,
+            "bfloat16": torch.bfloat16,
+            "fp32": torch.float32,
+            "float32": torch.float32,
+        }
+        val = mapping.get(dtype_str.lower())
+        if val is None:
+            raise ValueError(f"Unknown dtype '{dtype_str}'. Supported: {sorted(mapping.keys())}")
+        return val
+
+    def _prepare_inputs(
+        self, kernel_name: str, dtype: Optional[torch.dtype] = None
+    ) -> Tuple[Tuple[Any, ...], Callable[..., Any]]:
+        if dtype is None:
+            dtype = torch.float16 if (self.device.type == "cuda" and torch.cuda.is_available()) else torch.float32
 
         if kernel_name == "linear_attn":
             q = torch.randn(2, 4, 16, 32, device=self.device, dtype=dtype)
@@ -90,8 +108,7 @@ class TritonOpsBenchmark(AbstractBaseBenchmark):
             return (h, x), state_update_pytorch_fallback
 
         else:
-            x = torch.randn(2, 16, 32, device=self.device, dtype=dtype)
-            return (x,), lambda t: t * 2.0
+            raise ValueError(f"Unsupported Triton kernel '{kernel_name}'")
 
     def run_iteration(
         self,
