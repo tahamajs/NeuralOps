@@ -45,13 +45,17 @@ class DummySelfAttention(nn.Module):
 class DummyTransformerModel(nn.Module):
     def __init__(self, num_layers=2, d_model=32):
         super().__init__()
-        self.layers = nn.ModuleList([
-            nn.ModuleDict({
-                "attention": DummySelfAttention(d_model=d_model),
-                "mlp": nn.Linear(d_model, d_model),
-            })
-            for _ in range(num_layers)
-        ])
+        self.layers = nn.ModuleList(
+            [
+                nn.ModuleDict(
+                    {
+                        "attention": DummySelfAttention(d_model=d_model),
+                        "mlp": nn.Linear(d_model, d_model),
+                    }
+                )
+                for _ in range(num_layers)
+            ]
+        )
 
     def forward(self, x):
         for layer in self.layers:

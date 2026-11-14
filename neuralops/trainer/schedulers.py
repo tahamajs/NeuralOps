@@ -168,9 +168,7 @@ def create_linear(
         def lr_lambda(current_step: int) -> float:
             if current_step < num_warmup_steps:
                 return float(current_step) / float(max(1, num_warmup_steps))
-            progress = float(current_step - num_warmup_steps) / float(
-                max(1, num_training_steps - num_warmup_steps)
-            )
+            progress = float(current_step - num_warmup_steps) / float(max(1, num_training_steps - num_warmup_steps))
             return max(0.0, 1.0 - progress)
 
         return lr_scheduler.LambdaLR(optimizer, lr_lambda)

@@ -72,7 +72,11 @@ def replace_attention(
         target_mod = attention
         attention = None
 
-    logger.info("Replacing attention with '%s' (copy_weights=%s)", attention or (type(target_mod).__name__ if target_mod else "custom"), copy_weights)
+    logger.info(
+        "Replacing attention with '%s' (copy_weights=%s)",
+        attention or (type(target_mod).__name__ if target_mod else "custom"),
+        copy_weights,
+    )
 
     layers = layers or kwargs.pop("layer_indices", None)
     if layers == "all":
@@ -1323,7 +1327,9 @@ def distill(
 
     resolved_seed = 42 if seed is None else seed
     set_seed(resolved_seed)
-    logger.info("Starting knowledge distillation run (epochs=%d, lr=%s, alpha=%s, seed=%s)", epochs, lr, alpha, resolved_seed)
+    logger.info(
+        "Starting knowledge distillation run (epochs=%d, lr=%s, alpha=%s, seed=%s)", epochs, lr, alpha, resolved_seed
+    )
 
     train_loader = (
         dataset
