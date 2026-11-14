@@ -79,3 +79,13 @@ In prior releases, three parallel CLI parsers existed (`neuralops.benchmarks.cli
 3. **Trust Remote Code Protocol:** `trust_remote_code` defaults strictly to `False` in all pipeline and CLI invocations. Explicit `--trust-remote-code` or `NEURALOPS_TRUST_REMOTE_CODE=1` is required to execute external hub code.
 4. **Benchmark Command Hierarchy:** `neuralops benchmark` is now a dedicated command group (`run`, `plan`, `list`, `info`, `compare`, `resume`) replacing legacy overloaded aliases.
 5. **Decoupled Cluster Execution:** Legacy cluster batch execution scripts (`scripts/hpc/`) have been retired in favor of native multi-GPU Python CLI orchestration (`neuralops matrix`, `neuralops benchmark run`).
+6. **Canonical 5-Format Benchmark Persistence Engine:**
+   - Ad-hoc benchmark output files are superseded by the canonical 5-format persistence engine (`neuralops.benchmarks.results.saver.save_all_formats`).
+   - Every run writes:
+     1. Structured JSON: `results/<category>/<module>/<model>/<dataset>/rank_<rank>/<run_id>.json`
+     2. Structured Markdown scorecard: `<run_id>.md`
+     3. Append-only JSONL streaming ledger: `results/results.jsonl`
+     4. Tabular CSV summary: `results/results.csv`
+     5. Strongly-typed Parquet analytics table: `results/results.parquet`
+   - Complete provenance and reproducibility fields (`run_id`, `run_key`, `git_commit`, `git_branch`, `git_dirty`, `environment`, `hardware_usage`, `reproducibility`) are strictly validated against `$schema`.
+   - Legacy scripts using single-format outputs (`summary.json` or standalone `.csv`) should migrate to `save_all_formats(result, output_dir="results")`. See [`docs/BENCHMARK_PERSISTENCE_SPEC.md`](BENCHMARK_PERSISTENCE_SPEC.md) for full specification.
