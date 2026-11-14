@@ -147,7 +147,7 @@ def test_cli_help_and_cache_flags(module_path: str) -> None:
     """Verify CLI entrypoint help messages retain all flags including teacher_cache."""
     import importlib
     mod = importlib.import_module(module_path)
-    main_fn = getattr(mod, "main")
+    main_fn = mod.main
 
     with patch("sys.argv", ["prog", "--help"]), pytest.raises(SystemExit) as exc_info:
         main_fn()

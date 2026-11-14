@@ -96,11 +96,97 @@ class BaseBenchmark(ABC):
         raise NotImplementedError
 
 
+_REGISTRY_POPULATED: bool = False
+
+
+def ensure_populated() -> int:
+    """Ensure canonical benchmarks are populated into the registry.
+
+    Returns:
+        int: Number of benchmarks registered or total count if already populated.
+    """
+    global _REGISTRY_POPULATED
+    if not _REGISTRY_POPULATED:
+        _REGISTRY_POPULATED = True
+        return BenchmarkRegistry.populate_canonical_benchmarks()
+    return dict.__len__(BENCHMARK_REGISTRY)
+
+
+def get_registry() -> dict[str, Any]:
+    """Return the populated benchmark registry dictionary.
+
+    Returns:
+        dict[str, Any]: Dictionary containing all registered benchmarks.
+    """
+    ensure_populated()
+    return BENCHMARK_REGISTRY
+
+
+class _LazyBenchmarkRegistry(dict):
+    """Dictionary-like mapping that lazily populates benchmarks on first access."""
+
+    def _ensure(self) -> None:
+        if not _REGISTRY_POPULATED:
+            ensure_populated()
+
+    def __getitem__(self, key: Any) -> Any:
+        self._ensure()
+        return super().__getitem__(key)
+
+    def __contains__(self, key: Any) -> bool:
+        self._ensure()
+        return super().__contains__(key)
+
+    def __iter__(self) -> Any:
+        self._ensure()
+        return super().__iter__()
+
+    def __len__(self) -> int:
+        self._ensure()
+        return super().__len__()
+
+    def __bool__(self) -> bool:
+        self._ensure()
+        return super().__bool__()
+
+    def __repr__(self) -> str:
+        self._ensure()
+        return super().__repr__()
+
+    def get(self, key: Any, default: Any = None) -> Any:
+        self._ensure()
+        return super().get(key, default)
+
+    def keys(self) -> Any:
+        self._ensure()
+        return super().keys()
+
+    def values(self) -> Any:
+        self._ensure()
+        return super().values()
+
+    def items(self) -> Any:
+        self._ensure()
+        return super().items()
+
+    def copy(self) -> dict[str, Any]:
+        self._ensure()
+        return super().copy()
+
+    def pop(self, key: Any, *args: Any) -> Any:
+        self._ensure()
+        return super().pop(key, *args)
+
+    def setdefault(self, key: Any, default: Any = None) -> Any:
+        self._ensure()
+        return super().setdefault(key, default)
+
+
 # Canonical benchmark registry mapping benchmark name to benchmark entry (class, callable, or metadata dict)
-BENCHMARK_REGISTRY: Dict[str, Union[Type[BaseBenchmark], Callable[..., Any], Dict[str, Any]]] = {}
+BENCHMARK_REGISTRY: Dict[str, Union[Type[BaseBenchmark], Callable[..., Any], Dict[str, Any]]] = _LazyBenchmarkRegistry()
 
 # Detailed metadata index for registered benchmarks
-_BENCHMARK_METADATA: Dict[str, Dict[str, Any]] = {}
+_BENCHMARK_METADATA: Dict[str, Dict[str, Any]] = _LazyBenchmarkRegistry()
 
 
 def register_benchmark(
@@ -141,11 +227,13 @@ def register_benchmark(
 
 def get_benchmark(name: str) -> Optional[Any]:
     """Retrieve registered benchmark runner by name."""
+    ensure_populated()
     return BENCHMARK_REGISTRY.get(name)
 
 
 def list_benchmarks(mode: Optional[str] = None, hardware: Optional[str] = None) -> List[str]:
     """List registered benchmark names, optionally filtered by mode or hardware."""
+    ensure_populated()
     results: List[str] = []
     for name, meta in _BENCHMARK_METADATA.items():
         if mode is not None and meta["mode"] not in (mode, "any", "all"):
@@ -201,6 +289,9 @@ class BenchmarkRegistry:
         Registers all 131 attention mechanisms, 72 compressor engines, and verified ops
         under strict canonical names ('attention:<name>', 'compressor:<name>', 'cuda:<name>', 'triton:<name>').
         """
+        global _REGISTRY_POPULATED
+        _REGISTRY_POPULATED = True
+
         from neuralops.benchmarks.adapters.cuda_adapter import CANONICAL_CUDA_MODULES
         from neuralops.benchmarks.adapters.triton_adapter import CANONICAL_TRITON_MODULES
         from neuralops.benchmarks.discovery import discover_all_modules
@@ -312,15 +403,13 @@ class BenchmarkRegistry:
         return count
 
 
-# Auto-populate canonical benchmarks on initial import
-BenchmarkRegistry.populate_canonical_benchmarks()
-
-
 __all__ = [
     "BaseBenchmark",
     "BenchmarkRegistry",
     "BenchmarkSpec",
     "BENCHMARK_REGISTRY",
+    "ensure_populated",
+    "get_registry",
     "register_benchmark",
     "get_benchmark",
     "list_benchmarks",
