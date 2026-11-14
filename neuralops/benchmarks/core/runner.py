@@ -53,7 +53,7 @@ def _get_git_provenance() -> Dict[str, Any]:
             subprocess.check_output(["git", "status", "--porcelain"], stderr=subprocess.DEVNULL).decode("utf-8").strip()
         )
         is_dirty = len(status) > 0
-    except Exception:
+    except Exception:  # allowed-swallow: git metadata extraction fallback
         pass
     return {
         "commit_sha": commit_sha,
@@ -73,7 +73,7 @@ def _get_host_environment(device_str: str) -> Dict[str, Any]:
             cc_major, cc_minor = torch.cuda.get_device_capability(0)
             compute_cap = f"{cc_major}.{cc_minor}"
             vram_mb = round(torch.cuda.get_device_properties(0).total_memory / (1024.0 * 1024.0), 2)
-        except Exception:
+        except Exception:  # allowed-swallow: cuda device properties query fallback
             pass
 
     return {

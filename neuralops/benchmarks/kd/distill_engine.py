@@ -76,25 +76,29 @@ def _forward_hidden(mod: nn.Module, in_ids: torch.Tensor, att_m: Optional[torch.
 
 
 def _make_grad_scaler(device: torch.device, enabled: bool = True, init_scale: float = 1024.0) -> Any:
-    """Create a GradScaler compatible across PyTorch 1.12, 2.0, and 2.6+ using torch.amp."""
+    """Create a GradScaler compatible across PyTorch versions using torch.amp."""
     dev_str = device.type if hasattr(device, "type") else str(device)
     cuda_dev = dev_str if dev_str.startswith("cuda") else "cuda"
     if hasattr(torch, "amp") and hasattr(torch.amp, "GradScaler"):
         try:
             return torch.amp.GradScaler(cuda_dev, enabled=enabled, init_scale=init_scale)
-        except (TypeError, ValueError):
-            pass
+        except (TypeError, ValueError) as exc:  # allowed-swallow: version compatibility fallback
+            logger.debug("GradScaler with device positional failed: %s", exc)
+        try:
+            return torch.amp.GradScaler(device=cuda_dev, enabled=enabled, init_scale=init_scale)
+        except (TypeError, ValueError) as exc:  # allowed-swallow: version compatibility fallback
+            logger.debug("GradScaler with device kwarg failed: %s", exc)
     try:
         from torch.amp import GradScaler
 
         return GradScaler(cuda_dev, enabled=enabled, init_scale=init_scale)
-    except Exception:
-        pass
-    if hasattr(torch, "cuda") and hasattr(torch.cuda, "amp") and hasattr(torch.cuda.amp, "GradScaler"):
+    except Exception as exc:  # allowed-swallow: fallback to default cuda GradScaler
+        logger.debug("GradScaler fallback: %s", exc)
         try:
-            return torch.cuda.amp.GradScaler(enabled=enabled, init_scale=init_scale)
-        except (TypeError, ValueError):
-            pass
+            from torch.amp import GradScaler
+            return GradScaler(enabled=enabled, init_scale=init_scale)
+        except Exception:  # allowed-swallow: GradScaler unavailable
+            return None
     return None
 
 
