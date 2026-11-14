@@ -98,7 +98,7 @@ from neuralops.core.utils.general import set_seed as set_all_seeds
 
 
 def run_stress_test(
-    device_str: str = "cuda:0",
+    device_str: str = "cuda" if torch.cuda.is_available() else "cpu",
     seeds: list = None,
     limit_attentions: int = None,
     limit_compressors: int = None,
@@ -397,7 +397,7 @@ def main():
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda:0" if torch.cuda.is_available() else "cpu",
+        default="cuda" if torch.cuda.is_available() else "cpu",
         help="Device to execute benchmark",
     )
     parser.add_argument("--seeds", nargs="+", default=["42,1337,2026"], help="Random seeds (space- or comma-separated)")

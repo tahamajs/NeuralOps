@@ -92,6 +92,15 @@ class DummyConfig(PretrainedConfig):
             setattr(self, k, v)
 
 
+def _unpack(out: Any) -> torch.Tensor:
+    """Helper unpacking layer outputs across tuple/dict formats."""
+    if isinstance(out, (tuple, list)):
+        return out[0]
+    if isinstance(out, dict):
+        return out.get("context", out.get("out", out.get("hidden_states")))
+    return out
+
+
 @pytest.fixture(autouse=True)
 def set_seed() -> None:
     """Ensure deterministic random initialization across all tests."""
@@ -110,7 +119,7 @@ class TestMLASpecialized:
         cfg = DummyConfig(hidden_size=64, num_attention_heads=4, is_decoder=True)
         layer = MLAAttention(config=cfg, rank=32)
         x = torch.randn(2, 16, 64)
-        out = layer(x, causal=True)
+        out = _unpack(layer(x, causal=True))
         assert out.shape == (2, 16, 64)
         assert torch.isfinite(out).all()
 
@@ -118,7 +127,7 @@ class TestMLASpecialized:
         cfg = DummyConfig(hidden_size=64, num_attention_heads=4, is_decoder=False)
         layer = MLAAttention(config=cfg, rank=32)
         x = torch.randn(2, 8, 64)
-        out = layer(x, causal=False)
+        out = _unpack(layer(x, causal=False))
         assert out.shape == (2, 8, 64)
         assert torch.isfinite(out).all()
 
@@ -133,8 +142,8 @@ class TestMLASpecialized:
     def test_deepseek_mla_bridge_dual_stream_state(self) -> None:
         bridge = DeepSeekMLASurgeryBridge(latent_kv_dim=512, decoupled_rope_dim=64, q_latent_dim=128)
         summary = bridge.get_recurrent_state_memory_summary()
-        assert summary["compression_ratio"] >= 0.50
-        assert summary["is_50_percent_reduction_satisfied"] is True
+        assert summary["recurrent_state_reduction_ratio"] >= 0.50
+        assert bridge.verify_phase_062_recurrent_state_dod()
 
         init_state = bridge.init_latent_state(batch_size=2, device=torch.device("cpu"), dtype=torch.float32)
         assert init_state.content_state.shape == (2, 512, 128)
@@ -154,24 +163,40 @@ class TestMLASpecialized:
         torch.testing.assert_close(norm_rot, norm_orig, rtol=1e-4, atol=1e-4)
 
     def test_deepseek_mla_bridge_prefill_and_step_decode(self) -> None:
-        bridge = DeepSeekMLASurgeryBridge(latent_kv_dim=64, decoupled_rope_dim=32, q_latent_dim=64, hidden_dim=64)
-        h = torch.randn(2, 16, 64)
-        freqs = torch.arange(0, 16, dtype=torch.float32)
-        angles = torch.outer(torch.arange(16, dtype=torch.float32), freqs)
-        cos = torch.cos(angles)
-        sin = torch.sin(angles)
+        latent_kv_dim = 64
+        decoupled_rope_dim = 32
+        bridge = DeepSeekMLASurgeryBridge(
+            latent_kv_dim=latent_kv_dim,
+            decoupled_rope_dim=decoupled_rope_dim,
+            decay=0.99,
+        )
+        batch_size, seq_len, chunk_size = 2, 16, 8
+        c_kv = torch.randn(batch_size, seq_len, latent_kv_dim)
+        k_rope = torch.randn(batch_size, seq_len, decoupled_rope_dim)
+        qc = torch.randn(batch_size, seq_len, latent_kv_dim)
+        qr = torch.randn(batch_size, seq_len, decoupled_rope_dim)
 
-        out, final_state = bridge.forward_prefill_chunk_parallel(h, cos=cos, sin=sin, chunk_size=8)
-        assert out.shape == (2, 16, 64)
+        out, final_state = bridge.forward_chunk_scan(
+            c_kv=c_kv,
+            k_rope=k_rope,
+            q_content=qc,
+            q_rope=qr,
+            chunk_size=chunk_size,
+        )
+        assert out.shape == (batch_size, seq_len, latent_kv_dim)
         assert torch.isfinite(out).all()
         assert isinstance(final_state, DualStreamLatentState)
 
         # Single step decode
-        h_token = torch.randn(2, 64)
-        cos_step = cos[0:1]
-        sin_step = sin[0:1]
-        step_out, next_state = bridge.forward_step_decode(h_token, final_state, cos=cos_step, sin=sin_step)
-        assert step_out.shape == (2, 64)
+        step_out, next_state = bridge.forward_step(
+            c_kv[:, 0:1],
+            k_rope[:, 0:1],
+            qc[:, 0:1],
+            qr[:, 0:1],
+            final_state.state_c,
+            final_state.state_r,
+        )
+        assert step_out.shape == (batch_size, 1, latent_kv_dim)
         assert torch.isfinite(step_out).all()
 
 
@@ -188,16 +213,17 @@ class TestSSMAndHybridRecurrence:
         [
             ("Jamba2Block", Jamba2Block, {"dim": 64}),
             ("JambaInfoBlock", JambaInfoBlock, {"dim": 64}),
-            ("SAMBAM3Block", SAMBAM3Block, {"dim": 64}),
-            ("SambaMoE", SambaMoE, {"dim": 64, "num_experts": 2, "top_k": 1}),
+            ("SAMBAM3Block", SAMBAM3Block, {"d_model": 64}),
+            ("SambaMoE", SambaMoE, {"d_model": 64, "n_experts": 2}),
             ("GriffinSSDBlock", GriffinSSDBlock, {"dim": 64}),
-            ("HymbaTransXBlock", HymbaTransXBlock, {"dim": 64}),
+            ("HymbaTransXBlock", HymbaTransXBlock, {"hidden_size": 64}),
         ],
     )
     def test_ssm_hybrid_block_forward(self, cls_name: str, cls_type: type[nn.Module], kwargs: dict[str, Any]) -> None:
-        block = cls_type(**kwargs)
+        cfg = DummyConfig(hidden_size=64, num_attention_heads=4)
+        block = cls_type(config=cfg, **kwargs)
         x = torch.randn(2, 12, 64)
-        out = block(x)
+        out = _unpack(block(x))
         assert out.shape == (2, 12, 64)
         assert torch.isfinite(out).all()
 
@@ -214,7 +240,7 @@ class TestHybridAttentionFamily:
         cfg = DummyConfig(hidden_size=64, num_attention_heads=4)
         layer = HybridAttention(config=cfg)
         x = torch.randn(2, 16, 64)
-        out = layer(x)
+        out = _unpack(layer(x))
         assert out.shape == (2, 16, 64)
         assert torch.isfinite(out).all()
 
@@ -222,7 +248,7 @@ class TestHybridAttentionFamily:
         cfg = DummyConfig(hidden_size=64, num_attention_heads=4)
         layer = SplitHeadHybridAttention(config=cfg)
         x = torch.randn(2, 16, 64)
-        out = layer(x)
+        out = _unpack(layer(x))
         assert out.shape == (2, 16, 64)
         assert torch.isfinite(out).all()
 
@@ -230,7 +256,7 @@ class TestHybridAttentionFamily:
         cfg = DummyConfig(hidden_size=64, num_attention_heads=4)
         layer = TriBranchHybridAttention(config=cfg)
         x = torch.randn(2, 16, 64)
-        out = layer(x)
+        out = _unpack(layer(x))
         assert out.shape == (2, 16, 64)
         assert torch.isfinite(out).all()
 
@@ -238,7 +264,7 @@ class TestHybridAttentionFamily:
         cfg = DummyConfig(hidden_size=64, num_attention_heads=4)
         layer = GatedHybridKernelAttention(config=cfg)
         x = torch.randn(2, 16, 64)
-        out = layer(x)
+        out = _unpack(layer(x))
         assert out.shape == (2, 16, 64)
         assert torch.isfinite(out).all()
 
@@ -246,7 +272,7 @@ class TestHybridAttentionFamily:
         cfg = DummyConfig(hidden_size=64, num_attention_heads=4)
         layer = OptimizedHybridAttention(config=cfg)
         x = torch.randn(2, 16, 64)
-        out = layer(x)
+        out = _unpack(layer(x))
         assert out.shape == (2, 16, 64)
         assert torch.isfinite(out).all()
 
@@ -254,9 +280,7 @@ class TestHybridAttentionFamily:
         cfg = DummyConfig(hidden_size=64, num_attention_heads=4)
         layer = GraniteHybrid(config=cfg, dim=64, num_heads=4)
         x = torch.randn(2, 16, 64)
-        out = layer(x)
-        if isinstance(out, tuple):
-            out = out[0]
+        out = _unpack(layer(x))
         assert out.shape == (2, 16, 64)
         assert torch.isfinite(out).all()
 
@@ -266,11 +290,11 @@ class TestHybridAttentionFamily:
         halo = HaloReGLAAttention(config=cfg)
         x = torch.randn(2, 16, 64)
 
-        out_regla = regla(x)
+        out_regla = _unpack(regla(x))
         assert out_regla.shape == (2, 16, 64)
         assert torch.isfinite(out_regla).all()
 
-        out_halo = halo(x)
+        out_halo = _unpack(halo(x))
         assert out_halo.shape == (2, 16, 64)
         assert torch.isfinite(out_halo).all()
 
@@ -280,25 +304,25 @@ class TestHybridAttentionFamily:
         mix = MixAttentionMoska(config=cfg)
         x = torch.randn(2, 16, 64)
 
-        out_pos = pos(x)
+        out_pos = _unpack(pos(x))
         assert out_pos.shape == (2, 16, 64)
         assert torch.isfinite(out_pos).all()
 
-        out_mix = mix(x)
+        out_mix = _unpack(mix(x))
         assert out_mix.shape == (2, 16, 64)
         assert torch.isfinite(out_mix).all()
 
     def test_cosformer_and_gla(self) -> None:
         cfg = DummyConfig(hidden_size=64, num_attention_heads=4)
         cos = CosformerAttention(config=cfg)
-        gla = GatedLinearAttention(config=cfg)
+        gla = GLAttention(config=cfg, hidden_size=64, num_heads=4)
         x = torch.randn(2, 16, 64)
 
-        out_cos = cos(x)
+        out_cos = _unpack(cos(x))
         assert out_cos.shape == (2, 16, 64)
         assert torch.isfinite(out_cos).all()
 
-        out_gla = gla(x)
+        out_gla = _unpack(gla(x))
         assert out_gla.shape == (2, 16, 64)
         assert torch.isfinite(out_gla).all()
 
@@ -316,7 +340,7 @@ class TestMoEAndRouting:
         assert router.num_layers == 12
         assert 0 in router.full_attention_layers
         assert 11 in router.full_attention_layers
-        assert len(router.linear_attention_layers) > 0
+        assert len(router.get_linear_attention_layers()) > 0
 
         # Boundary layers: 0-3 and 10-11
         for idx in [0, 1, 2, 3, 10, 11]:
@@ -345,26 +369,27 @@ class TestMoEAndRouting:
         assert len(profile.entropies) == 8
 
     def test_sparse_moe_attentions(self) -> None:
-        expert_choice = ExpertChoiceMoEAttention(d_model=64)
-        reap_moe = REAPMoEAttention(d_model=64)
-        moe_deltakv = MoEDeltaKVPagedAttention(dim=64)
-        bam_umoe = BAMUMoEBlock(d_model=64, svd_rank=8)
+        cfg = DummyConfig(hidden_size=64, num_attention_heads=4)
+        expert_choice = ExpertChoiceMoEAttention(config=cfg, d_model=64)
+        reap_moe = REAPMoEAttention(config=cfg, hidden_size=64)
+        moe_deltakv = MoEDeltaKVPagedAttention(config=cfg, hidden_size=64)
+        bam_umoe = BAMUMoEBlock(config=cfg, hidden_size=64, svd_rank=8)
 
         x = torch.randn(2, 16, 64)
 
-        out_ec = expert_choice(x)
+        out_ec = _unpack(expert_choice(x))
         assert out_ec.shape == (2, 16, 64)
         assert torch.isfinite(out_ec).all()
 
-        out_reap = reap_moe(x)
+        out_reap = _unpack(reap_moe(x))
         assert out_reap.shape == (2, 16, 64)
         assert torch.isfinite(out_reap).all()
 
-        out_delta = moe_deltakv(x)
+        out_delta = _unpack(moe_deltakv(x))
         assert out_delta.shape == (2, 16, 64)
         assert torch.isfinite(out_delta).all()
 
-        out_bam = bam_umoe(x)
+        out_bam = _unpack(bam_umoe(x))
         assert out_bam.shape == (2, 16, 64)
         assert torch.isfinite(out_bam).all()
 
@@ -428,7 +453,7 @@ class TestAdaptersAndContracts:
         cfg = DummyConfig(hidden_size=64, num_attention_heads=4)
         rep = ReplaceAttention(config=cfg, rank=16)
         x = torch.randn(2, 12, 64)
-        out = rep(x)
+        out = _unpack(rep(x))
         assert out.shape == (2, 12, 64)
         assert torch.isfinite(out).all()
 

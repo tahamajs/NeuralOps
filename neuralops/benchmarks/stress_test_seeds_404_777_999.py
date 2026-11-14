@@ -27,7 +27,7 @@ DEFAULT_SEEDS = [404, 777, 999]
 
 
 def run_backward_stress_test(
-    device_str: str = "cuda:0",
+    device_str: str = "cuda" if torch.cuda.is_available() else "cpu",
     seeds: list = None,
     output_csv: str = "docs/benchmarks/paper_benchmarks_seeds_404_777_999.csv",
     output_json: str = "results/paper_benchmarks_seeds_404_777_999.json",

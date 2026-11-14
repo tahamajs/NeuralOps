@@ -200,7 +200,7 @@ def measure_resources(
     }
 
 
-def get_memory_fragmentation(device: str = "cuda:0") -> dict[str, float]:
+def get_memory_fragmentation(device: str = "cuda" if torch.cuda.is_available() else "cpu") -> dict[str, float]:
     """Measure GPU reserved vs allocated memory and fragmentation ratio."""
     if not torch.cuda.is_available() or str(device).startswith("cpu"):
         return {"reserved_mb": 0.0, "allocated_mb": 0.0, "fragmentation_ratio": 0.0}
@@ -214,7 +214,8 @@ def get_memory_fragmentation(device: str = "cuda:0") -> dict[str, float]:
             "allocated_mb": float(allocated / (1024 * 1024)),
             "fragmentation_ratio": float(max(0.0, frag)),
         }
-    except Exception:
+    except Exception as exc:  # allowed-swallow: device stats unavailable when uninitialized
+        LOG.warning("Failed to collect memory stats for device %s: %s", device, exc)
         return {"reserved_mb": 0.0, "allocated_mb": 0.0, "fragmentation_ratio": 0.0}
 
 

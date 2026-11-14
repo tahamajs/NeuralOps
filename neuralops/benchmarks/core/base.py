@@ -91,7 +91,7 @@ class AbstractBaseBenchmark(ABC):
 
     def resolve_device(self) -> torch.device:
         """Resolve requested hardware execution device with graceful CPU fallback."""
-        target = getattr(self.config.hardware, "device", "cuda:0")
+        target = getattr(self.config.hardware, "device", "cuda" if torch.cuda.is_available() else "cpu")
         if target.startswith("cuda") and not torch.cuda.is_available():
             logger.warning(
                 "CUDA requested ('%s') but torch.cuda.is_available() is False. Falling back to CPU.",
@@ -100,7 +100,8 @@ class AbstractBaseBenchmark(ABC):
             return torch.device("cpu")
         try:
             return torch.device(target)
-        except Exception:
+        except Exception as exc:  # allowed-swallow: invalid target string fallback
+            logger.warning("Could not create torch.device('%s'): %s. Falling back to CPU.", target, exc)
             return torch.device("cpu")
 
     def flush_l2_cache(self, size_mb: int | None = None) -> None:
@@ -111,7 +112,7 @@ class AbstractBaseBenchmark(ABC):
             try:
                 l2_bytes = torch.cuda.get_device_properties(self.device).L2_cache_size
                 size_mb = max(32, int(l2_bytes / (1024 * 1024)) + 16)
-            except Exception:
+            except Exception:  # allowed-swallow: L2 query fallback for emulated/MPS devices
                 size_mb = 64
         try:
             num_elements = (size_mb * 1024 * 1024) // 4
@@ -119,8 +120,8 @@ class AbstractBaseBenchmark(ABC):
             dummy.zero_()
             torch.cuda.synchronize(self.device)
             del dummy
-        except Exception:
-            pass
+        except Exception as exc:  # allowed-swallow: L2 cache allocation failure
+            logger.debug("L2 cache flush skipped: %s", exc)
 
     def measure_latency(
         self,
