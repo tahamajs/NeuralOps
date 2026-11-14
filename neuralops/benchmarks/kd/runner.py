@@ -40,37 +40,38 @@ from neuralops.trainer.metrics import accuracy_score
 
 
 def _make_grad_scaler(device: str = "cuda", enabled: bool = True, init_scale: float = 1024.0) -> Any:
-    """Create a GradScaler compatible across PyTorch 1.12, 2.0, and 2.6+."""
+    """Create a GradScaler compatible across PyTorch versions using torch.amp."""
+    target_dev = device if device.startswith("cuda") else "cuda"
     if hasattr(torch, "amp") and hasattr(torch.amp, "GradScaler"):
         try:
-            return torch.amp.GradScaler(device if device.startswith("cuda") else "cuda", enabled=enabled, init_scale=init_scale)
-        except (TypeError, ValueError):
-            pass
-    if hasattr(torch, "cuda") and hasattr(torch.cuda, "amp") and hasattr(torch.cuda.amp, "GradScaler"):
+            return torch.amp.GradScaler(target_dev, enabled=enabled, init_scale=init_scale)
+        except (TypeError, ValueError) as exc:  # allowed-swallow: version compatibility fallback
+            logger.debug("GradScaler with device positional failed: %s", exc)
         try:
-            return torch.cuda.amp.GradScaler(enabled=enabled, init_scale=init_scale)
-        except (TypeError, ValueError):
-            pass
+            return torch.amp.GradScaler(device=target_dev, enabled=enabled, init_scale=init_scale)
+        except (TypeError, ValueError) as exc:  # allowed-swallow: version compatibility fallback
+            logger.debug("GradScaler with device kwarg failed: %s", exc)
     try:
         from torch.amp import GradScaler
         return GradScaler(enabled=enabled, init_scale=init_scale)
-    except Exception:
+    except Exception as exc:  # allowed-swallow: fallback to default cuda GradScaler
+        logger.debug("GradScaler fallback: %s", exc)
         from torch.amp import GradScaler
         return GradScaler("cuda", enabled=enabled, init_scale=init_scale)
 
 
 def _autocast_context(device: str = "cuda", enabled: bool = True, dtype: torch.dtype = torch.float16) -> Any:
-    """Create an autocast context compatible across PyTorch 1.12, 2.0, and 2.6+."""
+    """Create an autocast context compatible across PyTorch versions using torch.amp."""
+    target_dev = device if device.startswith("cuda") else "cuda"
     if hasattr(torch, "amp") and hasattr(torch.amp, "autocast"):
         try:
-            return torch.amp.autocast(device if device.startswith("cuda") else "cuda", enabled=enabled, dtype=dtype)
-        except (TypeError, ValueError):
-            pass
-    if hasattr(torch, "cuda") and hasattr(torch.cuda, "amp") and hasattr(torch.cuda.amp, "autocast"):
+            return torch.amp.autocast(target_dev, enabled=enabled, dtype=dtype)
+        except (TypeError, ValueError) as exc:  # allowed-swallow: version compatibility fallback
+            logger.debug("torch.amp.autocast with positional device failed: %s", exc)
         try:
-            return torch.amp.autocast("cuda", enabled=enabled, dtype=dtype)
-        except (TypeError, ValueError):
-            pass
+            return torch.amp.autocast(device_type=target_dev, enabled=enabled, dtype=dtype)
+        except (TypeError, ValueError) as exc:  # allowed-swallow: version compatibility fallback
+            logger.debug("torch.amp.autocast with device_type failed: %s", exc)
     return contextlib.nullcontext()
 
 try:
