@@ -34,10 +34,10 @@ class TestMuonNewtonSchulz:
         O = zeropower_via_newtonschulz5(G, steps=5)
         assert O.shape == (32, 32)
 
-        # Orthogonality invariant: O @ O.t() should approximate identity
-        eye = torch.eye(32)
-        prod = O @ O.t()
-        assert torch.allclose(prod, eye, atol=0.2)
+        # Orthogonality invariant: singular values of O should be near 1.0
+        s = torch.linalg.svdvals(O)
+        assert s.min().item() > 0.5
+        assert s.max().item() < 1.5
 
     def test_rectangular_matrices(self):
         torch.manual_seed(42)

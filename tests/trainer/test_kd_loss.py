@@ -155,13 +155,14 @@ class TestRepresentationAndAttentionKD:
         hedgehog = HedgehogFeatureMapKDLoss(chunk_size=16)
         qt = torch.randn(2, 4, 32, 16)
         kt = torch.randn(2, 4, 32, 16)
-        phi_qs = F.relu(torch.randn(2, 4, 32, 16, requires_grad=True))
+        phi_raw = torch.randn(2, 4, 32, 16, requires_grad=True)
+        phi_qs = F.relu(phi_raw)
         phi_ks = F.relu(torch.randn(2, 4, 32, 16))
 
         loss = hedgehog(qt, kt, phi_qs, phi_ks)
         assert loss.item() >= 0.0
         loss.backward()
-        assert phi_qs.grad is not None
+        assert phi_raw.grad is not None
 
     def test_attention_stability_regularizer(self):
         torch.manual_seed(42)

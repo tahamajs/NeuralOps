@@ -100,20 +100,22 @@ class ReplaceAttention(BaseAttention):
         self.rank = int(rank) if rank and rank > 0 else 0
 
         if self.rank > 0:
-            self.q_proj = _FactorizedLinear(self.hidden_size, self.num_heads * self.head_dim, self.rank, bias=True)
+            self.q_proj = _FactorizedLinear(
+                self.hidden_size, self.num_heads * self.head_dim, rank=self.rank, bias=True
+            )
             self.k_proj = _FactorizedLinear(
                 self.hidden_size,
                 self.num_kv_heads * self.head_dim,
-                self.rank,
+                rank=self.rank,
                 bias=True,
             )
             self.v_proj = _FactorizedLinear(
                 self.hidden_size,
                 self.num_kv_heads * self.head_dim,
-                self.rank,
+                rank=self.rank,
                 bias=True,
             )
-            self.out_proj = _FactorizedLinear(self.all_head_size, self.hidden_size, self.rank, bias=True)
+            self.out_proj = _FactorizedLinear(self.all_head_size, self.hidden_size, rank=self.rank, bias=True)
         else:
             self.q_proj = nn.Linear(self.hidden_size, self.num_heads * self.head_dim)
             self.k_proj = nn.Linear(self.hidden_size, self.num_kv_heads * self.head_dim)

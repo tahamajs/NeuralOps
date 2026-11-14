@@ -1133,6 +1133,7 @@ def _heal_replaced_model_impl(
         optimizer = torch.optim.AdamW(trainable_params, lr=lr, weight_decay=weight_decay)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max(1, steps))
 
+        initial_state = {k: v.clone() for k, v in s_mod.state_dict().items()}
         best_loss = float("inf")
         best_state = {k: v.clone() for k, v in s_mod.state_dict().items()}
 
@@ -1178,17 +1179,35 @@ def _heal_replaced_model_impl(
                 )
                 break
 
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
-            optimizer.step()
-            scheduler.step()
-
             cur_loss_val = float(loss.item())
-            if cur_loss_val < best_loss:
+            if math.isfinite(cur_loss_val) and cur_loss_val < best_loss:
                 best_loss = cur_loss_val
                 best_state = {k: v.clone() for k, v in s_mod.state_dict().items()}
 
-        s_mod.load_state_dict(best_state)
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
+
+            has_non_finite_grad = False
+            for p in trainable_params:
+                if p.grad is not None and not torch.isfinite(p.grad).all():
+                    has_non_finite_grad = True
+                    break
+            if has_non_finite_grad:
+                logger.warning(
+                    "Non-finite gradient encountered during micro-healing at layer '%s', step %d/%d; halting optimization early.",
+                    layer_name,
+                    step + 1,
+                    steps,
+                )
+                break
+
+            optimizer.step()
+            scheduler.step()
+
+        if best_loss < float("inf"):
+            s_mod.load_state_dict(best_state)
+        else:
+            s_mod.load_state_dict(initial_state)
         s_mod.eval()
 
         with torch.no_grad():
@@ -1213,6 +1232,16 @@ def _heal_replaced_model_impl(
                 .mean()
                 .item()
             )
+
+            if not math.isfinite(final_mse):
+                logger.warning(
+                    "Final MSE at layer '%s' is non-finite (%s); falling back to initial state.",
+                    layer_name,
+                    final_mse,
+                )
+                s_mod.load_state_dict(initial_state)
+                final_mse = init_mse
+                final_cos = cos_sim0
 
         for p in trainable_params:
             p.requires_grad = False

@@ -55,18 +55,25 @@ class Muon(Optimizer):
 
     def __init__(
         self,
-        params: Iterable[nn.Parameter],
+        params: Iterable[nn.Parameter] | Iterable[dict[str, Any]],
         lr: float = 0.02,
         momentum: float = 0.95,
         weight_decay: float = 0.01,
         ns_steps: int = 5,
     ) -> None:
         defaults = dict(lr=lr, momentum=momentum, weight_decay=weight_decay, ns_steps=ns_steps)
-        params = list(params)
-        for p in params:
+        param_list = list(params)
+        all_tensors: list[torch.Tensor] = []
+        for p in param_list:
+            if isinstance(p, dict):
+                group_params = p.get("params", [])
+                all_tensors.extend(list(group_params) if isinstance(group_params, Iterable) else [group_params])
+            else:
+                all_tensors.append(p)
+        for p in all_tensors:
             if p.ndim != 2:
                 raise ValueError(f"Muon only supports 2-D matrix parameters, got param shape {p.shape}")
-        super().__init__(params, defaults)
+        super().__init__(param_list, defaults)
 
     @torch.no_grad()
     def step(self, closure: Callable[[], float] | None = None) -> float | None:
