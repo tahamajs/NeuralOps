@@ -1328,6 +1328,25 @@ def __getattr__(name: str) -> Any:
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
+def apply_backbone_surgery_hooks(
+    model: nn.Module,
+    model_type: str = "llama",
+    **kwargs: Any,
+) -> None:
+    """Legacy backward-compatibility shim for applying backbone surgery hooks.
+
+    Deprecated: Surgery is now performed transactionally via replace_attention.
+    """
+    import warnings
+
+    warnings.warn(
+        "apply_backbone_surgery_hooks is deprecated and will be removed in v2.2. "
+        "Surgery is now handled transactionally via replace_attention.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+
 __all__ = [
     "ModelSurgery",
     "SurgicalModelWrapper",
@@ -1359,4 +1378,5 @@ __all__ = [
     "split_and_set_qkv_weights",
     "_svd_factorize_weights",
     "adapt_decoder_attention_forward",
+    "apply_backbone_surgery_hooks",
 ]
