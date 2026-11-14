@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 @ATTENTION_REGISTRY.register("linformer_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("linformer", is_alias=True, supports_causal=True, supports_gqa=True)
 class LinformerAttention(BaseAttention):
     """LinformerAttention neural operator.
 

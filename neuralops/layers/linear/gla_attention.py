@@ -42,6 +42,13 @@ except Exception:
     supports_bidirectional=False,
     supports_gqa=False,
 )
+@ATTENTION_REGISTRY.register(
+    "gla",
+    is_alias=True,
+    supports_causal=True,
+    supports_bidirectional=False,
+    supports_gqa=False,
+)
 class GLAttention(BaseAttention):
     """
     Gated Linear Attention layer with FLA backend.

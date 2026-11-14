@@ -93,6 +93,7 @@ def _uses_rope(config: Any, old_attn: nn.Module | None) -> bool:
 
 
 @ATTENTION_REGISTRY.register("hymba_transx", supports_causal=True, supports_bidirectional=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("transx", is_alias=True, supports_causal=True, supports_bidirectional=True, supports_gqa=True)
 class HymbaTransXBlock(BaseAttention):
     r"""HymbaTransX: Hybrid Differential Transformer & State Space Model Block."""
 

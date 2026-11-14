@@ -38,6 +38,14 @@ logger = logging.getLogger(__name__)
     supports_gqa=True,
     supports_rope=True,
 )
+@ATTENTION_REGISTRY.register(
+    "gqa",
+    is_alias=True,
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+    supports_rope=True,
+)
 class GroupedQueryAttention(BaseAttention):
     """GroupedQueryAttention neural operator.
 

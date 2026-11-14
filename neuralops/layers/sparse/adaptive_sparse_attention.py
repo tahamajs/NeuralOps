@@ -39,6 +39,13 @@ from neuralops.utils.model_family import ModelAdapter
     supports_bidirectional=True,
     supports_gqa=True,
 )
+@ATTENTION_REGISTRY.register(
+    "sparse_attention",
+    is_alias=True,
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
 class AdaptiveSparseAttention(BaseAttention):
     """AdaptiveSparseAttention neural operator.
 

@@ -57,6 +57,7 @@ logger = logging.getLogger(__name__)
 
 
 @ATTENTION_REGISTRY.register("mamba_block")
+@ATTENTION_REGISTRY.register("mamba", is_alias=True)
 class MambaBlock(BaseAttention):
     """Faithful S6 / Mamba block, production-hardened."""
 

@@ -82,6 +82,20 @@ def _resolve_config_value(
     supports_bidirectional=True,
     supports_gqa=True,
 )
+@ATTENTION_REGISTRY.register(
+    "performer",
+    is_alias=True,
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
+@ATTENTION_REGISTRY.register(
+    "favor_plus",
+    is_alias=True,
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
 class PerformerAttention(BaseAttention):
     """PerformerAttention neural operator.
 

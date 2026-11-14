@@ -50,6 +50,7 @@ def _safe_low_rank(x: torch.Tensor, up_weight: torch.Tensor, down_weight: torch.
 
 
 @ATTENTION_REGISTRY.register("mla_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("mla", is_alias=True, supports_causal=True, supports_gqa=True)
 class MLAAttention(BaseAttention):
     """MLAAttention neural operator.
 

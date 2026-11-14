@@ -36,6 +36,13 @@ logger = logging.getLogger(__name__)
     supports_bidirectional=True,
     supports_gqa=True,
 )
+@ATTENTION_REGISTRY.register(
+    "nystrom",
+    is_alias=True,
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
 class NystromAttention(BaseAttention):
     """NystromAttention neural operator.
 

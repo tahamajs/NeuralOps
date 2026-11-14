@@ -307,6 +307,13 @@ def chunked_delta_rule_scan(
     supports_bidirectional=True,
     supports_gqa=True,
 )
+@ATTENTION_REGISTRY.register(
+    "gated_deltanet",
+    is_alias=True,
+    supports_causal=True,
+    supports_bidirectional=True,
+    supports_gqa=True,
+)
 class GatedDeltaNet(BaseAttention):
     """
     Gated DeltaNet with data-dependent decay (beta) and step size (alpha).

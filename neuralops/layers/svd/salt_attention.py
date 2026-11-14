@@ -221,6 +221,8 @@ def _compute_energy_rank(
 
 
 @ATTENTION_REGISTRY.register("salt_attention", supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("seesaw", is_alias=True, supports_causal=True, supports_gqa=True)
+@ATTENTION_REGISTRY.register("salt", is_alias=True, supports_causal=True, supports_gqa=True)
 class SALTAttention(BaseAttention):
     r"""
     SALT Attention module replacing standard linear projections with SALTLinear.
