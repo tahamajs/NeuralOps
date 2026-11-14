@@ -514,4 +514,11 @@ def list_ops(category: str = "all") -> list[str]:
     return sorted(key for key, value in OPS_REGISTRY.items() if value.category == category)
 
 
+# Verify OPS_REGISTRY has no duplicate keys
+_seen_keys = set()
+for _op_key in OPS_REGISTRY:
+    assert _op_key not in _seen_keys, f"Duplicate op key in OPS_REGISTRY: {_op_key}"
+    _seen_keys.add(_op_key)
+
+
 __all__ = ["OpConfig", "OPS_REGISTRY", "get_op", "list_ops", "resolve_op_name"]

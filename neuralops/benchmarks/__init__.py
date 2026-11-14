@@ -14,7 +14,10 @@ from __future__ import annotations
 import importlib
 from typing import Any
 
+from neuralops.benchmarks.registry import ensure_registry_populated
+
 __all__ = [
+    "ensure_registry_populated",
     "benchmark",
     "Runner",
     "BenchmarkResult",
