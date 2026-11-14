@@ -116,6 +116,36 @@ def test_d2_known_rtx4090_profile_analytical_bounds():
     assert 10.0 < est.total_time_seconds < 120.0
 
 
+def test_d2_activation_memory_calculated_and_reported():
+    """Verify estimate_resources explicitly calculates and reports activation memory."""
+    recipe_dict = {
+        "apiVersion": "neuralops/v1",
+        "kind": "Recipe",
+        "metadata": {
+            "name": "activation-mem-test",
+            "version": "1.0.0",
+            "description": "Test activation memory estimation",
+        },
+        "model": {"source": "llama-3-8b", "dtype": "float16"},
+        "operations": [
+            {
+                "id": "c1",
+                "type": "weights.compress",
+                "version": "1.0.0",
+                "config": {"method": "svd", "target_ratio": 0.5, "calibration_tokens": 1024},
+            }
+        ],
+    }
+    recipe = Recipe.from_dict(recipe_dict)
+    est = estimate_resources(recipe, hardware_profile="rtx4090", base_parameters=8_000_000_000)
+
+    # 8B model with 1024 tokens must have significant activation memory
+    assert hasattr(est, "activation_vram_mb")
+    assert est.activation_vram_mb > 0.0
+    assert "activation_vram_mb" in est.to_dict()
+    assert est.to_dict()["activation_vram_mb"] == est.activation_vram_mb
+
+
 def test_d2_activation_memory_and_separate_vram_fields():
     """Verify weights_only_vram_mb and estimated_peak_vram_mb are returned separately with activation memory."""
     recipe_dict = {

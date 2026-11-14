@@ -202,22 +202,20 @@ def apply_attention_module(
             f"Module '{module_name}' is not in ATTENTION_REGISTRY ({len(ATTENTION_REGISTRY)} modules available)."
         )
 
-    kwargs_clean = dict(kwargs)
-    rank = kwargs_clean.pop("rank", rank)
-    copy_weights = kwargs_clean.pop("copy_weights", copy_weights)
-    kwargs_clean.pop("attention_type", None)
-    kwargs_clean.pop("attention", None)
-    kwargs_clean.pop("module_name", None)
-
     LOG.info("Injecting attention replacement: '%s' (rank=%d)...", module_name, rank)
+    import inspect
     from neuralops.core.attention_utils import inject_attention
+
+    sig = inspect.signature(inject_attention)
+    valid_params = set(sig.parameters.keys())
+    filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_params}
 
     return inject_attention(
         model,
         attention_type=module_name,
         rank=rank,
         copy_weights=copy_weights,
-        **kwargs_clean,
+        **filtered_kwargs,
     )
 
 
@@ -237,37 +235,36 @@ def apply_compressor(
             f"Compressor '{module_name}' is not in COMPRESSOR_REGISTRY ({len(COMPRESSOR_REGISTRY)} available)."
         )
 
-    kwargs_clean = dict(kwargs)
-    rank = kwargs_clean.pop("rank", rank)
-    calibration_loader = kwargs_clean.pop("calibration_loader", calibration_loader)
-    kwargs_clean.pop("module_name", None)
-
     LOG.info("Applying compressor: '%s' (rank=%d)...", module_name, rank)
+    import inspect
+
     compressor_cls = COMPRESSOR_REGISTRY[module_name]
+
+    init_sig = inspect.signature(compressor_cls.__init__)
+    valid_init_params = set(init_sig.parameters.keys())
+    filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_init_params}
 
     compressor = None
     try:
-        compressor = compressor_cls(model=model, rank=rank, **kwargs_clean)
+        compressor = compressor_cls(model=model, rank=rank, **filtered_kwargs)
     except TypeError:
         try:
-            compressor = compressor_cls(rank=rank, **kwargs_clean)
+            compressor = compressor_cls(rank=rank, **filtered_kwargs)
         except TypeError:
             try:
-                compressor = compressor_cls(model, **kwargs_clean)
+                compressor = compressor_cls(model, **filtered_kwargs)
             except TypeError:
-                compressor = compressor_cls(**kwargs_clean)
+                compressor = compressor_cls(**filtered_kwargs)
 
     if hasattr(compressor, "compress"):
         comp_kwargs = {}
-        compress_fn = compressor.compress
-        has_code = hasattr(compress_fn, "__code__")
-        if calibration_loader is not None and has_code and "dataloader" in compress_fn.__code__.co_varnames:
+        if calibration_loader is not None and "dataloader" in compressor.compress.__code__.co_varnames:
             comp_kwargs["dataloader"] = calibration_loader
 
-        if has_code and "model" in compress_fn.__code__.co_varnames:
-            res = compress_fn(model, **comp_kwargs)
+        if "model" in compressor.compress.__code__.co_varnames:
+            res = compressor.compress(model, **comp_kwargs)
         else:
-            res = compress_fn(**comp_kwargs)
+            res = compressor.compress(**comp_kwargs)
 
         if isinstance(res, tuple):
             return res[0]

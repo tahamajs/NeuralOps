@@ -24,8 +24,13 @@ from neuralops.benchmarks.results.schema import BenchmarkResult
 LOG = logging.getLogger(__name__)
 
 SECRET_PATTERNS = [
-    re.compile(r"hf_[A-Za-z0-9]{34,}"),
-    re.compile(r"sk-[A-Za-z0-9]{32,}"),
+    re.compile(r"hf_[A-Za-z0-9]{30,}"),  # HF
+    re.compile(r"sk-[A-Za-z0-9]{20,}"),  # OpenAI
+    re.compile(r"ghp_[A-Za-z0-9]{36}"),  # GitHub
+    re.compile(r"ghs_[A-Za-z0-9]{36}"),  # GitHub server
+    re.compile(r"AKIA[0-9A-Z]{16}"),  # AWS
+    re.compile(r"AIza[0-9A-Za-z_-]{35}"),  # Google
+    re.compile(r"pypi-AgEIcHlwaS5vcmc[A-Za-z0-9\-_]{50,}"),
     re.compile(r"(?i)api[_-]?key\s*[:=]\s*['\"][A-Za-z0-9_\-]{16,}['\"]"),
 ]
 

@@ -60,14 +60,14 @@ def _query_nvml(device_index: int = 0) -> dict[str, float] | None:
         try:
             power_mw = pynvml.nvmlDeviceGetPowerUsage(handle)
             power_w = _sanitize_metric(float(power_mw) / 1000.0, default=25.0)
-        except Exception:
+        except Exception:  # allowed-swallow: NVML power usage query unsupported
             pass
 
         gpu_util = 0.0
         try:
             util = pynvml.nvmlDeviceGetUtilizationRates(handle)
             gpu_util = _sanitize_metric(float(util.gpu), default=0.0)
-        except Exception:
+        except Exception:  # allowed-swallow: NVML utilization rate query unsupported
             pass
 
         return {
@@ -80,7 +80,7 @@ def _query_nvml(device_index: int = 0) -> dict[str, float] | None:
             "power_w": round(power_w, 2),
             "mem_used_mb": round(used_mb, 2),
         }
-    except Exception:
+    except Exception:  # allowed-swallow: NVML query fallback to nvidia-smi
         pass
 
     # 2. Try nvidia-smi CLI
@@ -109,7 +109,7 @@ def _query_nvml(device_index: int = 0) -> dict[str, float] | None:
                 "power_w": round(power_w, 2),
                 "mem_used_mb": round(used_mb, 2),
             }
-    except Exception:
+    except Exception:  # allowed-swallow: nvidia-smi CLI execution fallback
         pass
 
     return None
@@ -131,7 +131,7 @@ def _query_cpu_and_mock() -> dict[str, float]:
         vm = psutil.virtual_memory()
         ram_used_mb = _sanitize_metric(float(vm.used) / (1024.0 * 1024.0), default=0.0)
         ram_total_mb = _sanitize_metric(float(vm.total) / (1024.0 * 1024.0), default=0.0)
-    except Exception:
+    except Exception:  # allowed-swallow: psutil virtual_memory query fallback
         pass
 
     # Check if PyTorch CUDA can provide VRAM
@@ -144,7 +144,7 @@ def _query_cpu_and_mock() -> dict[str, float]:
             allocated = torch.cuda.memory_allocated() / (1024.0 * 1024.0)
             if allocated > 0:
                 vram_used = _sanitize_metric(allocated, default=450.0)
-    except Exception:
+    except Exception:  # allowed-swallow: torch memory_allocated query fallback
         pass
 
     return {
@@ -179,7 +179,7 @@ def get_hardware_telemetry(device_index: int = 0) -> dict[str, float]:
             vm = psutil.virtual_memory()
             metrics["cpu_ram_used_mb"] = round(_sanitize_metric(float(vm.used) / (1024.0 * 1024.0)), 2)
             metrics["cpu_ram_total_mb"] = round(_sanitize_metric(float(vm.total) / (1024.0 * 1024.0)), 2)
-        except Exception:
+        except Exception:  # allowed-swallow: psutil telemetry augmentation fallback
             pass
 
     return metrics
@@ -287,6 +287,6 @@ class HardwareTelemetryMonitor:
             try:
                 self.log_step(step=step)
                 step += 1
-            except Exception:
+            except Exception:  # allowed-swallow: telemetry background polling loop resilience
                 pass
             self._stop_event.wait(self.interval_seconds)

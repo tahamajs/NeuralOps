@@ -93,6 +93,31 @@ def _fused_kronecker_gemm_kernel(
             tl.store(y_ptrs, out_val.to(x_ptr.dtype.element_ty))
 
 
+__all__ = ["triton_fused_kronecker_matmul", "triton_fused_kronecker_matmul_pytorch_ref"]
+
+
+def triton_fused_kronecker_matmul_pytorch_ref(
+    x: torch.Tensor,
+    A: torch.Tensor,
+    B: torch.Tensor,
+    bias: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    """Pure PyTorch reference implementation for Kronecker matrix multiplication."""
+    orig_shape = x.shape
+    x_2d = x.view(-1, orig_shape[-1])
+    M, _ = x_2d.shape
+    M1, N1 = A.shape
+    M2, N2 = B.shape
+    out_features = M1 * M2
+    X_reshaped = x_2d.view(M, N1, N2)
+    T = torch.matmul(X_reshaped, B.t())
+    Y = torch.matmul(A, T)
+    Y_flat = Y.reshape(M, out_features)
+    if bias is not None:
+        Y_flat = Y_flat + bias.to(dtype=Y_flat.dtype, device=Y_flat.device)
+    return Y_flat.view(*orig_shape[:-1], out_features)
+
+
 def triton_fused_kronecker_matmul(
     x: torch.Tensor,
     A: torch.Tensor,
@@ -123,22 +148,10 @@ def triton_fused_kronecker_matmul(
     assert K == N1 * N2, f"Input feature mismatch: {K} != {N1} * {N2}"
 
     if not x.is_cuda:
-        X_reshaped = x_2d.view(M, N1, N2)
-        T = torch.matmul(X_reshaped, B.t())
-        Y = torch.matmul(A, T.transpose(1, 2)).transpose(1, 2)
-        Y_flat = Y.reshape(M, out_features)
-        if bias is not None:
-            Y_flat = Y_flat + bias.to(dtype=Y_flat.dtype, device=Y_flat.device)
-        return Y_flat.view(*orig_shape[:-1], out_features)
+        return triton_fused_kronecker_matmul_pytorch_ref(x, A, B, bias=bias)
 
     if M1 > 64 or M2 > 64 or N1 > 64 or N2 > 64:
-        X_reshaped = x_2d.view(M, N1, N2)
-        T = torch.matmul(X_reshaped, B.t())
-        Y = torch.matmul(A, T.transpose(1, 2)).transpose(1, 2)
-        Y_flat = Y.reshape(M, out_features)
-        if bias is not None:
-            Y_flat = Y_flat + bias.to(dtype=Y_flat.dtype, device=Y_flat.device)
-        return Y_flat.view(*orig_shape[:-1], out_features)
+        return triton_fused_kronecker_matmul_pytorch_ref(x, A, B, bias=bias)
 
     Y = torch.empty((M, out_features), device=x.device, dtype=x.dtype)
 

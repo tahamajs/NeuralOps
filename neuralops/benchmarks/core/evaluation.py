@@ -64,33 +64,22 @@ def evaluate_classification(
 
     with torch.no_grad():
         for b_idx, batch in enumerate(pbar):
-            if isinstance(batch, dict):
-                input_ids = batch["input_ids"].to(device)
-                attention_mask = batch.get("attention_mask")
-                attention_mask = attention_mask.to(device) if attention_mask is not None else torch.ones_like(input_ids)
-                lbl = batch.get("labels") if "labels" in batch else batch.get("label")
-                labels = lbl.to(device) if lbl is not None else None
-            elif isinstance(batch, (tuple, list)):
-                input_ids = batch[0].to(device)
-                attention_mask = batch[1].to(device) if len(batch) > 1 else torch.ones_like(input_ids)
-                labels = batch[2].to(device) if len(batch) > 2 else None
-            else:
-                input_ids = batch.to(device)
-                attention_mask = torch.ones_like(input_ids)
-                labels = None
+            input_ids = batch[0].to(device)
+            attention_mask = batch[1].to(device)
+            labels = batch[2].to(device)
 
             outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
             loss = outputs.loss
             logits = outputs.logits
 
             preds = torch.argmax(logits, dim=-1)
-            if labels is not None:
-                correct += int((preds == labels).sum().item())
-                total += int(labels.numel())
-                all_preds.extend(preds.cpu().tolist())
-                all_labels.extend(labels.cpu().tolist())
+            correct += int((preds == labels).sum().item())
+            total += int(labels.numel())
             total_loss += float(loss.item()) if loss is not None else 0.0
             num_batches += 1
+
+            all_preds.extend(preds.cpu().tolist())
+            all_labels.extend(labels.cpu().tolist())
 
             if max_eval_batches is not None and b_idx + 1 >= max_eval_batches:
                 break
@@ -129,16 +118,8 @@ def evaluate_perplexity(
 
     with torch.no_grad():
         for b_idx, batch in enumerate(eval_loader):
-            if isinstance(batch, dict):
-                input_ids = batch["input_ids"].to(device)
-                attention_mask = batch.get("attention_mask")
-                attention_mask = attention_mask.to(device) if attention_mask is not None else torch.ones_like(input_ids)
-            elif isinstance(batch, (tuple, list)):
-                input_ids = batch[0].to(device)
-                attention_mask = batch[1].to(device) if len(batch) > 1 else torch.ones_like(input_ids)
-            else:
-                input_ids = batch.to(device)
-                attention_mask = torch.ones_like(input_ids)
+            input_ids = batch[0].to(device)
+            attention_mask = batch[1].to(device)
 
             labels = input_ids.clone()
             outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
@@ -166,7 +147,7 @@ def evaluate_perplexity(
 
 def measure_resources(
     model: nn.Module,
-    sample_batch: Any,
+    sample_batch: tuple[torch.Tensor, ...],
     device: str | torch.device = "cpu",
     warmup_iters: int = 3,
     measure_iters: int = 10,
@@ -175,18 +156,8 @@ def measure_resources(
     Profile peak VRAM consumption, latency per token, and token throughput.
     """
     model.eval()
-    if isinstance(sample_batch, dict):
-        input_ids = sample_batch["input_ids"].to(device)
-        attention_mask = sample_batch.get("attention_mask")
-        attention_mask = attention_mask.to(device) if attention_mask is not None else torch.ones_like(input_ids)
-    elif isinstance(sample_batch, (tuple, list)):
-        input_ids = sample_batch[0].to(device)
-        attention_mask = sample_batch[1].to(device) if len(sample_batch) > 1 else torch.ones_like(input_ids)
-    elif isinstance(sample_batch, torch.Tensor):
-        input_ids = sample_batch.to(device)
-        attention_mask = torch.ones_like(input_ids)
-    else:
-        raise TypeError(f"Unsupported sample_batch type: {type(sample_batch)}")
+    input_ids = sample_batch[0].to(device)
+    attention_mask = sample_batch[1].to(device)
     batch_size, seq_len = input_ids.shape
     total_tokens_per_pass = batch_size * seq_len
 
@@ -219,11 +190,33 @@ def measure_resources(
     throughput = total_tokens / max(total_time, 1e-8)
     latency_ms_per_token = (total_time / max(total_tokens, 1)) * 1000.0
 
+    frag_stats = get_memory_fragmentation(device if isinstance(device, str) else str(device))
+
     return {
         "peak_vram_mb": float(peak_vram_mb),
         "latency_ms_per_token": float(latency_ms_per_token),
         "throughput_tok_per_sec": float(throughput),
+        **frag_stats,
     }
+
+
+def get_memory_fragmentation(device: str = "cuda" if torch.cuda.is_available() else "cpu") -> dict[str, float]:
+    """Measure GPU reserved vs allocated memory and fragmentation ratio."""
+    if not torch.cuda.is_available() or str(device).startswith("cpu"):
+        return {"reserved_mb": 0.0, "allocated_mb": 0.0, "fragmentation_ratio": 0.0}
+    try:
+        stats = torch.cuda.memory_stats(device)
+        reserved = stats.get("reserved_bytes.all.current", 0)
+        allocated = stats.get("allocated_bytes.all.current", 0)
+        frag = (reserved - allocated) / max(reserved, 1)
+        return {
+            "reserved_mb": float(reserved / (1024 * 1024)),
+            "allocated_mb": float(allocated / (1024 * 1024)),
+            "fragmentation_ratio": float(max(0.0, frag)),
+        }
+    except Exception as exc:  # allowed-swallow: device stats unavailable when uninitialized
+        LOG.warning("Failed to collect memory stats for device %s: %s", device, exc)
+        return {"reserved_mb": 0.0, "allocated_mb": 0.0, "fragmentation_ratio": 0.0}
 
 
 def measure_peak_memory_mb(device: str | torch.device = "cpu") -> float:
@@ -267,4 +260,5 @@ __all__ = [
     "measure_resources",
     "measure_latency_and_throughput",
     "measure_peak_memory_mb",
+    "get_memory_fragmentation",
 ]

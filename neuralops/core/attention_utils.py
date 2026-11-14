@@ -13,6 +13,7 @@ Centralized helpers for attention module instantiation, tensor transformation, a
 
 from __future__ import annotations
 
+import importlib
 import logging
 import math
 from typing import Any
@@ -30,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 
 def inject_attention(*args: Any, **kwargs: Any) -> Any:
+<<<<<<< HEAD
     """Convenience alias for replace_attention."""
     from neuralops.api import replace_attention
 
@@ -41,6 +43,12 @@ def replace_attention(*args: Any, **kwargs: Any) -> Any:
     from neuralops.api import replace_attention as _ra
 
     return _ra(*args, **kwargs)
+=======
+    """Drop-in replace attention layers, delegating lazily to neuralops.core.replace_attention."""
+    from neuralops.core.replace_attention import replace_attention
+
+    return replace_attention(*args, **kwargs)
+>>>>>>> fix/benchmarks-remediation
 
 
 def available_attention_types() -> list[str]:
@@ -233,21 +241,30 @@ def apply_rotary_pos_emb(
     return q, k
 
 
-from neuralops.core._attention_injectors import _inject_attention_loop
-from neuralops.core._attention_surgery import (
-    FUSED_QKV_REGEX,
-    PROJ_REGEX_PATTERNS,
-    _copy_projection_weights,
-    _find_submodule_by_regex,
-    _slice_fused_qkv_weights,
-    _svd_factorize_weights,
-    compute_reconstruction_error,
-    slice_fused_qkv,
-    split_and_set_qkv_weights,
-)
+_LAZY_EXPORTS: dict[str, str] = {
+    "_inject_attention_loop": "neuralops.core._attention_injectors",
+    "FUSED_QKV_REGEX": "neuralops.models.surgery",
+    "PROJ_REGEX_PATTERNS": "neuralops.models.surgery",
+    "_copy_projection_weights": "neuralops.models.surgery",
+    "_find_submodule_by_regex": "neuralops.models.surgery",
+    "_slice_fused_qkv_weights": "neuralops.models.surgery",
+    "_svd_factorize_weights": "neuralops.models.surgery",
+    "compute_reconstruction_error": "neuralops.models.surgery",
+    "slice_fused_qkv": "neuralops.models.surgery",
+    "split_and_set_qkv_weights": "neuralops.models.surgery",
+    "replace_attention": "neuralops.core.replace_attention",
+    "inject_attention": "neuralops.core.replace_attention",
+}
 
 
-__all__ = [
+def __getattr__(name: str) -> Any:
+    if name in _LAZY_EXPORTS:
+        mod = importlib.import_module(_LAZY_EXPORTS[name])
+        return getattr(mod, name)
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
+
+__all__ = [  # noqa: F822
     "replace_attention",
     "inject_attention",
     "available_attention_types",
@@ -274,9 +291,3 @@ __all__ = [
     "apply_rotary_pos_emb",
     "LoRALinear",
 ]
-
-
-def __getattr__(name: str) -> Any:
-    if name in ("replace_attention", "inject_attention"):
-        return replace_attention
-    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

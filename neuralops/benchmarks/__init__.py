@@ -14,7 +14,11 @@ from __future__ import annotations
 import importlib
 from typing import Any
 
+from neuralops.benchmarks.registry import ensure_registry_populated, get_registry
+
 __all__ = [
+    "ensure_registry_populated",
+    "get_registry",
     "benchmark",
     "Runner",
     "BenchmarkResult",
@@ -118,7 +122,7 @@ def __getattr__(name: str) -> Any:
         module = importlib.import_module(f"neuralops.benchmarks.{name}")
         globals()[name] = module
         return module
-    except ModuleNotFoundError:  # allowed-swallow: lazy load fallback
+    except ModuleNotFoundError:  # allowed-swallow: lazy module load fallback
         pass
 
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

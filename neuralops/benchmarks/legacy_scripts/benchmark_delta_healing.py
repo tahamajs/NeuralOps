@@ -138,7 +138,7 @@ def get_eval_dataset() -> Dataset:
 
 def run_delta_healing(
     module_name: str,
-    device_str: str = "cuda:0",
+    device_str: str = "cuda" if torch.cuda.is_available() else "cpu",
     max_duration_sec: float = 120.0,
     peak_lr: float = 1e-3,
     batch_size: int = 2,
@@ -328,7 +328,7 @@ def run_delta_healing(
 def main() -> int:
     parser = argparse.ArgumentParser(description="Delta Healing with 6-Pillar KD")
     parser.add_argument("--module", type=str, default="adaptive_span_attention")
-    parser.add_argument("--device", type=str, default="cuda:0")
+    parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--duration", type=float, default=120.0)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--batch-size", type=int, default=2)

@@ -62,6 +62,7 @@ class CUDAGraphDecodeRunner:
 
     def capture(self, sample_cache: Optional[Any] = None) -> None:
         """Warm up and capture the single-token decoding forward pass."""
+<<<<<<< HEAD
         is_static = False
         if sample_cache is not None and not isinstance(sample_cache, UnifiedHybridCache):
             cls_name = sample_cache.__class__.__name__
@@ -81,6 +82,29 @@ class CUDAGraphDecodeRunner:
             raise TypeError(
                 f"CUDAGraphDecodeRunner requires a static-size KV cache (e.g. StaticCache), got {got_desc}"
             )
+=======
+        if sample_cache is not None:
+            if hasattr(sample_cache, "is_static") and not sample_cache.is_static:
+                raise ValueError(
+                    f"CUDAGraphDecodeRunner requires a static cache, but received non-static cache: {type(sample_cache).__name__}"
+                )
+            if "Dynamic" in type(sample_cache).__name__:
+                raise ValueError(
+                    f"CUDAGraphDecodeRunner requires a static cache, but received dynamic cache: {type(sample_cache).__name__}"
+                )
+            if (
+                not isinstance(sample_cache, UnifiedHybridCache)
+                and not getattr(sample_cache, "is_static", False)
+                and type(sample_cache).__name__ != "StaticCache"
+            ):
+                raise TypeError(
+                    f"CUDAGraphDecodeRunner requires a static cache instance (e.g. UnifiedHybridCache or StaticCache), got {type(sample_cache).__name__}"
+                )
+            self.static_cache = sample_cache
+        else:
+            num_layers = getattr(getattr(self.model, "config", None), "num_hidden_layers", 12)
+            self.static_cache = UnifiedHybridCache(num_layers=num_layers)
+>>>>>>> fix/benchmarks-remediation
 
         if not torch.cuda.is_available() or self.device.type != "cuda":
             logger.warning("CUDA is not available or device is not CUDA; skipping CUDA Graph capture.")
@@ -90,12 +114,6 @@ class CUDAGraphDecodeRunner:
         self.model.eval()
 
         self.static_input_ids = torch.zeros((self.batch_size, 1), dtype=torch.long, device=self.device)
-
-        if sample_cache is not None:
-            self.static_cache = sample_cache
-        else:
-            num_layers = getattr(getattr(self.model, "config", None), "num_hidden_layers", 12)
-            self.static_cache = UnifiedHybridCache(num_layers=num_layers)
 
         stream = torch.cuda.Stream(device=self.device)
         stream.wait_stream(torch.cuda.current_stream(device=self.device))

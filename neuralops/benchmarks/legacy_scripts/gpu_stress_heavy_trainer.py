@@ -161,7 +161,7 @@ def run_heavy_stress_training(
     print(f"  [+] Model initialized with {param_count / 1e6:.2f}M trainable parameters.", flush=True)
 
     optimizer = torch.optim.AdamW(student.parameters(), lr=base_lr, weight_decay=0.01)
-    scaler = torch.cuda.amp.GradScaler() if torch.cuda.is_available() else None
+    scaler = torch.amp.GradScaler("cuda") if torch.cuda.is_available() else None
 
     # Verify checkpoint directory
     ckpt_path = Path(checkpoint_dir)
@@ -188,7 +188,7 @@ def run_heavy_stress_training(
 
         # Forward pass with mixed precision
         if torch.cuda.is_available():
-            with torch.cuda.amp.autocast():
+            with torch.amp.autocast("cuda"):
                 student_logits, student_feat = student(input_ids)
                 with torch.no_grad():
                     teacher_logits, teacher_feat = teacher(input_ids)

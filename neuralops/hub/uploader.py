@@ -33,6 +33,19 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
+# 8 canonical secret detection patterns for tokens, keys, and credentials
+SECRET_PATTERNS = [
+    re.compile(r"hf_[A-Za-z0-9]{20,}"),  # Hugging Face token
+    re.compile(r"sk-[A-Za-z0-9]{20,}"),  # OpenAI / API secret
+    re.compile(r"ghp_[A-Za-z0-9]{36}"),  # GitHub personal token
+    re.compile(r"ghs_[A-Za-z0-9]{36}"),  # GitHub server token
+    re.compile(r"AKIA[0-9A-Z]{16}"),  # AWS Access Key ID
+    re.compile(r"AIza[0-9A-Za-z_-]{35}"),  # Google API key
+    re.compile(r"pypi-AgEIcHlwaS5vcmc[A-Za-z0-9\-_]{50,}"),  # PyPI upload token
+    re.compile(r"(?i)api[_-]?key\s*[:=]\s*['\"][A-Za-z0-9_\-]{16,}['\"]"),  # Generic API key
+]
+
+
 def _redact_secrets(message: str, secret: Optional[str] = None) -> str:
     """Ensure no HF token or API secret appears in messages, errors, or logs."""
     if not message:
@@ -40,11 +53,12 @@ def _redact_secrets(message: str, secret: Optional[str] = None) -> str:
     text = str(message)
     if secret:
         text = text.replace(secret, "[REDACTED_HF_TOKEN]")
-    env_token = os.environ.get("HF_TOKEN")
-    if env_token:
-        text = text.replace(env_token, "[REDACTED_HF_TOKEN]")
-    # Redact standard HF user access tokens (hf_...)
-    text = re.sub(r"hf_[A-Za-z0-9]{20,}", "[REDACTED_HF_TOKEN]", text)
+    for env_var in ("HF_TOKEN", "HUGGINGFACE_HUB_TOKEN"):
+        env_token = os.environ.get(env_var)
+        if env_token:
+            text = text.replace(env_token, "[REDACTED_HF_TOKEN]")
+    for pattern in SECRET_PATTERNS:
+        text = pattern.sub("[REDACTED_HF_TOKEN]", text)
     return text
 
 
@@ -267,11 +281,16 @@ class AsyncHFHubUploader:
         *,
         repo_id: Optional[str] = None,
         zoo_type: Optional[str] = None,
+<<<<<<< HEAD
+=======
+        folder_path: Optional[str | Path] = None,
+>>>>>>> fix/benchmarks-remediation
         mechanism_name: Optional[str] = None,
         **kwargs: Any,
     ) -> concurrent.futures.Future[Any]:
         """Submit a completed checkpoint folder for background upload and cleanup.
 
+<<<<<<< HEAD
         Supports both standard signature:
             submit_upload(attn_key, staging_dir, metrics, *, repo_id=..., zoo_type=...)
         and caller pattern:
@@ -311,6 +330,57 @@ class AsyncHFHubUploader:
             final_metrics,
             final_repo_id,
             zoo_type or kwargs.get("zoo_type"),
+=======
+        Supports both canonical and legacy call signatures:
+          1. submit_upload(attn_key, staging_dir, metrics, repo_id=..., zoo_type=...)
+          2. submit_upload(folder_path, repo_id, mechanism_name=...)
+        """
+        # Resolve folder_path / staging_dir alias
+        if folder_path is not None:
+            resolved_path = Path(folder_path)
+            resolved_key = str(mechanism_name or attn_key or resolved_path.name)
+            resolved_repo_id = repo_id or (
+                str(staging_dir) if staging_dir and not isinstance(staging_dir, dict) else None
+            )
+            resolved_metrics = metrics if isinstance(metrics, dict) else (kwargs.get("metrics") or {})
+            resolved_zoo_type = zoo_type or kwargs.get("zoo_type")
+
+        # Handle legacy signature: submit_upload(ckpt_dir, repo_id, mechanism_name=...)
+        elif mechanism_name is not None:
+            resolved_key = str(mechanism_name)
+            resolved_path = Path(attn_key) if attn_key is not None else Path(".")
+            resolved_repo_id = repo_id or (str(staging_dir) if staging_dir else None)
+            resolved_metrics = metrics if isinstance(metrics, dict) else (kwargs.get("metrics") or {})
+            resolved_zoo_type = zoo_type or kwargs.get("zoo_type")
+
+        # First arg is a Path object or directory string, and 3rd arg is not a dict
+        elif isinstance(attn_key, Path) or (
+            isinstance(attn_key, str)
+            and (os.path.sep in attn_key or "/" in attn_key or Path(attn_key).is_dir())
+            and not isinstance(metrics, dict)
+        ):
+            resolved_path = Path(attn_key)
+            resolved_repo_id = repo_id or (str(staging_dir) if staging_dir else None)
+            resolved_key = str(mechanism_name or resolved_path.name)
+            resolved_metrics = metrics if isinstance(metrics, dict) else (kwargs.get("metrics") or {})
+            resolved_zoo_type = zoo_type or kwargs.get("zoo_type")
+
+        # Canonical signature: submit_upload(attn_key, staging_dir, metrics, repo_id=..., zoo_type=...)
+        else:
+            resolved_key = str(attn_key) if attn_key is not None else "unknown"
+            resolved_path = Path(staging_dir) if staging_dir is not None else Path(".")
+            resolved_metrics = metrics if isinstance(metrics, dict) else (kwargs.get("metrics") or {})
+            resolved_repo_id = repo_id
+            resolved_zoo_type = zoo_type or kwargs.get("zoo_type")
+
+        future = self.executor.submit(
+            self._worker_upload_and_cleanup,
+            resolved_key,
+            resolved_path,
+            resolved_metrics,
+            resolved_repo_id,
+            resolved_zoo_type,
+>>>>>>> fix/benchmarks-remediation
         )
         self.futures.append(future)
         return future
@@ -457,6 +527,8 @@ class AsyncHFHubUploader:
 
 __all__ = [
     "AsyncHFHubUploader",
+    "SECRET_PATTERNS",
+    "_redact_secrets",
     "retry_hf_api_call",
     "upload_with_retry",
 ]

@@ -41,44 +41,38 @@ from neuralops.trainer.metrics import accuracy_score
 
 def _make_grad_scaler(device: str = "cuda", enabled: bool = True, init_scale: float = 1024.0) -> Any:
     """Create a GradScaler compatible across PyTorch versions using torch.amp."""
-    cuda_dev = device if device.startswith("cuda") else "cuda"
+    target_dev = device if device.startswith("cuda") else "cuda"
     if hasattr(torch, "amp") and hasattr(torch.amp, "GradScaler"):
         try:
-            return torch.amp.GradScaler(cuda_dev, enabled=enabled, init_scale=init_scale)
+            return torch.amp.GradScaler(target_dev, enabled=enabled, init_scale=init_scale)
         except (TypeError, ValueError) as exc:  # allowed-swallow: version compatibility fallback
             logger.debug("GradScaler with device positional failed: %s", exc)
         try:
-            return torch.amp.GradScaler(device=cuda_dev, enabled=enabled, init_scale=init_scale)
+            return torch.amp.GradScaler(device=target_dev, enabled=enabled, init_scale=init_scale)
         except (TypeError, ValueError) as exc:  # allowed-swallow: version compatibility fallback
             logger.debug("GradScaler with device kwarg failed: %s", exc)
     try:
         from torch.amp import GradScaler
-
-        return GradScaler(cuda_dev, enabled=enabled, init_scale=init_scale)
+        return GradScaler(enabled=enabled, init_scale=init_scale)
     except Exception as exc:  # allowed-swallow: fallback to default cuda GradScaler
         logger.debug("GradScaler fallback: %s", exc)
-        try:
-            from torch.amp import GradScaler
-            return GradScaler(enabled=enabled, init_scale=init_scale)
-        except Exception:  # allowed-swallow: GradScaler unavailable
-            return None
-    return None
+        from torch.amp import GradScaler
+        return GradScaler("cuda", enabled=enabled, init_scale=init_scale)
 
 
 def _autocast_context(device: str = "cuda", enabled: bool = True, dtype: torch.dtype = torch.float16) -> Any:
     """Create an autocast context compatible across PyTorch versions using torch.amp."""
-    cuda_dev = device if device.startswith("cuda") else "cuda"
+    target_dev = device if device.startswith("cuda") else "cuda"
     if hasattr(torch, "amp") and hasattr(torch.amp, "autocast"):
         try:
-            return torch.amp.autocast(cuda_dev, enabled=enabled, dtype=dtype)
+            return torch.amp.autocast(target_dev, enabled=enabled, dtype=dtype)
         except (TypeError, ValueError) as exc:  # allowed-swallow: version compatibility fallback
             logger.debug("torch.amp.autocast with positional device failed: %s", exc)
         try:
-            return torch.amp.autocast(device_type=cuda_dev, enabled=enabled, dtype=dtype)
+            return torch.amp.autocast(device_type=target_dev, enabled=enabled, dtype=dtype)
         except (TypeError, ValueError) as exc:  # allowed-swallow: version compatibility fallback
             logger.debug("torch.amp.autocast with device_type failed: %s", exc)
     return contextlib.nullcontext()
-
 
 try:
     from neuralops.evaluation.eval_patcher import apply_module_to_model
@@ -121,6 +115,10 @@ class KDRunner:
         """Handle SIGINT gracefully by recording state and exiting cleanly."""
         logger.warning("Caught interrupt signal! Persisting state before termination...")
         self.interrupted = True
+        try:
+            self._atomic_save_state(self.state)
+        except Exception as e:
+            logger.error("Failed to save state on interrupt: %s", e)
 
     def _get_git_commit(self) -> str:
         """Retrieve current git commit hash if available."""
@@ -183,8 +181,7 @@ class KDRunner:
         for obj in objs:
             if obj is not None:
                 try:
-                    if hasattr(obj, "zero_grad"):
-                        obj.zero_grad(set_to_none=True)
+                    del obj
                 except Exception:
                     # allowed-swallow: best-effort-telemetry
                     pass
@@ -376,14 +373,6 @@ class KDRunner:
             Benchmark performance metrics and status.
         """
         t_start = time.time()
-        if torch.cuda.is_available():
-            torch.cuda.reset_peak_memory_stats()
-
-        # Enforce teacher evaluation mode and complete parameter freezing for isolation
-        teacher.eval()
-        for p in teacher.parameters():
-            p.requires_grad = False
-
         result: Dict[str, Any] = {
             "module": module_name,
             "dataset": dataset_name,
@@ -426,6 +415,7 @@ class KDRunner:
 
             trainable = [p for p in student.parameters() if p.requires_grad]
             if not trainable:
+                logger.warning("No attention modules found; training all student params")
                 for p in student.parameters():
                     p.requires_grad = True
                 trainable = [p for p in student.parameters() if p.requires_grad]
@@ -540,11 +530,7 @@ class KDRunner:
             result["status"] = "ERROR"
             result["error"] = str(exc)[:200]
         finally:
-            if optimizer is not None:
-                optimizer.zero_grad(set_to_none=True)
             self._cleanup_gpu(optimizer, student)
-            del student
-            del optimizer
 
         result["duration_s"] = round(time.time() - t_start, 1)
         return result

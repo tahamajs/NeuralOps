@@ -16,6 +16,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
+import torch.nn as nn
+
 from neuralops.pipeline_transform.snapshot import ModelSnapshot
 from neuralops.surgery.registry import SURGERY_REGISTRY, register_surgery
 from neuralops.surgery.validation import ValidationReport, validate_before_surgery
@@ -408,8 +410,8 @@ def apply_mla_attention_surgery(
     from neuralops.surgery.mla_surgery import DeepSeekMLASurgeryBridge
     from neuralops.surgery.scanner import UniversalArchitectureScanner
 
-    scanner = UniversalArchitectureScanner(model)
-    targets = scanner.scan()
+    scanner = UniversalArchitectureScanner()
+    targets = scanner.scan(model)
     for spec in targets:
         mla_bridge = DeepSeekMLASurgeryBridge(
             latent_kv_dim=latent_kv_dim,
@@ -418,7 +420,24 @@ def apply_mla_attention_surgery(
             hidden_dim=spec.embed_dim,
             **kwargs,
         )
+<<<<<<< HEAD
         spec.parent_module.register_module(spec.attr_name, mla_bridge)
+=======
+        attr = spec.attr_name
+        if isinstance(spec.parent_module, (dict, nn.ModuleDict)):
+            spec.parent_module[attr] = mla_bridge
+        elif hasattr(spec.parent_module, "__setitem__") and (
+            attr.isdigit() or isinstance(spec.parent_module, (list, nn.ModuleList))
+        ):
+            idx = int(attr) if attr.isdigit() else 0
+            spec.parent_module[idx] = mla_bridge
+        elif hasattr(spec.parent_module, "__setitem__") and not hasattr(spec.parent_module, "__setattr__"):
+            spec.parent_module[attr] = mla_bridge
+        elif attr:
+            setattr(spec.parent_module, attr, mla_bridge)
+        else:
+            setattr(spec.parent_module, spec.module_path.split(".")[-1], mla_bridge)
+>>>>>>> fix/benchmarks-remediation
     return model
 
 

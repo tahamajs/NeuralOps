@@ -109,7 +109,7 @@ class DenseTeacherModel(nn.Module):
 class SixPillarKDSuite:
     """Coordinates multi-pillar knowledge distillation healing loops with exact PPL computation."""
 
-    def __init__(self, device: str = "cuda:0", temperature: float = 2.0) -> None:
+    def __init__(self, device: str = "cuda" if torch.cuda.is_available() else "cpu", temperature: float = 2.0) -> None:
         self.device = torch.device(device)
         self.l_logit = LogitDistillationLoss(mode="forward_kl", temperature=temperature)
         self.l_feature = HedgehogFeatureMapKDLoss(chunk_size=16, temperature=1.0)
@@ -284,7 +284,7 @@ def train_module_kd(
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="6-Pillar KD Parallel Benchmark with PPL")
-    parser.add_argument("--device", type=str, default="cuda:0")
+    parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--max-duration", type=float, default=120.0)
     parser.add_argument("--worker-id", type=int, default=0, help="Worker rank (0, 1, 2)")
     parser.add_argument("--num-workers", type=int, default=1, help="Total workers (e.g. 3)")

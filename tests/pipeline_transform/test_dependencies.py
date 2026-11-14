@@ -114,3 +114,34 @@ def test_d1_shape_simulation_propagation():
 
     conflicts = analyze_recipe(recipe)
     assert len(conflicts) == 0
+
+
+def test_d1_detects_unknown_operation_as_error():
+    """Verify analyze_recipe flags unknown or unregistered operations as ERROR."""
+    recipe_dict = {
+        "apiVersion": "neuralops/v1",
+        "kind": "Recipe",
+        "metadata": {
+            "name": "unknown-op-recipe",
+            "version": "1.0.0",
+            "description": "Recipe with unregistered operation",
+        },
+        "model": {"source": "llama-3", "dtype": "float16"},
+        "operations": [
+            {
+                "id": "bad-op",
+                "type": "nonexistent.op",
+                "version": "1.0.0",
+                "config": {},
+            }
+        ],
+    }
+    recipe = Recipe.from_dict(recipe_dict)
+    conflicts = analyze_recipe(recipe)
+
+    assert len(conflicts) == 1
+    err = conflicts[0]
+    assert err.severity == ConflictSeverity.ERROR
+    assert err.code == "E_CONFLICT_UNKNOWN_OPERATION"
+    assert "nonexistent.op" in err.message
+    assert err.stage_id == "bad-op"

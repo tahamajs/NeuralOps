@@ -149,3 +149,51 @@ def test_b2_spill_to_disk_safetensors_and_restore():
     # Cleanup disk resources
     snap.cleanup()
     assert snap.disk_path is None
+
+
+def test_b2_restore_cleans_orphaned_parameters_and_modules():
+    """Verify full-model restore removes orphaned parameters and modules added during mutation."""
+    model = MultiLayerDummyModel()
+    hash_before = _hash_state_dict(model.state_dict())
+
+    snap = capture(model)
+
+    # Add orphaned parameter and orphaned module
+    model.orphan_root = nn.Parameter(torch.randn(16))
+    model.layers[0].orphan_child = nn.Parameter(torch.randn(16))
+    model.new_module = nn.Linear(32, 32)
+
+    assert hasattr(model, "orphan_root")
+    assert hasattr(model.layers[0], "orphan_child")
+    assert hasattr(model, "new_module")
+
+    # Restore snapshot
+    restore(model, snap)
+
+    # Verify orphaned parameters and modules are completely cleaned up
+    assert not hasattr(model, "orphan_root")
+    assert not hasattr(model.layers[0], "orphan_child")
+    assert not hasattr(model, "new_module")
+
+    # Verify bit-identical state
+    hash_after = _hash_state_dict(model.state_dict())
+    assert hash_after == hash_before
+
+
+def test_b2_selective_restore_cleans_orphaned_parameters():
+    """Verify selective restore removes orphaned parameters matching state_paths."""
+    model = MultiLayerDummyModel()
+    hash_before = _hash_state_dict(model.state_dict())
+
+    snap = capture(model, state_paths=["layers.0"])
+
+    # Add orphaned parameter to layers.0
+    model.layers[0].orphan_layer0 = nn.Parameter(torch.randn(16))
+    assert hasattr(model.layers[0], "orphan_layer0")
+
+    # Restore selective snapshot
+    restore(model, snap)
+
+    assert not hasattr(model.layers[0], "orphan_layer0")
+    hash_after = _hash_state_dict(model.state_dict())
+    assert hash_after == hash_before

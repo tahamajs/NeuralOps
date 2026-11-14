@@ -11,7 +11,7 @@ Exceptions for Pipeline Planning and Transformation Operations.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from neuralops.core.exceptions import NeuralOpsError
 
@@ -43,7 +43,7 @@ class ConfigurationError(NeuralOpsError):
     def __init__(
         self,
         message: str,
-        constraints: Optional[dict] = None,
+        constraints: Optional[Dict[str, Any]] = None,
         error_code: str = "E_CONFIG_UNSATISFIABLE",
     ) -> None:
         super().__init__(message)

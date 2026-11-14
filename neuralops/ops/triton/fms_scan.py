@@ -328,6 +328,9 @@ def _fms_bwd_kernel(
 class _FMSScanFn(torch.autograd.Function):
     @staticmethod
     def forward(ctx: Any, q: Any, k: Any, v: Any, decay: Any) -> Any:
+        if not HAS_TRITON or not q.is_cuda:
+            return fms_scan_pytorch(q, k, v, decay)
+
         B, H, L, D = q.shape
         assert D <= MAX_REGISTER_DIM, f"head_dim {D} > {MAX_REGISTER_DIM}"
 
@@ -476,6 +479,9 @@ def fms_scan_triton(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: to
 
     if decay.shape[0] != H:
         raise ValueError(f"decay shape {decay.shape} does not match H={H}")
+
+    if not HAS_TRITON or not q.is_cuda:
+        return fms_scan_pytorch(q, k, v, decay)
 
     return _FMSScanFn.apply(q, k, v, decay)
 

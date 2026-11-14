@@ -36,7 +36,7 @@ def time_fn(fn, *args, repeat=20, warmup=5):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", default="results/cuda_10_phases_speedup_rtx3090.csv")
-    parser.add_argument("--device", default="cuda:0")
+    parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     args = parser.parse_args()
 
     device = args.device

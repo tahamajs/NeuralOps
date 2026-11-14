@@ -190,31 +190,57 @@ def finalize_surgery(model: nn.Module) -> nn.Module:
     # snapshot so removing those children cannot invalidate Module.modules().
     for m in list(model.modules()):
         if isinstance(m, UniversalAttentionBridge):
-            if m.teacher_branch is not None:
-                del m.teacher_branch
-                m.teacher_branch = None
-            if hasattr(m, "teacher_bridge_wrapper") and m.teacher_bridge_wrapper is not None:
-                del m.teacher_bridge_wrapper
-                m.teacher_bridge_wrapper = None
+            # 1. Sever teacher branches and wrappers from modules dictionary
+            for child_attr in (
+                "teacher_branch",
+                "teacher_bridge_wrapper",
+                "normalizer",
+                "orig_module",
+                "base_module",
+            ):
+                if hasattr(m, child_attr):
+                    try:
+                        delattr(m, child_attr)
+                    except AttributeError:
+                        pass
+                if child_attr in m._modules:
+                    del m._modules[child_attr]
+                # Maintain backward-compatible attribute access returning None
+                setattr(m, child_attr, None)
+
             if hasattr(m, "memory_mode"):
                 m.memory_mode = None
             if hasattr(m, "chunk_size"):
                 m.chunk_size = None
-            if hasattr(m, "normalizer") and m.normalizer is not None:
-                del m.normalizer
-                m.normalizer = None
-            if hasattr(m, "orig_module") and m.orig_module is not None:
-                del m.orig_module
-                m.orig_module = None
-            if hasattr(m, "base_module") and m.base_module is not None:
-                del m.base_module
-                m.base_module = None
-            m.alpha = 1.0
+
+            # 2. Sever references to teacher weights and parent in AttentionTargetSpec
+            if hasattr(m, "spec") and m.spec is not None:
+                m.spec.target_module = None
+                m.spec.extracted_qkv = None
+                m.spec.parent_module = None
+                if hasattr(m.spec, "extra_metadata") and isinstance(m.spec.extra_metadata, dict):
+                    m.spec.extra_metadata.pop("lora_adapters", None)
+                    m.spec.extra_metadata.pop("moa_router", None)
+
+            # 3. Sever LoRA / adapter parameter references from orig_module
+            if hasattr(m, "lora_adapters") and isinstance(m.lora_adapters, dict):
+                m.lora_adapters.clear()
+            for lora_attr in ("lora_A", "lora_B", "scaling", "lora_magnitude_vector", "peft_config"):
+                if hasattr(m, lora_attr):
+                    delattr(m, lora_attr)
+
+            # 4. Clean up distillation loss tensors and graph connections
             if hasattr(m, "_last_twin_loss"):
-                m._last_twin_loss = None
+                delattr(m, "_last_twin_loss")
+
+            # 5. Restore unpatched forward and clean closure references
             if getattr(m, "_is_shadow_twin_patched", False):
                 m.forward = getattr(m, "_orig_unpatched_forward", m.forward)
                 m._is_shadow_twin_patched = False
+            if hasattr(m, "_orig_unpatched_forward"):
+                delattr(m, "_orig_unpatched_forward")
+
+            m.alpha = 1.0
             count += 1
 
     gc.collect()

@@ -21,11 +21,21 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.base import BaseCompressor
+
 try:
     from neuralops.core.triton_kernels._base import HAS_TRITON, triton_dispatch
 except ImportError:
     HAS_TRITON = False
     triton_dispatch = None
+
+
+class LoRAParameter(nn.Parameter):
+    """Parameter proxy providing a .weight property for seamless Module/Parameter compatibility."""
+
+    @property
+    def weight(self) -> LoRAParameter:
+        return self
 
 
 class LoRALinear(nn.Module):
@@ -45,7 +55,7 @@ class LoRALinear(nn.Module):
         lora_alpha: float = 32.0,
         lora_dropout: float = 0.0,
         dropout: float | None = None,
-        freeze_base: bool = False,
+        freeze_base: bool | None = None,
         merge_weights: bool = False,
         device: torch.device | None = None,
         dtype: torch.dtype | None = None,
@@ -73,11 +83,16 @@ class LoRALinear(nn.Module):
         self.lora_dropout = nn.Dropout(p=effective_dropout) if effective_dropout > 0.0 else nn.Identity()
         self.merged = False
         self.merge_weights = merge_weights
-        self.freeze_base = freeze_base
+
+        is_wrapper = isinstance(base_or_in_features, nn.Module)
+        if freeze_base is None:
+            self.freeze_base = is_wrapper
+        else:
+            self.freeze_base = bool(freeze_base)
 
         factory_kwargs = {"device": device, "dtype": dtype}
 
-        if isinstance(base_or_in_features, nn.Module):
+        if is_wrapper:
             self.base_layer = base_or_in_features
             in_feat = getattr(self.base_layer, "in_features", None)
             out_feat = getattr(self.base_layer, "out_features", None)
@@ -106,14 +121,14 @@ class LoRALinear(nn.Module):
                 self.register_parameter("bias", None)
 
         if self.lora_rank > 0 and self.in_features and self.out_features:
-            self.lora_A = nn.Parameter(torch.empty((self.lora_rank, self.in_features), **factory_kwargs))
-            self.lora_B = nn.Parameter(torch.empty((self.out_features, self.lora_rank), **factory_kwargs))
+            self.lora_A = LoRAParameter(torch.empty((self.lora_rank, self.in_features), **factory_kwargs))
+            self.lora_B = LoRAParameter(torch.empty((self.out_features, self.lora_rank), **factory_kwargs))
         else:
             self.register_parameter("lora_A", None)
             self.register_parameter("lora_B", None)
 
         self.reset_parameters()
-        if freeze_base:
+        if self.freeze_base:
             self.freeze_base_weights()
 
     def reset_parameters(self) -> None:
@@ -232,4 +247,36 @@ class LoRALinear(nn.Module):
         return res
 
 
-__all__ = ["LoRALinear"]
+class LoRACompressor(BaseCompressor):
+    """Parameter-efficient LoRA model compressor."""
+
+    FAMILY: str = "low_rank"
+
+    def __init__(
+        self,
+        model: nn.Module,
+        rank: int = 16,
+        r: int | None = None,
+        lora_alpha: float = 32.0,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(model, name="lora", **kwargs)
+        self.rank = r if r is not None else rank
+        self.lora_alpha = lora_alpha
+
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
+        """Wrap Linear layers with LoRALinear."""
+        from neuralops.core.model_utils import replace_module
+
+        adapted_count = 0
+        for name, module in list(self.model.named_modules()):
+            if isinstance(module, nn.Linear) and not isinstance(module, LoRALinear):
+                lora_layer = LoRALinear(module, r=self.rank, lora_alpha=self.lora_alpha)
+                replace_module(self.model, name, lora_layer)
+                adapted_count += 1
+        stats = self.get_compression_stats()
+        stats["adapted_layers"] = adapted_count
+        return self.model, stats
+
+
+__all__ = ["LoRALinear", "LoRAParameter", "LoRACompressor"]

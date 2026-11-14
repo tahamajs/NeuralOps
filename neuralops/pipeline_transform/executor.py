@@ -38,6 +38,7 @@ def execute_plan(
     plan: ExecutionPlan,
     model: Optional[nn.Module] = None,
     device: str = "auto",
+    baseline_model: Optional[nn.Module] = None,
 ) -> PipelineResult:
     """Execute an ExecutionPlan transactionally with per-stage validation and rollback.
 
@@ -45,6 +46,7 @@ def execute_plan(
         plan: The compiled ExecutionPlan to execute.
         model: Optional in-memory model to mutate. If None, loaded from plan target.
         device: Device to place the model on ("auto", "cpu", "cuda", etc.).
+        baseline_model: Optional reference model for cross-stage validation comparison.
 
     Returns:
         PipelineResult with final model, telemetry stage records, and evidence.
@@ -119,6 +121,13 @@ def execute_plan(
         mem_before = _get_memory_bytes(model)
         params_before = sum(p.numel() for p in model.parameters())
 
+        # Capture pre-transformation model reference for validation to prevent self-compare
+        pre_stage_model: Optional[nn.Module] = None
+        try:
+            pre_stage_model = copy.deepcopy(model)
+        except Exception as exc:
+            logger.debug("Failed creating pre-stage model deepcopy for validation: %s", exc)
+
         # 4. Apply operation
         # Capture pre-mutation copy so validation gates compare against the real pre-state
         try:
@@ -154,12 +163,19 @@ def execute_plan(
         )
         stage_val_ctx = dict(stage.config)
         stage_val_ctx.setdefault("baseline_parameters", params_before)
+        val_before = pre_stage_model if pre_stage_model is not None else baseline_model
         val_result = run_validation_gates(
+<<<<<<< HEAD
             model_before=pre_copy,
+=======
+            model_before=val_before,
+>>>>>>> fix/benchmarks-remediation
             model_after=new_model,
             profile=val_profile,
             context=stage_val_ctx,
+            baseline_model=baseline_model or val_before,
         )
+        del pre_stage_model
 
         # 6. Verify gate results
         if not val_result.passed:
@@ -240,6 +256,7 @@ def execute_recipe(
     return execute_plan(
         plan=plan,
         model=model,
+        baseline_model=baseline_model,
     )
 
 

@@ -253,7 +253,7 @@ def _get_parent_and_attr(root: nn.Module, path: str) -> tuple[nn.Module, str]:
 
 
 def restore(model: nn.Module, snapshot: Snapshot) -> None:
-    """Restore model to the exact snapshotted state.
+    """Restore model to the exact snapshotted state, eliminating orphaned parameters and buffers.
 
     Raises:
         RollbackError: If any restoration step fails.
@@ -299,9 +299,38 @@ def restore(model: nn.Module, snapshot: Snapshot) -> None:
         # 1. Restore structural submodule mutations
         if "" in snapshot.submodules:
             saved_root = snapshot.submodules[""]
+            # Remove any newly attached children not present in saved root
+            saved_children = set(name for name, _ in saved_root.named_children())
+            for child_name in [name for name, _ in model.named_children()]:
+                if child_name not in saved_children:
+                    delattr(model, child_name)
+
+            # Re-attach and restore children from saved root
             for child_name, child_mod in saved_root.named_children():
                 setattr(model, child_name, copy.deepcopy(child_mod).to(device))
-            model.load_state_dict(saved_root.state_dict())
+
+            # Remove any orphaned parameters not present in saved root
+            saved_state = saved_root.state_dict()
+            for name, _ in list(model.named_parameters()):
+                if name not in saved_state:
+                    try:
+                        parent, attr = _get_parent_and_attr(model, name)
+                        if hasattr(parent, attr):
+                            delattr(parent, attr)
+                    except Exception as exc:
+                        logger.debug("Failed removing orphaned parameter '%s': %s", name, exc)
+
+            # Remove any orphaned buffers not present in saved root
+            for name, _ in list(model.named_buffers()):
+                if name not in saved_state:
+                    try:
+                        parent, attr = _get_parent_and_attr(model, name)
+                        if hasattr(parent, attr):
+                            delattr(parent, attr)
+                    except Exception as exc:
+                        logger.debug("Failed removing orphaned buffer '%s': %s", name, exc)
+
+            model.load_state_dict(saved_root.state_dict(), strict=True)
         else:
             for path, saved_mod in snapshot.submodules.items():
                 try:
@@ -313,6 +342,37 @@ def restore(model: nn.Module, snapshot: Snapshot) -> None:
                         setattr(parent, attr, restored_mod)
                 except Exception as exc:
                     logger.debug("Submodule reattachment failed for path '%s': %s", path, exc)
+
+            # Identify valid parameters and buffers for selective restore
+            if snapshot.disk_path and os.path.exists(snapshot.disk_path):
+                from safetensors import safe_open
+
+                with safe_open(snapshot.disk_path, framework="pt") as f:
+                    valid_params = {k[2:] for k in f.keys() if k.startswith("p:")}
+                    valid_buffers = {k[2:] for k in f.keys() if k.startswith("b:")}
+            else:
+                valid_params = set(snapshot.params.keys())
+                valid_buffers = set(snapshot.buffers.keys())
+
+            # Remove any orphaned parameters matching selective state_paths
+            for name, _ in list(model.named_parameters()):
+                if _matches_any_path(name, snapshot.state_paths) and name not in valid_params:
+                    try:
+                        parent, attr = _get_parent_and_attr(model, name)
+                        if hasattr(parent, attr):
+                            delattr(parent, attr)
+                    except Exception as exc:
+                        logger.debug("Failed removing orphaned parameter '%s': %s", name, exc)
+
+            # Remove any orphaned buffers matching selective state_paths
+            for name, _ in list(model.named_buffers()):
+                if _matches_any_path(name, snapshot.state_paths) and name not in valid_buffers:
+                    try:
+                        parent, attr = _get_parent_and_attr(model, name)
+                        if hasattr(parent, attr):
+                            delattr(parent, attr)
+                    except Exception as exc:
+                        logger.debug("Failed removing orphaned buffer '%s': %s", name, exc)
 
         # 2. Restore parameters
         if snapshot.disk_path and os.path.exists(snapshot.disk_path):
@@ -339,7 +399,7 @@ def restore(model: nn.Module, snapshot: Snapshot) -> None:
                             if b_name == name:
                                 b.data.copy_(tensor.to(device=b.device, dtype=b.dtype))
                                 break
-        else:
+        elif "" not in snapshot.submodules:
             for name, tensor in snapshot.params.items():
                 param_found = False
                 for p_name, p in model.named_parameters():

@@ -36,14 +36,15 @@ class SummaryGenerator:
     def _load_all_records(self) -> List[Dict[str, Any]]:
         records = []
         if self.jsonl_file.exists():
-            try:
-                with open(self.jsonl_file, "r", encoding="utf-8") as fp:
-                    for line in fp:
-                        line = line.strip()
-                        if line:
+            with open(self.jsonl_file, "r", encoding="utf-8") as fp:
+                for line_num, line in enumerate(fp, 1):
+                    line = line.strip()
+                    if line:
+                        try:
                             records.append(json.loads(line))
-            except Exception as e:
-                LOG.warning("Could not read results.jsonl for summary generation: %s", e)
+                        except Exception as e:
+                            LOG.warning("Could not read results.jsonl line %d: %s", line_num, e)
+                            continue
         return records
 
     def generate_all(self) -> Dict[str, Path]:

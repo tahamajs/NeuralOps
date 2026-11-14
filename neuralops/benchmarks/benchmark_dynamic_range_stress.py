@@ -29,7 +29,7 @@ DEFAULT_KERNEL_NAMES = ["gla_scan", "sparse_attention", "rotational_svd", "samba
 
 
 def run_dynamic_range_benchmark(
-    device_str: str = "cuda:0",
+    device_str: str = "cuda" if torch.cuda.is_available() else "cpu",
     scales: list = None,
     kernel_names: list = None,
     warmup: int = 5,
@@ -260,7 +260,7 @@ def main():
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda:0" if torch.cuda.is_available() else "cpu",
+        default="cuda" if torch.cuda.is_available() else "cpu",
         help="Device to execute benchmark",
     )
     parser.add_argument("--warmup", type=int, default=5, help="Warmup iterations")

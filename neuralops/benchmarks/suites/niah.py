@@ -53,32 +53,6 @@ class NeedleInAHaystackBenchmark(AbstractBaseBenchmark):
 
         self.needle_prompt = custom.get("needle_prompt", "The secret password is ALPHA_CENTAURI_42")
 
-        self.model = custom.get("model")
-        self.tokenizer = custom.get("tokenizer")
-
-        model_name = getattr(self.config, "model", None)
-        if not model_name and getattr(self.config, "models", None):
-            model_name = self.config.models[0]
-        if self.model is None and model_name:
-            try:
-                from neuralops.benchmarks.core.model_loader import load_model_and_tokenizer
-
-                self.model, self.tokenizer, _ = load_model_and_tokenizer(
-                    model_name=model_name,
-                    device=self.device,
-                    is_causal=True,
-                )
-            except Exception as e:
-                logger.warning("Could not load model %s for NIAH: %s", model_name, e)
-                self.model = None
-                self.tokenizer = None
-
-        if self.model is None or self.tokenizer is None:
-            raise NotImplementedError(
-                "NeedleInAHaystackBenchmark requires an actual causal language model and tokenizer. "
-                "Fake randn evaluation has been removed."
-            )
-
         # Build execution grid
         self.grid: List[Tuple[int, float]] = []
         for ctx in self.context_lengths:
@@ -99,92 +73,7 @@ class NeedleInAHaystackBenchmark(AbstractBaseBenchmark):
         depth: float,
         **kwargs: Any,
     ) -> Dict[str, float]:
-        self.flush_l2_cache()
-
-        if self.model is None or self.tokenizer is None:
-            raise NotImplementedError(
-                "NeedleInAHaystackBenchmark requires an actual causal language model and tokenizer. "
-                "Fake randn evaluation has been removed."
-            )
-
-        needle_pos = max(0, min(int(ctx_len * depth), ctx_len - 1))
-
-        try:
-            passkey = "42424"
-            needle_text = f" Special notice: The secret passkey is {passkey}. Remember this exact number. "
-            needle_tokens = self.tokenizer.encode(needle_text, add_special_tokens=False)
-            q_text = " What is the secret passkey mentioned in the text? The secret passkey is"
-            q_tokens = self.tokenizer.encode(q_text, add_special_tokens=False)
-
-            target_haystack_len = max(ctx_len - len(needle_tokens) - len(q_tokens), 32)
-            base_tokens = self.tokenizer.encode("NeuralOps benchmark long context evaluation text. ", add_special_tokens=False)
-            repeats = (target_haystack_len // max(1, len(base_tokens))) + 1
-            haystack_tokens = (base_tokens * repeats)[:target_haystack_len]
-
-            insert_idx = max(0, min(int(len(haystack_tokens) * depth), len(haystack_tokens)))
-            full_tokens = haystack_tokens[:insert_idx] + needle_tokens + haystack_tokens[insert_idx:] + q_tokens
-            input_ids = torch.tensor([full_tokens], device=self.device)
-
-            def eval_retrieval() -> Any:
-                with torch.no_grad():
-                    return self.model(input_ids=input_ids)
-
-            latency_ms, _ = self.measure_latency(eval_retrieval, warmup=1, repeat=2)
-            outputs = eval_retrieval()
-            next_token_logits = outputs.logits[:, -1, :]
-            pred_token_id = int(torch.argmax(next_token_logits, dim=-1).item())
-            expected_token_id = self.tokenizer.encode(passkey, add_special_tokens=False)[0]
-            accuracy = 1.0 if pred_token_id == expected_token_id else 0.0
-
-            self.tracker.log_metric("niah_retrieval_accuracy", accuracy, step=step)
-            self.tracker.log_metric("niah_latency_ms", latency_ms, step=step)
-
-            result_entry = {
-                "step": step,
-                "mechanism_or_kernel": f"niah_ctx{ctx_len}_depth{int(depth * 100)}",
-                "batch_size": 1,
-                "seq_len": ctx_len,
-                "dtype": "fp32",
-                "depth_pct": depth,
-                "latency_ms": latency_ms,
-                "latency_p50_ms": latency_ms,
-                "latency_p90_ms": latency_ms,
-                "latency_p99_ms": latency_ms,
-                "retrieval_accuracy": accuracy,
-                "predicted_pos": pred_token_id,
-                "actual_pos": expected_token_id,
-                "tflops": 0.0,
-                "peak_vram_mb": 0.0,
-                "status": "PASS",
-            }
-            self.results_table.append(result_entry)
-            return {"accuracy": accuracy, "latency_ms": latency_ms}
-
-        except Exception as e:
-            logger.warning("NIAH iteration failed at ctx=%d, depth=%.2f: %s", ctx_len, depth, e)
-            self.results_table.append(
-                {
-                    "step": step,
-                    "mechanism_or_kernel": f"niah_ctx{ctx_len}_depth{int(depth * 100)}",
-                    "batch_size": 1,
-                    "seq_len": ctx_len,
-                    "dtype": "fp32",
-                    "depth_pct": depth,
-                    "latency_ms": 0.0,
-                    "latency_p50_ms": 0.0,
-                    "latency_p90_ms": 0.0,
-                    "latency_p99_ms": 0.0,
-                    "retrieval_accuracy": 0.0,
-                    "predicted_pos": -1,
-                    "actual_pos": needle_pos,
-                    "tflops": 0.0,
-                    "peak_vram_mb": 0.0,
-                    "status": f"FAILED_RUNTIME: {e}",
-                }
-            )
-            self.tracker.log_metric("niah_retrieval_accuracy", 0.0, step=step)
-            self.tracker.log_metric("niah_latency_ms", 0.0, step=step)
-            return {"accuracy": 0.0, "latency_ms": 0.0}
+        raise NotImplementedError("NIAH requires real model; not implemented")
 
     def run(self) -> None:
         step = 0

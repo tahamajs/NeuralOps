@@ -11,11 +11,13 @@ NeuralOps Trainer Optimizers Subpackage.
 
 from __future__ import annotations
 
+from neuralops.trainer.optimizers.anyprecision import AnyPrecisionAdamW, create_anyprecision_optimizer
 from neuralops.trainer.optimizers.factory import (
     OPTIMIZER_REGISTRY,
     create_adabelief,
     create_adam,
     create_adamw,
+    create_anyprecision,
     create_lamb,
     create_lars,
     create_lion,
@@ -35,6 +37,9 @@ from neuralops.trainer.optimizers.stiefel import is_stiefel_parameter, project_s
 
 __all__ = [
     "OPTIMIZER_REGISTRY",
+    "AnyPrecisionAdamW",
+    "create_anyprecision",
+    "create_anyprecision_optimizer",
     "RiemannianStiefelOptimizer",
     "Muon",
     "MuonAdamW",

@@ -524,6 +524,68 @@ def adapt_decoder_attention_forward(
     return (attn_out, attn_weights, past_kv)
 
 
+<<<<<<< HEAD
+=======
+def apply_backbone_surgery_hooks(
+    model: nn.Module,
+    model_type: str = "llama",
+    attach_forward_adapter: bool = False,
+) -> list[str]:
+    """Tag RoPE & GQA backbone decoders with compatibility metadata flags.
+
+    Inspects attention submodules of supported decoder families (LLaMA, Mistral, Qwen2)
+    and tags them with `supports_gqa = True` and `supports_rope = True` attributes for
+    routing and capability checks.
+
+    Note:
+        By default, this function performs metadata tagging and does not attach PyTorch
+        execution hooks. To wrap module execution with runtime argument adaptation
+        (handling position embeddings, position_ids, and return tuples), set
+        `attach_forward_adapter=True` or use `adapt_decoder_attention_forward` directly.
+
+    Args:
+        model: Target model or container module.
+        model_type: Backbone architecture family name (e.g. 'llama', 'mistral', 'qwen2').
+        attach_forward_adapter: If True, wraps each attention module's forward method
+            with `adapt_decoder_attention_forward`.
+
+    Returns:
+        List of tagged module names.
+    """
+    mtype = model_type.lower()
+    if mtype not in ("llama", "mistral", "qwen", "qwen2", "qwen2_5", "qwen3_5"):
+        return []
+
+    tagged_names: list[str] = []
+    for name, module in model.named_modules():
+        leaf = name.split(".")[-1].lower()
+        if leaf in ("self_attn", "attention", "attn"):
+            if not hasattr(module, "supports_gqa"):
+                module.supports_gqa = True
+            if not hasattr(module, "supports_rope"):
+                module.supports_rope = True
+            if attach_forward_adapter and not getattr(module, "_has_surgery_adapter", False):
+                orig_forward = module.forward
+
+                def _make_adapted_forward(m: nn.Module, fwd_fn: Any) -> Any:
+                    def _adapted_forward(*args: Any, **kwargs: Any) -> Any:
+                        return adapt_decoder_attention_forward(fwd_fn, *args, **kwargs)
+
+                    return _adapted_forward
+
+                module.forward = _make_adapted_forward(module, orig_forward)
+                module._has_surgery_adapter = True
+            tagged_names.append(name)
+
+    logger.debug(
+        "apply_backbone_surgery_hooks: tagged %d attention modules in %s model (adapter=%s)",
+        len(tagged_names),
+        model_type,
+        attach_forward_adapter,
+    )
+    return tagged_names
+
+>>>>>>> fix/benchmarks-remediation
 
 class SubspaceAnchorWrapper(nn.Module):
     def __init__(self, base_layer: nn.Module, surg_layer: nn.Module, alpha: float = 0.25):
@@ -533,13 +595,42 @@ class SubspaceAnchorWrapper(nn.Module):
         self.alpha = alpha
 
     def forward(self, *args: Any, **kwargs: Any) -> Any:
-        y_b = self.base(*args, **kwargs)
-        y_s = self.surg(*args, **kwargs)
+        base_dtype = next((p.dtype for p in self.base.parameters() if p.is_floating_point()), None)
+        surg_dtype = next((p.dtype for p in self.surg.parameters() if p.is_floating_point()), None)
+
+        def _cast_args(
+            a: tuple[Any, ...], kw: dict[str, Any], target_dt: Optional[torch.dtype]
+        ) -> tuple[tuple[Any, ...], dict[str, Any]]:
+            if target_dt is None:
+                return a, kw
+            new_a = tuple(
+                x.to(dtype=target_dt) if isinstance(x, torch.Tensor) and x.is_floating_point() else x for x in a
+            )
+            new_kw = {
+                k: v.to(dtype=target_dt) if isinstance(v, torch.Tensor) and v.is_floating_point() else v
+                for k, v in kw.items()
+            }
+            return new_a, new_kw
+
+        args_b, kwargs_b = _cast_args(args, kwargs, base_dtype)
+        args_s, kwargs_s = _cast_args(args, kwargs, surg_dtype)
+
+        y_b = self.base(*args_b, **kwargs_b)
+        y_s = self.surg(*args_s, **kwargs_s)
         vb = y_b[0] if isinstance(y_b, tuple) else y_b
         vs = y_s[0] if isinstance(y_s, tuple) else y_s
-        out = (1.0 - self.alpha) * vb + self.alpha * vs
+
+        if isinstance(vb, torch.Tensor) and isinstance(vs, torch.Tensor):
+            target_out_dtype = vb.dtype
+            out = (1.0 - self.alpha) * vb.float() + self.alpha * vs.float()
+            out = out.to(dtype=target_out_dtype)
+        else:
+            out = (1.0 - self.alpha) * vb + self.alpha * vs
+
         if isinstance(y_b, tuple):
             return (out,) + y_b[1:]
+        elif isinstance(y_s, tuple):
+            return (out,) + y_s[1:]
         return out
 
 
@@ -689,7 +780,11 @@ def calibrate_surgically_replaced_model(
             parent_mod = curr
 
             if parent_mod is not None:
-                if hasattr(parent_mod, "output") and hasattr(parent_mod.output, "dense") and isinstance(parent_mod.output.dense, nn.Linear):
+                if (
+                    hasattr(parent_mod, "output")
+                    and hasattr(parent_mod.output, "dense")
+                    and isinstance(parent_mod.output.dense, nn.Linear)
+                ):
                     downstream_proj = parent_mod.output.dense
                 elif hasattr(parent_mod, "dense") and isinstance(parent_mod.dense, nn.Linear):
                     downstream_proj = parent_mod.dense
@@ -698,12 +793,16 @@ def calibrate_surgically_replaced_model(
             W_cur = downstream_proj.weight.data.float().clone()
             W_target = torch.matmul(W_cur, W_align.t())
             W_new = (1.0 - blend_alpha) * W_cur + blend_alpha * W_target
-            downstream_proj.weight.data.copy_(W_new.to(dtype=downstream_proj.weight.dtype, device=downstream_proj.weight.device))
+            downstream_proj.weight.data.copy_(
+                W_new.to(dtype=downstream_proj.weight.dtype, device=downstream_proj.weight.device)
+            )
             if getattr(downstream_proj, "bias", None) is not None:
                 b_cur = downstream_proj.bias.data.float().clone()
                 b_target = b_cur + torch.matmul(b_align.unsqueeze(0), W_cur.t()).squeeze(0)
                 b_new = (1.0 - blend_alpha) * b_cur + blend_alpha * b_target
-                downstream_proj.bias.data.copy_(b_new.to(dtype=downstream_proj.bias.dtype, device=downstream_proj.bias.device))
+                downstream_proj.bias.data.copy_(
+                    b_new.to(dtype=downstream_proj.bias.dtype, device=downstream_proj.bias.device)
+                )
         else:
             # 2. Check for upstream internal projection inside surg_mod (e.g. decoder models where hook is on self_attn)
             out_proj = None
@@ -809,16 +908,52 @@ def _heal_replaced_model_impl(
             logger.debug("Ridge warm-start skipped or failed: %s", e_ridge)
 
     batches = []
+    teacher_dev = next(teacher_model.parameters()).device
+    teacher_float_dtype = next(
+        (p.dtype for p in teacher_model.parameters() if p.is_floating_point()),
+        torch.float32,
+    )
+
     if isinstance(calibration_inputs, dict):
-        batches.append({k: v.to(target_dev) for k, v in calibration_inputs.items()})
+        batches.append(
+            {
+                k: (
+                    v.to(device=teacher_dev, dtype=teacher_float_dtype)
+                    if v.is_floating_point()
+                    else v.to(device=teacher_dev)
+                )
+                if isinstance(v, torch.Tensor)
+                else v
+                for k, v in calibration_inputs.items()
+            }
+        )
     elif isinstance(calibration_inputs, torch.Tensor):
-        batches.append(calibration_inputs.to(target_dev))
+        batches.append(
+            calibration_inputs.to(device=teacher_dev, dtype=teacher_float_dtype)
+            if calibration_inputs.is_floating_point()
+            else calibration_inputs.to(device=teacher_dev)
+        )
     elif isinstance(calibration_inputs, (list, tuple)):
         for item in calibration_inputs:
             if isinstance(item, dict):
-                batches.append({k: v.to(target_dev) for k, v in item.items()})
+                batches.append(
+                    {
+                        k: (
+                            v.to(device=teacher_dev, dtype=teacher_float_dtype)
+                            if v.is_floating_point()
+                            else v.to(device=teacher_dev)
+                        )
+                        if isinstance(v, torch.Tensor)
+                        else v
+                        for k, v in item.items()
+                    }
+                )
             elif isinstance(item, torch.Tensor):
-                batches.append(item.to(target_dev))
+                batches.append(
+                    item.to(device=teacher_dev, dtype=teacher_float_dtype)
+                    if item.is_floating_point()
+                    else item.to(device=teacher_dev)
+                )
 
     def _run_forward(m: nn.Module, b: Any) -> Any:
         if isinstance(b, dict):
@@ -861,28 +996,21 @@ def _heal_replaced_model_impl(
     cached_targets: Dict[str, list[torch.Tensor]] = {name: [] for name, _, _ in layer_pairs}
     hooks = []
 
-    mod_to_parent: Dict[nn.Module, nn.Module] = {}
-    for _, parent in teacher_model.named_modules():
-        for child in parent.children():
-            if child not in mod_to_parent:
-                mod_to_parent[child] = parent
-
     for name, t_mod, _ in layer_pairs:
-        parent_mod = mod_to_parent.get(t_mod)
 
-        def _make_capture_hook(layer_name: str, has_parent_hook: bool):
+        def _make_capture_hook(layer_name: str):
             def _hook(mod, inp, out):
                 out_tensor = out[0] if isinstance(out, tuple) else out
                 if isinstance(out_tensor, torch.Tensor):
                     cached_targets[layer_name].append(out_tensor.detach().float())
-                if not has_parent_hook:
+                if not cached_inputs[layer_name]:
                     in_tensor = inp[0] if isinstance(inp, tuple) and len(inp) > 0 else inp
                     if isinstance(in_tensor, torch.Tensor):
                         cached_inputs[layer_name].append(in_tensor.detach().float())
 
             return _hook
 
-        def _make_parent_prehook(layer_name: str):
+        def _make_prehook(layer_name: str):
             def _pre_hook(mod, inp):
                 in_tensor = inp[0] if isinstance(inp, tuple) and len(inp) > 0 else inp
                 if isinstance(in_tensor, torch.Tensor):
@@ -890,11 +1018,8 @@ def _heal_replaced_model_impl(
 
             return _pre_hook
 
-        if parent_mod is not None:
-            hooks.append(parent_mod.register_forward_pre_hook(_make_parent_prehook(name)))
-            hooks.append(t_mod.register_forward_hook(_make_capture_hook(name, has_parent_hook=True)))
-        else:
-            hooks.append(t_mod.register_forward_hook(_make_capture_hook(name, has_parent_hook=False)))
+        hooks.append(t_mod.register_forward_pre_hook(_make_prehook(name)))
+        hooks.append(t_mod.register_forward_hook(_make_capture_hook(name)))
 
     with torch.no_grad():
         for b in batches:
@@ -914,6 +1039,58 @@ def _heal_replaced_model_impl(
     final_mses = []
     init_coss = []
     final_coss = []
+
+    def _detect_surg_input_dtype(mod: nn.Module) -> torch.dtype:
+        for attr in ("q_proj", "qkv_proj", "in_proj", "W_q", "query", "k_proj", "v_proj"):
+            sub = getattr(mod, attr, None)
+            if isinstance(sub, nn.Module):
+                sub_dts = [p.dtype for p in sub.parameters() if p.is_floating_point()]
+                if sub_dts:
+                    return sub_dts[0]
+        for p in mod.parameters():
+            if p.is_floating_point():
+                return p.dtype
+        for b in mod.buffers():
+            if b.is_floating_point():
+                return b.dtype
+        return torch.float32
+
+    def _call_surg_module(mod: nn.Module, x_in: torch.Tensor, in_dt: torch.dtype) -> torch.Tensor:
+        x_step = x_in.to(in_dt)
+        attempts = [
+            lambda: mod(x_step),
+            lambda: mod(hidden_states=x_step),
+            lambda: mod(x_step, x_step, x_step),
+            lambda: adapt_decoder_attention_forward(mod, x_step)[0],
+        ]
+        res = None
+        last_exc: Optional[Exception] = None
+        for att in attempts:
+            try:
+                res = att()
+                break
+            except (TypeError, RuntimeError) as e_att:
+                last_exc = e_att
+                continue
+        if res is None:
+            for alt_dt in (torch.float32, torch.float16, torch.bfloat16):
+                if alt_dt == in_dt:
+                    continue
+                try:
+                    x_alt = x_in.to(alt_dt)
+                    res = mod(x_alt)
+                    break
+                except Exception:
+                    try:
+                        res = mod(hidden_states=x_alt)
+                        break
+                    except Exception:
+                        continue
+        if res is None:
+            if last_exc is not None:
+                raise last_exc
+            raise RuntimeError(f"Failed to forward surgical module {type(mod).__name__}")
+        return res[0] if isinstance(res, tuple) else res
 
     for layer_name, _, s_mod in layer_pairs:
         in_list = cached_inputs.get(layer_name, [])
@@ -942,11 +1119,25 @@ def _heal_replaced_model_impl(
                 if b in orig_buffer_dtypes:
                     b.data = b.data.to(orig_buffer_dtypes[b])
             continue
+
+        target_in_dtype = _detect_surg_input_dtype(s_mod)
+
+        # Harmonize mixed-dtype parameters inside s_mod if inconsistent
+        s_float_dts = {p.dtype for p in s_mod.parameters() if p.is_floating_point()}
+        if len(s_float_dts) > 1:
+            for p in s_mod.parameters():
+                if p.is_floating_point() and p.dtype != target_in_dtype:
+                    p.data = p.data.to(target_in_dtype)
+            for b in s_mod.buffers():
+                if b.is_floating_point() and b.dtype != target_in_dtype:
+                    b.data = b.data.to(target_in_dtype)
+
         for p in trainable_params:
             p.requires_grad = True
 
         with torch.no_grad():
             s_mod.eval()
+<<<<<<< HEAD
             try:
                 pred0 = s_mod(H_in)
             except Exception:
@@ -955,7 +1146,18 @@ def _heal_replaced_model_impl(
                 except Exception:
                     pred0 = s_mod(H_in, H_in, H_in)
             pred0_val = pred0[0] if isinstance(pred0, tuple) else pred0
+=======
+            pred0_val = _call_surg_module(s_mod, H_in, target_in_dtype)
+>>>>>>> fix/benchmarks-remediation
             pred0_f = pred0_val.float()
+
+            if pred0_f.shape != Y_tgt.shape:
+                if pred0_f.numel() == Y_tgt.numel():
+                    pred0_f = pred0_f.reshape_as(Y_tgt)
+                elif pred0_f.ndim == Y_tgt.ndim and pred0_f.shape[:-1] == Y_tgt.shape[:-1]:
+                    min_dim = min(pred0_f.shape[-1], Y_tgt.shape[-1])
+                    pred0_f = pred0_f[..., :min_dim]
+                    Y_tgt = Y_tgt[..., :min_dim]
 
             denom_mse = float(torch.norm(Y_tgt, p="fro").item() ** 2 + 1e-6)
             init_mse = float(torch.norm(pred0_f - Y_tgt, p="fro").item() ** 2 / denom_mse)
@@ -973,6 +1175,7 @@ def _heal_replaced_model_impl(
         optimizer = torch.optim.AdamW(trainable_params, lr=lr, weight_decay=weight_decay)
         scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max(1, steps))
 
+        initial_state = {k: v.clone() for k, v in s_mod.state_dict().items()}
         best_loss = float("inf")
         best_state = {k: v.clone() for k, v in s_mod.state_dict().items()}
 
@@ -984,6 +1187,7 @@ def _heal_replaced_model_impl(
             Y_tgt_step = tgt_list[batch_idx % len(tgt_list)].to(device=target_dev, dtype=common_dtype)
             denom_mse_step = float(torch.norm(Y_tgt_step, p="fro").item() ** 2 + 1e-6)
 
+<<<<<<< HEAD
             try:
                 pred = s_mod(H_in_step)
             except Exception:
@@ -993,7 +1197,18 @@ def _heal_replaced_model_impl(
                     pred = s_mod(H_in_step, H_in_step, H_in_step)
 
             pred_val = pred[0] if isinstance(pred, tuple) else pred
+=======
+            pred_val = _call_surg_module(s_mod, H_in_step, target_in_dtype)
+>>>>>>> fix/benchmarks-remediation
             pred_f = pred_val.float()
+
+            if pred_f.shape != Y_tgt_step.shape:
+                if pred_f.numel() == Y_tgt_step.numel():
+                    pred_f = pred_f.reshape_as(Y_tgt_step)
+                elif pred_f.ndim == Y_tgt_step.ndim and pred_f.shape[:-1] == Y_tgt_step.shape[:-1]:
+                    min_dim = min(pred_f.shape[-1], Y_tgt_step.shape[-1])
+                    pred_f = pred_f[..., :min_dim]
+                    Y_tgt_step = Y_tgt_step[..., :min_dim]
 
             loss_fro = torch.norm(pred_f - Y_tgt_step, p="fro") ** 2 / denom_mse_step
             loss_cos = (
@@ -1018,20 +1233,39 @@ def _heal_replaced_model_impl(
                 )
                 break
 
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
-            optimizer.step()
-            scheduler.step()
-
             cur_loss_val = float(loss.item())
-            if cur_loss_val < best_loss:
+            if math.isfinite(cur_loss_val) and cur_loss_val < best_loss:
                 best_loss = cur_loss_val
                 best_state = {k: v.clone() for k, v in s_mod.state_dict().items()}
 
-        s_mod.load_state_dict(best_state)
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
+
+            has_non_finite_grad = False
+            for p in trainable_params:
+                if p.grad is not None and not torch.isfinite(p.grad).all():
+                    has_non_finite_grad = True
+                    break
+            if has_non_finite_grad:
+                logger.warning(
+                    "Non-finite gradient encountered during micro-healing at layer '%s', step %d/%d; halting optimization early.",
+                    layer_name,
+                    step + 1,
+                    steps,
+                )
+                break
+
+            optimizer.step()
+            scheduler.step()
+
+        if best_loss < float("inf"):
+            s_mod.load_state_dict(best_state)
+        else:
+            s_mod.load_state_dict(initial_state)
         s_mod.eval()
 
         with torch.no_grad():
+<<<<<<< HEAD
             try:
                 pred_final = s_mod(H_in)
             except Exception:
@@ -1040,7 +1274,18 @@ def _heal_replaced_model_impl(
                 except Exception:
                     pred_final = s_mod(H_in, H_in, H_in)
             pred_final_val = pred_final[0] if isinstance(pred_final, tuple) else pred_final
+=======
+            pred_final_val = _call_surg_module(s_mod, H_in, target_in_dtype)
+>>>>>>> fix/benchmarks-remediation
             pred_final_f = pred_final_val.float()
+
+            if pred_final_f.shape != Y_tgt.shape:
+                if pred_final_f.numel() == Y_tgt.numel():
+                    pred_final_f = pred_final_f.reshape_as(Y_tgt)
+                elif pred_final_f.ndim == Y_tgt.ndim and pred_final_f.shape[:-1] == Y_tgt.shape[:-1]:
+                    min_dim = min(pred_final_f.shape[-1], Y_tgt.shape[-1])
+                    pred_final_f = pred_final_f[..., :min_dim]
+                    Y_tgt = Y_tgt[..., :min_dim]
 
             final_mse = float(torch.norm(pred_final_f - Y_tgt, p="fro").item() ** 2 / denom_mse)
             final_cos = (
@@ -1052,6 +1297,16 @@ def _heal_replaced_model_impl(
                 .mean()
                 .item()
             )
+
+            if not math.isfinite(final_mse):
+                logger.warning(
+                    "Final MSE at layer '%s' is non-finite (%s); falling back to initial state.",
+                    layer_name,
+                    final_mse,
+                )
+                s_mod.load_state_dict(initial_state)
+                final_mse = init_mse
+                final_cos = cos_sim0
 
         for p in trainable_params:
             p.requires_grad = False
@@ -1156,7 +1411,18 @@ def heal_replaced_model(
             parameter.requires_grad_(was_trainable)
 
 
-from neuralops.api import replace_attention, transplant_attention
+def replace_attention(*args: Any, **kwargs: Any) -> Any:
+    """Delegate to neuralops.api.replace_attention."""
+    from neuralops.api import replace_attention as _impl
+
+    return _impl(*args, **kwargs)
+
+
+def transplant_attention(*args: Any, **kwargs: Any) -> Any:
+    """Delegate to neuralops.api.transplant_attention."""
+    from neuralops.api import transplant_attention as _impl
+
+    return _impl(*args, **kwargs)
 
 
 def replace_attention_in_model(*args: Any, **kwargs: Any) -> Any:

@@ -162,8 +162,20 @@ def create_wsd(
 def create_linear(
     optimizer: torch.optim.Optimizer, num_warmup_steps: int = 0, num_training_steps: int = 10000, **kwargs: Any
 ) -> Any:
-    """Build and return linear."""
+    """Build and return linear learning rate schedule with optional warmup."""
+    if num_warmup_steps > 0:
+
+        def lr_lambda(current_step: int) -> float:
+            if current_step < num_warmup_steps:
+                return float(current_step) / float(max(1, num_warmup_steps))
+            progress = float(current_step - num_warmup_steps) / float(max(1, num_training_steps - num_warmup_steps))
+            return max(0.0, 1.0 - progress)
+
+        return lr_scheduler.LambdaLR(optimizer, lr_lambda)
     return lr_scheduler.LinearLR(optimizer, start_factor=1.0, end_factor=0.0, total_iters=num_training_steps)
+
+
+get_linear_schedule_with_warmup = create_linear
 
 
 @SCHEDULER_REGISTRY.register("cosine")
@@ -251,5 +263,6 @@ __all__ = [
     "get_lr_scheduler",
     "get_scheduler",
     "get_cosine_schedule_with_warmup",
+    "get_linear_schedule_with_warmup",
     "SCHEDULER_REGISTRY",
 ]

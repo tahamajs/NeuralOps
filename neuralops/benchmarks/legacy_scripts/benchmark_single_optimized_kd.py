@@ -96,7 +96,7 @@ class DenseTeacherModel(nn.Module):
 class SixPillarKDSuite:
     """Coordinates multi-pillar knowledge distillation healing loops with exact PPL computation."""
 
-    def __init__(self, device: str = "cuda:0", temperature: float = 2.0) -> None:
+    def __init__(self, device: str = "cuda" if torch.cuda.is_available() else "cpu", temperature: float = 2.0) -> None:
         self.device = torch.device(device)
         self.l_logit = LogitDistillationLoss(mode="forward_kl", temperature=temperature)
         self.l_feature = HedgehogFeatureMapKDLoss(chunk_size=16, temperature=1.0)
@@ -194,7 +194,7 @@ def run_single_optimized_kd(
     # Pure FP32 precision: Native PyTorch MHA and custom CUDA/Triton attention layers
     # maintain exact numeric stability without Half/Float mismatch across attention weights.
     use_amp = False
-    scaler = torch.cuda.amp.GradScaler(enabled=False)
+    scaler = torch.amp.GradScaler("cuda", enabled=False)
 
     steps = 0
     init_ce = None
@@ -334,7 +334,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Single-Module High-Precision Optimized KD Benchmark")
     parser.add_argument("--module", type=str, default="adaptive_span_attention", help="Module to optimize")
     parser.add_argument("--category", type=str, default="attention", choices=["attention", "compressor"])
-    parser.add_argument("--device", type=str, default="cuda:0")
+    parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--duration", type=float, default=120.0, help="Max duration in seconds")
     parser.add_argument("--lr", type=float, default=1e-3, help="Peak learning rate")
     parser.add_argument("--batch-size", type=int, default=8, help="Batch size")

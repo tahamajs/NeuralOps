@@ -819,6 +819,7 @@ _STATIC_API_NAMES = (
     "load_attention_from_hub",
     "pipeline",
     "TextGenerationPipeline",
+    "probe_optimal_batch_size",
 )
 
 _PUBLIC_API = {name: "neuralops.api" for name in _STATIC_API_NAMES}

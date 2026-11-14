@@ -449,7 +449,7 @@ class SurgerizedModelAdapter(HuggingFaceModelAdapter):
             if tokenizer is None:
                 try:
                     tokenizer = AutoTokenizer.from_pretrained(str(ckpt_path))
-                except Exception:
+                except Exception:  # allowed-swallow: optional tokenizer loading fallback
                     pass
         except Exception as e:
             raise RuntimeError(f"Failed to load weights from checkpoint dir {ckpt_path}: {e}") from e
@@ -519,7 +519,7 @@ class UniversalModelAdapter:
                 if tokenizer is None:
                     try:
                         tokenizer = AutoTokenizer.from_pretrained(str(ckpt_path))
-                    except Exception:
+                    except Exception:  # allowed-swallow: optional tokenizer loading fallback
                         pass
                 resolved_name = model_name or manifest.get("model_tag") or ckpt_path.name
                 adapter = SurgerizedModelAdapter(
@@ -545,7 +545,7 @@ class UniversalModelAdapter:
             if tokenizer is None:
                 try:
                     tokenizer = AutoTokenizer.from_pretrained(model_or_path)
-                except Exception:
+                except Exception:  # allowed-swallow: optional tokenizer loading fallback
                     pass
             adapter = HuggingFaceModelAdapter(
                 model=model,

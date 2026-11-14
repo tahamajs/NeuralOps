@@ -16,7 +16,6 @@ Provides:
   - Micro-chunked perplexity evaluation avoiding high-vocab VRAM spikes
   - Optimizer memory isolation between distillation stages
 """
-
 from __future__ import annotations
 
 import contextlib
@@ -76,30 +75,19 @@ def _forward_hidden(mod: nn.Module, in_ids: torch.Tensor, att_m: Optional[torch.
 
 
 def _make_grad_scaler(device: torch.device, enabled: bool = True, init_scale: float = 1024.0) -> Any:
-    """Create a GradScaler compatible across PyTorch versions using torch.amp."""
-    dev_str = device.type if hasattr(device, "type") else str(device)
-    cuda_dev = dev_str if dev_str.startswith("cuda") else "cuda"
+    """Create a GradScaler compatible across PyTorch 1.12, 2.0, and 2.6+ without deprecation warnings."""
     if hasattr(torch, "amp") and hasattr(torch.amp, "GradScaler"):
         try:
-            return torch.amp.GradScaler(cuda_dev, enabled=enabled, init_scale=init_scale)
-        except (TypeError, ValueError) as exc:  # allowed-swallow: version compatibility fallback
-            logger.debug("GradScaler with device positional failed: %s", exc)
-        try:
-            return torch.amp.GradScaler(device=cuda_dev, enabled=enabled, init_scale=init_scale)
-        except (TypeError, ValueError) as exc:  # allowed-swallow: version compatibility fallback
-            logger.debug("GradScaler with device kwarg failed: %s", exc)
+            dev_str = device.type if hasattr(device, "type") else str(device)
+            return torch.amp.GradScaler(dev_str if dev_str.startswith("cuda") else "cuda", enabled=enabled, init_scale=init_scale)
+        except (TypeError, ValueError):  # allowed-swallow: grad scaler version compatibility fallback
+            pass
     try:
         from torch.amp import GradScaler
-
-        return GradScaler(cuda_dev, enabled=enabled, init_scale=init_scale)
-    except Exception as exc:  # allowed-swallow: fallback to default cuda GradScaler
-        logger.debug("GradScaler fallback: %s", exc)
-        try:
-            from torch.amp import GradScaler
-            return GradScaler(enabled=enabled, init_scale=init_scale)
-        except Exception:  # allowed-swallow: GradScaler unavailable
-            return None
-    return None
+        return GradScaler("cuda", enabled=enabled, init_scale=init_scale)
+    except Exception:
+        from torch.amp import GradScaler  # fallback for ancient PyTorch
+        return GradScaler(enabled=enabled, init_scale=init_scale)
 
 
 def _compute_masked_representation_loss(
@@ -173,11 +161,7 @@ def evaluate_causal_ppl(
             att_m = batch["attention_mask"].to(device, non_blocking=True)
             lbls = batch.get("labels", in_ids).to(device, non_blocking=True)
 
-            with (
-                torch.amp.autocast("cuda", enabled=(device.type == "cuda"), dtype=torch.float16)
-                if device.type == "cuda"
-                else contextlib.nullcontext()
-            ):
+            with (torch.amp.autocast("cuda", enabled=(device.type == "cuda"), dtype=torch.float16) if device.type == "cuda" else contextlib.nullcontext()):
                 lm_sub = getattr(model, "model", getattr(model, "language_model", model))
                 if hasattr(lm_sub, "model") and hasattr(lm_sub.model, "layers"):
                     lm_core = lm_sub.model
@@ -198,9 +182,7 @@ def evaluate_causal_ppl(
                     seq_len = in_ids.size(1) - 1
                     shift_logits = logits[:, :seq_len, :].contiguous()
                     shift_labels = lbls[:, 1:].contiguous()
-                    loss_full = F.cross_entropy(
-                        shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1), reduction="sum"
-                    )
+                    loss_full = F.cross_entropy(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1), reduction="sum")
                     if torch.isfinite(loss_full):
                         total_loss += loss_full.item()
                         total_tokens += shift_labels.numel()
@@ -220,9 +202,7 @@ def evaluate_causal_ppl(
                     tgt_c = targets[:, c : c + chunk_sz]
                     if lm_head is not None:
                         logits_c = lm_head(h_c)
-                        loss_c = F.cross_entropy(
-                            logits_c.reshape(-1, logits_c.size(-1)), tgt_c.reshape(-1), reduction="sum"
-                        )
+                        loss_c = F.cross_entropy(logits_c.reshape(-1, logits_c.size(-1)), tgt_c.reshape(-1), reduction="sum")
                         if torch.isfinite(loss_c):
                             total_loss += loss_c.item()
                             total_tokens += tgt_c.numel()
@@ -243,7 +223,6 @@ def evaluate_sst2_accuracy(
     """Evaluates binary sentiment classification on SST-2 validation split."""
     try:
         from datasets import load_dataset
-
         sst2 = load_dataset("glue", "sst2", split="validation")
     except Exception as exc:
         logger.debug("SST-2 evaluation skipped: %s", exc)
@@ -268,11 +247,7 @@ def evaluate_sst2_accuracy(
             in_ids = enc["input_ids"].to(device)
             att_m = enc["attention_mask"].to(device) if "attention_mask" in enc else None
 
-            with (
-                torch.amp.autocast("cuda", enabled=(device.type == "cuda"), dtype=torch.float16)
-                if device.type == "cuda"
-                else contextlib.nullcontext()
-            ):
+            with (torch.amp.autocast("cuda", enabled=(device.type == "cuda"), dtype=torch.float16) if device.type == "cuda" else contextlib.nullcontext()):
                 fwd_kwargs: dict[str, Any] = {}
                 if att_m is not None:
                     fwd_kwargs["attention_mask"] = att_m
@@ -317,7 +292,7 @@ class TwoStageDistillationEngine:
         device: Optional[torch.device] = None,
         use_cosine_scheduler: bool = True,
         margin_loss_weight: float = 0.5,
-        max_steps: Optional[int] = None,
+        min_steps_per_stage: int = 1,
     ) -> None:
         self.train_secs = float(train_secs)
         self.stage1_frac = float(stage1_frac)
@@ -332,7 +307,7 @@ class TwoStageDistillationEngine:
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.use_cosine_scheduler = bool(use_cosine_scheduler)
         self.margin_loss_weight = float(margin_loss_weight)
-        self.max_steps = int(max_steps) if max_steps is not None else None
+        self.min_steps_per_stage = max(1, int(min_steps_per_stage))
 
     def run(
         self,
@@ -346,8 +321,6 @@ class TwoStageDistillationEngine:
         gradient_checkpointing: bool = False,
         train_secs: Optional[float] = None,
         letter_token_ids: Optional[List[int]] = None,
-        max_steps: Optional[int] = None,
-        train_steps: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Execute the two-stage distillation procedure."""
         if teacher_cache is None and teacher_model is None:
@@ -363,14 +336,6 @@ class TwoStageDistillationEngine:
         evaluator = eval_fn or evaluate_causal_ppl
         pre_metric = evaluator(student, val_loader, dev)
         logger.info("%sPre-Distillation Metric: %.2f", log_prefix, pre_metric)
-
-        eff_max_steps = (
-            max_steps if max_steps is not None else (train_steps if train_steps is not None else self.max_steps)
-        )
-        max_steps_s1: Optional[int] = (
-            max(1, int(eff_max_steps * self.stage1_frac)) if eff_max_steps is not None else None
-        )
-        max_steps_s2: Optional[int] = max(1, eff_max_steps - max_steps_s1) if eff_max_steps is not None else None
 
         total_budget_secs = float(train_secs) if train_secs is not None else self.train_secs
         t_start = time.time()
@@ -393,18 +358,14 @@ class TwoStageDistillationEngine:
         step_s1 = 0
         t0_s1 = time.time()
 
-        while (time.time() < t_s1_end) and (max_steps_s1 is None or step_s1 < max_steps_s1):
+        while time.time() < t_s1_end or step_s1 < self.min_steps_per_stage:
             for batch in train_loader:
-                if (time.time() >= t_s1_end) or (max_steps_s1 is not None and step_s1 >= max_steps_s1):
+                if time.time() >= t_s1_end and step_s1 >= self.min_steps_per_stage:
                     break
                 in_ids = batch["input_ids"].to(dev, non_blocking=True)
                 att_m = batch["attention_mask"].to(dev, non_blocking=True)
 
-                with (
-                    torch.amp.autocast("cuda", enabled=(dev.type == "cuda"), dtype=torch.float16)
-                    if dev.type == "cuda"
-                    else contextlib.nullcontext()
-                ):
+                with (torch.amp.autocast("cuda", enabled=(dev.type == "cuda"), dtype=torch.float16) if dev.type == "cuda" else contextlib.nullcontext()):
                     core = getattr(student, "model", getattr(student, "language_model", student))
                     target_s = core.model if (hasattr(core, "model") and hasattr(core.model, "layers")) else core
                     s_out = _forward_hidden(target_s, in_ids, att_m)
@@ -416,14 +377,8 @@ class TwoStageDistillationEngine:
                     else:
                         assert teacher_model is not None
                         with torch.no_grad():
-                            t_core = getattr(
-                                teacher_model, "model", getattr(teacher_model, "language_model", teacher_model)
-                            )
-                            target_t = (
-                                t_core.model
-                                if (hasattr(t_core, "model") and hasattr(t_core.model, "layers"))
-                                else t_core
-                            )
+                            t_core = getattr(teacher_model, "model", getattr(teacher_model, "language_model", teacher_model))
+                            target_t = t_core.model if (hasattr(t_core, "model") and hasattr(t_core.model, "layers")) else t_core
                             t_out = _forward_hidden(target_t, in_ids, att_m)
                         s_h = s_out.hidden_states[1:]
                         t_h = t_out.hidden_states[1:]
@@ -466,15 +421,12 @@ class TwoStageDistillationEngine:
         t0_s2 = time.time()
         dur_s2_total = max(1e-5, t_s2_end - t0_s2)
 
-        while (time.time() < t_s2_end) and (max_steps_s2 is None or step_s2 < max_steps_s2):
+        while time.time() < t_s2_end or step_s2 < self.min_steps_per_stage:
             for batch in train_loader:
-                if (time.time() >= t_s2_end) or (max_steps_s2 is not None and step_s2 >= max_steps_s2):
+                if time.time() >= t_s2_end and step_s2 >= self.min_steps_per_stage:
                     break
                 if self.use_cosine_scheduler:
-                    if max_steps_s2 is not None:
-                        progress = min(1.0, max(0.0, step_s2 / max(1, max_steps_s2)))
-                    else:
-                        progress = min(1.0, max(0.0, (time.time() - t0_s2) / dur_s2_total))
+                    progress = min(1.0, max(0.0, (time.time() - t0_s2) / dur_s2_total))
                     cur_lr = self.min_lr_s2 + 0.5 * (self.lr_s2 - self.min_lr_s2) * (1.0 + math.cos(math.pi * progress))
                     for pg in opt2.param_groups:
                         pg["lr"] = cur_lr
@@ -482,11 +434,7 @@ class TwoStageDistillationEngine:
                 in_ids = batch["input_ids"].to(dev, non_blocking=True)
                 att_m = batch["attention_mask"].to(dev, non_blocking=True)
 
-                with (
-                    torch.amp.autocast("cuda", enabled=(dev.type == "cuda"), dtype=torch.float16)
-                    if dev.type == "cuda"
-                    else contextlib.nullcontext()
-                ):
+                with (torch.amp.autocast("cuda", enabled=(dev.type == "cuda"), dtype=torch.float16) if dev.type == "cuda" else contextlib.nullcontext()):
                     core = getattr(student, "model", getattr(student, "language_model", student))
                     target_s = core.model if (hasattr(core, "model") and hasattr(core.model, "layers")) else core
                     s_out = _forward_hidden(target_s, in_ids, att_m)
@@ -498,14 +446,8 @@ class TwoStageDistillationEngine:
                     else:
                         assert teacher_model is not None
                         with torch.no_grad():
-                            t_core = getattr(
-                                teacher_model, "model", getattr(teacher_model, "language_model", teacher_model)
-                            )
-                            target_t = (
-                                t_core.model
-                                if (hasattr(t_core, "model") and hasattr(t_core.model, "layers"))
-                                else t_core
-                            )
+                            t_core = getattr(teacher_model, "model", getattr(teacher_model, "language_model", teacher_model))
+                            target_t = t_core.model if (hasattr(t_core, "model") and hasattr(t_core.model, "layers")) else t_core
                             t_out = _forward_hidden(target_t, in_ids, att_m)
                         s_h = s_out.hidden_states[1:]
                         t_h = t_out.hidden_states[1:]
@@ -519,16 +461,8 @@ class TwoStageDistillationEngine:
 
                     # Compute auxiliary multiple-choice option loss & margin preservation if metadata present
                     loss_choice = torch.tensor(0.0, device=dev)
-                    s_last = (
-                        s_out.hidden_states[-1] if hasattr(s_out, "hidden_states") and s_out.hidden_states else None
-                    )
-                    if (
-                        lm_head is not None
-                        and s_last is not None
-                        and "answer_idx" in batch
-                        and "prompt_lens" in batch
-                        and self.margin_loss_weight > 0
-                    ):
+                    s_last = s_out.hidden_states[-1] if hasattr(s_out, "hidden_states") and s_out.hidden_states else None
+                    if lm_head is not None and s_last is not None and "answer_idx" in batch and "prompt_lens" in batch and self.margin_loss_weight > 0:
                         ans_indices = batch["answer_idx"].to(dev, non_blocking=True)
                         prompt_lens = batch["prompt_lens"].to(dev, non_blocking=True)
                         num_choices_t = batch.get("num_choices", None)
@@ -537,11 +471,7 @@ class TwoStageDistillationEngine:
                         for b_i in range(in_ids.size(0)):
                             pos = int(prompt_lens[b_i].item()) - 1
                             tgt = ans_indices[b_i]
-                            n_ch = (
-                                int(num_choices_t[b_i].item())
-                                if num_choices_t is not None
-                                else (len(cand_ids) if cand_ids else 0)
-                            )
+                            n_ch = int(num_choices_t[b_i].item()) if num_choices_t is not None else (len(cand_ids) if cand_ids else 0)
                             if cand_ids is not None and 0 <= pos < s_last.size(1) and 0 <= tgt.item() < n_ch:
                                 sub_ids = [cid for cid in cand_ids[:n_ch] if 0 <= cid < lm_head.out_features]
                                 if len(sub_ids) == n_ch:
@@ -569,17 +499,13 @@ class TwoStageDistillationEngine:
                             batch["teacher_topk_vals"].to(dev, non_blocking=True),
                             batch["teacher_topk_idx"].to(dev, non_blocking=True),
                         )
-                        loss = (
-                            loss_mse + 0.50 * loss_cos + 0.25 * loss_kd + self.margin_loss_weight * loss_choice
-                        ) / self.grad_accum
+                        loss = (loss_mse + 0.50 * loss_cos + 0.25 * loss_kd + self.margin_loss_weight * loss_choice) / self.grad_accum
                     elif lm_head is not None and s_last is not None:
                         logits_shift = lm_head(s_last[:, :-1, :]).contiguous()
                         labels_shift = in_ids[:, 1:].contiguous()
                         ce_loss = F.cross_entropy(logits_shift.view(-1, logits_shift.size(-1)), labels_shift.view(-1))
                         ce_term = ce_loss if torch.isfinite(ce_loss) else 0.0
-                        loss = (
-                            loss_mse + 0.50 * loss_cos + 0.25 * ce_term + self.margin_loss_weight * loss_choice
-                        ) / self.grad_accum
+                        loss = (loss_mse + 0.50 * loss_cos + 0.25 * ce_term + self.margin_loss_weight * loss_choice) / self.grad_accum
                     else:
                         loss = (loss_mse + 0.50 * loss_cos + self.margin_loss_weight * loss_choice) / self.grad_accum
 
@@ -593,13 +519,8 @@ class TwoStageDistillationEngine:
                     scaler2.update()
                     opt2.zero_grad(set_to_none=True)
                     if self.use_cosine_scheduler:
-                        if max_steps_s2 is not None:
-                            progress = min(1.0, max(0.0, step_s2 / max(1, max_steps_s2)))
-                        else:
-                            progress = min(1.0, max(0.0, (time.time() - t0_s2) / dur_s2_total))
-                        cur_lr = self.min_lr_s2 + 0.5 * (self.lr_s2 - self.min_lr_s2) * (
-                            1.0 + math.cos(math.pi * progress)
-                        )
+                        progress = min(1.0, max(0.0, (time.time() - t0_s2) / dur_s2_total))
+                        cur_lr = self.min_lr_s2 + 0.5 * (self.lr_s2 - self.min_lr_s2) * (1.0 + math.cos(math.pi * progress))
                         for pg in opt2.param_groups:
                             pg["lr"] = cur_lr
 
@@ -610,23 +531,15 @@ class TwoStageDistillationEngine:
             scaler2.update()
             opt2.zero_grad(set_to_none=True)
             if self.use_cosine_scheduler:
-                if max_steps_s2 is not None:
-                    progress = min(1.0, max(0.0, step_s2 / max(1, max_steps_s2)))
-                else:
-                    progress = min(1.0, max(0.0, (time.time() - t0_s2) / dur_s2_total))
+                progress = min(1.0, max(0.0, (time.time() - t0_s2) / dur_s2_total))
                 cur_lr = self.min_lr_s2 + 0.5 * (self.lr_s2 - self.min_lr_s2) * (1.0 + math.cos(math.pi * progress))
                 for pg in opt2.param_groups:
                     pg["lr"] = cur_lr
 
         dur_s2 = time.time() - t0_s2
         if self.use_cosine_scheduler:
-            if max_steps_s2 is not None:
-                final_progress = min(1.0, max(0.0, step_s2 / max(1, max_steps_s2)))
-            else:
-                final_progress = min(1.0, max(0.0, dur_s2 / dur_s2_total))
-            final_lr_s2 = self.min_lr_s2 + 0.5 * (self.lr_s2 - self.min_lr_s2) * (
-                1.0 + math.cos(math.pi * final_progress)
-            )
+            final_progress = min(1.0, max(0.0, dur_s2 / dur_s2_total))
+            final_lr_s2 = self.min_lr_s2 + 0.5 * (self.lr_s2 - self.min_lr_s2) * (1.0 + math.cos(math.pi * final_progress))
         else:
             final_lr_s2 = float(opt2.param_groups[0]["lr"])
         del opt2, scaler2
@@ -681,12 +594,7 @@ def execute_with_oom_retry(
         except RuntimeError as exc:
             if "out of memory" in str(exc).lower() and cur_bs > 1:
                 cur_bs = max(1, cur_bs // 2)
-                logger.warning(
-                    "[OOM RETRY] CUDA out of memory; backing off to batch_size=%d (attempt %d/%d)",
-                    cur_bs,
-                    attempt + 1,
-                    max_retries,
-                )
+                logger.warning("[OOM RETRY] CUDA out of memory; backing off to batch_size=%d (attempt %d/%d)", cur_bs, attempt + 1, max_retries)
                 if torch.cuda.is_available():
                     torch.cuda.empty_cache()
                 gc.collect()

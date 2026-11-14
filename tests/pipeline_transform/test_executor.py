@@ -42,10 +42,12 @@ class TwoLayerTestNet(nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.config = type("Config", (), {"hidden_size": 64, "num_hidden_layers": 2})()
-        self.intermediate = nn.ModuleDict({
-            "dense1": nn.Linear(64, 64),
-            "dense2": nn.Linear(64, 64),
-        })
+        self.intermediate = nn.ModuleDict(
+            {
+                "dense1": nn.Linear(64, 64),
+                "dense2": nn.Linear(64, 64),
+            }
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         h = self.intermediate["dense1"](x)
@@ -195,3 +197,47 @@ def test_b4_pipeline_result_json_roundtrip():
     loaded = json.loads(json_str)
     assert loaded["success"] is True
     assert len(loaded["stage_records"]) == 1
+
+
+def test_b4_validation_prevents_self_compare(monkeypatch):
+    """Verify execute_plan passes a genuine pre-mutation model rather than self-comparing."""
+    import neuralops.pipeline_transform.executor as exec_mod
+
+    recipe = Recipe(
+        apiVersion="neuralops/v1",
+        kind="Recipe",
+        metadata=Metadata(name="self-compare-check", version="1.0.0", description="Self-compare check"),
+        model=ModelSpec(family="distilbert", source="distilbert-base-uncased", dtype="float32"),
+        operations=[
+            Operation(
+                id="s1",
+                type="weights.compress",
+                version="1.0.0",
+                config={"target": "intermediate.dense1", "method": "svd", "target_ratio": 0.8},
+            ),
+        ],
+    )
+    model = TwoLayerTestNet()
+    plan = plan_recipe(recipe, model_or_config=model)
+
+    captured_pairs = []
+    orig_run_val = exec_mod.run_validation_gates
+
+    def spy_run_val(*args, **kwargs):
+        captured_pairs.append((kwargs.get("model_before"), kwargs.get("model_after")))
+        return orig_run_val(*args, **kwargs)
+
+    monkeypatch.setattr(exec_mod, "run_validation_gates", spy_run_val)
+
+    result = execute_plan(plan, model=model, device="cpu")
+    assert result.success is True
+    assert len(captured_pairs) == 1
+    model_before, model_after = captured_pairs[0]
+
+    # Verify model_before is NOT the exact same object as model_after (no self-compare)
+    assert model_before is not model_after
+    assert model_before is not None
+    assert model_after is not None
+
+    # Verify model_before still has dense1 as nn.Linear (original structure)
+    assert isinstance(model_before.intermediate["dense1"], nn.Linear)

@@ -54,7 +54,7 @@ class GPUMemoryForensics:
             if torch.cuda.is_available():
                 allocated_mb = torch.cuda.memory_allocated() / (1024.0 * 1024.0)
                 reserved_mb = torch.cuda.memory_reserved() / (1024.0 * 1024.0)
-        except Exception:
+        except Exception:  # allowed-swallow: cuda memory forensic snapshot query fallback
             pass
 
         entry = {
@@ -117,7 +117,7 @@ class GPUMemoryForensics:
                         snapshot_path = str(snap_file)
                     except Exception as dump_err:
                         logger.warning("Could not dump PyTorch memory snapshot: %s", dump_err)
-        except Exception:
+        except Exception:  # allowed-swallow: cuda memory forensic snapshot query fallback
             pass
 
         return {

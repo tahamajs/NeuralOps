@@ -25,7 +25,7 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from .samba_m3 import SAMBAM3Block
 
 try:
-    from .reap_moe import REAPMoE
+    from neuralops.layers.sparse.reap_moe import REAPMoE
 except Exception:
     REAPMoE = None
 
@@ -468,3 +468,13 @@ def inject_samba_moe(
     except Exception as e:
         logger.error("inject_samba_moe failed at layer %d: %s", layer_idx, e)
         return None
+
+
+SambaMoE = SambaMoEBlock
+
+__all__ = [
+    "SambaMoEBlock",
+    "SambaMoE",
+    "MinimalMoEFallback",
+    "inject_samba_moe",
+]

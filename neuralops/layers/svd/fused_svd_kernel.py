@@ -446,6 +446,7 @@ from neuralops.core.registry import ATTENTION_REGISTRY
     supports_bidirectional=True,
     supports_gqa=True,
 )
+@ATTENTION_REGISTRY.register("fused_svd", is_alias=True)
 class FusedSVDKernelAttention(BaseAttention):
     r"""Fused SVD-Kernel Linear Attention Module.
     Production-hardened across DistilBERT, RoBERTa/BERT nested, GPT-2 Conv1D, and Qwen/LLaMA.

@@ -27,6 +27,8 @@ from neuralops.ops.triton.elementwise import fast_hadamard_transform
 
 logger = logging.getLogger(__name__)
 
+HadamardIncoherentSVDLinear = SVDLinear
+
 
 @COMPRESSOR_REGISTRY.register("hadamard_incoherent_svd")
 @COMPRESSOR_REGISTRY.register("hadamard_svd", is_alias=True)
@@ -135,5 +137,6 @@ def hadamard_svd_factory(model: nn.Module, rank: int = 32, **kwargs: Any) -> nn.
 
 __all__ = [
     "HadamardIncoherentSVDCompressor",
+    "HadamardIncoherentSVDLinear",
     "hadamard_svd_factory",
 ]

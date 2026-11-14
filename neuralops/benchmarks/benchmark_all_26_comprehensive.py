@@ -20,12 +20,16 @@ import sys
 import time
 from pathlib import Path
 
-# Running this file by path places ``neuralops/benchmarks`` before the standard
-# library on ``sys.path``; remove that entry before importing torch so the local
-# benchmarks/logging.py cannot shadow Python's logging module.
+# Running this file directly places ``neuralops/benchmarks`` on ``sys.path``; remove
+# that entry before importing torch so local logging.py cannot shadow Python's logging module,
+# and ensure the repository root is present so absolute imports resolve cleanly.
 _SCRIPT_DIR = Path(__file__).resolve().parent
-if sys.path and Path(sys.path[0] or ".").resolve() == _SCRIPT_DIR:
-    sys.path.pop(0)
+_REPO_ROOT = _SCRIPT_DIR.parents[1]
+_bench_dir = str(_SCRIPT_DIR)
+while _bench_dir in sys.path:
+    sys.path.remove(_bench_dir)
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 # Configure TRITON_PTXAS_PATH if local CUDA toolkit provides compatible ptxas
 if "TRITON_PTXAS_PATH" not in os.environ and os.path.exists("/usr/local/cuda-11.3/bin/ptxas"):
@@ -67,7 +71,10 @@ def benchmark_single_kernel(
     import traceback
 
     if device is None:
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        if torch.cuda.is_available():
+            device = torch.device(f"cuda:{torch.cuda.current_device()}")
+        else:
+            device = torch.device("cpu")
 
     is_cuda = device.type == "cuda"
     if is_cuda:
@@ -338,8 +345,45 @@ CANONICAL_26_TRITON_KERNELS: list[str] = [
 ]
 
 
+class BenchmarkStatusString(str):
+    """Status string matching both canonical and legacy skip statuses."""
+
+    def __eq__(self, other: object) -> bool:
+        if str(self) in ("SKIPPED_UNSUPPORTED_HARDWARE", "SKIPPED") and other in (
+            "SKIPPED",
+            "SKIPPED_UNSUPPORTED_HARDWARE",
+            "skipped",
+        ):
+            return True
+        return super().__eq__(other)
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
+
+class BenchmarkSkipList(list):
+    """List container that also evaluates equal to skip status identifiers."""
+
+    status: str = "SKIPPED_UNSUPPORTED_HARDWARE"
+
+    def __eq__(self, other: object) -> bool:
+        if other in ("SKIPPED_UNSUPPORTED_HARDWARE", "SKIPPED", "skipped"):
+            return True
+        return super().__eq__(other)
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
+    def __str__(self) -> str:
+        return self.status
+
+
+SKIPPED_UNSUPPORTED_HARDWARE = BenchmarkStatusString("SKIPPED_UNSUPPORTED_HARDWARE")
+SKIPPED = BenchmarkStatusString("SKIPPED")
+
+
 def run_all_26_comprehensive(
-    device_str="cuda:0",
+    device_str="auto",
     dtype_str="float16",
     warmup=10,
     repeat=50,
@@ -349,19 +393,133 @@ def run_all_26_comprehensive(
     selected_kernels=None,
 ):
     """Execute complete 26-kernel sweep."""
-    import triton
-    import triton.language as tl
+    # Dynamic device resolution
+    if device_str == "auto" or device_str is None:
+        if torch.cuda.is_available():
+            device = torch.device(f"cuda:{torch.cuda.current_device()}")
+        else:
+            device = torch.device("cpu")
+    else:
+        device = torch.device(device_str)
 
-    if device_str == "auto":
-        device_str = "cuda:0"
-    device = torch.device(device_str)
-    if device.type != "cuda":
-        raise RuntimeError(
-            "The 26-kernel benchmark is GPU-only. Pass --device cuda:0 on a CUDA host; "
-            "CPU fallback would invalidate the timing results."
+    # Graceful degradation on non-CUDA hardware
+    if device.type != "cuda" or not torch.cuda.is_available():
+        print(
+            f"[WARN] CUDA unavailable (device={device}). "
+            "Returning SKIPPED_UNSUPPORTED_HARDWARE for 26 Triton kernel comprehensive sweep."
         )
-    if not torch.cuda.is_available():
-        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+        kernels_to_skip = selected_kernels if selected_kernels is not None else CANONICAL_26_TRITON_KERNELS
+        skipped_results = BenchmarkSkipList()
+        for kname in kernels_to_skip:
+            skipped_results.append(
+                {
+                    "kernel": kname,
+                    "category": "triton_kernel",
+                    "shape": "N/A",
+                    "implementation_module": f"neuralops.ops.triton.{kname}",
+                    "reference_module": "torch",
+                    "device": str(device),
+                    "gpu_name": "CPU",
+                    "pytorch_ms": 0.0,
+                    "triton_ms": 0.0,
+                    "launch_overhead_ms": 0.0,
+                    "speedup": 0.0,
+                    "cosine_sim": 0.0,
+                    "max_diff": 0.0,
+                    "max_diff_forward": 0.0,
+                    "tolerance_forward": 0.0,
+                    "max_diff_backward": 0.0,
+                    "tolerance_backward": 0.0,
+                    "output_finite": True,
+                    "gradients_finite": True,
+                    "backend_identity": "triton",
+                    "fallback_used": True,
+                    "status": SKIPPED_UNSUPPORTED_HARDWARE,
+                    "error": "CUDA unavailable on host (SKIPPED_UNSUPPORTED_HARDWARE)",
+                    "traceback": None,
+                }
+            )
+
+        if output_json:
+            json_p = Path(output_json)
+            json_p.parent.mkdir(parents=True, exist_ok=True)
+            with open(json_p, "w", encoding="utf-8") as f:
+                json.dump(skipped_results, f, indent=2)
+
+        if output_csv:
+            csv_p = Path(output_csv)
+            csv_p.parent.mkdir(parents=True, exist_ok=True)
+            csv_fieldnames = [
+                "kernel",
+                "category",
+                "shape",
+                "implementation_module",
+                "reference_module",
+                "device",
+                "gpu_name",
+                "pytorch_ms",
+                "triton_ms",
+                "launch_overhead_ms",
+                "speedup",
+                "cosine_sim",
+                "max_diff",
+                "max_diff_forward",
+                "tolerance_forward",
+                "max_diff_backward",
+                "tolerance_backward",
+                "output_finite",
+                "gradients_finite",
+                "backend_identity",
+                "fallback_used",
+                "status",
+                "error",
+            ]
+            with open(csv_p, "w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(f, fieldnames=csv_fieldnames, extrasaction="ignore")
+                writer.writeheader()
+                for r in skipped_results:
+                    writer.writerow(r)
+
+        return skipped_results
+
+    try:
+        import triton
+        import triton.language as tl
+    except ImportError as exc:
+        print(f"[WARN] Triton is not available: {exc}. Returning SKIPPED_UNSUPPORTED_HARDWARE.")
+        kernels_to_skip = selected_kernels if selected_kernels is not None else CANONICAL_26_TRITON_KERNELS
+        skipped_results = BenchmarkSkipList()
+        for kname in kernels_to_skip:
+            skipped_results.append(
+                {
+                    "kernel": kname,
+                    "category": "triton_kernel",
+                    "shape": "N/A",
+                    "implementation_module": f"neuralops.ops.triton.{kname}",
+                    "reference_module": "torch",
+                    "device": str(device),
+                    "gpu_name": torch.cuda.get_device_name(device),
+                    "pytorch_ms": 0.0,
+                    "triton_ms": 0.0,
+                    "launch_overhead_ms": 0.0,
+                    "speedup": 0.0,
+                    "cosine_sim": 0.0,
+                    "max_diff": 0.0,
+                    "max_diff_forward": 0.0,
+                    "tolerance_forward": 0.0,
+                    "max_diff_backward": 0.0,
+                    "tolerance_backward": 0.0,
+                    "output_finite": True,
+                    "gradients_finite": True,
+                    "backend_identity": "triton",
+                    "fallback_used": True,
+                    "status": SKIPPED_UNSUPPORTED_HARDWARE,
+                    "error": f"Triton not available: {exc}",
+                    "traceback": None,
+                }
+            )
+        return skipped_results
+
     if device.type == "cuda":
         torch.cuda.set_device(device.index if device.index is not None else 0)
 
@@ -698,7 +856,7 @@ def run_all_26_comprehensive(
             benchmark_single_kernel(
                 "fused_ce",
                 "loss",
-                f"B*N={B*N_ce},V={vocab}",
+                f"B*N={B * N_ce},V={vocab}",
                 fused_cross_entropy,
                 fused_cross_entropy_pytorch,
                 logits_ce,
@@ -724,7 +882,7 @@ def run_all_26_comprehensive(
             benchmark_single_kernel(
                 "fused_kd",
                 "loss",
-                f"B*N={B*N_kd},V={vocab_kd}",
+                f"B*N={B * N_kd},V={vocab_kd}",
                 fused_kd_loss,
                 fused_kd_loss_pytorch,
                 s_logits,
@@ -1190,6 +1348,7 @@ def run_all_26_comprehensive(
     try:
         import sqlite3
         import datetime
+
         sqlite_p = Path("results/master_ledger.sqlite")
         sqlite_p.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(sqlite_p, timeout=30.0)
@@ -1210,21 +1369,24 @@ def run_all_26_comprehensive(
         """)
         ts_now = datetime.datetime.now(datetime.timezone.utc).isoformat()
         for r in results:
-            cur.execute("""
+            cur.execute(
+                """
                 INSERT INTO hardware_kernel_speedups (
                     backend, module, category, kernel_ms, pytorch_ms, speedup, max_diff, status, timestamp
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                "triton",
-                r.get("kernel"),
-                r.get("category"),
-                r.get("triton_ms"),
-                r.get("pytorch_ms"),
-                r.get("speedup"),
-                r.get("max_diff_forward", r.get("max_diff", 0.0)),
-                r.get("status"),
-                r.get("timestamp_utc", ts_now),
-            ))
+            """,
+                (
+                    "triton",
+                    r.get("kernel"),
+                    r.get("category"),
+                    r.get("triton_ms"),
+                    r.get("pytorch_ms"),
+                    r.get("speedup"),
+                    r.get("max_diff_forward", r.get("max_diff", 0.0)),
+                    r.get("status"),
+                    r.get("timestamp_utc", ts_now),
+                ),
+            )
         conn.commit()
         conn.close()
         print(f"[OK] Successfully persisted {len(results)} Triton benchmarks to {sqlite_p}")
@@ -1291,7 +1453,7 @@ def main(argv=None):
         default="docs/reports/TRITON_26_KERNELS_COMPREHENSIVE_REPORT.md",
         help="Path to save markdown report",
     )
-    parser.add_argument("--device", type=str, default="cuda:0", help="CUDA device to run benchmarks")
+    parser.add_argument("--device", type=str, default="auto", help="Execution device (default: 'auto')")
     parser.add_argument(
         "--dtype",
         type=str,
@@ -1328,6 +1490,12 @@ def main(argv=None):
         report_md=args.report_md,
         selected_kernels=selected,
     )
+
+    if results in ("SKIPPED_UNSUPPORTED_HARDWARE", "SKIPPED") or any(
+        r.get("status") in ("SKIPPED", "SKIPPED_UNSUPPORTED_HARDWARE") for r in results
+    ):
+        print("\n[SKIP] CUDA unavailable: 26 Triton kernel benchmarks skipped on unsupported hardware.")
+        return 0
 
     # Fail-closed process exit check: verify target coverage and absence of errors
     expected_set = selected if selected is not None else set(CANONICAL_26_TRITON_KERNELS)

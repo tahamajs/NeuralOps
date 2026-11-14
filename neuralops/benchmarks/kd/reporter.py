@@ -158,7 +158,9 @@ class KDReporter:
     @staticmethod
     def _atomic_write_json(target_path: Path, data: Any) -> None:
         """Write JSON atomically using temporary file swap."""
-        temp_file = target_path.with_suffix(".tmp")
+        import uuid
+
+        temp_file = target_path.with_suffix(f".tmp.{uuid.uuid4().hex[:8]}")
         with open(temp_file, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
             f.flush()
@@ -168,7 +170,9 @@ class KDReporter:
     @staticmethod
     def _atomic_write_text(target_path: Path, content: str) -> None:
         """Write text content atomically using temporary file swap."""
-        temp_file = target_path.with_suffix(".tmp")
+        import uuid
+
+        temp_file = target_path.with_suffix(f".tmp.{uuid.uuid4().hex[:8]}")
         with open(temp_file, "w", encoding="utf-8") as f:
             f.write(content)
             f.flush()

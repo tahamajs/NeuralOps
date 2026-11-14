@@ -20,7 +20,6 @@ Key guarantees:
   - Advisory file locking + atomic temp-file os.replace prevent subprocess race corruption.
   - Automatic batch-size OOM backoff during cache generation.
 """
-
 from __future__ import annotations
 
 import contextlib
@@ -56,11 +55,12 @@ else:
 VLM_MAX_CACHE_BYTES = int(1.75 * 1024 * 1024 * 1024)
 
 
-def _safe_torch_load(path: Path, weights_only: bool = True) -> Any:
-    """Load a torch checkpoint across PyTorch versions defaulting to weights_only=True for security."""
+def _safe_torch_load(path: Path) -> Any:
+    """Load a torch checkpoint across PyTorch versions safely with weights_only=True."""
     try:
-        return torch.load(path, map_location="cpu", weights_only=weights_only)
+        return torch.load(path, map_location="cpu", weights_only=True)
     except TypeError:
+        logger.warning("PyTorch <2.0: weights_only not available, trusting local cache")
         return torch.load(path, map_location="cpu")
 
 
@@ -84,12 +84,22 @@ def _cache_file_lock(cache_path: Path) -> Iterator[None]:
     """Advisory exclusive file lock around cache inspection and creation."""
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     lock_path = cache_path.with_name(f"{cache_path.name}.lock")
-    with open(lock_path, "a+", encoding="utf-8") as lock_fh:
-        fcntl.flock(lock_fh.fileno(), fcntl.LOCK_EX)
-        try:
+    try:
+        import filelock
+        with filelock.FileLock(str(lock_path)):
             yield
-        finally:
-            fcntl.flock(lock_fh.fileno(), fcntl.LOCK_UN)
+    except ImportError:
+        try:
+            import fcntl
+
+            with open(lock_path, "a+", encoding="utf-8") as lock_fh:
+                fcntl.flock(lock_fh.fileno(), fcntl.LOCK_EX)
+                try:
+                    yield
+                finally:
+                    fcntl.flock(lock_fh.fileno(), fcntl.LOCK_UN)
+        except (ImportError, AttributeError, OSError):
+            yield
 
 
 def resolve_teacher_cache_path(
@@ -368,9 +378,7 @@ def build_or_load_causal_teacher_cache(
                 )
                 return loaded
         except Exception as exc:
-            logger.warning(
-                "Existing causal teacher cache %s unreadable (%s); re-checking under lock...", cache_path, exc
-            )
+            logger.warning("Existing causal teacher cache %s unreadable (%s); re-checking under lock...", cache_path, exc)
 
     with _cache_file_lock(cache_path):
         if cache_path.exists():
@@ -405,11 +413,7 @@ def build_or_load_causal_teacher_cache(
 
                 def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
                     ids = self.chunks[idx].long()
-                    return {
-                        "input_ids": ids,
-                        "attention_mask": torch.ones_like(ids, dtype=torch.long),
-                        "labels": ids.clone(),
-                    }
+                    return {"input_ids": ids, "attention_mask": torch.ones_like(ids, dtype=torch.long), "labels": ids.clone()}
 
             val_loader = DataLoader(_ValDictDataset(val_chunks), batch_size=max(1, val_batch_size), shuffle=False)
             teacher_ppl = float(evaluate_ppl_fn(teacher, val_loader, device))
@@ -432,11 +436,7 @@ def build_or_load_causal_teacher_cache(
                             end = min(start + cur_bs, n_samples)
                             in_ids = sub_chunks[start:end].to(device=device, dtype=torch.long, non_blocking=True)
                             att_m = torch.ones_like(in_ids, dtype=torch.long)
-                            with (
-                                torch.amp.autocast("cuda", dtype=torch.float16)
-                                if device.type == "cuda"
-                                else contextlib.nullcontext()
-                            ):
+                            with (torch.amp.autocast("cuda", dtype=torch.float16) if device.type == "cuda" else contextlib.nullcontext()):
                                 out = teacher(
                                     input_ids=in_ids,
                                     attention_mask=att_m,
@@ -635,9 +635,7 @@ def build_or_load_vlm_teacher_cache(
             eval_bs = max(1, int(batch_size))
             while True:
                 try:
-                    teacher_acc, teacher_ppl = evaluate_vlm_fn(
-                        teacher, val_examples, processor, device, batch_size=eval_bs
-                    )
+                    teacher_acc, teacher_ppl = evaluate_vlm_fn(teacher, val_examples, processor, device, batch_size=eval_bs)
                     break
                 except RuntimeError as exc:
                     if "out of memory" in str(exc).lower() and eval_bs > 1:
@@ -683,11 +681,7 @@ def build_or_load_vlm_teacher_cache(
                                 dtype=torch.float16 if device.type == "cuda" else torch.float32,
                                 non_blocking=True,
                             )
-                            with (
-                                torch.amp.autocast("cuda", dtype=torch.float16)
-                                if device.type == "cuda"
-                                else contextlib.nullcontext()
-                            ):
+                            with (torch.amp.autocast("cuda", dtype=torch.float16) if device.type == "cuda" else contextlib.nullcontext()):
                                 out = teacher(
                                     input_ids=in_ids,
                                     attention_mask=att_m,

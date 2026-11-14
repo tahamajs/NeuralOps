@@ -61,15 +61,19 @@ class FocalLoss(nn.Module):
 class LabelSmoothingLoss(nn.Module):
     def __init__(self, smoothing=0.1, **kwargs) -> None:
         super().__init__()
-        self.smoothing = smoothing
-        self.confidence = 1.0 - smoothing
+        self.smoothing = float(smoothing)
+        self.confidence = 1.0 - self.smoothing
 
     def forward(self, logits, labels) -> Any:
         """Forward pass — compute module output from inputs."""
         log_probs = F.log_softmax(logits, dim=-1)
         labels = labels.to(log_probs.device)
-        nll = -log_probs.gather(dim=-1, index=labels.unsqueeze(1))
-        smooth = -log_probs.mean(dim=-1)
+        if labels.dim() < log_probs.dim():
+            idx = labels.unsqueeze(-1)
+        else:
+            idx = labels
+        nll = -log_probs.gather(dim=-1, index=idx)
+        smooth = -log_probs.mean(dim=-1, keepdim=True)
         return (self.confidence * nll + self.smoothing * smooth).mean()
 
 
@@ -113,6 +117,33 @@ class ContrastiveLoss(nn.Module):
         dist = F.pairwise_distance(embeddings[0], embeddings[1])
         loss = (1 - labels) * 0.5 * dist.pow(2) + labels * 0.5 * torch.clamp(self.margin - dist, min=0).pow(2)
         return loss.mean()
+
+
+@LOSS_REGISTRY.register("kd")
+@LOSS_REGISTRY.register("distillation")
+@LOSS_REGISTRY.register("logit_kd")
+class LogitKDLossWrapper(nn.Module):
+    def __init__(self, temperature: float = 2.0, mode: str = "forward_kl", **kwargs: Any) -> None:
+        super().__init__()
+        from neuralops.trainer.distillation.multi_level_kd import LogitDistillationLoss
+
+        self.loss_fn = LogitDistillationLoss(temperature=temperature, mode=mode, **kwargs)
+
+    def forward(self, student_logits: torch.Tensor, teacher_logits: torch.Tensor, **kwargs: Any) -> torch.Tensor:
+        return self.loss_fn(student_logits, teacher_logits, **kwargs)
+
+
+@LOSS_REGISTRY.register("cka")
+@LOSS_REGISTRY.register("linear_cka")
+class LinearCKALossWrapper(nn.Module):
+    def __init__(self, eps: float = 1e-8, **kwargs: Any) -> None:
+        super().__init__()
+        from neuralops.trainer.distillation.multi_level_kd import LinearCKALoss
+
+        self.loss_fn = LinearCKALoss(eps=eps, **kwargs)
+
+    def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        return self.loss_fn(x, y)
 
 
 def get_loss_function(name: str, **kwargs) -> nn.Module:

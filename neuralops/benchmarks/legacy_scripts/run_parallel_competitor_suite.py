@@ -76,7 +76,7 @@ def persist_competitor_record(rec: dict, sqlite_path: Path, csv_path: Path):
 
 
 def main():
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     sqlite_path = (repo_root / "results" / "master_ledger.sqlite").resolve()
     csv_path = (repo_root / "results" / "csv" / "competitor_benchmarks.csv").resolve()
 

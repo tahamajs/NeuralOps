@@ -104,6 +104,7 @@ def test_save_surgical_delta_excludes_frozen_vision_and_anchors(tmp_path: Path) 
         trained_param_names=trained_names,
         anchor_prefixes=["language_model.model.layers.1.self_attn"],
         operations=[{"component_type": "attention", "operator_key": "alibi", "pattern": "hybrid_3_1"}],
+        remove_full_weights=True,
     )
 
     assert not stale.exists(), "Legacy full weights must be purged"

@@ -269,14 +269,18 @@ def save_all_formats(
     output_dir: Path | str = "results",
     require_parquet: bool = False,
 ) -> Dict[str, Path]:
+    """Save the benchmark result across formats.
+
+    .. deprecated::
+        save_all_formats is deprecated; use MultiFormatSaver instead.
     """
-    Save the same benchmark run across all 5 canonical formats:
-    1. JSON (canonical self-contained)
-    2. JSONL (append-only index)
-    3. CSV (rolling spreadsheet index)
-    4. Markdown (human-readable summary)
-    5. Parquet (columnar storage for queries, optional unless require_parquet=True)
-    """
+    import warnings
+
+    warnings.warn(
+        "save_all_formats is deprecated; use MultiFormatSaver",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     out_dir = Path(output_dir)
     json_path = compute_result_path(result, base_dir=out_dir)
     md_path = json_path.with_suffix(".md")
@@ -290,31 +294,31 @@ def save_all_formats(
     csv_path = out_dir / "results.csv"
     save_csv_index(result, csv_path)
 
-    parquet_saved = False
-    parquet_path = out_dir / "results.parquet"
-    try:
-        save_parquet_index(result, parquet_path)
-        parquet_saved = parquet_path.exists()
-    except Exception as e:
-        if require_parquet:
-            raise RuntimeError(f"Parquet export failed: {e}") from e
-        LOG.warning("Optional Parquet index export failed (%s); omitting from saved artifacts.", e)
-
-    result.artifacts.json_file = str(json_path.relative_to(out_dir) if json_path.is_relative_to(out_dir) else json_path)
-
-    saved_artifacts: Dict[str, Path] = {
+    saved: Dict[str, Path] = {
         "json": json_path,
         "markdown": md_path,
         "jsonl": jsonl_path,
         "csv": csv_path,
     }
-    if parquet_saved:
-        saved_artifacts["parquet"] = parquet_path
+
+    parquet_path = out_dir / "results.parquet"
+    try:
+        save_parquet_index(result, parquet_path)
+        saved["parquet"] = parquet_path
+    except Exception as exc:
+        if require_parquet:
+            raise RuntimeError(f"Parquet export failed: {exc}") from exc
+        warnings.warn(f"Optional Parquet export skipped: {exc}", stacklevel=2)
+
+    # Record saved paths into result artifact metadata
+    if hasattr(result, "artifacts") and result.artifacts is not None:
+        result.artifacts.json_file = str(
+            json_path.relative_to(out_dir) if json_path.is_relative_to(out_dir) else json_path
+        )
 
     multi_saved = MultiFormatSaver(output_dir).save(result)
-    saved_artifacts.update(multi_saved)
-
-    return saved_artifacts
+    saved.update(multi_saved)
+    return saved
 
 
 _SQLITE_LOCK = threading.Lock()
@@ -420,7 +424,7 @@ class MultiFormatSaver:
             f_wal.flush()
             try:
                 os.fsync(f_wal.fileno())
-            except OSError:
+            except OSError:  # allowed-swallow: fsync unsupported on filesystem
                 pass
         return self.journal_path
 

@@ -76,7 +76,7 @@ def get_git_provenance() -> dict[str, Any]:
         else:
             git_data["is_dirty"] = False
             git_data["uncommitted_diff_sha256"] = None
-    except Exception:
+    except Exception:  # allowed-swallow: git repository metadata inspection fallback
         # Fallback if git binary or repo metadata is not available
         pass
 

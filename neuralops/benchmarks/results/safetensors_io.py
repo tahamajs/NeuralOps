@@ -85,7 +85,7 @@ def save_surgerized_safetensors(
         import torch
 
         has_torch = True
-    except ImportError:
+    except ImportError:  # allowed-swallow: safetensors backend fallback
         pass
 
     # Inspect whether inputs are torch tensors or numpy arrays
@@ -107,7 +107,7 @@ def save_surgerized_safetensors(
                     np_state[k] = v
             np_save_file(np_state, str(target), metadata=st_metadata if st_metadata else None)
             return target
-        except ImportError:
+        except ImportError:  # allowed-swallow: safetensors backend fallback
             pass
         except Exception as exc:
             raise RuntimeError(f"Failed to serialize numpy state to SafeTensors at {target}: {exc}") from exc
@@ -117,7 +117,7 @@ def save_surgerized_safetensors(
 
         st_save_file(clean_state, str(target), metadata=st_metadata if st_metadata else None)
         return target
-    except ImportError:
+    except ImportError:  # allowed-swallow: safetensors backend fallback
         pass
     except Exception as exc:
         raise RuntimeError(f"Failed to serialize surgerized model weights to SafeTensors at {target}: {exc}") from exc
@@ -137,7 +137,7 @@ def save_surgerized_safetensors(
                 np_state[k] = v
         np_save_file(np_state, str(target), metadata=st_metadata if st_metadata else None)
         return target
-    except ImportError:
+    except ImportError:  # allowed-swallow: safetensors backend fallback
         pass
     except Exception as exc:
         raise RuntimeError(f"Failed to serialize numpy state to SafeTensors at {target}: {exc}") from exc
@@ -152,6 +152,7 @@ def load_surgerized_safetensors(
     path: Path | str,
     device: str = "cpu",
     framework: str = "pt",
+    strict: bool = True,
 ) -> Tuple[Dict[str, Any], Dict[str, str]]:
     """Load weights and embedded provenance metadata from a SafeTensors file.
 
@@ -160,7 +161,7 @@ def load_surgerized_safetensors(
 
     Args:
         path: Path to the .safetensors file or directory containing model.safetensors.
-        device: Target device for loaded tensors (e.g., 'cpu', 'cuda:0').
+        device: Target device for loaded tensors (e.g., 'cpu', 'cuda').
         framework: Target tensor framework ('pt' for PyTorch, 'numpy' or 'np' for NumPy).
 
     Returns:
@@ -196,7 +197,10 @@ def load_surgerized_safetensors(
                     tensors[k] = f.get_tensor(k)
             return tensors, metadata
         except Exception as primary_exc:
-            # If PyTorch was requested but failed (e.g. torch not installed or CPU fallback), try np
+            # If PyTorch was requested and strict=True, fail closed
+            if framework_clean == "pt" and strict:
+                raise primary_exc
+            # If PyTorch was requested but failed (and not strict), try np
             if framework_clean == "pt":
                 try:
                     with safe_open(str(target), framework="np") as f:
@@ -204,10 +208,10 @@ def load_surgerized_safetensors(
                         for k in f.keys():
                             tensors[k] = f.get_tensor(k)
                     return tensors, metadata
-                except Exception:
+                except Exception:  # allowed-swallow: safetensors backend fallback
                     pass
             raise primary_exc
-    except ImportError:
+    except ImportError:  # allowed-swallow: safetensors backend fallback
         pass
     except Exception as exc:
         raise RuntimeError(f"Failed to load SafeTensors file at {target}: {exc}") from exc
@@ -219,7 +223,7 @@ def load_surgerized_safetensors(
 
             tensors = load_file(str(target), device=device)
             return tensors, metadata
-        except Exception:
+        except Exception:  # allowed-swallow: safetensors backend fallback
             pass
 
     try:

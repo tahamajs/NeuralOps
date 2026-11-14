@@ -578,7 +578,7 @@ def _add_multiseed_options(multiseed_p: argparse.ArgumentParser) -> None:
     multiseed_p.add_argument("--hidden-dim", type=int, default=64, help="Hidden dimension")
     multiseed_p.add_argument("--dtype", type=str, default="float32", help="Precision/dtype")
     multiseed_p.add_argument("--causal", action="store_true", default=False, help="Enable causal masking")
-    multiseed_p.add_argument("--device", type=str, default="cpu", help="Device (cpu, cuda:0, etc.)")
+    multiseed_p.add_argument("--device", type=str, default="cpu", help="Device (cpu, cuda, etc.)")
     multiseed_p.add_argument("--warmup", type=int, default=5, help="Warmup iterations per seed")
     multiseed_p.add_argument("--iters", type=int, default=20, help="Measured iterations per seed")
     multiseed_p.add_argument(
@@ -883,7 +883,7 @@ def _build_parser() -> argparse.ArgumentParser:
     roof_p.add_argument(
         "--dtype", type=str, default="float16", choices=["float16", "bfloat16", "float32"], help="Precision"
     )
-    roof_p.add_argument("--device", type=str, default=None, help="Device (e.g. cuda:0, cpu)")
+    roof_p.add_argument("--device", type=str, default=None, help="Device (e.g. cuda, cpu)")
     roof_p.add_argument("--json", action="store_true", help="Output raw JSON metrics")
     roof_p.add_argument("--latex", action="store_true", help="Print publication-ready LaTeX booktabs table snippet")
 
@@ -1257,7 +1257,7 @@ def handle_info(args: argparse.Namespace) -> int:
                 else:
                     print(render_architecture_card(spec))
                 return 0
-        except Exception:  # allowed-swallow: target architecture not inspectable, fallback to error message
+        except Exception:  # allowed-swallow: architecture card generation fallback
             pass
 
         print(f"Error: Target '{name}' not found in registry.")
@@ -2844,6 +2844,15 @@ def main(argv: list[str] | None = None) -> int:
       - Full traceback is suppressed by default for clean UX; printed only when --verbose is active.
       - Library modules must use named loggers; user-facing terminal CLI output uses print/console.
     """
+    import warnings
+
+    warnings.warn(
+        "neuralops.benchmarks.cli is deprecated and will be removed in a future release. "
+        "Please use neuralops.benchmarks.cli_v2 instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
     parser = _build_parser()
 
     raw_args = sys.argv[1:] if argv is None else argv

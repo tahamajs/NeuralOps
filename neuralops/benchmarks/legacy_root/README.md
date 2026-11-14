@@ -43,7 +43,7 @@ Every benchmark in the suite conforms to a uniform argument schema:
 |---|---|---|---|
 | `--output` | `str` | *Script-dependent* | Path to write output CSV file. |
 | `--output-json` | `str` | *Script-dependent* | Path to write structured JSON results. |
-| `--device` | `str` | `cuda:0` / `cpu` | Device target for benchmark execution. |
+| `--device` | `str` | `cuda` / `cpu` | Device target for benchmark execution. |
 | `--dtype` | `str` | `float16` | Data type precision (`float16`, `float32`, `bfloat16`). |
 | `--warmup` | `int` | `2` - `10` | Number of unmeasured warmup iterations before recording events. |
 | `--repeat` | `int` | `5` - `50` | Number of measured iterations across which latency is averaged. |

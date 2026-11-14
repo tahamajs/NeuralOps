@@ -677,18 +677,10 @@ class LinformerAttention(BaseAttention):
         scores = torch.matmul(q.float(), K_proj.transpose(-2, -1).contiguous().float()) * scale
 
         if self.is_decoder:
-            if self.k_proj_dim >= L:
-                causal_scores = torch.matmul(q.float(), k.transpose(-2, -1).contiguous().float()) * scale
-                causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
-                scores = causal_scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
-                V_proj = v
-            else:
-                torch.tril(torch.ones(L, k_eff, device=device, dtype=torch.bool))
-                idx_q = torch.arange(L, device=device).unsqueeze(1)
-                idx_k = torch.arange(k_eff, device=device).unsqueeze(0)
-                step = max(1, L // k_eff)
-                allowed = (idx_k * step) <= idx_q
-                scores = scores.masked_fill(~allowed.unsqueeze(0).unsqueeze(0), -1e4)
+            causal_scores = torch.matmul(q.float(), k.transpose(-2, -1).contiguous().float()) * scale
+            causal_mask = torch.tril(torch.ones(L, L, device=device, dtype=torch.bool))
+            scores = causal_scores.masked_fill(~causal_mask.unsqueeze(0).unsqueeze(0), -1e4)
+            V_proj = v
 
         if valid_mask is not None:
             scores = scores.masked_fill(~valid_mask.unsqueeze(1).unsqueeze(-1), -1e4)

@@ -1,0 +1,27 @@
+{
+  "wave": 4,
+  "started_at": "2026-11-15T00:00:00Z",
+  "last_updated": "2026-11-15T00:00:00Z",
+  "agents": {
+    "W4-L1": {"status": "pending", "branch": "wave4/W4-L1", "commits": 0, "worktree": null},
+    "W4-L2": {"status": "pending", "branch": "wave4/W4-L2", "commits": 0, "worktree": null},
+    "W4-L3": {"status": "pending", "branch": "wave4/W4-L3", "commits": 0, "worktree": null},
+    "W4-L4": {"status": "pending", "branch": "wave4/W4-L4", "commits": 0, "worktree": null},
+    "W4-O1": {"status": "pending", "branch": "wave4/W4-O1", "commits": 0, "worktree": null},
+    "W4-O2": {"status": "pending", "branch": "wave4/W4-O2", "commits": 0, "worktree": null},
+    "W4-C1": {"status": "pending", "branch": "wave4/W4-C1", "commits": 0, "worktree": null},
+    "W4-T1": {"status": "pending", "branch": "wave4/W4-T1", "commits": 0, "worktree": null},
+    "W4-T2": {"status": "pending", "branch": "wave4/W4-T2", "commits": 0, "worktree": null},
+    "W4-T3": {"status": "pending", "branch": "wave4/W4-T3", "commits": 0, "worktree": null},
+    "W4-A1": {"status": "pending", "branch": "wave4/W4-A1", "commits": 0, "worktree": null},
+    "W4-C2": {"status": "pending", "branch": "wave4/W4-C2", "commits": 0, "worktree": null},
+    "W4-E1": {"status": "pending", "branch": "wave4/W4-E1", "commits": 0, "worktree": null},
+    "W4-U1": {"status": "pending", "branch": "wave4/W4-U1", "commits": 0, "worktree": null},
+    "W4-U2": {"status": "pending", "branch": "wave4/W4-U2", "commits": 0, "worktree": null},
+    "W4-B1": {"status": "pending", "branch": "wave4/W4-B1", "commits": 0, "worktree": null},
+    "W4-B2": {"status": "pending", "branch": "wave4/W4-B2", "commits": 0, "worktree": null},
+    "W4-B3": {"status": "pending", "branch": "wave4/W4-B3", "commits": 0, "worktree": null},
+    "W4-I1": {"status": "pending", "branch": "wave4/W4-I1", "commits": 0, "worktree": null},
+    "W4-R1": {"status": "pending", "branch": "wave4/W4-R1", "commits": 0, "worktree": null}
+  }
+}

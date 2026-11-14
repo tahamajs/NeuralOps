@@ -631,6 +631,15 @@ class RadixTreeNode:
         """Deterministic SHA-256 prefix hash of this node's token chunk."""
         return _compute_prefix_hash(self.token_chunk)
 
+    @property
+    def recurrent_state(self) -> Optional[Dict[int, torch.Tensor]]:
+        """Alias for prefix_state storing recurrent state per layer."""
+        return self.prefix_state
+
+    @recurrent_state.setter
+    def recurrent_state(self, val: Optional[Dict[int, torch.Tensor]]) -> None:
+        self.prefix_state = val
+
     def is_leaf(self) -> bool:
         return len(self.children) == 0
 

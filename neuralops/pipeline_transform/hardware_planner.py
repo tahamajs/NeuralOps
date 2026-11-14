@@ -102,10 +102,17 @@ class ResourceEstimate:
     confidence: str = "medium"  # "high", "medium", "low"
     warnings: List[str] = field(default_factory=list)
     hardware_profile: Optional[Dict[str, Any]] = None
+    activation_vram_mb: float = 0.0
+    weights_only_vram_mb: float = 0.0
+    estimated_peak_vram_mb: float = 0.0
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "peak_vram_mb": self.peak_vram_mb,
+<<<<<<< HEAD
+=======
+            "activation_vram_mb": self.activation_vram_mb,
+>>>>>>> fix/benchmarks-remediation
             "weights_only_vram_mb": self.weights_only_vram_mb,
             "estimated_peak_vram_mb": self.estimated_peak_vram_mb,
             "total_time_seconds": self.total_time_seconds,
@@ -186,11 +193,18 @@ def estimate_resources(
     plan_or_recipe: Union[ExecutionPlan, Recipe, Dict[str, Any]],
     hardware_profile: Optional[Union[str, HardwareProfile, Dict[str, Any]]] = None,
     base_parameters: Optional[int] = None,
+<<<<<<< HEAD
     batch_size: int = 1,
     seq_len: int = 2048,
     hidden_dim: Optional[int] = None,
     num_layers: Optional[int] = None,
     factor: float = 2.0,
+=======
+    batch_size: Optional[int] = None,
+    seq_len: Optional[int] = None,
+    hidden_dim: Optional[int] = None,
+    num_layers: Optional[int] = None,
+>>>>>>> fix/benchmarks-remediation
     **kwargs: Any,
 ) -> ResourceEstimate:
     """Estimate peak VRAM, transformation latency, FLOP delta, and parameter count."""
@@ -249,11 +263,47 @@ def estimate_resources(
     total_time = 0.0
     likely_needs_finetuning = False
 
+    # Estimate transformer geometry from parameter count
+    if params_before >= 60_000_000_000:
+        hidden_size, num_layers = 8192, 80
+    elif params_before >= 10_000_000_000:
+        hidden_size, num_layers = 5120, 40
+    elif params_before >= 6_000_000_000:
+        hidden_size, num_layers = 4096, 32
+    elif params_before >= 1_000_000_000:
+        hidden_size, num_layers = 2048, 24
+    elif params_before >= 500_000_000:
+        hidden_size, num_layers = 1024, 24
+    else:
+        hidden_size, num_layers = 768, 12
+
+    # Calibration tokens and forward activation footprint
+    calib_tokens = 512
+    for s in stages:
+        cfg = getattr(s, "config", {}) if hasattr(s, "config") else s.get("config", {})
+        if "calibration_tokens" in cfg:
+            calib_tokens = max(calib_tokens, int(cfg["calibration_tokens"]))
+
+    eff_batch = batch_size if batch_size is not None else 2
+    eff_seq = seq_len if seq_len is not None else max(128, calib_tokens // eff_batch)
+    eff_hidden = hidden_dim if hidden_dim is not None else hidden_size
+    eff_layers = num_layers if num_layers is not None else num_layers
+    bytes_per_elem = 2.0  # FP16
+    layer_activation_bytes = eff_batch * eff_seq * eff_hidden * bytes_per_elem * 6.0
+    activation_vram_mb = (layer_activation_bytes * eff_layers) / (1024 * 1024)
+
     # Baseline VRAM model:
+<<<<<<< HEAD
     # Model weights (FP16: 2 bytes/param) + Optimizer/Activations/Peak scratch space
     weights_only_vram_mb = (params_before * 2.0) / (1024 * 1024)
     base_model_vram_mb = weights_only_vram_mb
     peak_vram_mb = base_model_vram_mb * 1.15
+=======
+    # Model weights (FP16: 2 bytes/param) + intermediate activation memory + scratch buffer
+    weights_only_vram_mb = (params_before * 2.0) / (1024 * 1024)
+    base_model_vram_mb = weights_only_vram_mb
+    peak_vram_mb = (base_model_vram_mb + activation_vram_mb) * 1.15
+>>>>>>> fix/benchmarks-remediation
 
     # Infer architecture dimensions for activation memory heuristic
     if hidden_dim is not None:
@@ -321,14 +371,14 @@ def estimate_resources(
 
             # Peak scratch VRAM during SVD decomposition
             svd_scratch_mb = base_model_vram_mb * (0.1 + 0.8 * target_ratio)
-            peak_vram_mb = max(peak_vram_mb, base_model_vram_mb + svd_scratch_mb)
+            peak_vram_mb = max(peak_vram_mb, base_model_vram_mb + activation_vram_mb + svd_scratch_mb)
 
             if target_ratio < 0.6:
                 likely_needs_finetuning = True
 
         elif op_type == "attention.replace":
             total_time += 1.5
-            peak_vram_mb = max(peak_vram_mb, base_model_vram_mb * 1.3)
+            peak_vram_mb = max(peak_vram_mb, (base_model_vram_mb + activation_vram_mb) * 1.3)
             likely_needs_finetuning = True
 
         else:
@@ -360,6 +410,9 @@ def estimate_resources(
         confidence=confidence,
         warnings=warnings,
         hardware_profile=hw_prof.to_dict(),
+        activation_vram_mb=round(activation_vram_mb, 2),
+        weights_only_vram_mb=round(weights_only_vram_mb, 2),
+        estimated_peak_vram_mb=round(peak_vram_mb, 2),
     )
 
 

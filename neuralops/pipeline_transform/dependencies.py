@@ -82,11 +82,13 @@ class ConflictDetector:
         self.recipe = recipe
         self.adapter = adapter
         self.graph = DependencyGraph()
+        self.missing_operations: List[Tuple[str, str, str]] = []
         self._build_graph()
 
     def _build_graph(self) -> None:
         for idx, op_spec in enumerate(self.recipe.operations):
             st_id = op_spec.id or f"stage_{idx}"
+<<<<<<< HEAD
             if op_spec.type not in OPERATION_REGISTRY:
                 raise KeyError(f"Operation '{op_spec.type}' is not registered in OPERATION_REGISTRY")
             versions = OPERATION_REGISTRY[op_spec.type]
@@ -96,6 +98,15 @@ class ConflictDetector:
                     f"Operation '{op_spec.type}' version '{op_spec.version}' is not registered in OPERATION_REGISTRY"
                 )
             op_instance = op_val() if isinstance(op_val, type) else op_val
+=======
+            op_versions = OPERATION_REGISTRY.get(op_spec.type)
+            if op_versions is None or op_spec.version not in op_versions:
+                self.missing_operations.append((st_id, op_spec.type, op_spec.version))
+                op_instance = None
+            else:
+                op_val = op_versions[op_spec.version]
+                op_instance = op_val() if isinstance(op_val, type) else op_val
+>>>>>>> fix/benchmarks-remediation
 
             reqs = set(getattr(op_instance, "requires", []))
             prods = set(getattr(op_instance, "produces", []))
@@ -128,6 +139,21 @@ class ConflictDetector:
         conflicts: List[Conflict] = []
         produced_features: Set[str] = set()
         seen_operations: List[str] = []
+
+        # 0. Check for unregistered / missing operations
+        for st_id, op_type, op_ver in self.missing_operations:
+            conflicts.append(
+                Conflict(
+                    severity=ConflictSeverity.ERROR,
+                    code="E_CONFLICT_UNKNOWN_OPERATION",
+                    message=(
+                        f"Unknown or unregistered operation '{op_type}' v{op_ver} at stage '{st_id}'. "
+                        f"Operation must be registered in OPERATION_REGISTRY."
+                    ),
+                    stage_id=st_id,
+                    operation=op_type,
+                )
+            )
 
         # Simulated tensor shape tracking: (batch, seq, hidden)
         current_shape: Tuple[int, ...] = (2, 16, 64)

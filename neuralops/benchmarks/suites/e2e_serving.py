@@ -38,29 +38,6 @@ class ServingBenchmark(AbstractBaseBenchmark):
         if limit is not None and isinstance(limit, int) and limit > 0:
             self.batch_sizes = self.batch_sizes[:limit]
 
-        self.model = custom.get("model")
-        model_name = getattr(self.config, "model", None)
-        if not model_name and getattr(self.config, "models", None):
-            model_name = self.config.models[0]
-        if self.model is None and model_name:
-            try:
-                from neuralops.benchmarks.core.model_loader import load_model_and_tokenizer
-
-                self.model, _, _ = load_model_and_tokenizer(
-                    model_name=model_name,
-                    device=self.device,
-                    is_causal=True,
-                )
-            except Exception as e:
-                logger.warning("Could not load model %s for ServingBenchmark: %s", model_name, e)
-                self.model = None
-
-        if self.model is None:
-            raise NotImplementedError(
-                "ServingBenchmark requires an actual model instance to evaluate TTFT and ITL. "
-                "Fake randn simulation has been removed."
-            )
-
         self.start_time = time.time()
         self.results_table: List[Dict[str, Any]] = []
 
@@ -72,87 +49,7 @@ class ServingBenchmark(AbstractBaseBenchmark):
         gen_len: int = 32,
         **kwargs: Any,
     ) -> Dict[str, float]:
-        self.flush_l2_cache()
-
-        if self.model is None:
-            raise NotImplementedError(
-                "ServingBenchmark requires an actual model instance to evaluate TTFT and ITL. "
-                "Fake randn simulation has been removed."
-            )
-
-        vocab_size = getattr(getattr(self.model, "config", None), "vocab_size", 1000)
-        prompt_tokens = torch.randint(0, vocab_size, (batch_size, prompt_len), device=self.device)
-        decode_token = torch.randint(0, vocab_size, (batch_size, 1), device=self.device)
-
-        # Prefill pass: compute first-token KV cache
-        def prefill() -> Any:
-            with torch.no_grad():
-                return self.model(input_ids=prompt_tokens, use_cache=True)
-
-        try:
-            prefill_out = prefill()
-            past_key_values = getattr(prefill_out, "past_key_values", None)
-
-            # Decode pass: generate one token using cached KV states if available
-            def decode_step() -> Any:
-                with torch.no_grad():
-                    if past_key_values is not None:
-                        return self.model(input_ids=decode_token, past_key_values=past_key_values, use_cache=True)
-                    return self.model(input_ids=decode_token)
-
-            ttft_ms, _ = self.measure_latency(prefill, warmup=1, repeat=2)
-            itl_ms, _ = self.measure_latency(decode_step, warmup=1, repeat=min(gen_len, 5))
-
-            total_tokens = batch_size * gen_len
-            total_time_s = (ttft_ms + itl_ms * gen_len) / 1000.0
-            throughput = _sanitize_float(total_tokens / max(total_time_s, 1e-6))
-
-            self.tracker.log_metric("ttft_ms", ttft_ms, step=step)
-            self.tracker.log_metric("throughput_tokens_per_sec", throughput, step=step)
-
-            result_entry = {
-                "step": step,
-                "mechanism_or_kernel": "serving_evaluation",
-                "batch_size": batch_size,
-                "seq_len": prompt_len + gen_len,
-                "dtype": "fp32",
-                "latency_ms": ttft_ms,
-                "latency_p50_ms": ttft_ms,
-                "latency_p90_ms": ttft_ms,
-                "latency_p99_ms": ttft_ms,
-                "ttft_ms": ttft_ms,
-                "itl_ms": itl_ms,
-                "throughput_tokens_per_sec": throughput,
-                "tflops": 0.0,
-                "peak_vram_mb": 0.0,
-                "status": "PASS",
-            }
-            self.results_table.append(result_entry)
-            return {"ttft_ms": ttft_ms, "throughput_tokens_per_sec": throughput}
-
-        except Exception as e:
-            logger.warning("Serving simulation error: %s", e)
-            self.results_table.append(
-                {
-                    "step": step,
-                    "mechanism_or_kernel": "serving_simulation",
-                    "batch_size": batch_size,
-                    "seq_len": prompt_len + gen_len,
-                    "dtype": "fp32",
-                    "latency_ms": 0.0,
-                    "latency_p50_ms": 0.0,
-                    "latency_p90_ms": 0.0,
-                    "latency_p99_ms": 0.0,
-                    "ttft_ms": 0.0,
-                    "itl_ms": 0.0,
-                    "throughput_tokens_per_sec": 0.0,
-                    "tflops": 0.0,
-                    "peak_vram_mb": 0.0,
-                    "status": f"FAILED_RUNTIME: {e}",
-                }
-            )
-            self.tracker.log_metric("ttft_ms", 0.0, step=step)
-            return {"ttft_ms": 0.0, "throughput_tokens_per_sec": 0.0}
+        raise NotImplementedError("e2e_serving requires real serving framework; not implemented")
 
     def run(self) -> None:
         step = 0

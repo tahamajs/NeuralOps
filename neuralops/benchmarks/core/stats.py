@@ -30,6 +30,9 @@ def paired_ttest(accs1: list[float], accs2: list[float]) -> float:
     """
     arr1, arr2 = np.array(accs1, dtype=np.float64), np.array(accs2, dtype=np.float64)
     if np.array_equal(arr1, arr2) or (np.var(arr1) == 0 and np.var(arr2) == 0):
+        import warnings
+
+        warnings.warn("paired_ttest encountered identical samples or zero variance", stacklevel=2)
         return 1.0
     try:
         res = stats.ttest_ind(arr1, arr2, equal_var=False)

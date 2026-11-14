@@ -44,7 +44,7 @@ def print_gpu_memory(label: str = "") -> None:
                 check=False,
             )
             print(f"[{label}] nvidia-smi: {res.stdout.strip()}")
-        except Exception:  # allowed-swallow: nvidia-smi unavailable or non-zero exit
+        except Exception:  # allowed-swallow: nvidia-smi inspection fallback
             pass
 
 
@@ -54,7 +54,7 @@ def main() -> None:
     parser.add_argument("--target_layer", type=int, default=14, help="Layer index to transplant (default: 14)")
     parser.add_argument("--target_attention", type=str, default="chunk_gla", help="Target attention mechanism")
     parser.add_argument("--heal_steps", type=int, default=10, help="Number of micro-healing steps")
-    parser.add_argument("--device", default="cuda:0", help="Execution device; CUDA is required by default")
+    parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu", help="Execution device")
     args = parser.parse_args()
 
     default_paths = [

@@ -52,13 +52,14 @@ class HardwareExecutionTarget(BaseModel):
 
     @field_validator("device")
     @classmethod
-    def validate_device_string(cls, v: str) -> str:
-        if re.match(r"^\d+$", v):
-            v = f"cuda:{v}"
-        pattern = r"^(cuda(:\d+)?|cpu|mps)$"
-        if not re.match(pattern, v):
-            raise ValueError(f"Invalid compute device '{v}'. Must match pattern: {pattern}")
-        return v
+    def validate_device_string(cls, v: Any) -> str:
+        v_str = str(v).strip()
+        if re.match(r"^\d+$", v_str):
+            v_str = f"cuda:{v_str}"
+        pattern = r"^(cuda(:\d+)?|cpu|mps|auto)$"
+        if not re.match(pattern, v_str):
+            raise ValueError(f"Invalid compute device '{v_str}'. Must match pattern: {pattern}")
+        return v_str
 
 
 class TrackingSubsystemConfig(BaseModel):
@@ -262,3 +263,19 @@ class BenchmarkRunConfig(BaseModel):
         import yaml
 
         return yaml.dump(self.model_dump(mode="json"), sort_keys=False)
+
+    @classmethod
+    def from_yaml(cls, path_or_yaml: Union[str, Path]) -> BenchmarkRunConfig:
+        """Instantiate BenchmarkRunConfig from a YAML file path or YAML document string."""
+        import yaml
+
+        path = Path(path_or_yaml) if isinstance(path_or_yaml, str) and "\n" not in path_or_yaml else None
+        if path is not None and path.is_file():
+            with open(path, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+        else:
+            data = yaml.safe_load(str(path_or_yaml))
+
+        if not isinstance(data, dict):
+            raise ValueError(f"Expected YAML dictionary root for BenchmarkRunConfig, got {type(data).__name__}")
+        return cls.model_validate(data)

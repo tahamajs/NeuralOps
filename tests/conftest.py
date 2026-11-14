@@ -248,6 +248,7 @@ def pytest_collection_modifyitems(config, items):
                 "test_monitor_single_server",
                 "test_serving_canonical",
                 "test_shard_placeholder",
+                "test_cli_cuda_visible_devices",
                 "test_changelog_sync",
                 "test_notebook_catalog",
                 "test_hardware_probe",
@@ -257,6 +258,15 @@ def pytest_collection_modifyitems(config, items):
                 "test_adapters_unified",
                 "test_compare_cli",
                 "test_import_boundaries",
+                "test_config_validate_device",
+                "test_dispatcher_leases",
+                "test_flush_l2_dynamic",
+                "test_memory_fragmentation",
+                "test_cuda_ops_no_fake",
+                "test_triton_ops_all_kernels",
+                "test_triton_sample",
+                "test_timing_correct",
+                "test_cli_cuda_visible_devices",
             )
         ) or ("test_notebook_structure_and_syntax" in item_name or "test_notebook_smoke" in item_name)
         if ("cuda" in item_path or "cuda" in item.keywords or "cuda" in item_name) and not is_static_config_test:

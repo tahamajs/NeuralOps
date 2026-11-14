@@ -27,7 +27,7 @@ from neuralops.core.base import BaseAttention
 from neuralops.core.common import _env_flag, _env_float, _unpack_weight_bias
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.utils.gqa import repeat_kv
-from neuralops.layers.gated.gated_delta_net import LoRALinear
+from neuralops.core.peft.lora import LoRALinear
 
 logger = logging.getLogger(__name__)
 
@@ -555,9 +555,13 @@ class GriffinSSDBlock(BaseAttention):
                 k_ssd = repeat_kv(k_ssd, repeats)
                 v_ssd = repeat_kv(v_ssd, repeats)
             if self.is_decoder:
-                from neuralops.ops.triton.selective_scan import fused_rglru_ssd_scan_triton
+                try:
+                    from neuralops.ops.triton.selective_scan import fused_rglru_ssd_scan_triton
 
-                global_out = fused_rglru_ssd_scan_triton(q_ssd, k_ssd, v_ssd, decay, chunk_size=32)
+                    global_out = fused_rglru_ssd_scan_triton(q_ssd, k_ssd, v_ssd, decay, chunk_size=32)
+                except Exception as exc:
+                    logger.debug("Falling back to PyTorch causal scan in GriffinSSD: %s", exc)
+                    global_out = self._ssd_chunked_causal(q_ssd, k_ssd, v_ssd, decay, chunk_size=32)
             else:
                 global_out = self._ssd_symmetric(q_ssd, k_ssd, v_ssd, decay, mask_bool)
 

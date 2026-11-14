@@ -14,11 +14,14 @@ Model loading, parameter freezing, weight inspection, and buffer verification he
 from __future__ import annotations
 
 from contextlib import contextmanager
+import logging
 import math
 from typing import Any
 
 import torch
 import torch.nn as nn
+
+logger = logging.getLogger(__name__)
 
 
 def run_calibration_forward(
@@ -60,8 +63,8 @@ def copy_attention_weights(
         try:
             dst_module.copy_weights(src_module)
             return
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Dedicated copy_weights failed, falling back: %s", exc)
 
     if source_map is None:
         source_map = ATTENTION_WEIGHT_MAP
@@ -153,7 +156,9 @@ def copy_attention_weights(
                 if src_heads > dst_heads and src_heads % dst_heads == 0:
                     group = src_heads // dst_heads
                     scale = math.sqrt(group)
-                    w_pooled = (w_src.view(dst_heads, group, h_dim, src_in).mean(dim=1) * scale).reshape(dst_out, dst_in)
+                    w_pooled = (w_src.view(dst_heads, group, h_dim, src_in).mean(dim=1) * scale).reshape(
+                        dst_out, dst_in
+                    )
                     dst.weight.data.copy_(w_pooled)
                     if src.bias is not None and dst.bias is not None:
                         b_pooled = (src.bias.data.view(dst_heads, group, h_dim).mean(dim=1) * scale).reshape(dst_out)

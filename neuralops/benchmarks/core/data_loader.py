@@ -165,12 +165,6 @@ def load_dataset_by_name(
                 second = "sentence2" if "sentence2" in raw_local.column_names else None
                 return _TokenizedIterableDataset(raw_local, tokenizer, (first, second), max_length)
             rows = raw_local
-            if max_samples is not None and max_samples < len(rows):
-                if hasattr(rows, "select"):
-                    rows = rows.select(range(max_samples))
-                else:
-                    rows = rows[:max_samples]
-                LOG.info("Subsampled local dataset to %d samples", max_samples)
             text_columns = [c for c in ("sentence", "text", "sentence1") if c in rows.column_names]
             first = (
                 text_columns[0] if text_columns else next(c for c in rows.column_names if c not in {"label", "labels"})
@@ -178,32 +172,20 @@ def load_dataset_by_name(
             second = "sentence2" if "sentence2" in rows.column_names else None
             texts1 = list(rows[first])
             texts2 = list(rows[second]) if second else None
-            if texts2 is not None:
-                enc = tokenizer(
-                    texts1,
-                    texts2,
-                    padding="max_length",
-                    truncation=True,
-                    max_length=max_length,
-                    return_tensors="pt",
-                )
-            else:
-                enc = tokenizer(
-                    texts1,
-                    padding="max_length",
-                    truncation=True,
-                    max_length=max_length,
-                    return_tensors="pt",
-                )
+            enc = tokenizer(
+                texts1,
+                texts2,
+                padding="max_length",
+                truncation=True,
+                max_length=max_length,
+                return_tensors="pt",
+            )
             labels = torch.tensor(
                 rows["label"]
                 if "label" in rows.column_names
                 else rows["labels"] if "labels" in rows.column_names else [0] * len(rows)
             )
-            tensors = [enc["input_ids"], enc["attention_mask"], labels]
-            if "token_type_ids" in enc:
-                tensors.append(enc["token_type_ids"])
-            return TensorDataset(*tensors)
+            return TensorDataset(enc["input_ids"], enc["attention_mask"], labels)
         except Exception as exc:
             raise RuntimeError(f"Failed to load local dataset '{local_path}': {exc}") from exc
 
@@ -280,17 +262,6 @@ def load_dataset_by_name(
         input_ids = enc.input_ids[0]
 
         total_tokens = (input_ids.numel() // max_length) * max_length
-        if total_tokens == 0:
-            if input_ids.numel() > 0:
-                pad_len = max_length - input_ids.numel()
-                pad_id = getattr(tokenizer, "pad_token_id", 0) or 0
-                padded = torch.cat([input_ids, torch.full((pad_len,), pad_id, dtype=input_ids.dtype)])
-                chunks = padded.view(1, max_length)
-                attention_mask = torch.cat(
-                    [torch.ones(input_ids.numel(), dtype=torch.long), torch.zeros(pad_len, dtype=torch.long)]
-                ).view(1, max_length)
-                return TensorDataset(chunks, attention_mask, chunks)
-            raise ValueError(f"WikiText dataset '{name}' contains 0 tokens after tokenization.")
         input_ids = input_ids[:total_tokens]
         chunks = input_ids.view(-1, max_length)
         attention_mask = torch.ones_like(chunks)
@@ -354,12 +325,16 @@ def load_wikitext_dataset(
     return load_dataset_by_name(name=ds_name, tokenizer=tokenizer, max_length=max_length, split=split)
 
 
-def load_preprocess_script(path: str | Path) -> Callable[[Any], Any]:
+def load_preprocess_script(path: str | Path, trust: bool = False) -> Callable[[Any], Any]:
     """Load and validate custom preprocessing script exposing `preprocess(batch) -> batch`.
 
     WARNING: Executing a preprocessing script executes arbitrary Python code.
-    Ensure the script is sourced from a trusted origin.
+    Requires explicit trust=True opt-in to protect against untrusted code execution.
     """
+    if not trust:
+        raise PermissionError(
+            f"Loading preprocessing script '{path}' requires explicit trust=True to allow code execution."
+        )
     path_obj = Path(path).resolve()
     if not path_obj.is_file():
         raise FileNotFoundError(f"Preprocessing script not found: {path_obj}")

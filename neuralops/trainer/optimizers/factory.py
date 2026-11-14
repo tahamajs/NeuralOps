@@ -18,6 +18,7 @@ from typing import Any
 import torch.optim as optim
 
 from neuralops.core.registry import Registry
+from neuralops.trainer.optimizers.anyprecision import AnyPrecisionAdamW, create_anyprecision_optimizer
 from neuralops.trainer.optimizers.lion import Lion, create_lion_optimizer
 from neuralops.trainer.optimizers.muon import Muon, create_muon_adamw_optimizer
 from neuralops.trainer.optimizers.riemannian import RiemannianStiefelOptimizer
@@ -59,6 +60,19 @@ def create_muon_adamw_reg(
 ) -> Any:
     """Build and return MuonAdamW hybrid optimizer."""
     return create_muon_adamw_optimizer(params, lr_muon=lr, lr_adam=lr_adam, weight_decay=weight_decay, **kwargs)
+
+
+@OPTIMIZER_REGISTRY.register("anyprecision")
+@OPTIMIZER_REGISTRY.register("anyprecision_adamw")
+def create_anyprecision(
+    params: Any,
+    lr: float = 1e-3,
+    betas: tuple[float, float] = (0.9, 0.999),
+    weight_decay: float = 0.01,
+    **kwargs: Any,
+) -> AnyPrecisionAdamW:
+    """Build and return AnyPrecisionAdamW optimizer."""
+    return create_anyprecision_optimizer(params, lr=lr, betas=betas, weight_decay=weight_decay, **kwargs)
 
 
 @OPTIMIZER_REGISTRY.register("riemannian_stiefel")
@@ -141,6 +155,7 @@ def create_lars(params: Any, lr: float = 1e-3, weight_decay: float = 0.0, **kwar
 
 __all__ = [
     "OPTIMIZER_REGISTRY",
+    "create_anyprecision",
     "create_lion",
     "create_muon",
     "create_muon_adamw_reg",

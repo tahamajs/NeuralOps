@@ -49,32 +49,37 @@ class BenchmarkSweepResumer:
 
         try:
             with open(self.journal_path, "r", encoding="utf-8") as fp:
-                for line in fp:
+                for line_num, line in enumerate(fp, 1):
                     line = line.strip()
                     if not line:
                         continue
                     try:
                         record = json.loads(line)
                         self._run_entries.append(record)
+                    except json.JSONDecodeError as jde:
+                        LOG.warning(
+                            "Failed to parse JSON in %s line %d: %s",
+                            self.journal_path,
+                            line_num,
+                            jde,
+                        )
+                        continue
 
-                        event = record.get("event", "")
-                        run_id = record.get("run_id", "")
-                        status = record.get("status", "")
+                    event = record.get("event", "")
+                    run_id = record.get("run_id", "")
+                    status = record.get("status", "")
 
-                        # A run is considered complete if event is CASE_SUCCESS or status is success
-                        if event == "CASE_SUCCESS" or status == "success":
-                            if run_id:
-                                self._completed_runs.add(run_id)
+                    # A run is considered complete if event is CASE_SUCCESS or status is success
+                    if event == "CASE_SUCCESS" or status == "success":
+                        if run_id:
+                            self._completed_runs.add(run_id)
 
-                            m_name = record.get("model_name", "") or record.get("model", "")
-                            t_attn = record.get("transplanted_attention", "") or record.get("module", "")
-                            b_suite = record.get("benchmark_suite", "") or record.get("dataset", "")
+                        m_name = record.get("model_name", "") or record.get("model", "")
+                        t_attn = record.get("transplanted_attention", "") or record.get("module", "")
+                        b_suite = record.get("benchmark_suite", "") or record.get("dataset", "")
 
-                            if m_name or t_attn or b_suite:
-                                self._completed_tuples.add((str(m_name), str(t_attn), str(b_suite)))
-
-                    except json.JSONDecodeError:
-                        LOG.warning("Malformed JSON line encountered in journal: %s", line)
+                        if m_name or t_attn or b_suite:
+                            self._completed_tuples.add((str(m_name), str(t_attn), str(b_suite)))
         except Exception as exc:
             LOG.warning("Failed to parse journal file at %s: %s", self.journal_path, exc)
 
@@ -194,7 +199,7 @@ def dedup_results_ledger(ledger_db_path: Path | str) -> int:
                         for k in ("accuracy", "score", "throughput", "throughput_req_sec", "retention"):
                             if k in m_data and isinstance(m_data[k], (int, float)):
                                 metric_score = max(metric_score, float(m_data[k]))
-                except Exception:
+                except Exception:  # allowed-swallow: corrupted json parsing fallback
                     pass
                 return (status_score, metric_score, ts)
 

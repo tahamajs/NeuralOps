@@ -32,7 +32,7 @@ def run_quality_sweep(*args, **kwargs):
 
 try:
     from neuralops.benchmarks._legacy.run_quality_sweep import evaluate_comprehensive, main, prepare_eval_batches
-except ImportError:  # allowed-swallow: legacy module optional import
+except ImportError:  # allowed-swallow: optional legacy sweep import
     pass
 
 __all__ = ["run_quality_sweep", "QualitySweepConfig", "evaluate_comprehensive", "prepare_eval_batches"]

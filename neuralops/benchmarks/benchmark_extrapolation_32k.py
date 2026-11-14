@@ -19,6 +19,9 @@ import os
 import sys
 import time
 from pathlib import Path
+from typing import Any
+
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")
 
 import torch
 import torch.nn.functional as F
@@ -35,8 +38,44 @@ DEFAULT_SEQ_LENS = [512, 1024, 2048, 4096, 8192, 16384, 32768]
 QUICK_SEQ_LENS = [512, 1024]
 
 
+def collect_cuda_memory_stats(device: torch.device | str) -> dict[str, Any]:
+    """Report torch.cuda.memory_stats() metrics and activation fragmentation ratio."""
+    dev = torch.device(device) if isinstance(device, str) else device
+    if dev.type != "cuda" or not torch.cuda.is_available():
+        return {
+            "peak_vram_mb": 0.0,
+            "reserved_vram_mb": 0.0,
+            "allocated_vram_mb": 0.0,
+            "fragmentation_ratio": 0.0,
+            "memory_stats": {},
+        }
+    try:
+        mem_stats = torch.cuda.memory_stats(dev)
+        peak_mb = float(torch.cuda.max_memory_allocated(dev) / (1024.0**2))
+        res_bytes = mem_stats.get("reserved_bytes.all.current", torch.cuda.memory_reserved(dev))
+        alloc_bytes = mem_stats.get("allocated_bytes.all.current", torch.cuda.memory_allocated(dev))
+        res_mb = float(res_bytes / (1024.0**2))
+        alloc_mb = float(alloc_bytes / (1024.0**2))
+        frag_ratio = float(max(0.0, (res_bytes - alloc_bytes) / res_bytes)) if res_bytes > 0 else 0.0
+        return {
+            "peak_vram_mb": round(peak_mb, 1),
+            "reserved_vram_mb": round(res_mb, 1),
+            "allocated_vram_mb": round(alloc_mb, 1),
+            "fragmentation_ratio": round(frag_ratio, 4),
+            "memory_stats": mem_stats,
+        }
+    except Exception:
+        return {
+            "peak_vram_mb": 0.0,
+            "reserved_vram_mb": 0.0,
+            "allocated_vram_mb": 0.0,
+            "fragmentation_ratio": 0.0,
+            "memory_stats": {},
+        }
+
+
 def run_extrapolation_benchmark(
-    device_str: str = "cuda:0",
+    device_str: str = "auto",
     dtype_str: str = "float16",
     seq_lens: list = None,
     warmup: int = 3,
@@ -48,6 +87,9 @@ def run_extrapolation_benchmark(
     """Execute sequence length scaling benchmark."""
     if seq_lens is None:
         seq_lens = DEFAULT_SEQ_LENS
+
+    if device_str == "auto" or device_str is None:
+        device_str = "cuda" if torch.cuda.is_available() else "cpu"
 
     if "cuda" in device_str and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
@@ -165,7 +207,7 @@ def run_extrapolation_benchmark(
                     torch.cuda.synchronize()
                 lat_ms = ((time.perf_counter() - t0) / iters) * 1000.0
 
-                peak_mem_mb = (torch.cuda.max_memory_allocated(device) / (1024.0**2)) if device.type == "cuda" else 0.0
+                mem_info = collect_cuda_memory_stats(device)
 
                 if isinstance(out, tuple):
                     out = out[0]
@@ -175,15 +217,19 @@ def run_extrapolation_benchmark(
                     "sequence_length": L,
                     "mechanism": m_name,
                     "latency_ms": round(lat_ms, 2),
-                    "peak_vram_mb": round(peak_mem_mb, 1),
+                    "peak_vram_mb": mem_info["peak_vram_mb"],
+                    "reserved_vram_mb": mem_info["reserved_vram_mb"],
+                    "allocated_vram_mb": mem_info["allocated_vram_mb"],
+                    "fragmentation_ratio": mem_info["fragmentation_ratio"],
                     "kv_state_kb": round(kv_state_kb, 1),
                     "state_complexity": state_complexity,
                     "state_drift_rel": float(f"{drift:.2e}"),
                     "zero_nan": not has_nan,
+                    "memory_stats": mem_info["memory_stats"],
                 }
                 results.append(row)
                 print(
-                    f"  {m_name:<28} | Latency: {lat_ms:6.2f} ms | Peak VRAM: {peak_mem_mb:6.1f} MB | KV State: {kv_state_kb:8.1f} KB ({state_complexity}) | Drift: {drift:9.2e} | Stable: {not has_nan}"
+                    f"  {m_name:<28} | Latency: {lat_ms:6.2f} ms | Peak VRAM: {mem_info['peak_vram_mb']:6.1f} MB | Frag: {mem_info['fragmentation_ratio']:6.4f} | KV State: {kv_state_kb:8.1f} KB ({state_complexity}) | Drift: {drift:9.2e} | Stable: {not has_nan}"
                 )
             except Exception as exc:
                 print(f"  {m_name:<28} | EXCEPTION: {exc}")
@@ -193,10 +239,14 @@ def run_extrapolation_benchmark(
                         "mechanism": m_name,
                         "latency_ms": 0.0,
                         "peak_vram_mb": 0.0,
+                        "reserved_vram_mb": 0.0,
+                        "allocated_vram_mb": 0.0,
+                        "fragmentation_ratio": 0.0,
                         "kv_state_kb": round(kv_state_kb, 1),
                         "state_complexity": state_complexity,
                         "state_drift_rel": float("nan"),
                         "zero_nan": False,
+                        "memory_stats": {},
                     }
                 )
 
@@ -211,11 +261,15 @@ def run_extrapolation_benchmark(
                     "mechanism",
                     "latency_ms",
                     "peak_vram_mb",
+                    "reserved_vram_mb",
+                    "allocated_vram_mb",
+                    "fragmentation_ratio",
                     "kv_state_kb",
                     "state_complexity",
                     "state_drift_rel",
                     "zero_nan",
                 ],
+                extrasaction="ignore",
             )
             writer.writeheader()
             for r in results:
@@ -284,7 +338,7 @@ def run_extrapolation_benchmark(
     return results
 
 
-def main():
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Long-Horizon Sequence Extrapolation Benchmark")
     parser.add_argument(
         "--output",
@@ -307,8 +361,8 @@ def main():
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda:0" if torch.cuda.is_available() else "cpu",
-        help="Device to execute benchmark",
+        default="auto",
+        help="Device to execute benchmark (default: 'auto')",
     )
     parser.add_argument(
         "--dtype",
@@ -325,7 +379,7 @@ def main():
     parser.add_argument("--warmup", type=int, default=3, help="Warmup iterations")
     parser.add_argument("--repeat", type=int, default=10, help="Repeat iterations")
     parser.add_argument("--quick", action="store_true", help="Quick mode (seq-lens 512,1024)")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     if args.quick:
         seq_lens = QUICK_SEQ_LENS

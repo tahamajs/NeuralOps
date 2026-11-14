@@ -519,18 +519,29 @@ class Registry:
 
     def get(self, key: str, unwrap: bool = False) -> Callable | None:
         """Safely retrieve a registered component, or None if not found."""
+        orig_key = key
         if key in DEPRECATED_ALIASES:
             canonical = DEPRECATED_ALIASES[key]
-            import warnings
-
-            warnings.warn(
-                f"'{key}' is deprecated. Use '{canonical}' instead.",
-                DeprecationWarning,
-                stacklevel=2,
+            is_cross = (
+                (self.name == "attentions" and (canonical in _COMPRESSOR_FILE_MAP or canonical.endswith("_compressor")))
+                or (self.name == "compressors" and (canonical in _ATTENTION_FILE_MAP or canonical.endswith("_attention")))
             )
-            key = canonical
+            if not is_cross:
+                import warnings
+
+                warnings.warn(
+                    f"'{key}' is deprecated. Use '{canonical}' instead.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+                key = canonical
         try:
             k = _handle_deprecated(key)
+            if (
+                (self.name == "attentions" and (k in _COMPRESSOR_FILE_MAP or k.endswith("_compressor")))
+                or (self.name == "compressors" and (k in _ATTENTION_FILE_MAP or k.endswith("_attention")))
+            ):
+                k = orig_key
         except ValueError:
             return None
         self._try_lazy_load(k)
@@ -538,8 +549,8 @@ class Registry:
         obj = self._dict.get(k_lower)
         if obj is None:
             obj = self._aliases.get(k_lower)
-        if obj is None and self.name == "attentions" and k_lower in _ATTENTION_FILE_MAP:
-            can = _ATTENTION_FILE_MAP[k_lower]
+        if obj is None and self.name == "attentions" and (k_lower in _ATTENTION_FILE_MAP or key.lower() in _ATTENTION_FILE_MAP):
+            can = _ATTENTION_FILE_MAP.get(k_lower) or _ATTENTION_FILE_MAP[key.lower()]
             self._try_lazy_load(can)
             bare = can.split(".")[-1].lower()
             obj = (
@@ -566,18 +577,29 @@ class Registry:
 
     def resolve(self, key: str) -> Callable:
         """Retrieve a registered component and raise a descriptive error if missing."""
+        orig_key = key
         if key in DEPRECATED_ALIASES:
             canonical = DEPRECATED_ALIASES[key]
-            import warnings
-
-            warnings.warn(
-                f"'{key}' is deprecated. Use '{canonical}' instead.",
-                DeprecationWarning,
-                stacklevel=2,
+            is_cross = (
+                (self.name == "attentions" and (canonical in _COMPRESSOR_FILE_MAP or canonical.endswith("_compressor")))
+                or (self.name == "compressors" and (canonical in _ATTENTION_FILE_MAP or canonical.endswith("_attention")))
             )
-            key = canonical
+            if not is_cross:
+                import warnings
+
+                warnings.warn(
+                    f"'{key}' is deprecated. Use '{canonical}' instead.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+                key = canonical
         try:
             k = _handle_deprecated(key)
+            if (
+                (self.name == "attentions" and (k in _COMPRESSOR_FILE_MAP or k.endswith("_compressor")))
+                or (self.name == "compressors" and (k in _ATTENTION_FILE_MAP or k.endswith("_attention")))
+            ):
+                k = orig_key
         except ValueError as e:
             raise KeyError(str(e)) from e
         self._try_lazy_load(k)
@@ -585,8 +607,8 @@ class Registry:
         obj = self._dict.get(k_lower)
         if obj is None:
             obj = self._aliases.get(k_lower)
-        if obj is None and self.name == "attentions" and k_lower in _ATTENTION_FILE_MAP:
-            can = _ATTENTION_FILE_MAP[k_lower]
+        if obj is None and self.name == "attentions" and (k_lower in _ATTENTION_FILE_MAP or key.lower() in _ATTENTION_FILE_MAP):
+            can = _ATTENTION_FILE_MAP.get(k_lower) or _ATTENTION_FILE_MAP[key.lower()]
             self._try_lazy_load(can)
             bare = can.split(".")[-1].lower()
             obj = (

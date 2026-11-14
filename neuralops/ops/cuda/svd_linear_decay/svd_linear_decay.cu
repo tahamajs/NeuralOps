@@ -71,7 +71,7 @@ __global__ void svd_linear_decay_fwd_kernel(
     // Allocate registers for S state column: up to 64 rows of D_k per thread's assigned d2
     // If D_k <= 64, each thread manages 1 element of d2 across all d1 rows.
     // D_v is partitioned among threads in block:
-    if (tid >= D_v) return;
+    const bool active_dv = (tid < D_v);
     const int d2 = tid; // 1 thread per D_v column (num_threads >= D_v)
 
     // State vectors in registers
@@ -116,34 +116,36 @@ __global__ void svd_linear_decay_fwd_kernel(
 
         __syncthreads();
 
-        const float v_val = to_float(v[v_t_offset + d2]);
-        const float default_lam = s_lam[0];
+        if (active_dv) {
+            const float v_val = to_float(v[v_t_offset + d2]);
+            const float default_lam = s_lam[0];
 
-        // State update:
-        // S_t[d1, d2] = lambda[d1] * S_{t-1}[d1, d2] + k_t[d1] * v_t[d2]
-        // Z_t[d1]     = lambda[d1] * Z_{t-1}[d1]     + k_t[d1]
-        #pragma unroll 4
-        for (int d1 = 0; d1 < D_k; ++d1) {
-            float lam_d1 = channel_wise ? s_lam[d1] : default_lam;
-            float k_d1 = s_k[d1];
-            S_col[d1] = fmaf(lam_d1, S_col[d1], k_d1 * v_val);
-            Z_arr[d1] = fmaf(lam_d1, Z_arr[d1], k_d1);
+            // State update:
+            // S_t[d1, d2] = lambda[d1] * S_{t-1}[d1, d2] + k_t[d1] * v_t[d2]
+            // Z_t[d1]     = lambda[d1] * Z_{t-1}[d1]     + k_t[d1]
+            #pragma unroll 4
+            for (int d1 = 0; d1 < D_k; ++d1) {
+                float lam_d1 = channel_wise ? s_lam[d1] : default_lam;
+                float k_d1 = s_k[d1];
+                S_col[d1] = fmaf(lam_d1, S_col[d1], k_d1 * v_val);
+                Z_arr[d1] = fmaf(lam_d1, Z_arr[d1], k_d1);
+            }
+
+            // Query output projection:
+            // num = sum_{d1} q_t[d1] * S_t[d1, d2]
+            // den = sum_{d1} q_t[d1] * Z_t[d1] + eps
+            float num = 0.0f;
+            float den = 0.0f;
+            #pragma unroll 4
+            for (int d1 = 0; d1 < D_k; ++d1) {
+                float q_d1 = s_q[d1];
+                num = fmaf(q_d1, S_col[d1], num);
+                den = fmaf(q_d1, Z_arr[d1], den);
+            }
+
+            den = fmaxf(den + eps, 1e-6f);
+            out[v_t_offset + d2] = from_float<scalar_t>(num / den);
         }
-
-        // Query output projection:
-        // num = sum_{d1} q_t[d1] * S_t[d1, d2]
-        // den = sum_{d1} q_t[d1] * Z_t[d1] + eps
-        float num = 0.0f;
-        float den = 0.0f;
-        #pragma unroll 4
-        for (int d1 = 0; d1 < D_k; ++d1) {
-            float q_d1 = s_q[d1];
-            num = fmaf(q_d1, S_col[d1], num);
-            den = fmaf(q_d1, Z_arr[d1], den);
-        }
-
-        den = fmaxf(den + eps, 1e-6f);
-        out[v_t_offset + d2] = from_float<scalar_t>(num / den);
 
         __syncthreads();
     }

@@ -102,7 +102,7 @@ class AttentionBenchmarkAdapter(BaseBenchmarkAdapter):
         if hasattr(ATTENTION_REGISTRY, "_load_all"):
             try:
                 ATTENTION_REGISTRY._load_all()
-            except Exception:  # allowed-swallow: attention registry lazy load fallback
+            except Exception:  # allowed-swallow: registry lookup or constructor signature fallback
                 pass
 
         cls = ATTENTION_REGISTRY.get(self.attention_name)
@@ -128,28 +128,28 @@ class AttentionBenchmarkAdapter(BaseBenchmarkAdapter):
         # Attempt signature 1: explicit dim and num_heads
         try:
             mod = cls(dim=self.dim, num_heads=self.num_heads, **self.extra_kwargs)
-        except (TypeError, ValueError):  # allowed-swallow: try next instantiation signature
+        except (TypeError, ValueError):  # allowed-swallow: registry lookup or constructor signature fallback
             pass
 
         # Attempt signature 2: config object
         if mod is None:
             try:
                 mod = cls(config=cfg)
-            except (TypeError, ValueError):  # allowed-swallow: try next instantiation signature
+            except (TypeError, ValueError):  # allowed-swallow: registry lookup or constructor signature fallback
                 pass
 
         # Attempt signature 3: positional config
         if mod is None:
             try:
                 mod = cls(cfg)
-            except (TypeError, ValueError):  # allowed-swallow: try next instantiation signature
+            except (TypeError, ValueError):  # allowed-swallow: registry lookup or constructor signature fallback
                 pass
 
         # Attempt signature 4: hidden_size, num_heads
         if mod is None:
             try:
                 mod = cls(hidden_size=self.dim, num_heads=self.num_heads)
-            except (TypeError, ValueError):  # allowed-swallow: try next instantiation signature
+            except (TypeError, ValueError):  # allowed-swallow: registry lookup or constructor signature fallback
                 pass
 
         # Fallback signature 5: parameterless default init
@@ -178,7 +178,7 @@ class AttentionBenchmarkAdapter(BaseBenchmarkAdapter):
         if hasattr(ATTENTION_REGISTRY, "_load_all"):
             try:
                 ATTENTION_REGISTRY._load_all()
-            except Exception:  # allowed-swallow: attention registry lazy load fallback
+            except Exception:  # allowed-swallow: registry lookup or constructor signature fallback
                 pass
 
         backend = "cuda" if "cuda" in str(self.device) else "pytorch"

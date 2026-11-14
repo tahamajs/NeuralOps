@@ -95,6 +95,7 @@ def save_recipe_to_hub(
     """Upload recipe directly to a HuggingFace Hub dataset or model repository."""
     import tempfile
 
+    tmp_path: str | None = None
     try:
         from huggingface_hub import HfApi
 
@@ -110,6 +111,9 @@ def save_recipe_to_hub(
         )
     except Exception as exc:
         raise RuntimeError(f"Failed to publish recipe to HuggingFace Hub '{repo_id}': {exc}") from exc
+    finally:
+        if tmp_path is not None:
+            Path(tmp_path).unlink(missing_ok=True)
 
 
 __all__ = [

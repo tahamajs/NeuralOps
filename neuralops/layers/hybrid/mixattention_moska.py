@@ -998,9 +998,12 @@ fasa_inject = inject_mixattention_moska
 
 __all__ = [
     "MixAttentionMoSKA",
+    "MixAttentionMoska",
     "FASA",
     "inject_mixattention_moska",
     "fasa_inject",
     "apply_rotary_pos_emb",
     "LoRALinear",
 ]
+
+MixAttentionMoska = MixAttentionMoSKA

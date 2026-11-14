@@ -14,7 +14,7 @@ print("=========================================================================
 print("  NeuralOps HEAVY LLM Layer Benchmark on Qwen2.5-7B (NVIDIA RTX 3090 - 24GB)")
 print("================================================================================")
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 vram_total = torch.cuda.get_device_properties(device).total_memory / (1024**3)
 print("Target GPU: {} ({}) | Total VRAM: {:.2f} GB".format(device, torch.cuda.get_device_name(device), vram_total))
 

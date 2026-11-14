@@ -39,12 +39,11 @@ def _load_overrides() -> dict[str, dict[str, Any]]:
 
 def inspect_module_capabilities(
     name: str,
-    cls: type,
+    cls: Any,
     module_type: str,
     overrides: dict[str, dict[str, Any]] | None = None,
 ) -> ModuleMetadata:
-    """
-    Inspect capability flags for a module class using:
+    """Inspect capability flags for a module class using:
     1. discovery_overrides.json
     2. Explicit class attributes
     3. Signature reflection heuristics
@@ -54,10 +53,15 @@ def inspect_module_capabilities(
 
     mod_overrides = overrides.get(name, {})
 
-    sig = str(inspect.signature(cls.__init__)) if hasattr(cls, "__init__") else ""
+    sig = ""
+    if hasattr(cls, "__init__"):
+        try:
+            sig = str(inspect.signature(cls.__init__))
+        except (TypeError, ValueError):
+            sig = ""
 
     if "supports_causal" in mod_overrides:
-        causal = mod_overrides["supports_causal"]
+        causal = bool(mod_overrides["supports_causal"])
     elif hasattr(cls, "supports_causal"):
         causal = bool(cls.supports_causal)
     elif hasattr(cls, "is_causal"):
@@ -68,7 +72,7 @@ def inspect_module_capabilities(
         causal = module_type == "compressor"
 
     if "supports_gqa" in mod_overrides:
-        gqa = mod_overrides["supports_gqa"]
+        gqa = bool(mod_overrides["supports_gqa"])
     elif hasattr(cls, "supports_gqa"):
         gqa = bool(cls.supports_gqa)
     elif "num_kv_heads" in sig or "gqa" in sig:
@@ -77,7 +81,7 @@ def inspect_module_capabilities(
         gqa = False
 
     if "supports_rope" in mod_overrides:
-        rope = mod_overrides["supports_rope"]
+        rope = bool(mod_overrides["supports_rope"])
     elif hasattr(cls, "supports_rope"):
         rope = bool(cls.supports_rope)
     elif "rope" in sig or "rotary" in sig or "position_embeddings" in sig:
@@ -86,13 +90,13 @@ def inspect_module_capabilities(
         rope = False
 
     if "requires_cuda" in mod_overrides:
-        cuda = mod_overrides["requires_cuda"]
+        cuda = bool(mod_overrides["requires_cuda"])
     elif hasattr(cls, "requires_cuda"):
         cuda = bool(cls.requires_cuda)
     else:
         cuda = False
 
-    timeout_s = mod_overrides.get("timeout_s", 1800)
+    timeout_s = int(mod_overrides.get("timeout_s", 1800))
 
     parts = name.split("_")
     family = parts[0] if parts else "unknown"
@@ -145,22 +149,45 @@ def discover_all_modules() -> list[ModuleMetadata]:
                 )
             if len(discovered) == 203:
                 return discovered
-        except Exception:
-            # allowed-swallow: best-effort-telemetry
-            pass
+        except Exception as exc:
+            LOG.warning("Failed reading static catalog at %s: %s", CATALOG_PATH, exc)
 
-    from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+    try:
+        from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
+    except Exception as exc:
+        LOG.warning("Failed to import core registries: %s", exc)
+        return []
 
     overrides = _load_overrides()
     discovered: list[ModuleMetadata] = []
 
-    for k in sorted(ATTENTION_REGISTRY.keys()):
-        meta = inspect_module_capabilities(k, ATTENTION_REGISTRY[k], "attention", overrides)
-        discovered.append(meta)
+    try:
+        attn_keys = sorted(ATTENTION_REGISTRY.keys())
+    except Exception as exc:
+        LOG.warning("Failed to list attention keys from registry: %s", exc)
+        attn_keys = []
 
-    for k in sorted(COMPRESSOR_REGISTRY.keys()):
-        meta = inspect_module_capabilities(k, COMPRESSOR_REGISTRY[k], "compressor", overrides)
-        discovered.append(meta)
+    for k in attn_keys:
+        try:
+            cls = ATTENTION_REGISTRY[k]
+            meta = inspect_module_capabilities(k, cls, "attention", overrides)
+            discovered.append(meta)
+        except Exception as exc:
+            LOG.warning("Failed to inspect attention module %s: %s", k, exc)
+
+    try:
+        comp_keys = sorted(COMPRESSOR_REGISTRY.keys())
+    except Exception as exc:
+        LOG.warning("Failed to list compressor keys from registry: %s", exc)
+        comp_keys = []
+
+    for k in comp_keys:
+        try:
+            cls = COMPRESSOR_REGISTRY[k]
+            meta = inspect_module_capabilities(k, cls, "compressor", overrides)
+            discovered.append(meta)
+        except Exception as exc:
+            LOG.warning("Failed to inspect compressor module %s: %s", k, exc)
 
     return discovered
 

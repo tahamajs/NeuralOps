@@ -497,7 +497,7 @@ class BenchmarkOrchestrator:
                     signal.signal(signal.SIGINT, prev_sigint)
                 if prev_sigterm is not None and hasattr(signal, "SIGTERM"):
                     signal.signal(signal.SIGTERM, prev_sigterm)
-            except (ValueError, AttributeError):  # allowed-swallow: signal handler restoration from non-main thread
+            except (ValueError, AttributeError):  # allowed-swallow: signal handling from non-main thread
                 pass
 
     def run(self) -> list[BenchmarkResult]:

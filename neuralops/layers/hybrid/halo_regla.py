@@ -884,7 +884,10 @@ def inject_halo_regla(
 
 __all__ = [
     "HALOReGLAAttention",
+    "HaloReGLAAttention",
     "inject_halo_regla",
     "LoRALinear",
     "apply_rotary_pos_emb",
 ]
+
+HaloReGLAAttention = HALOReGLAAttention

@@ -97,36 +97,20 @@ class BaseBenchmark(ABC):
 
 
 _REGISTRY_POPULATED: bool = False
+_POPULATING: bool = False
 
 
-def ensure_populated() -> int:
-    """Ensure canonical benchmarks are populated into the registry.
-
-    Returns:
-        int: Number of benchmarks registered or total count if already populated.
-    """
-    global _REGISTRY_POPULATED
-    if not _REGISTRY_POPULATED:
-        return BenchmarkRegistry.populate_canonical_benchmarks()
-    return dict.__len__(BENCHMARK_REGISTRY)
-
-
-def get_registry() -> dict[str, Any]:
-    """Return the populated benchmark registry dictionary.
-
-    Returns:
-        dict[str, Any]: Dictionary containing all registered benchmarks.
-    """
-    ensure_populated()
-    return BENCHMARK_REGISTRY
-
-
-class _LazyBenchmarkRegistry(dict):
-    """Dictionary-like mapping that lazily populates benchmarks on first access."""
+class _LazyBenchmarkRegistry(Dict[Any, Any]):
+    """Dictionary proxy that lazily populates canonical benchmarks on read access."""
 
     def _ensure(self) -> None:
-        if not _REGISTRY_POPULATED:
-            ensure_populated()
+        global _POPULATING
+        if not _REGISTRY_POPULATED and not _POPULATING:
+            _POPULATING = True
+            try:
+                ensure_registry_populated()
+            finally:
+                _POPULATING = False
 
     def __getitem__(self, key: Any) -> Any:
         self._ensure()
@@ -136,21 +120,13 @@ class _LazyBenchmarkRegistry(dict):
         self._ensure()
         return super().__contains__(key)
 
-    def __iter__(self) -> Any:
-        self._ensure()
-        return super().__iter__()
-
     def __len__(self) -> int:
         self._ensure()
         return super().__len__()
 
-    def __bool__(self) -> bool:
+    def __iter__(self) -> Any:
         self._ensure()
-        return super().__bool__()
-
-    def __repr__(self) -> str:
-        self._ensure()
-        return super().__repr__()
+        return super().__iter__()
 
     def get(self, key: Any, default: Any = None) -> Any:
         self._ensure()
@@ -172,17 +148,15 @@ class _LazyBenchmarkRegistry(dict):
         self._ensure()
         return super().copy()
 
-    def pop(self, key: Any, *args: Any) -> Any:
+    def __repr__(self) -> str:
         self._ensure()
-        return super().pop(key, *args)
-
-    def setdefault(self, key: Any, default: Any = None) -> Any:
-        self._ensure()
-        return super().setdefault(key, default)
+        return super().__repr__()
 
 
-# Canonical benchmark registry mapping benchmark name to benchmark entry (class, callable, or metadata dict)
-BENCHMARK_REGISTRY: Dict[str, Union[Type[BaseBenchmark], Callable[..., Any], Dict[str, Any]]] = _LazyBenchmarkRegistry()
+# Canonical benchmark registry mapping benchmark name to benchmark entry (class, callable, metadata dict, or BenchmarkSpec)
+BENCHMARK_REGISTRY: Dict[str, Union[Type[BaseBenchmark], Callable[..., Any], Dict[str, Any], BenchmarkSpec]] = (
+    _LazyBenchmarkRegistry()
+)
 
 # Detailed metadata index for registered benchmarks
 _BENCHMARK_METADATA: Dict[str, Dict[str, Any]] = _LazyBenchmarkRegistry()
@@ -217,33 +191,11 @@ def register_benchmark(
             target._benchmark_name = name
             target._benchmark_mode = mode
             target._benchmark_hardware = hardware
-        except (AttributeError, TypeError):  # allowed-swallow: target object does not support attribute mutation
+        except (AttributeError, TypeError):  # allowed-swallow: target does not support attribute mutation
             pass
         return target
 
     return decorator
-
-
-def get_benchmark(name: str) -> Optional[Any]:
-    """Retrieve registered benchmark runner by name."""
-    ensure_populated()
-    return BENCHMARK_REGISTRY.get(name)
-
-
-def list_benchmarks(mode: Optional[str] = None, hardware: Optional[str] = None) -> List[str]:
-    """List registered benchmark names, optionally filtered by mode or hardware."""
-    ensure_populated()
-    results: List[str] = []
-    for name, meta in _BENCHMARK_METADATA.items():
-        if mode is not None and meta["mode"] not in (mode, "any", "all"):
-            continue
-        if hardware is not None and meta["hardware"] not in (hardware, "any", "all"):
-            continue
-        results.append(name)
-    return sorted(results)
-
-
-_REGISTRY_POPULATED: bool = False
 
 
 class BenchmarkRegistry:
@@ -285,6 +237,12 @@ class BenchmarkRegistry:
         return mode in OPERATIONAL_BENCHMARK_MODES
 
     @staticmethod
+    def get_registry() -> Dict[str, Any]:
+        """Return the canonical benchmark registry dict, populating if necessary."""
+        ensure_registry_populated()
+        return BENCHMARK_REGISTRY
+
+    @staticmethod
     def populate_canonical_benchmarks() -> int:
         """Populate BENCHMARK_REGISTRY and _BENCHMARK_METADATA with canonical inventory.
 
@@ -294,8 +252,7 @@ class BenchmarkRegistry:
         """
         global _REGISTRY_POPULATED
         if _REGISTRY_POPULATED:
-            return dict.__len__(BENCHMARK_REGISTRY)
-        _REGISTRY_POPULATED = True
+            return len(BENCHMARK_REGISTRY)
 
         count = 0
 
@@ -305,7 +262,7 @@ class BenchmarkRegistry:
 
             modules = discover_all_modules()
             for m in modules:
-                cat = getattr(m, "type", None) or getattr(m, "module_type", "attention")
+                cat = str(getattr(m, "type", None) or getattr(m, "module_type", "attention"))
                 canon_name = f"{cat}:{m.name}"
                 spec = BenchmarkSpec(
                     canonical_name=canon_name,
@@ -427,27 +384,31 @@ class BenchmarkRegistry:
 
         # 5. Register meta benchmarks for the 12 OPERATIONAL_BENCHMARK_MODES
         for op_mode in OPERATIONAL_BENCHMARK_MODES:
-            meta_name = f"mode:{op_mode}"
+            meta_name = f"__meta__:{op_mode}"
             if meta_name not in BENCHMARK_REGISTRY:
                 spec = BenchmarkSpec(
                     canonical_name=meta_name,
-                    category="mode",
+                    category="meta",
                     target_name=op_mode,
                     requires_cuda=(op_mode in ("flash-compute", "distributed-mfu")),
-                    default_timeout_s=3600,
+                    default_timeout_s=7200,
                     metadata={"operational_mode": op_mode, "is_meta": True},
                 )
                 BENCHMARK_REGISTRY[meta_name] = spec
                 _BENCHMARK_METADATA[meta_name] = {
                     "name": meta_name,
-                    "category": "mode",
+                    "category": "meta",
                     "target_name": op_mode,
                     "mode": op_mode,
                     "hardware": "cuda" if spec.requires_cuda else "any",
-                    "description": f"Operational benchmark mode meta-runner: {op_mode}",
+                    "description": f"Meta-benchmark grouping all {op_mode} benchmarks",
                     "spec": spec,
                 }
-                # Also allow direct access via mode name if not already registered
+                # Also support mode:<name> and direct name if not already registered
+                alt_name = f"mode:{op_mode}"
+                if alt_name not in BENCHMARK_REGISTRY:
+                    BENCHMARK_REGISTRY[alt_name] = spec
+                    _BENCHMARK_METADATA[alt_name] = _BENCHMARK_METADATA[meta_name]
                 if op_mode not in BENCHMARK_REGISTRY:
                     BENCHMARK_REGISTRY[op_mode] = spec
                     _BENCHMARK_METADATA[op_mode] = _BENCHMARK_METADATA[meta_name]
@@ -459,16 +420,46 @@ class BenchmarkRegistry:
 
 def ensure_registry_populated() -> int:
     """Ensure that canonical benchmarks are populated in BENCHMARK_REGISTRY lazily and idempotently."""
-    return ensure_populated()
+    return BenchmarkRegistry.populate_canonical_benchmarks()
+
+
+def get_registry() -> Dict[str, Union[Type[BaseBenchmark], Callable[..., Any], Dict[str, Any], BenchmarkSpec]]:
+    """Retrieve canonical BENCHMARK_REGISTRY, ensuring lazy population."""
+    ensure_registry_populated()
+    return BENCHMARK_REGISTRY
+
+
+def get_benchmark(name: str) -> Optional[Any]:
+    """Retrieve registered benchmark runner by name."""
+    ensure_registry_populated()
+    return BENCHMARK_REGISTRY.get(name)
+
+
+def list_benchmarks(mode: Optional[str] = None, hardware: Optional[str] = None) -> List[str]:
+    """List registered benchmark names, optionally filtered by mode or hardware."""
+    ensure_registry_populated()
+    results: List[str] = []
+    for name, meta in _BENCHMARK_METADATA.items():
+        if mode is not None and meta["mode"] not in (mode, "any", "all"):
+            continue
+        if hardware is not None and meta["hardware"] not in (hardware, "any", "all"):
+            continue
+        results.append(name)
+    return sorted(results)
+
+
+# Module-scope call is completely removed for zero import-time side effects
+# Call ensure_registry_populated() explicitly when access to BENCHMARK_REGISTRY is needed.
+
+
 __all__ = [
     "BaseBenchmark",
     "BenchmarkRegistry",
     "BenchmarkSpec",
     "BENCHMARK_REGISTRY",
-    "ensure_populated",
-    "get_registry",
     "register_benchmark",
     "get_benchmark",
+    "get_registry",
     "list_benchmarks",
     "ensure_registry_populated",
     "CANONICAL_BENCHMARK_MODELS",

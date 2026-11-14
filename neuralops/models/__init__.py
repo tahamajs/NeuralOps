@@ -12,6 +12,7 @@ NeuralOps Models Core Modules.
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from transformers import AutoConfig, AutoModel, AutoModelForCausalLM
 
@@ -35,13 +36,31 @@ from neuralops.models.modeling_norm import NeuralOpsRMSNorm, build_norm_layer
 from neuralops.models.modeling_rope import NeuralOpsRotaryEmbedding
 from neuralops.models.paged_state import PagedStateTable, RadixPrefixStateCache
 from neuralops.models.protocols import ModelHandle, SurgicalModel
-from neuralops.models.surgery import (
-    ModelSurgery,
-    SurgeryTransactionError,
-    compute_attention_weights,
-    transplant_model_attention,
-)
-from neuralops.models.surgical_io import extract_surgical_manifest, load_surgical_checkpoint, save_surgical_checkpoint
+
+_SURGERY_NAMES = {
+    "ModelSurgery",
+    "SurgeryTransactionError",
+    "compute_attention_weights",
+    "transplant_model_attention",
+}
+_SURGICAL_IO_NAMES = {
+    "extract_surgical_manifest",
+    "load_surgical_checkpoint",
+    "save_surgical_checkpoint",
+}
+
+
+def __getattr__(name: str) -> Any:
+    if name in _SURGERY_NAMES:
+        from neuralops.models import surgery
+
+        return getattr(surgery, name)
+    if name in _SURGICAL_IO_NAMES:
+        from neuralops.models import surgical_io
+
+        return getattr(surgical_io, name)
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
 
 logger = logging.getLogger(__name__)
 

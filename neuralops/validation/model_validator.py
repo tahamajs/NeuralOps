@@ -11,55 +11,120 @@ Model Architecture Validator
 Validates model architecture construction, layer integrity, and forward pass execution.
 """
 
+from __future__ import annotations
+
+import logging
+from typing import Any, List, Sequence, Union
+
 import torch
+import torch.nn as nn
+
+logger = logging.getLogger(__name__)
 
 
 class ModelValidator:
-    def __init__(self, model, input_shape, device="cpu"):
-        self.model = model
-        self.input_shape = input_shape
-        self.device = device
-        self.errors = []
+    """Validates PyTorch model forward and backward passes and parameter sanity."""
 
-    def validate(self):
-        print("\n=== Validating model ===")
+    def __init__(
+        self,
+        model: nn.Module,
+        input_shape: Sequence[int],
+        device: Union[str, torch.device] = "cpu",
+    ) -> None:
+        self.model = model
+        self.input_shape = tuple(input_shape)
+        self.device = str(device)
+        self.errors: List[str] = []
+        self.warnings: List[str] = []
+
+    def validate(self) -> bool:
+        """Run validation checks on model."""
+        logger.info("Validating model on %s with input shape %s", self.device, self.input_shape)
         try:
             self.model = self.model.to(self.device)
-            print(f"  ✅ Moved to {self.device}")
         except Exception as e:
             self.errors.append(f"Move to device failed: {e}")
+            logger.error("Move to device failed: %s", e)
             return False
 
         n_params = sum(p.numel() for p in self.model.parameters())
         n_trainable = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
-        print(f"  Total params: {n_params/1e6:.2f}M, Trainable: {n_trainable/1e6:.2f}M")
+        logger.info("Total params: %.2fM, Trainable: %.2fM", n_params / 1e6, n_trainable / 1e6)
 
+        dummy: Any = None
         try:
             self.model.eval()
-            dummy = torch.randint(0, 1000, self.input_shape, device=self.device)
-            with torch.no_grad():
-                out = self.model(dummy)
-            logits = out.logits if hasattr(out, "logits") else out[0]
-            print(f"  ✅ Forward pass: output shape {logits.shape}")
-            if torch.isnan(logits).any():
-                self.errors.append("NaN in forward output!")
-            if torch.isinf(logits).any():
-                self.errors.append("Inf in forward output!")
+            try:
+                dummy = torch.randint(0, 1000, self.input_shape, device=self.device)
+                with torch.no_grad():
+                    out = self.model(dummy)
+            except (RuntimeError, TypeError):
+                dummy = torch.randn(self.input_shape, device=self.device)
+                with torch.no_grad():
+                    out = self.model(dummy)
+
+            logits = getattr(out, "logits", out)
+            if isinstance(logits, (tuple, list)) and len(logits) > 0:
+                logits = logits[0]
+
+            if isinstance(logits, torch.Tensor):
+                if torch.isnan(logits).any():
+                    self.errors.append("NaN in forward output!")
+                if torch.isinf(logits).any():
+                    self.errors.append("Inf in forward output!")
         except Exception as e:
             self.errors.append(f"Forward failed: {e}")
             return False
 
         try:
             self.model.train()
+            loss = None
+            if dummy is None:
+                dummy = torch.randn(self.input_shape, device=self.device)
+
+            # 1. Try forward with labels kwarg
             try:
                 labels = torch.zeros(self.input_shape[0], dtype=torch.long, device=self.device)
                 out = self.model(dummy, labels=labels)
+                if hasattr(out, "loss") and out.loss is not None:
+                    loss = out.loss
             except Exception:
-                labels = torch.zeros(self.input_shape[0], self.input_shape[1], dtype=torch.long, device=self.device)
-                out = self.model(dummy, labels=labels)
-            out.loss.backward()
-            print(f"  ✅ Backward pass: loss {out.loss.item():.4f}")
-            self.model.zero_grad()
+                pass
+
+            if loss is None:
+                try:
+                    labels = torch.zeros(
+                        self.input_shape[0],
+                        self.input_shape[1],
+                        dtype=torch.long,
+                        device=self.device,
+                    )
+                    out = self.model(dummy, labels=labels)
+                    if hasattr(out, "loss") and out.loss is not None:
+                        loss = out.loss
+                except Exception:
+                    pass
+
+            # 2. Try forward without labels kwarg
+            if loss is None:
+                out = self.model(dummy)
+                if hasattr(out, "loss") and out.loss is not None:
+                    loss = out.loss
+                elif hasattr(out, "logits"):
+                    loss = out.logits.sum()
+                elif isinstance(out, (tuple, list)) and len(out) > 0 and isinstance(out[0], torch.Tensor):
+                    loss = out[0].sum()
+                elif isinstance(out, torch.Tensor):
+                    loss = out.sum()
+
+            if loss is not None and isinstance(loss, torch.Tensor) and loss.requires_grad:
+                loss.backward()
+                self.model.zero_grad()
+            elif loss is not None and isinstance(loss, torch.Tensor) and not loss.requires_grad:
+                if n_trainable > 0:
+                    self.errors.append("Backward failed: loss does not require grad despite trainable parameters")
+            else:
+                self.errors.append("Backward failed: could not compute scalar loss from model output")
         except Exception as e:
             self.errors.append(f"Backward failed: {e}")
 
@@ -67,5 +132,8 @@ class ModelValidator:
         if n_nan_grads > 0:
             self.errors.append(f"{n_nan_grads} params with NaN grads")
 
-        print(f"  Errors: {len(self.errors)}")
+        logger.info("Validation complete. Errors: %d", len(self.errors))
         return len(self.errors) == 0
+
+
+__all__ = ["ModelValidator"]

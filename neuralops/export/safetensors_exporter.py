@@ -32,7 +32,7 @@ class SafeTensorsExporter:
     ) -> Dict[str, str]:
         """Export PyTorch model weights to SafeTensors and JSON manifest."""
         state_dict = model.state_dict()
-        tensor_dict = {k: v.contiguous().cpu() for k, v in state_dict.items()}
+        tensor_dict = {k: v.detach().cpu().clone().contiguous() for k, v in state_dict.items()}
 
         st_path = self.output_dir / f"{filename_prefix}.safetensors"
         manifest_path = self.output_dir / f"{filename_prefix}_manifest.json"

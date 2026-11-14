@@ -82,7 +82,16 @@ class BenchmarkStatus(str, Enum):
             "planned": cls.PLANNED,
             "running": cls.RUNNING,
         }
-        return mapping.get(val_str, cls.FAILED)
+        if val_str in mapping:
+            return mapping[val_str]
+        import warnings
+
+        warnings.warn(
+            f"Unknown benchmark status '{value}', defaulting to FAILED. "
+            f"Valid statuses: {sorted(set(mapping.keys()))}",
+            stacklevel=2,
+        )
+        return cls.FAILED
 
 
 def _get_git_commit() -> str:
@@ -459,6 +468,23 @@ class BenchmarkResult:
 
     def __post_init__(self) -> None:
         """Synchronize top-level legacy fields with structured metadata."""
+        if self.run_metadata is None:
+            self.run_metadata = RunMetadata()
+        if self.environment is None:
+            self.environment = EnvironmentMetadata()
+        if self.hardware_usage is None:
+            self.hardware_usage = HardwareUsage()
+        if self.metrics is None:
+            self.metrics = {}
+        if self.module is None:
+            self.module = {}
+        if self.model is None:
+            self.model = {}
+        if self.dataset is None:
+            self.dataset = {}
+        if self.config is None:
+            self.config = {}
+
         if not self.run_id:
             self.run_id = self.run_metadata.run_id
         else:
@@ -763,7 +789,7 @@ def normalize_legacy_result_dict(legacy_dict: Dict[str, Any]) -> BenchmarkResult
     if "steps" in d and "pre_train_steps" not in d:
         try:
             d["pre_train_steps"] = int(d["steps"])
-        except (ValueError, TypeError):
+        except (ValueError, TypeError):  # allowed-swallow: non-integer steps field fallback
             pass
 
     # 7. Preserve extra unknown fields into metadata

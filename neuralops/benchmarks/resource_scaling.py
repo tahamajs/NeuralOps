@@ -189,7 +189,7 @@ def run_resource_scaling(config: BenchmarkConfig) -> list[BenchmarkResult]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=None)
-    parser.add_argument("--device", type=str, default=None, help="Device to execute benchmark (cpu, cuda, cuda:0)")
+    parser.add_argument("--device", type=str, default=None, help="Device to execute benchmark (cpu, cuda)")
     parser.add_argument("--attention", type=str, default=None, help="Attention mechanism registry key")
     parser.add_argument("--batch-sizes", type=int, nargs="+", default=None, help="Batch size list")
     parser.add_argument("--seq-lens", type=int, nargs="+", default=None, help="Sequence length list")

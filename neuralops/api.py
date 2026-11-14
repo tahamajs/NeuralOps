@@ -72,7 +72,11 @@ def replace_attention(
         target_mod = attention
         attention = None
 
-    logger.info("Replacing attention with '%s' (copy_weights=%s)", attention or (type(target_mod).__name__ if target_mod else "custom"), copy_weights)
+    logger.info(
+        "Replacing attention with '%s' (copy_weights=%s)",
+        attention or (type(target_mod).__name__ if target_mod else "custom"),
+        copy_weights,
+    )
 
     layers = layers or kwargs.pop("layer_indices", None)
     if layers == "all":
@@ -98,7 +102,23 @@ def replace_attention(
 
             wrapped = UniversalAttentionWrapper(mod_copy, layer_name=name, return_tuple=True)
             replace_module(model, name, wrapped)
-        return model
+
+        meta_entry: Dict[str, Any] = {
+            "op": "replace",
+            "type": type(target_mod).__name__,
+            "kwargs": {
+                "rank": rank,
+                "copy_weights": copy_weights,
+                "layers": layers,
+                **kwargs,
+            },
+        }
+        if not hasattr(model, "_neuralops_metadata") or model._neuralops_metadata is None:
+            model._neuralops_metadata = []
+        model._neuralops_metadata.append(meta_entry)
+        from neuralops.utils.hub_integration import attach_attention_methods
+
+        return attach_attention_methods(model)
 
     attn_name = (
         attention
@@ -135,6 +155,8 @@ def replace_attention(
     call_kwargs = dict(kwargs)
     if layers is not None:
         call_kwargs["layer_indices"] = layers
+    if validation_level is not None:
+        call_kwargs["validation_level"] = validation_level
 
     hybrid_spec = kwargs.get("hybrid_spec", None)
     if hybrid_spec is not None:
@@ -295,6 +317,45 @@ def transplant_attention(
 
 # v1.7.0 High-Level Public Ergonomics Aliases
 transplant = transplant_attention
+
+
+def compose_attention(
+    projection: str = "dense",
+    positional: str = "none",
+    kernel_map: Union[str, Any] = "softmax",
+    mask: str = "causal",
+    engine: str = "sdpa",
+    embed_dim: int = 768,
+    num_heads: int = 12,
+    **kwargs: Any,
+) -> Any:
+    """Compose a modular declarative attention mechanism from customizable primitives.
+
+    Args:
+        projection: Linear projection type (e.g. 'dense', 'linear').
+        positional: Positional encoding ('none', 'rope', 'alibi').
+        kernel_map: Feature kernel mapping ('softmax', 'relu', or custom callable).
+        mask: Attention masking ('causal', 'bidirectional', 'none').
+        engine: Computation engine ('sdpa', 'exact', 'triton').
+        embed_dim: Model hidden representation dimension.
+        num_heads: Number of attention query heads.
+        **kwargs: Additional parameters forwarded to ComposableAttention.
+
+    Returns:
+        Configured ComposableAttention module instance.
+    """
+    from neuralops.core.composable import compose_attention as _compose
+
+    return _compose(
+        projection=projection,
+        positional=positional,
+        kernel_map=kernel_map,
+        mask=mask,
+        engine=engine,
+        embed_dim=embed_dim,
+        num_heads=num_heads,
+        **kwargs,
+    )
 
 
 def serve(
@@ -1266,7 +1327,9 @@ def distill(
 
     resolved_seed = 42 if seed is None else seed
     set_seed(resolved_seed)
-    logger.info("Starting knowledge distillation run (epochs=%d, lr=%s, alpha=%s, seed=%s)", epochs, lr, alpha, resolved_seed)
+    logger.info(
+        "Starting knowledge distillation run (epochs=%d, lr=%s, alpha=%s, seed=%s)", epochs, lr, alpha, resolved_seed
+    )
 
     train_loader = (
         dataset
@@ -1703,6 +1766,8 @@ __all__ = [
     "replace_attention",
     "transplant_attention",
     "transplant",
+    "compose_attention",
+    "probe_optimal_batch_size",
     "serve",
     "compress",
     "get_attention_module",

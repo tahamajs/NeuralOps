@@ -2240,7 +2240,9 @@ def fused_svd_gemm_triton(
     from neuralops.ops.triton._types import FORCE_PYTORCH_FALLBACK, HAS_TRITON
 
     if U is None or V is None:
-        out = torch.zeros(*x.shape[:-1], bias.shape[0] if bias is not None else x.shape[-1], device=x.device, dtype=x.dtype)
+        out = torch.zeros(
+            *x.shape[:-1], bias.shape[0] if bias is not None else x.shape[-1], device=x.device, dtype=x.dtype
+        )
         if bias is not None:
             out = out + bias
         if residual is not None:
@@ -2305,7 +2307,9 @@ def fused_svd_lora_sparse_attn_triton(
         if bias is not None:
             out = out + bias
     else:
-        out = torch.zeros(*x.shape[:-1], bias.shape[0] if bias is not None else x.shape[-1], device=x.device, dtype=x.dtype)
+        out = torch.zeros(
+            *x.shape[:-1], bias.shape[0] if bias is not None else x.shape[-1], device=x.device, dtype=x.dtype
+        )
         if bias is not None:
             out = out + bias
 
@@ -3315,7 +3319,7 @@ def triton_fused_kronecker_matmul_pytorch_ref(
     out_features = M1 * M2
     X_reshaped = x_2d.view(M, N1, N2)
     T = torch.matmul(X_reshaped, B.t())
-    Y = torch.matmul(T.transpose(1, 2), A.t()).transpose(1, 2)
+    Y = torch.matmul(A, T)
     Y_flat = Y.reshape(M, out_features)
     if bias is not None:
         Y_flat = Y_flat + bias.to(dtype=Y_flat.dtype, device=Y_flat.device)

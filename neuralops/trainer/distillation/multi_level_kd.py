@@ -187,7 +187,8 @@ class AttentionStabilityReg(nn.Module):
         sink_loss: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         if not gate_parameters:
-            zero_loss = torch.tensor(0.0)
+            dev = sink_loss.device if sink_loss is not None else "cpu"
+            zero_loss = torch.tensor(0.0, device=dev)
             if sink_loss is not None:
                 return self.lambda_sink * sink_loss
             return zero_loss
@@ -252,7 +253,7 @@ class HedgehogFeatureMapKDLoss(nn.Module):
             A_t = F.softmax(torch.matmul(qc_t, k_teacher.transpose(-1, -2)), dim=-1)
 
             qc_s = phi_q_student[:, :, st:en]
-            A_s_raw = torch.matmul(qc_s, phi_k_student.transpose(-1, -2))
+            A_s_raw = torch.matmul(qc_s, phi_k_student.transpose(-1, -2)).clamp_min(0.0)
             A_s = A_s_raw / A_s_raw.sum(dim=-1, keepdim=True).clamp(min=1e-6)
 
             loss = loss + F.kl_div(torch.log(A_s.clamp(min=1e-8)), A_t, reduction="batchmean")
@@ -489,28 +490,39 @@ class MultiLevelKDTrainer:
         self.feature_loss_fn = HedgehogFeatureMapKDLoss(chunk_size=64, temperature=temperature)
         self.stab_reg_fn = AttentionStabilityReg(lambda_sat=1.0)
 
+    @staticmethod
+    def _supports_hidden_states(model: nn.Module) -> bool:
+        """Safely determine if model forward accepts output_hidden_states without raising AttributeError."""
+        forward_fn = getattr(model, "forward", None)
+        if forward_fn is None:
+            return False
+        try:
+            import inspect
+
+            sig = inspect.signature(forward_fn)
+            return "output_hidden_states" in sig.parameters or any(
+                p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
+            )
+        except Exception:
+            code = getattr(forward_fn, "__code__", None)
+            return code is not None and "output_hidden_states" in getattr(code, "co_varnames", ())
+
     def _extract_logits_and_hidden(
         self,
         model: nn.Module,
         inputs: Any,
     ) -> Tuple[torch.Tensor, Optional[Tuple[torch.Tensor, ...]]]:
         """Extracts logits and intermediate hidden states from arbitrary forward output."""
+        supports_hidden = self._supports_hidden_states(model)
         if isinstance(inputs, dict):
             batch_inputs = {k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in inputs.items()}
-            outputs = (
-                model(**batch_inputs, output_hidden_states=True)
-                if "output_hidden_states" in getattr(model, "forward", {}).__code__.co_varnames
-                else model(**batch_inputs)
-            )
+            outputs = model(**batch_inputs, output_hidden_states=True) if supports_hidden else model(**batch_inputs)
         elif isinstance(inputs, (tuple, list)):
             batch_inputs = [v.to(self.device) if isinstance(v, torch.Tensor) else v for v in inputs]
             outputs = model(*batch_inputs)
         elif isinstance(inputs, torch.Tensor):
             tensor_input = inputs.to(self.device)
-            if "output_hidden_states" in getattr(model, "forward", {}).__code__.co_varnames:
-                outputs = model(tensor_input, output_hidden_states=True)
-            else:
-                outputs = model(tensor_input)
+            outputs = model(tensor_input, output_hidden_states=True) if supports_hidden else model(tensor_input)
         else:
             raise TypeError(f"Unsupported batch type: {type(inputs).__name__}")
 
@@ -603,9 +615,9 @@ class MultiLevelKDTrainer:
         losses_tracked["total_loss"] = total_loss
 
         # Memory threshold purging for streaming checkpointed distillation
-        if self.memory_mode == "streaming_checkpointed" and torch.cuda.is_available():
-            alloc = torch.cuda.memory_allocated()
-            total = torch.cuda.get_device_properties(0).total_memory
+        if self.memory_mode == "streaming_checkpointed" and torch.cuda.is_available() and self.device.type == "cuda":
+            alloc = torch.cuda.memory_allocated(self.device)
+            total = torch.cuda.get_device_properties(self.device).total_memory
             if total > 0 and (alloc / total) > 0.75:
                 torch.cuda.empty_cache()
 

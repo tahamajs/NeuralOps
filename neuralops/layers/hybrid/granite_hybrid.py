@@ -28,7 +28,7 @@ from neuralops.core.base import BaseAttention
 from neuralops.core.common import _unpack_weight_bias
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.utils.gqa import repeat_kv
-from neuralops.layers.gated.gated_delta_net import LoRALinear
+from neuralops.core.peft.lora import LoRALinear
 
 logger = logging.getLogger(__name__)
 
@@ -1058,6 +1058,7 @@ def inject_granite_hybrid(
 
 
 __all__ = [
+    "GraniteHybrid",
     "GraniteHybridBlock",
     "GraniteHybridAttention",
     "Mamba2",
@@ -1065,3 +1066,5 @@ __all__ = [
     "inject_granite_hybrid",
     "apply_rotary_pos_emb",
 ]
+
+GraniteHybrid = GraniteHybridBlock

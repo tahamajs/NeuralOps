@@ -1697,7 +1697,10 @@ class UniversalSurgeryDirector:
 
         # Law 1: QK-Norm Preservation
         if self.profile.has_qk_norm:
-            has_qk = any(getattr(mod, "has_qk_norm", False) or hasattr(mod, "q_norm") for mod in self.model.modules())
+            has_qk = any(
+                getattr(mod, "has_qk_norm", False) or hasattr(mod, "q_norm") or hasattr(mod, "k_norm")
+                for mod in self.model.modules()
+            )
             laws["Law_1_QK_Norm"] = bool(has_qk)
             if not has_qk:
                 violations.append("Law 1 Violation: QK-Norm missing on model configured with QK-Norm.")
@@ -1709,15 +1712,40 @@ class UniversalSurgeryDirector:
             scale = (1.0 / math.sqrt(max(self.profile.head_dim, 1))) * math.tanh(
                 self.profile.softcapping_factor / max(self.profile.softcapping_factor, 1.0)
             )
-            passed = bool(scale > 0.0)
+            scale_valid = bool(scale > 0.0 and math.isfinite(scale))
+            bridges = [m for m in self.model.modules() if isinstance(m, InvariantPreservingLinearBridge)]
+            mismatched_bridges = [
+                b for b in bridges if getattr(b, "softcapping_factor", None) != self.profile.softcapping_factor
+            ]
+            passed = scale_valid and len(mismatched_bridges) == 0
             laws["Law_2_Softcapping"] = passed
-            if not passed:
+            if not scale_valid:
                 violations.append("Law 2 Violation: Invalid folded soft-capping scale factor.")
+            elif mismatched_bridges:
+                violations.append("Law 2 Violation: Replaced linear bridges missing required softcapping factor.")
         else:
             laws["Law_2_Softcapping"] = True
 
+<<<<<<< HEAD
         # Law 3: Zero-Bleed Padding Mask Sanitization (cannot be statically proven)
         laws["Law_3_Zero_Bleed_Padding"] = "UNVERIFIED"
+=======
+        # Law 3: Zero-Bleed Padding Mask Sanitization
+        try:
+            k_test = torch.ones(1, 1, 4, 16)
+            v_test = torch.ones(1, 1, 4, 16)
+            mask_test = torch.tensor([[1, 1, 0, 0]])
+            k_san, v_san = sanitize_kv_for_padding_mask(k_test, v_test, mask_test)
+            k_zero = bool(torch.all(k_san[:, :, 2:, :] == 0.0) and torch.all(v_san[:, :, 2:, :] == 0.0))
+            out_san = sanitize_output_for_padding_mask(k_test, mask_test)
+            out_zero = bool(torch.all(out_san[:, :, 2:, :] == 0.0))
+            passed_law3 = k_zero and out_zero
+        except Exception:
+            passed_law3 = False
+        laws["Law_3_Zero_Bleed_Padding"] = passed_law3
+        if not passed_law3:
+            violations.append("Law 3 Violation: Padding sanitization failed to zero masked token activations.")
+>>>>>>> fix/benchmarks-remediation
 
         # Law 4: Static Cross-Attention Caching in Encoder-Decoder
         if self.profile.is_encoder_decoder:
@@ -1727,28 +1755,89 @@ class UniversalSurgeryDirector:
                 or hasattr(mod, "prefill_encoder")
                 for mod in self.model.modules()
             )
-            laws["Law_4_Static_Cross_Attention"] = bool(has_cross or True)
+            laws["Law_4_Static_Cross_Attention"] = bool(has_cross)
+            if not has_cross:
+                violations.append("Law 4 Violation: Encoder-Decoder model lacking static cross-attention linear bridge.")
         else:
             laws["Law_4_Static_Cross_Attention"] = True
 
+<<<<<<< HEAD
         # Law 5: RoPE Pre-Projection Alignment (cannot be statically proven)
         laws["Law_5_RoPE_Pre_Projection"] = "UNVERIFIED"
+=======
+        # Law 5: RoPE Pre-Projection Alignment
+        if (
+            self.profile.positional_topology == "rope"
+            or hasattr(self.model, "rotary_emb")
+            or any(hasattr(m, "rotary_emb") for m in self.model.modules())
+        ):
+            even_head = (self.profile.head_dim % 2 == 0) if self.profile.head_dim > 0 else True
+            try:
+                d = max(self.profile.head_dim, 4)
+                if d % 2 != 0:
+                    d = d + 1
+                q_t = torch.randn(1, 1, 2, d)
+                k_t = torch.randn(1, 1, 2, d)
+                cos_t = torch.ones(1, 1, 2, d)
+                sin_t = torch.zeros(1, 1, 2, d)
+                qr, kr = apply_rope_pre_feature_map(q_t, k_t, cos_t, sin_t)
+                identity_passed = bool(torch.allclose(qr, q_t, atol=1e-5) and torch.allclose(kr, k_t, atol=1e-5))
+            except Exception:
+                identity_passed = False
+            passed_rope = even_head and identity_passed
+            laws["Law_5_RoPE_Pre_Projection"] = passed_rope
+            if not even_head:
+                violations.append(f"Law 5 Violation: RoPE model head_dim={self.profile.head_dim} is odd (must be even).")
+            elif not identity_passed:
+                violations.append("Law 5 Violation: RoPE pre-projection alignment test failed.")
+        else:
+            laws["Law_5_RoPE_Pre_Projection"] = True
+>>>>>>> fix/benchmarks-remediation
 
         # Law 6: Decoupled Latent State Routing (DeepSeek MLA)
-        if self.profile.family == "deepseek_mla":
+        if self.profile.family == "deepseek_mla" or self.profile.is_mla:
             is_mla_routed = any(
-                "DeepSeekMLASurgeryBridge" in mod.__class__.__name__ or hasattr(mod, "init_latent_state")
+                "DeepSeekMLASurgeryBridge" in mod.__class__.__name__
+                or hasattr(mod, "init_latent_state")
+                or hasattr(mod, "kv_a_proj_with_mqa")
                 for mod in self.model.modules()
             )
-            passed = bool(is_mla_routed or self.profile.is_mla)
-            laws["Law_6_Decoupled_Latent_Router"] = passed
-            if not passed:
+            laws["Law_6_Decoupled_Latent_Router"] = bool(is_mla_routed)
+            if not is_mla_routed:
                 violations.append("Law 6 Violation: DeepSeek MLA model lacking decoupled latent state bridge.")
         else:
             laws["Law_6_Decoupled_Latent_Router"] = True
 
+<<<<<<< HEAD
         # Law 7: Causal State Monotonicity & Exponential State Decay (cannot be statically proven)
         laws["Law_7_Causal_Monotonicity_State_Decay"] = "UNVERIFIED"
+=======
+        # Law 7: Causal State Monotonicity & Exponential State Decay
+        decay_valid = True
+        for mod in self.model.modules():
+            gamma = getattr(mod, "decay", None)
+            if gamma is not None:
+                if not (isinstance(gamma, (int, float)) and 0.0 < gamma < 1.0):
+                    decay_valid = False
+                    violations.append(f"Law 7 Violation: Decay factor gamma={gamma} outside open interval (0, 1).")
+                else:
+                    try:
+                        bound = compute_decayed_state_bound(float(gamma))
+                        if not math.isfinite(bound) or bound <= 0.0:
+                            decay_valid = False
+                            violations.append(f"Law 7 Violation: Unbounded asymptotic state bound for gamma={gamma}.")
+                    except Exception:
+                        decay_valid = False
+                        violations.append(f"Law 7 Violation: Error computing state bound for gamma={gamma}.")
+        try:
+            b_sample = compute_decayed_state_bound(0.99)
+            bound_calc_ok = bool(math.isfinite(b_sample) and b_sample > 0.0)
+        except Exception:
+            bound_calc_ok = False
+        laws["Law_7_Causal_Monotonicity_State_Decay"] = decay_valid and bound_calc_ok
+        if not bound_calc_ok:
+            violations.append("Law 7 Violation: State decay asymptotic bound computation failed.")
+>>>>>>> fix/benchmarks-remediation
 
         # Law 8: Tied Embeddings Preservation
         if self.profile.has_tied_embeddings:
@@ -1759,12 +1848,35 @@ class UniversalSurgeryDirector:
         else:
             laws["Law_8_Tied_Embeddings"] = True
 
+<<<<<<< HEAD
         # Law 9: FP32 Accumulation Guard (cannot be statically proven)
         laws["Law_9_FP32_Accumulation"] = "UNVERIFIED"
+=======
+        # Law 9: FP32 Accumulation Guard
+        fp32_valid = True
+        for mod in self.model.modules():
+            if hasattr(mod, "last_accum_dtype") and mod.last_accum_dtype != torch.float32:
+                fp32_valid = False
+                violations.append(f"Law 9 Violation: Module {type(mod).__name__} last_accum_dtype != torch.float32.")
+            if hasattr(mod, "recurrent_state_dtype") and mod.recurrent_state_dtype != torch.float32:
+                fp32_valid = False
+                violations.append(f"Law 9 Violation: Module {type(mod).__name__} recurrent_state_dtype != torch.float32.")
+        laws["Law_9_FP32_Accumulation"] = fp32_valid
+>>>>>>> fix/benchmarks-remediation
 
         # Law 10: Master Universal Surgery Integration
-        laws["Law_10_Master_Integration"] = isinstance(self.model, nn.Module)
-        laws["Law_10_Master_Universal_Certification"] = isinstance(self.model, nn.Module) and len(violations) == 0
+        is_mod = isinstance(self.model, nn.Module)
+        has_params = any(True for _ in self.model.parameters()) or any(True for _ in self.model.modules())
+        finite_weights = all(bool(torch.isfinite(p).all().item()) for p in self.model.parameters() if p.numel() > 0)
+        if not is_mod:
+            violations.append("Law 10 Violation: Model is not an nn.Module instance.")
+        if not finite_weights:
+            violations.append("Law 10 Violation: Non-finite (NaN/Inf) parameters detected in model.")
+
+        laws["Law_10_Master_Integration"] = bool(is_mod and has_params and finite_weights)
+        laws["Law_10_Master_Universal_Certification"] = bool(
+            is_mod and has_params and finite_weights and len(violations) == 0
+        )
 
         target_laws = (
             "Law_1_QK_Norm",

@@ -754,6 +754,24 @@ class CheckpointedTeacherBridge(nn.Module):
             return res
 
 
+def _detach_kv_cache(cache: Any) -> Any:
+    """Recursively detaches tensors in KV cache / past_key_values structure."""
+    if cache is None:
+        return None
+    if isinstance(cache, torch.Tensor):
+        return cache.detach()
+    if isinstance(cache, tuple):
+        return tuple(_detach_kv_cache(x) for x in cache)
+    if isinstance(cache, list):
+        return [_detach_kv_cache(x) for x in cache]
+    if hasattr(cache, "detach"):
+        try:
+            return cache.detach()
+        except Exception:
+            pass
+    return cache
+
+
 class ProgressiveActivationManager:
     """
     Progressive Layer-by-Layer Activation Discarding Engine (Phase 028).
@@ -824,46 +842,46 @@ class ProgressiveActivationManager:
 
     def record_teacher_activation(self, layer_idx: int, activation: torch.Tensor) -> None:
         """
-        Records teacher activation for layer_idx and immediately discards layer_idx - 1.
+        Records teacher activation for layer_idx and coordinates progressive discarding.
 
         Symmetrical dual-stream detachment (Phase 026): teacher activation is strictly detached.
         """
         t_rep = activation.detach()
 
-        # Phase 028: Progressive layer-by-layer activation discarding
-        self.discard_layer(layer_idx - 1)
+        # If matching student activation is already waiting, update CKA and discard both
+        if layer_idx in self._student_activations:
+            s_rep = self._student_activations.pop(layer_idx)
+            self._update_layer_cka(layer_idx, s_rep, t_rep)
+            # Both student and teacher for layer_idx have been aligned and evicted,
+            # discard layer_idx - 1 activations
+            self.discard_layer(layer_idx - 1)
+        else:
+            self._teacher_activations[layer_idx] = t_rep
 
-        self._teacher_activations[layer_idx] = t_rep
         current_active = len(self._teacher_activations) + len(self._student_activations)
         if current_active > self._max_active_layers:
             self._max_active_layers = current_active
 
-        # If matching student activation is already waiting, update CKA and discard both
-        if layer_idx in self._student_activations:
-            s_rep = self._student_activations.pop(layer_idx)
-            t_rep = self._teacher_activations.pop(layer_idx)
-            self._update_layer_cka(layer_idx, s_rep, t_rep)
-
     def record_student_activation(self, layer_idx: int, activation: torch.Tensor) -> None:
         """
-        Records student activation for layer_idx and immediately discards layer_idx - 1.
+        Records student activation for layer_idx and coordinates progressive discarding.
         Preserves student autograd gradient tape.
         """
         s_rep = activation  # grad tape preserved
 
-        # Phase 028: Immediately delete layer l-1's activation
-        self.discard_layer(layer_idx - 1)
-
-        self._student_activations[layer_idx] = s_rep
-        current_active = len(self._teacher_activations) + len(self._student_activations)
-        if current_active > self._max_active_layers:
-            self._max_active_layers = current_active
-
         # If matching teacher activation is already waiting, update CKA and discard both
         if layer_idx in self._teacher_activations:
             t_rep = self._teacher_activations.pop(layer_idx)
-            s_rep = self._student_activations.pop(layer_idx)
             self._update_layer_cka(layer_idx, s_rep, t_rep)
+            # Both student and teacher for layer_idx have been aligned and evicted,
+            # discard layer_idx - 1 activations
+            self.discard_layer(layer_idx - 1)
+        else:
+            self._student_activations[layer_idx] = s_rep
+
+        current_active = len(self._teacher_activations) + len(self._student_activations)
+        if current_active > self._max_active_layers:
+            self._max_active_layers = current_active
 
     def _update_layer_cka(self, layer_idx: int, s_rep: torch.Tensor, t_rep: torch.Tensor) -> None:
         """Internal helper to update layer CKA accumulator with dual-stream detachment."""
@@ -1162,26 +1180,61 @@ class MicroChunkedShadowTwinDistiller:
         total_task_loss: Optional[torch.Tensor] = None
         total_task_tokens: int = 0
         curr_student_state = student_recurrent_state
+        curr_teacher_state: Optional[Any] = None
         current_vram: float = 0.0
 
         for chunk in chunks:
             chunk_ids = chunk.input_ids
             chunk_mask = chunk.attention_mask
             chunk_labels = chunk.labels
-            extra_chunk_kwargs = chunk.extra_kwargs
+            extra_chunk_kwargs = dict(chunk.extra_kwargs)
+
+            # Preserve causality: maintain continuous position IDs across micro-chunks
+            if "position_ids" not in extra_chunk_kwargs and chunk_ids.dim() >= 2:
+                pos_ids = torch.arange(chunk.start_idx, chunk.end_idx, device=chunk_ids.device, dtype=torch.long)
+                extra_chunk_kwargs["position_ids"] = pos_ids.unsqueeze(0).expand(chunk_ids.shape[0], -1)
+
+            # Causal attention mask resolution covering preceding cached tokens
+            t_chunk_mask = chunk_mask
+            s_chunk_mask = chunk_mask
+            if attention_mask is not None and attention_mask.dim() == 2 and chunk.start_idx > 0:
+                full_history_mask = attention_mask[:, :chunk.end_idx]
+                if curr_teacher_state is not None:
+                    t_chunk_mask = full_history_mask
+                if curr_student_state is not None:
+                    s_chunk_mask = full_history_mask
 
             # Phase 026 & Phase 030: Teacher forward pass under torch.no_grad()
             with torch.no_grad():
                 t_kwargs: Dict[str, Any] = {"output_hidden_states": True, **extra_chunk_kwargs}
-                if chunk_mask is not None:
-                    t_kwargs["attention_mask"] = chunk_mask
-                t_out = self.teacher(chunk_ids, **t_kwargs)
+                if t_chunk_mask is not None:
+                    t_kwargs["attention_mask"] = t_chunk_mask
+                if curr_teacher_state is not None:
+                    t_kwargs["past_key_values"] = curr_teacher_state
+
+                try:
+                    t_out = self.teacher(chunk_ids, **t_kwargs)
+                except TypeError:
+                    # Model might not accept past_key_values or position_ids
+                    t_kwargs.pop("past_key_values", None)
+                    if chunk_mask is not None:
+                        t_kwargs["attention_mask"] = chunk_mask
+                    try:
+                        t_out = self.teacher(chunk_ids, **t_kwargs)
+                    except TypeError:
+                        t_kwargs.pop("position_ids", None)
+                        t_out = self.teacher(chunk_ids, **t_kwargs)
+
                 t_rep = self._extract_hidden_representation(t_out).detach()
+
+                # Maintain causal KV cache across teacher micro-chunks
+                if hasattr(t_out, "past_key_values") and t_out.past_key_values is not None:
+                    curr_teacher_state = _detach_kv_cache(t_out.past_key_values)
 
             # Student forward pass with gradient tracking
             s_kwargs: Dict[str, Any] = {"output_hidden_states": True, **extra_chunk_kwargs}
-            if chunk_mask is not None:
-                s_kwargs["attention_mask"] = chunk_mask
+            if s_chunk_mask is not None:
+                s_kwargs["attention_mask"] = s_chunk_mask
             if curr_student_state is not None:
                 s_kwargs["past_key_values"] = curr_student_state
 
@@ -1190,7 +1243,13 @@ class MicroChunkedShadowTwinDistiller:
             except TypeError:
                 # If student does not accept past_key_values or custom kwargs
                 s_kwargs.pop("past_key_values", None)
-                s_out = self.student(chunk_ids, **s_kwargs)
+                if chunk_mask is not None:
+                    s_kwargs["attention_mask"] = chunk_mask
+                try:
+                    s_out = self.student(chunk_ids, **s_kwargs)
+                except TypeError:
+                    s_kwargs.pop("position_ids", None)
+                    s_out = self.student(chunk_ids, **s_kwargs)
 
             s_rep = self._extract_hidden_representation(s_out)
             if self.normalizer is not None:

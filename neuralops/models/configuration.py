@@ -140,11 +140,21 @@ class NeuralOpsConfig(PretrainedConfig):
 
     def get_layer_attn_spec(self, layer_idx: int) -> dict[str, Any]:
         """Return the attention specification dictionary for a given layer index."""
-        specs = normalize_hybrid_spec(
-            self.attn,
-            num_layers=self.num_hidden_layers,
-            default_type=self.attention_type,
-        )
+        specs = getattr(self, "_cached_attn_specs", None)
+        if (
+            specs is None
+            or len(specs) != self.num_hidden_layers
+            or getattr(self, "_cached_attn_source", None) is not self.attn
+            or getattr(self, "_cached_attn_default", None) != self.attention_type
+        ):
+            specs = normalize_hybrid_spec(
+                self.attn,
+                num_layers=self.num_hidden_layers,
+                default_type=self.attention_type,
+            )
+            self._cached_attn_specs = specs
+            self._cached_attn_source = self.attn
+            self._cached_attn_default = self.attention_type
         return specs[layer_idx]
 
     def get_layer_compression_spec(self, layer_idx: int) -> dict[str, Any] | None:
@@ -152,11 +162,22 @@ class NeuralOpsConfig(PretrainedConfig):
         if self.compression is None and self.compression_type is None:
             return None
         default_comp = self.compression_type or "none"
-        specs = normalize_hybrid_spec(
-            self.compression,
-            num_layers=self.num_hidden_layers,
-            default_type=default_comp,
-        )
+        specs = getattr(self, "_cached_comp_specs", None)
+        if (
+            specs is None
+            or len(specs) != self.num_hidden_layers
+            or getattr(self, "_cached_comp_source", None) is not self.compression
+            or getattr(self, "_cached_comp_default", None) != default_comp
+        ):
+            specs = normalize_hybrid_spec(
+                self.compression,
+                num_layers=self.num_hidden_layers,
+                default_type=default_comp,
+            )
+            self._cached_comp_specs = specs
+            self._cached_comp_source = self.compression
+            self._cached_comp_default = default_comp
+
         layer_spec = specs[layer_idx]
         if layer_spec.get("type") in ("none", None):
             return None

@@ -32,13 +32,17 @@ class DummyLlamaModel(nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.config = type("Config", (), {"hidden_size": 768, "num_hidden_layers": 12})()
-        self.layers = nn.ModuleList([
-            nn.ModuleDict({
-                "self_attn": nn.Linear(768, 768),
-                "mlp": nn.Linear(768, 3072),
-            })
-            for _ in range(2)
-        ])
+        self.layers = nn.ModuleList(
+            [
+                nn.ModuleDict(
+                    {
+                        "self_attn": nn.Linear(768, 768),
+                        "mlp": nn.Linear(768, 3072),
+                    }
+                )
+                for _ in range(2)
+            ]
+        )
 
 
 def test_b1_valid_llama_recipe_planning():
