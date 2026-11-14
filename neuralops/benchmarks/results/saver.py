@@ -311,6 +311,9 @@ def save_all_formats(
     if parquet_saved:
         saved_artifacts["parquet"] = parquet_path
 
+    multi_saved = MultiFormatSaver(output_dir).save(result)
+    saved_artifacts.update(multi_saved)
+
     return saved_artifacts
 
 
