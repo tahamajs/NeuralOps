@@ -146,8 +146,8 @@ class TestMLASpecialized:
         assert bridge.verify_phase_062_recurrent_state_dod()
 
         init_state = bridge.init_latent_state(batch_size=2, device=torch.device("cpu"), dtype=torch.float32)
-        assert init_state.content_state.shape == (2, 512, 128)
-        assert init_state.rope_state.shape == (2, 64, 64)
+        assert init_state.state_c.shape == (2, 512, 128)
+        assert init_state.state_r.shape == (2, 64, 64)
 
     def test_deepseek_mla_bridge_rope_norm_preservation(self) -> None:
         batch_size, seq_len, dim = 2, 8, 64

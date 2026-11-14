@@ -306,7 +306,7 @@ def main():
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda:0" if torch.cuda.is_available() else "cpu",
+        default="cuda" if torch.cuda.is_available() else "cpu",
         help="Device to execute benchmark",
     )
     parser.add_argument("--seeds", type=str, default="404,777,999", help="Comma-separated random seeds")
