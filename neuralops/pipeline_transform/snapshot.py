@@ -237,7 +237,7 @@ def _get_parent_and_attr(root: nn.Module, path: str) -> tuple[nn.Module, str]:
 
 
 def restore(model: nn.Module, snapshot: Snapshot) -> None:
-    """Restore model to the exact snapshotted state.
+    """Restore model to the exact snapshotted state, eliminating orphaned parameters and buffers.
 
     Raises:
         RollbackError: If any restoration step fails.
@@ -348,7 +348,7 @@ def restore(model: nn.Module, snapshot: Snapshot) -> None:
                             if b_name == name:
                                 b.data.copy_(tensor.to(device=b.device, dtype=b.dtype))
                                 break
-        else:
+        elif "" not in snapshot.submodules:
             for name, tensor in snapshot.params.items():
                 param_found = False
                 for p_name, p in model.named_parameters():

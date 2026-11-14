@@ -1058,6 +1058,7 @@ def inject_granite_hybrid(
 
 
 __all__ = [
+    "GraniteHybrid",
     "GraniteHybridBlock",
     "GraniteHybridAttention",
     "Mamba2",
@@ -1065,3 +1066,5 @@ __all__ = [
     "inject_granite_hybrid",
     "apply_rotary_pos_emb",
 ]
+
+GraniteHybrid = GraniteHybridBlock

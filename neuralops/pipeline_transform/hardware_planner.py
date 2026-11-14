@@ -100,10 +100,12 @@ class ResourceEstimate:
     confidence: str = "medium"  # "high", "medium", "low"
     warnings: List[str] = field(default_factory=list)
     hardware_profile: Optional[Dict[str, Any]] = None
+    activation_vram_mb: float = 0.0
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "peak_vram_mb": self.peak_vram_mb,
+            "activation_vram_mb": self.activation_vram_mb,
             "total_time_seconds": self.total_time_seconds,
             "parameters_before": self.parameters_before,
             "parameters_after": self.parameters_after,
@@ -239,10 +241,37 @@ def estimate_resources(
     total_time = 0.0
     likely_needs_finetuning = False
 
+    # Estimate transformer geometry from parameter count
+    if params_before >= 60_000_000_000:
+        hidden_size, num_layers = 8192, 80
+    elif params_before >= 10_000_000_000:
+        hidden_size, num_layers = 5120, 40
+    elif params_before >= 6_000_000_000:
+        hidden_size, num_layers = 4096, 32
+    elif params_before >= 1_000_000_000:
+        hidden_size, num_layers = 2048, 24
+    elif params_before >= 500_000_000:
+        hidden_size, num_layers = 1024, 24
+    else:
+        hidden_size, num_layers = 768, 12
+
+    # Calibration tokens and forward activation footprint
+    calib_tokens = 512
+    for s in stages:
+        cfg = getattr(s, "config", {}) if hasattr(s, "config") else s.get("config", {})
+        if "calibration_tokens" in cfg:
+            calib_tokens = max(calib_tokens, int(cfg["calibration_tokens"]))
+
+    calib_batch = 2
+    calib_seq = max(128, calib_tokens // calib_batch)
+    bytes_per_elem = 2.0  # FP16
+    layer_activation_bytes = calib_batch * calib_seq * hidden_size * bytes_per_elem * 6.0
+    activation_vram_mb = (layer_activation_bytes * num_layers) / (1024 * 1024)
+
     # Baseline VRAM model:
-    # Model weights (FP16: 2 bytes/param) + Optimizer/Activations/Peak scratch space
+    # Model weights (FP16: 2 bytes/param) + intermediate activation memory + scratch buffer
     base_model_vram_mb = (params_before * 2.0) / (1024 * 1024)
-    peak_vram_mb = base_model_vram_mb * 1.15
+    peak_vram_mb = (base_model_vram_mb + activation_vram_mb) * 1.15
 
     for s in stages:
         op_type = getattr(s, "operation_type", getattr(s, "type", "unknown"))
@@ -264,14 +293,14 @@ def estimate_resources(
 
             # Peak scratch VRAM during SVD decomposition
             svd_scratch_mb = base_model_vram_mb * (0.1 + 0.8 * target_ratio)
-            peak_vram_mb = max(peak_vram_mb, base_model_vram_mb + svd_scratch_mb)
+            peak_vram_mb = max(peak_vram_mb, base_model_vram_mb + activation_vram_mb + svd_scratch_mb)
 
             if target_ratio < 0.6:
                 likely_needs_finetuning = True
 
         elif op_type == "attention.replace":
             total_time += 1.5
-            peak_vram_mb = max(peak_vram_mb, base_model_vram_mb * 1.3)
+            peak_vram_mb = max(peak_vram_mb, (base_model_vram_mb + activation_vram_mb) * 1.3)
             likely_needs_finetuning = True
 
         else:
@@ -299,6 +328,7 @@ def estimate_resources(
         confidence=confidence,
         warnings=warnings,
         hardware_profile=hw_prof.to_dict(),
+        activation_vram_mb=round(activation_vram_mb, 2),
     )
 
 

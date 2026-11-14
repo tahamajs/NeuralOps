@@ -31,6 +31,9 @@ logger = logging.getLogger(__name__)
 
 
 @ATTENTION_REGISTRY.register("residual_svd_attention")
+@ATTENTION_REGISTRY.register("res_svd", is_alias=True)
+@ATTENTION_REGISTRY.register("res_svd_attention", is_alias=True)
+@ATTENTION_REGISTRY.register("residual_svd", is_alias=True)
 class ResidualSVDAttention(BaseAttention):
     """ResidualSVDAttention neural operator.
 

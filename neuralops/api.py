@@ -98,7 +98,23 @@ def replace_attention(
 
             wrapped = UniversalAttentionWrapper(mod_copy, layer_name=name, return_tuple=True)
             replace_module(model, name, wrapped)
-        return model
+
+        meta_entry: Dict[str, Any] = {
+            "op": "replace",
+            "type": type(target_mod).__name__,
+            "kwargs": {
+                "rank": rank,
+                "copy_weights": copy_weights,
+                "layers": layers,
+                **kwargs,
+            },
+        }
+        if not hasattr(model, "_neuralops_metadata") or model._neuralops_metadata is None:
+            model._neuralops_metadata = []
+        model._neuralops_metadata.append(meta_entry)
+        from neuralops.utils.hub_integration import attach_attention_methods
+
+        return attach_attention_methods(model)
 
     attn_name = (
         attention

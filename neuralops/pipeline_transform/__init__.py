@@ -28,6 +28,7 @@ from neuralops.pipeline_transform.hardware_planner import (
     ResourceEstimate,
     estimate_resources,
 )
+from neuralops.pipeline_transform.master_transformer import MasterTransformerPipeline
 from neuralops.pipeline_transform.plan import ExecutionPlan, Stage
 from neuralops.pipeline_transform.planner import plan_recipe
 from neuralops.pipeline_transform.result import PipelineError, PipelineResult, StageRecord
@@ -44,6 +45,7 @@ __all__ = [
     "ExecutionPlan",
     "HardwareProfile",
     "KNOWN_HARDWARE_PROFILES",
+    "MasterTransformerPipeline",
     "ModelSnapshot",
     "PipelineError",
     "PipelineResult",

@@ -21,6 +21,14 @@ from transformers.modeling_outputs import BaseModelOutputWithPast, CausalLMOutpu
 from transformers.modeling_utils import PreTrainedModel
 
 try:
+    from .cache import UnifiedHybridCache
+except ImportError:
+    try:
+        from cache import UnifiedHybridCache
+    except ImportError:
+        from neuralops.models.cache import UnifiedHybridCache
+
+try:
     from .configuration_neuralops import NeuralOpsConfig
 except ImportError:
     try:
@@ -130,6 +138,20 @@ class NeuralOpsModel(NeuralOpsPreTrainedModel):
         all_self_attns = () if output_attentions else None
         next_decoder_cache = () if use_cache else None
 
+        ignored_keys = {
+            "labels",
+            "loss_kwargs",
+            "num_items_in_batch",
+            "cache_position",
+            "return_dict",
+            "output_attentions",
+            "output_hidden_states",
+            "use_cache",
+            "past_key_values",
+        }
+        layer_kwargs = {k: v for k, v in kwargs.items() if k not in ignored_keys}
+        is_unified_cache = isinstance(past_key_values, UnifiedHybridCache)
+
         for idx, decoder_layer in enumerate(self.layers):
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
@@ -151,16 +173,24 @@ class NeuralOpsModel(NeuralOpsPreTrainedModel):
                 past_key_value=past_layer_kv,
                 output_attentions=output_attentions,
                 use_cache=use_cache,
-                **kwargs,
+                **layer_kwargs,
             )
 
             hidden_states = layer_outputs[0]
 
             if use_cache:
-                next_decoder_cache += (layer_outputs[2 if output_attentions else 1],)
+                present_kv = layer_outputs[2 if output_attentions else 1]
+                if is_unified_cache:
+                    past_key_values[idx] = present_kv
+                else:
+                    next_decoder_cache += (present_kv,)
 
             if output_attentions:
                 all_self_attns += (layer_outputs[1],)
+
+        if use_cache and is_unified_cache:
+            past_key_values.update_seen_tokens(seq_length)
+            next_decoder_cache = past_key_values
 
         hidden_states = self.norm(hidden_states)
 
@@ -247,16 +277,30 @@ class NeuralOpsForCausalLM(NeuralOpsPreTrainedModel, GenerationMixin):
 
     @staticmethod
     def _reorder_cache(past_key_values: Any, beam_idx: torch.Tensor) -> Any:
+        if past_key_values is None:
+            return None
+        if hasattr(past_key_values, "reorder_cache"):
+            return past_key_values.reorder_cache(beam_idx)
+        if isinstance(past_key_values, UnifiedHybridCache):
+            return past_key_values.reorder_cache(beam_idx)
+
         reordered_past = ()
         for layer_past in past_key_values:
             if layer_past is None:
                 reordered_past += (None,)
-            elif isinstance(layer_past, tuple):
+            elif isinstance(layer_past, (tuple, list)):
                 reordered_past += (
-                    tuple(past_state.index_select(0, beam_idx.to(past_state.device)) for past_state in layer_past),
+                    tuple(
+                        past_state.index_select(0, beam_idx.to(past_state.device))
+                        if isinstance(past_state, torch.Tensor)
+                        else past_state
+                        for past_state in layer_past
+                    ),
                 )
-            else:
+            elif isinstance(layer_past, torch.Tensor):
                 reordered_past += (layer_past.index_select(0, beam_idx.to(layer_past.device)),)
+            else:
+                reordered_past += (layer_past,)
         return reordered_past
 
     def forward(

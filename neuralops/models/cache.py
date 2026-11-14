@@ -24,12 +24,17 @@ class UnifiedHybridCache:
     Seamlessly manages per-layer state without requiring model re-configuration.
     """
 
+    is_static: bool = True
+
     def __init__(self, num_layers: int | None = None) -> None:
         self.layers: list[Any] = [] if num_layers is None else [None] * num_layers
         self._seen_tokens: int = 0
 
     def __len__(self) -> int:
         return len(self.layers)
+
+    def __iter__(self) -> Any:
+        return iter(self.layers)
 
     def __getitem__(self, idx: int) -> Any:
         if idx < len(self.layers):
@@ -73,15 +78,36 @@ class UnifiedHybridCache:
         state: Any,
         layer_type: str = "linear",
         window_size: int | None = None,
+        num_tokens: int | None = None,
     ) -> Any:
         """
         Updates the cache for a given layer index according to its attention mechanism type.
+
+        Args:
+            layer_idx: Target transformer layer index.
+            state: Key-value tuple or recurrent state tensor for the layer.
+            layer_type: Attention family identifier ('full', 'dense', 'window', 'linear', etc.).
+            window_size: Sliding window retention size if applicable.
+            num_tokens: Explicit token count added by this update step.
+
+        Returns:
+            Updated cache state for the target layer.
         """
         while len(self.layers) <= layer_idx:
             self.layers.append(None)
 
         if state is None:
             return self.layers[layer_idx]
+
+        incoming_tokens = num_tokens
+        if incoming_tokens is None:
+            if isinstance(state, (tuple, list)) and len(state) >= 1 and isinstance(state[0], torch.Tensor):
+                t = state[0]
+                if t.dim() >= 2 and (t.dim() != 4 or t.shape[-2] != t.shape[-1]):
+                    incoming_tokens = t.shape[-2]
+            elif isinstance(state, torch.Tensor) and state.dim() >= 2:
+                if state.dim() != 4 or state.shape[-2] != state.shape[-1]:
+                    incoming_tokens = state.shape[-2]
 
         if "full" in layer_type.lower() or "dense" in layer_type.lower() or "gqa" in layer_type.lower():
             if isinstance(state, (tuple, list)) and len(state) >= 2:
@@ -92,6 +118,8 @@ class UnifiedHybridCache:
                     v = torch.cat([prev[1], v], dim=-2)
                 updated_state = (k, v)
                 self.layers[layer_idx] = updated_state
+                if layer_idx == 0:
+                    self._seen_tokens = k.shape[-2]
                 return updated_state
 
         if "window" in layer_type.lower() or "sliding" in layer_type.lower():
@@ -106,10 +134,63 @@ class UnifiedHybridCache:
                     v = v[..., -window_size:, :]
                 updated_state = (k, v)
                 self.layers[layer_idx] = updated_state
+                if layer_idx == 0:
+                    added = incoming_tokens if incoming_tokens is not None else 1
+                    self._seen_tokens += added
                 return updated_state
 
         self.layers[layer_idx] = state
+        if layer_idx == 0 and incoming_tokens is not None:
+            self._seen_tokens += incoming_tokens
         return state
+
+    def update(
+        self,
+        key_states: torch.Tensor,
+        value_states: torch.Tensor,
+        layer_idx: int,
+        cache_kwargs: dict[str, Any] | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        """HF Cache protocol update method."""
+        layer_type = "full"
+        window_size = None
+        if cache_kwargs:
+            layer_type = cache_kwargs.get("layer_type", "full")
+            window_size = cache_kwargs.get("window_size", None)
+        num_toks = key_states.shape[-2] if key_states.dim() >= 2 else 1
+        return self.update_layer(
+            layer_idx=layer_idx,
+            state=(key_states, value_states),
+            layer_type=layer_type,
+            window_size=window_size,
+            num_tokens=num_toks,
+        )
+
+    def reorder_cache(self, beam_idx: torch.Tensor) -> UnifiedHybridCache:
+        """
+        Reorders cache states according to beam_idx along the batch dimension.
+
+        Args:
+            beam_idx: Tensor containing indices of selected beams.
+
+        Returns:
+            New UnifiedHybridCache with reordered states.
+        """
+        reordered = UnifiedHybridCache(len(self.layers))
+        reordered._seen_tokens = self._seen_tokens
+        for idx, layer_state in enumerate(self.layers):
+            if layer_state is None:
+                reordered[idx] = None
+            elif isinstance(layer_state, (tuple, list)):
+                reordered[idx] = tuple(
+                    s.index_select(0, beam_idx.to(s.device)) if isinstance(s, torch.Tensor) else s
+                    for s in layer_state
+                )
+            elif isinstance(layer_state, torch.Tensor):
+                reordered[idx] = layer_state.index_select(0, beam_idx.to(layer_state.device))
+            else:
+                reordered[idx] = layer_state
+        return reordered
 
     def update_seen_tokens(self, num_tokens: int) -> None:
         self._seen_tokens += num_tokens

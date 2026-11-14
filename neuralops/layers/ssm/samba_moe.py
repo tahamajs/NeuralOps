@@ -25,7 +25,7 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 from .samba_m3 import SAMBAM3Block
 
 try:
-    from .reap_moe import REAPMoE
+    from neuralops.layers.sparse.reap_moe import REAPMoE
 except Exception:
     REAPMoE = None
 

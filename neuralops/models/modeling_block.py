@@ -81,6 +81,14 @@ class NeuralOpsBlock(nn.Module):
                 logger.error("Failed to apply compressor %s on layer %d: %s", comp_type, layer_idx, e, exc_info=True)
                 raise
 
+        import inspect
+
+        sig = inspect.signature(self.self_attn.forward)
+        self._attn_accepts_var_kwargs = any(
+            p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
+        )
+        self._attn_param_names = set(sig.parameters.keys())
+
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -102,6 +110,11 @@ class NeuralOpsBlock(nn.Module):
 
         normed_hidden_states = self.input_layernorm(hidden_states)
 
+        if self._attn_accepts_var_kwargs:
+            attn_kwargs = kwargs
+        else:
+            attn_kwargs = {k: v for k, v in kwargs.items() if k in self._attn_param_names}
+
         attn_outputs = self.self_attn(
             normed_hidden_states,
             attention_mask=attention_mask,
@@ -109,7 +122,7 @@ class NeuralOpsBlock(nn.Module):
             past_key_value=past_key_value,
             output_attentions=output_attentions,
             use_cache=use_cache,
-            **kwargs,
+            **attn_kwargs,
         )
 
         if isinstance(attn_outputs, tuple):
