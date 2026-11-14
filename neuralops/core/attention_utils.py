@@ -29,8 +29,18 @@ from neuralops.core.utils.rope import _rotate_half, apply_rope_after_up_projecti
 logger = logging.getLogger(__name__)
 
 
-from neuralops.api import replace_attention
-inject_attention = replace_attention
+def inject_attention(*args: Any, **kwargs: Any) -> Any:
+    """Convenience alias for replace_attention."""
+    from neuralops.api import replace_attention
+
+    return replace_attention(*args, **kwargs)
+
+
+def replace_attention(*args: Any, **kwargs: Any) -> Any:
+    """Convenience alias for replace_attention."""
+    from neuralops.api import replace_attention as _ra
+
+    return _ra(*args, **kwargs)
 
 
 def available_attention_types() -> list[str]:

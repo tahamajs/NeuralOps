@@ -250,8 +250,9 @@ def test_save_surgical_delta_and_load_surgical_checkpoint_roundtrip(tmp_path: Pa
         remove_full_weights=True,
     )
 
+    # P0-1: Pre-existing user checkpoint and optimizer files must NOT be unlinked
     for stale_name in ("pytorch_model.bin", "model.safetensors", "surgical_model_state.pt", "optimizer.pt"):
-        assert not (tmp_path / stale_name).exists()
+        assert (tmp_path / stale_name).exists()
 
     saved = load_file(str(tmp_path / "attention_weights.safetensors"))
     assert summary["saved_tensor_count"] == len(saved)
