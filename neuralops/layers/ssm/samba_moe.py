@@ -468,3 +468,13 @@ def inject_samba_moe(
     except Exception as e:
         logger.error("inject_samba_moe failed at layer %d: %s", layer_idx, e)
         return None
+
+
+SambaMoE = SambaMoEBlock
+
+__all__ = [
+    "SambaMoEBlock",
+    "SambaMoE",
+    "MinimalMoEFallback",
+    "inject_samba_moe",
+]

@@ -35,16 +35,22 @@ class NeuralOpsRMSNorm(nn.Module):
     def forward(self, hidden_states: torch.Tensor) -> torch.Tensor:
         if hidden_states.is_cuda and hidden_states.dtype in (torch.float16, torch.bfloat16):
             try:
-                from neuralops.ops.triton.elementwise import rmsnorm_triton
+                try:
+                    from neuralops.ops.triton.elementwise import fused_rmsnorm as _rmsnorm_fn
+                except ImportError:
+                    from neuralops.kernels.extended_kernels import rmsnorm_triton as _rmsnorm_fn
 
-                return rmsnorm_triton(hidden_states, self.weight, self.variance_epsilon)
+                weight = self.weight.to(device=hidden_states.device, dtype=hidden_states.dtype)
+                out = _rmsnorm_fn(hidden_states, weight, self.variance_epsilon)
+                return out.to(hidden_states.dtype)
             except (RuntimeError, ImportError) as e:
-                logger.debug("rmsnorm_triton failed: %s, falling back to PyTorch reference", e)
+                logger.debug("Triton rmsnorm failed: %s, falling back to PyTorch reference", e)
         input_dtype = hidden_states.dtype
         hidden_states = hidden_states.to(torch.float32)
         variance = hidden_states.pow(2).mean(-1, keepdim=True)
         hidden_states = hidden_states * torch.rsqrt(variance + self.variance_epsilon)
-        return self.weight * hidden_states.to(input_dtype)
+        weight = self.weight.to(device=hidden_states.device, dtype=input_dtype)
+        return (weight * hidden_states.to(input_dtype)).to(input_dtype)
 
 
 def build_norm_layer(norm_type: str, hidden_size: int, eps: float = 1e-6) -> nn.Module:

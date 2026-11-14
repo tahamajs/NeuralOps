@@ -762,15 +762,28 @@ class EndoskeletalShell(nn.Module):
                 if hasattr(target_model, attr):
                     layers_attr = getattr(target_model, attr)
                     break
-            if isinstance(layers_attr, (nn.ModuleList, list, tuple)):
-                for idx, layer in enumerate(layers_attr):
+            if isinstance(layers_attr, (nn.ModuleList, list, tuple, nn.ModuleDict, dict)):
+                items = (
+                    layers_attr.items()
+                    if isinstance(layers_attr, (dict, nn.ModuleDict))
+                    else enumerate(layers_attr)
+                )
+                for idx_key, layer in items:
+                    idx = int(idx_key) if str(idx_key).isdigit() else len(candidate_specs)
                     attn_mod = None
                     attn_name = None
-                    for a_name in ("self_attn", "attn", "attention", "mha", "layer_0"):
-                        if hasattr(layer, a_name):
-                            attn_mod = getattr(layer, a_name)
-                            attn_name = a_name
-                            break
+                    if isinstance(layer, (dict, nn.ModuleDict)):
+                        for a_name in ("self_attn", "attn", "attention", "mha", "layer_0"):
+                            if a_name in layer:
+                                attn_mod = layer[a_name]
+                                attn_name = a_name
+                                break
+                    elif isinstance(layer, nn.Module):
+                        for a_name in ("self_attn", "attn", "attention", "mha", "layer_0"):
+                            if hasattr(layer, a_name):
+                                attn_mod = getattr(layer, a_name)
+                                attn_name = a_name
+                                break
                     if attn_mod is not None:
                         embed_dim = getattr(attn_mod, "embed_dim", getattr(attn_mod, "hidden_size", 64))
                         num_heads = getattr(attn_mod, "num_heads", getattr(attn_mod, "num_attention_heads", 4))
@@ -782,9 +795,9 @@ class EndoskeletalShell(nn.Module):
                         )
                         candidate_specs.append(
                             AttentionTargetSpec(
-                                module_path=f"layers.{idx}.{attn_name}",
-                                parent_module=layer,
-                                attr_name=attn_name,
+                                module_path=f"layers.{idx}.{attn_name or 'attn'}",
+                                parent_module=layer if isinstance(layer, nn.Module) else target_model,
+                                attr_name=attn_name or "",
                                 target_module=attn_mod,
                                 pattern_type=pattern,
                                 embed_dim=embed_dim,
@@ -880,11 +893,37 @@ class EndoskeletalShell(nn.Module):
                 if target_dtype is not None and target_dtype.is_floating_point:
                     bridge.to(dtype=target_dtype)
 
-            # In-place transplantation into parent module
-            if hasattr(spec.parent_module, "__setitem__") and spec.attr_name.isdigit():
-                spec.parent_module[int(spec.attr_name)] = bridge
+            # In-place transplantation into parent module with dict/empty-attr resilience
+            attr = spec.attr_name or ""
+            if not attr:
+                if isinstance(spec.parent_module, (dict, nn.ModuleDict)):
+                    for k, v in spec.parent_module.items():
+                        if v is spec.target_module:
+                            attr = str(k)
+                            break
+                elif hasattr(spec.parent_module, "named_children"):
+                    for child_name, child_mod in spec.parent_module.named_children():
+                        if child_mod is spec.target_module:
+                            attr = child_name
+                            break
+
+            if isinstance(spec.parent_module, (dict, nn.ModuleDict)):
+                spec.parent_module[attr] = bridge
+            elif hasattr(spec.parent_module, "__setitem__") and (
+                attr.isdigit() or isinstance(spec.parent_module, (list, nn.ModuleList))
+            ):
+                idx = int(attr) if attr.isdigit() else 0
+                spec.parent_module[idx] = bridge
+            elif hasattr(spec.parent_module, "__setitem__") and not hasattr(spec.parent_module, "__setattr__"):
+                spec.parent_module[attr] = bridge
+            elif attr:
+                setattr(spec.parent_module, attr, bridge)
             else:
-                setattr(spec.parent_module, spec.attr_name, bridge)
+                logger.warning(
+                    "apply_moa_schedule: unable to resolve attr_name on %s for target %s",
+                    type(spec.parent_module),
+                    type(spec.target_module),
+                )
 
             wrapped_bridges[l_idx] = bridge
 

@@ -103,7 +103,7 @@ def lagrangian_rank_allocation(
         max_r = min(d_in, d_out, int(max_rank_factor * min(d_in, d_out)))
         max_r = max(1, max_r)
 
-        s = np.linalg.svd(W.astype(np.float64), compute_uv=False)
+        s = np.linalg.svd(W.astype(np.float64), full_matrices=False, compute_uv=False)
         cum_ent = compute_cumulative_entropy(s, max_r)
         cost = 1.0 - cum_ent
         cost_table.append(cost)

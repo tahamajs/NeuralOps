@@ -11,8 +11,15 @@ NeuralOps Surgery Subpackage.
 
 from typing import Any
 
-from neuralops.api import replace_attention, transplant_attention
-from neuralops.models.surgery import calibrate_attention_subspace, heal_replaced_model
+from neuralops.models.surgery import (
+    calibrate_attention_subspace,
+    heal_replaced_model,
+    transplant_attention,
+)
+from neuralops.surgery.attention_replace import (
+    apply_backbone_surgery_hooks,
+    replace_attention,
+)
 from neuralops.export.surgery_manifest import (
     AttentionSurgeryEntry,
     CompressionSurgeryEntry,
@@ -147,6 +154,7 @@ __all__ = [
     "save_recipe",
     "save_recipe_to_hub",
     "validate_recipe_schema",
+    "apply_backbone_surgery_hooks",
     "replace_attention",
     "shrink_mlp",
     "prune_layers",

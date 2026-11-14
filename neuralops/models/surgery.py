@@ -565,9 +565,9 @@ def apply_backbone_surgery_hooks(
             if attach_forward_adapter and not getattr(module, "_has_surgery_adapter", False):
                 orig_forward = module.forward
 
-                def _make_adapted_forward(m: nn.Module, _fwd: Any) -> Any:
+                def _make_adapted_forward(m: nn.Module, fwd_fn: Any) -> Any:
                     def _adapted_forward(*args: Any, **kwargs: Any) -> Any:
-                        return adapt_decoder_attention_forward(m, *args, **kwargs)
+                        return adapt_decoder_attention_forward(fwd_fn, *args, **kwargs)
 
                     return _adapted_forward
 
@@ -981,28 +981,20 @@ def _heal_replaced_model_impl(
     cached_targets: Dict[str, list[torch.Tensor]] = {name: [] for name, _, _ in layer_pairs}
     hooks = []
 
-    mod_to_parent: Dict[nn.Module, nn.Module] = {}
-    for _, parent in teacher_model.named_modules():
-        for child in parent.children():
-            if child not in mod_to_parent:
-                mod_to_parent[child] = parent
-
     for name, t_mod, _ in layer_pairs:
-        parent_mod = mod_to_parent.get(t_mod)
-
-        def _make_capture_hook(layer_name: str, has_parent_hook: bool):
+        def _make_capture_hook(layer_name: str):
             def _hook(mod, inp, out):
                 out_tensor = out[0] if isinstance(out, tuple) else out
                 if isinstance(out_tensor, torch.Tensor):
                     cached_targets[layer_name].append(out_tensor.detach().float())
-                if not has_parent_hook:
+                if not cached_inputs[layer_name]:
                     in_tensor = inp[0] if isinstance(inp, tuple) and len(inp) > 0 else inp
                     if isinstance(in_tensor, torch.Tensor):
                         cached_inputs[layer_name].append(in_tensor.detach().float())
 
             return _hook
 
-        def _make_parent_prehook(layer_name: str):
+        def _make_prehook(layer_name: str):
             def _pre_hook(mod, inp):
                 in_tensor = inp[0] if isinstance(inp, tuple) and len(inp) > 0 else inp
                 if isinstance(in_tensor, torch.Tensor):
@@ -1010,11 +1002,8 @@ def _heal_replaced_model_impl(
 
             return _pre_hook
 
-        if parent_mod is not None:
-            hooks.append(parent_mod.register_forward_pre_hook(_make_parent_prehook(name)))
-            hooks.append(t_mod.register_forward_hook(_make_capture_hook(name, has_parent_hook=True)))
-        else:
-            hooks.append(t_mod.register_forward_hook(_make_capture_hook(name, has_parent_hook=False)))
+        hooks.append(t_mod.register_forward_pre_hook(_make_prehook(name)))
+        hooks.append(t_mod.register_forward_hook(_make_capture_hook(name)))
 
     with torch.no_grad():
         for b in batches:

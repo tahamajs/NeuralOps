@@ -21,6 +21,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.core.base import BaseCompressor
+
 try:
     from neuralops.core.triton_kernels._base import HAS_TRITON, triton_dispatch
 except ImportError:
@@ -245,4 +247,36 @@ class LoRALinear(nn.Module):
         return res
 
 
-__all__ = ["LoRALinear", "LoRAParameter"]
+class LoRACompressor(BaseCompressor):
+    """Parameter-efficient LoRA model compressor."""
+
+    FAMILY: str = "low_rank"
+
+    def __init__(
+        self,
+        model: nn.Module,
+        rank: int = 16,
+        r: int | None = None,
+        lora_alpha: float = 32.0,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(model, name="lora", **kwargs)
+        self.rank = r if r is not None else rank
+        self.lora_alpha = lora_alpha
+
+    def compress(self) -> tuple[nn.Module, dict[str, Any]]:
+        """Wrap Linear layers with LoRALinear."""
+        from neuralops.core.model_utils import replace_module
+
+        adapted_count = 0
+        for name, module in list(self.model.named_modules()):
+            if isinstance(module, nn.Linear) and not isinstance(module, LoRALinear):
+                lora_layer = LoRALinear(module, r=self.rank, lora_alpha=self.lora_alpha)
+                replace_module(self.model, name, lora_layer)
+                adapted_count += 1
+        stats = self.get_compression_stats()
+        stats["adapted_layers"] = adapted_count
+        return self.model, stats
+
+
+__all__ = ["LoRALinear", "LoRAParameter", "LoRACompressor"]

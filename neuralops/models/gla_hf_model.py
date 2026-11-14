@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import torch
 import torch.nn as nn
-from transformers import GenerationMixin, PretrainedConfig, PreTrainedModel
+from transformers import PretrainedConfig, PreTrainedModel
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
 from neuralops.layers.linear.gla_attention import GLAttention
@@ -76,7 +76,7 @@ class GLABlock(nn.Module):
         return hidden_states
 
 
-class GLAModel(PreTrainedModel, GenerationMixin):
+class GLAModel(PreTrainedModel):
     config_class = GLAConfig
     base_model_prefix = "gla"
     main_input_name = "input_ids"
@@ -89,20 +89,9 @@ class GLAModel(PreTrainedModel, GenerationMixin):
         self.ln_f = nn.LayerNorm(config.hidden_size, eps=1e-5)
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
 
-    def prepare_inputs_for_generation(
-        self,
-        input_ids,
-        past_key_values=None,
-        attention_mask=None,
-        **kwargs,
-    ):
-        return {
-            "input_ids": input_ids,
-            "past_key_values": past_key_values,
-            "attention_mask": attention_mask,
-            "use_cache": False,
-            **kwargs,
-        }
+    def can_generate(self) -> bool:
+        """GLAModel does not support autoregressive generation mixin."""
+        return False
 
     def forward(
         self,

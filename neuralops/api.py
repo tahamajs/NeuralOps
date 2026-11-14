@@ -151,6 +151,8 @@ def replace_attention(
     call_kwargs = dict(kwargs)
     if layers is not None:
         call_kwargs["layer_indices"] = layers
+    if validation_level is not None:
+        call_kwargs["validation_level"] = validation_level
 
     hybrid_spec = kwargs.get("hybrid_spec", None)
     if hybrid_spec is not None:
@@ -311,6 +313,45 @@ def transplant_attention(
 
 # v1.7.0 High-Level Public Ergonomics Aliases
 transplant = transplant_attention
+
+
+def compose_attention(
+    projection: str = "dense",
+    positional: str = "none",
+    kernel_map: Union[str, Any] = "softmax",
+    mask: str = "causal",
+    engine: str = "sdpa",
+    embed_dim: int = 768,
+    num_heads: int = 12,
+    **kwargs: Any,
+) -> Any:
+    """Compose a modular declarative attention mechanism from customizable primitives.
+
+    Args:
+        projection: Linear projection type (e.g. 'dense', 'linear').
+        positional: Positional encoding ('none', 'rope', 'alibi').
+        kernel_map: Feature kernel mapping ('softmax', 'relu', or custom callable).
+        mask: Attention masking ('causal', 'bidirectional', 'none').
+        engine: Computation engine ('sdpa', 'exact', 'triton').
+        embed_dim: Model hidden representation dimension.
+        num_heads: Number of attention query heads.
+        **kwargs: Additional parameters forwarded to ComposableAttention.
+
+    Returns:
+        Configured ComposableAttention module instance.
+    """
+    from neuralops.core.composable import compose_attention as _compose
+
+    return _compose(
+        projection=projection,
+        positional=positional,
+        kernel_map=kernel_map,
+        mask=mask,
+        engine=engine,
+        embed_dim=embed_dim,
+        num_heads=num_heads,
+        **kwargs,
+    )
 
 
 def serve(
@@ -1719,6 +1760,8 @@ __all__ = [
     "replace_attention",
     "transplant_attention",
     "transplant",
+    "compose_attention",
+    "probe_optimal_batch_size",
     "serve",
     "compress",
     "get_attention_module",

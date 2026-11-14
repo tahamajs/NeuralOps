@@ -156,7 +156,9 @@ def copy_attention_weights(
                 if src_heads > dst_heads and src_heads % dst_heads == 0:
                     group = src_heads // dst_heads
                     scale = math.sqrt(group)
-                    w_pooled = (w_src.view(dst_heads, group, h_dim, src_in).mean(dim=1) * scale).reshape(dst_out, dst_in)
+                    w_pooled = (w_src.view(dst_heads, group, h_dim, src_in).mean(dim=1) * scale).reshape(
+                        dst_out, dst_in
+                    )
                     dst.weight.data.copy_(w_pooled)
                     if src.bias is not None and dst.bias is not None:
                         b_pooled = (src.bias.data.view(dst_heads, group, h_dim).mean(dim=1) * scale).reshape(dst_out)

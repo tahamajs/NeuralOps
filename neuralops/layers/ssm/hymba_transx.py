@@ -756,9 +756,16 @@ class HymbaTransXBlock(BaseAttention):
                     mb = mamba_bwd[0] if isinstance(mamba_bwd, tuple) else mamba_bwd
                     M_out = 0.5 * (mf + torch.flip(mb, dims=[1]))
 
-        from neuralops.ops.triton.sliding_window import fused_hymba_meta_token_mix_triton
+        try:
+            from neuralops.ops.triton.sliding_window import fused_hymba_meta_token_mix_triton
 
-        combined = fused_hymba_meta_token_mix_triton(A_out, M_out if self.mamba is not None else None, self.alpha)
+            combined = fused_hymba_meta_token_mix_triton(A_out, M_out if self.mamba is not None else None, self.alpha)
+        except Exception:
+            if M_out is not None:
+                alpha = torch.sigmoid(self.alpha).view(1, 1, -1)
+                combined = alpha * A_out + (1.0 - alpha) * M_out
+            else:
+                combined = A_out
 
         if self.is_nested_encoder:
             out = combined

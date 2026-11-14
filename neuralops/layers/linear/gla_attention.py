@@ -560,3 +560,12 @@ def _chunked_gla_forward(
     """Module-level function for chunked GLA forward pass."""
     dummy = GLAttention(hidden_size=q.shape[-1] * q.shape[1], num_heads=q.shape[1]).to(device=q.device, dtype=q.dtype)
     return dummy._chunked_gla_forward(q, k, v, log_gate, chunk_size)
+
+
+GatedLinearAttention = GLAttention
+
+__all__ = [
+    "GLAttention",
+    "GatedLinearAttention",
+    "_chunked_gla_forward",
+]

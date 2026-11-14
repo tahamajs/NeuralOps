@@ -212,13 +212,17 @@ def causal_prefix_scan(
     v: torch.Tensor,
     eps: float = 1e-6,
     decay: Optional[float] = None,
+    chunk_size: int = 128,
 ) -> torch.Tensor:
-    """Causal linear prefix recurrence via vectorized cumulative sums.
+    """Causal linear prefix recurrence via chunkwise parallel associative scan.
 
     Computes S_t = sum_{i=1}^t phi(K_i)^T V_i, ensuring strict lower-triangular
     dependency where future tokens have zero gradient contribution to past representations.
     Supports exponential state decay gamma in (0, 1) according to Law 7.
     Accumulates in FP32 for numerical stability when inputs are FP16 or BF16.
+
+    Uses O(C^2 + D^2) bounded chunk memory scaling instead of allocating an O(T * D^2)
+    5D outer-product tensor across the entire sequence length T.
     """
     orig_dtype = q_phi.dtype
     is_fp16 = orig_dtype in (torch.float16, torch.bfloat16)
@@ -226,27 +230,102 @@ def causal_prefix_scan(
     k_calc = k_phi.float() if is_fp16 else k_phi
     v_calc = v.float() if is_fp16 else v
 
-    kv = torch.einsum("bhtd,bhte->bhtde", k_calc, v_calc)
-    if decay is not None and 0.0 < decay < 1.0:
-        t = k_calc.shape[2]
-        pos = torch.arange(t, device=k_calc.device, dtype=k_calc.dtype)
-        log_gamma = math.log(decay)
-        decay_weights = torch.exp(pos * log_gamma).view(1, 1, t, 1, 1)
-        inv_decay_weights = torch.exp(-pos * log_gamma).view(1, 1, t, 1, 1)
-        kv = kv * inv_decay_weights
-        kv_cum = torch.cumsum(kv, dim=2) * decay_weights
+    is_3d = q_calc.dim() == 3
+    if is_3d:
+        q_calc = q_calc.unsqueeze(1)
+        k_calc = k_calc.unsqueeze(1)
+        v_calc = v_calc.unsqueeze(1)
 
-        k_decay = decay_weights.squeeze(-1)
-        inv_k_decay = inv_decay_weights.squeeze(-1)
-        k_scaled = k_calc * inv_k_decay
-        k_cum = torch.cumsum(k_scaled, dim=2) * k_decay
-    else:
-        kv_cum = torch.cumsum(kv, dim=2)
-        k_cum = torch.cumsum(k_calc, dim=2)
+    t = q_calc.shape[2]
+    if t == 0:
+        res = torch.empty_like(v_calc)
+        if is_3d:
+            res = res.squeeze(1)
+        return res.to(orig_dtype) if is_fp16 else res
 
-    out = torch.einsum("bhtd,bhtde->bhte", q_calc, kv_cum)
-    denom = torch.einsum("bhtd,bhtd->bht", q_calc, k_cum).unsqueeze(-1) + eps
-    res = out / denom
+    b, h, _, d = q_calc.shape
+    e = v_calc.shape[-1]
+    device = q_calc.device
+    dtype = q_calc.dtype
+
+    has_decay = decay is not None and 0.0 < decay < 1.0
+    c_size = max(1, int(chunk_size))
+
+    # Fast single-chunk specialization when sequence length is small and no decay
+    if t <= c_size and not has_decay:
+        attn = torch.matmul(q_calc, k_calc.transpose(-2, -1))
+        mask = torch.tril(torch.ones(t, t, device=device, dtype=torch.bool))
+        attn = attn.masked_fill(~mask, 0.0)
+        out = torch.matmul(attn, v_calc)
+        denom = attn.sum(dim=-1, keepdim=True) + eps
+        res = out / denom
+        if is_3d:
+            res = res.squeeze(1)
+        return res.to(orig_dtype) if is_fp16 else res
+
+    # Chunkwise parallel associative scan with O(1) state memory scaling
+    out_chunks = []
+    s_state = torch.zeros(b, h, d, e, device=device, dtype=dtype)
+    z_state = torch.zeros(b, h, d, 1, device=device, dtype=dtype)
+
+    for start in range(0, t, c_size):
+        end = min(start + c_size, t)
+        length = end - start
+
+        q_c = q_calc[:, :, start:end, :]
+        k_c = k_calc[:, :, start:end, :]
+        v_c = v_calc[:, :, start:end, :]
+
+        if has_decay:
+            idx = torch.arange(length, device=device, dtype=dtype)
+            gamma_t = torch.pow(float(decay), idx)
+            inv_gamma_t = torch.pow(float(decay), -idx)
+            decay_mat = torch.tril(gamma_t.unsqueeze(1) * inv_gamma_t.unsqueeze(0))
+
+            attn_intra = torch.matmul(q_c, k_c.transpose(-2, -1)) * decay_mat
+            num_intra = torch.matmul(attn_intra, v_c)
+            den_intra = attn_intra.sum(dim=-1, keepdim=True)
+
+            inter_decay = (gamma_t * float(decay)).view(1, 1, length, 1)
+            q_decayed = q_c * inter_decay
+
+            num_inter = torch.matmul(q_decayed, s_state)
+            den_inter = torch.matmul(q_decayed, z_state)
+
+            num_chunk = num_inter + num_intra
+            den_chunk = den_inter + den_intra + eps
+            out_chunks.append(num_chunk / den_chunk)
+
+            end_decay = torch.pow(float(decay), (length - 1) - idx).view(1, 1, length, 1)
+            k_end_decayed = k_c * end_decay
+            delta_s = torch.matmul(k_end_decayed.transpose(-2, -1), v_c)
+            delta_z = k_end_decayed.sum(dim=2, keepdim=True).transpose(-2, -1)
+
+            chunk_decay = float(decay) ** length
+            s_state = s_state * chunk_decay + delta_s
+            z_state = z_state * chunk_decay + delta_z
+        else:
+            attn_intra = torch.matmul(q_c, k_c.transpose(-2, -1))
+            mask = torch.tril(torch.ones(length, length, device=device, dtype=torch.bool))
+            attn_intra = attn_intra.masked_fill(~mask, 0.0)
+            num_intra = torch.matmul(attn_intra, v_c)
+            den_intra = attn_intra.sum(dim=-1, keepdim=True)
+
+            num_inter = torch.matmul(q_c, s_state)
+            den_inter = torch.matmul(q_c, z_state)
+
+            num_chunk = num_inter + num_intra
+            den_chunk = den_inter + den_intra + eps
+            out_chunks.append(num_chunk / den_chunk)
+
+            delta_s = torch.matmul(k_c.transpose(-2, -1), v_c)
+            delta_z = k_c.sum(dim=2, keepdim=True).transpose(-2, -1)
+            s_state = s_state + delta_s
+            z_state = z_state + delta_z
+
+    res = torch.cat(out_chunks, dim=2)
+    if is_3d:
+        res = res.squeeze(1)
     return res.to(orig_dtype) if is_fp16 else res
 
 
