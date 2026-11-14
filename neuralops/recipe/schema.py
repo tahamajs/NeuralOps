@@ -134,7 +134,7 @@ class ModelSpec:
     family: Optional[str] = None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any], path: str = "model") -> ModelSpec:
+    def from_dict(cls, data: Dict[str, Any], path: str = "model", *, strict_sha: bool = False) -> ModelSpec:
         if not isinstance(data, dict):
             raise RecipeSchemaError(
                 f"Expected mapping for '{path}', got {type(data).__name__}", E_SCHEMA_WRONG_TYPE, path
@@ -159,11 +159,11 @@ class ModelSpec:
 
         revision = data.get("revision")
         if revision is not None:
-            if not isinstance(revision, str):
+            if not isinstance(revision, str) or not revision.strip():
                 raise RecipeSchemaError(
-                    f"Field '{path}.revision' must be string", E_SCHEMA_WRONG_TYPE, f"{path}.revision"
+                    f"Field '{path}.revision' must be non-empty string", E_SCHEMA_WRONG_TYPE, f"{path}.revision"
                 )
-            if not GIT_SHA_RE.match(revision):
+            if strict_sha and not GIT_SHA_RE.match(revision):
                 raise RecipeSchemaError(
                     f"Model revision '{revision}' must be a full 40-character commit SHA",
                     E_SCHEMA_WRONG_TYPE,
@@ -390,10 +390,11 @@ class Recipe:
         # Prune None values from artifacts and execution if not specified
         if self.artifacts is None:
             d.pop("artifacts", None)
+        d.pop("_cached_hash", None)
         return d
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> Recipe:
+    def from_dict(cls, data: Dict[str, Any], *, strict_sha: bool = False) -> Recipe:
         if not isinstance(data, dict):
             raise RecipeSchemaError(
                 f"Top-level recipe must be a mapping, got {type(data).__name__}", E_SCHEMA_WRONG_TYPE
@@ -416,7 +417,7 @@ class Recipe:
             raise RecipeSchemaError(f"Unsupported kind '{kind}', expected 'Recipe'", E_SCHEMA_WRONG_TYPE, "kind")
 
         metadata = Metadata.from_dict(data["metadata"])
-        model = ModelSpec.from_dict(data["model"])
+        model = ModelSpec.from_dict(data["model"], strict_sha=strict_sha)
 
         raw_ops = data["operations"]
         if not isinstance(raw_ops, list) or not raw_ops:

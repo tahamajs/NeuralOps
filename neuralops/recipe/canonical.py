@@ -61,4 +61,12 @@ def recipe_hash(recipe_or_dict: Recipe | dict[str, Any]) -> str:
     """Compute cryptographic SHA-256 hash over the canonical byte stream."""
     b = canonical_bytes(recipe_or_dict)
     digest = hashlib.sha256(b).hexdigest()
-    return f"sha256:{digest}"
+    computed_hash = f"sha256:{digest}"
+
+    if isinstance(recipe_or_dict, Recipe):
+        cached = getattr(recipe_or_dict, "_cached_hash", None)
+        if cached is not None and cached != computed_hash:
+            raise ValueError("Recipe was mutated after hashing. Recreate the recipe.")
+        object.__setattr__(recipe_or_dict, "_cached_hash", computed_hash)
+
+    return computed_hash

@@ -24,11 +24,18 @@ class NumericalValidator:
 
     @staticmethod
     def check_finite(tensor: torch.Tensor, name: str) -> ValidationStatus:
-        if torch.isnan(tensor).any():
-            raise ValueError(f"NaN in {name}")
-        if torch.isinf(tensor).any():
-            raise ValueError(f"Inf in {name}")
-        return ValidationStatus({"status": "passed", "passed": True, "name": name})
+        nan_count = int(torch.isnan(tensor).sum().item()) if isinstance(tensor, torch.Tensor) else 0
+        inf_count = int(torch.isinf(tensor).sum().item()) if isinstance(tensor, torch.Tensor) else 0
+        passed = nan_count == 0 and inf_count == 0
+        return ValidationStatus(
+            {
+                "status": "passed" if passed else "failed",
+                "passed": passed,
+                "name": name,
+                "nan_count": nan_count,
+                "inf_count": inf_count,
+            }
+        )
 
     @staticmethod
     def check_range(
@@ -39,14 +46,16 @@ class NumericalValidator:
     ) -> ValidationStatus:
         max_abs = float(tensor.abs().max().item()) if isinstance(tensor, torch.Tensor) else float(abs(tensor))
         within_range = max_abs <= max_val
-        return ValidationStatus({
-            "status": "passed" if within_range else "warning",
-            "passed": within_range,
-            "name": name,
-            "max_abs": max_abs,
-            "min_val": min_val,
-            "max_val": max_val,
-        })
+        return ValidationStatus(
+            {
+                "status": "passed" if within_range else "warning",
+                "passed": within_range,
+                "name": name,
+                "max_abs": max_abs,
+                "min_val": min_val,
+                "max_val": max_val,
+            }
+        )
 
     @staticmethod
     def gradient_norm(model: torch.nn.Module) -> float:

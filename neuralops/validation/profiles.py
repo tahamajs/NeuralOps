@@ -62,13 +62,8 @@ class EmpiricalBenchmarkGate(Gate):
                 duration_seconds=time.perf_counter() - t0,
             )
 
-        return GateResult(
-            gate_name=self.name,
-            passed=True,
-            skipped=False,
-            severity=self.severity,
-            message="Empirical benchmark passed",
-            duration_seconds=time.perf_counter() - t0,
+        raise NotImplementedError(
+            "EmpiricalBenchmarkGate evaluation is not implemented yet; empirical evaluation must be performed through the benchmark suite."
         )
 
 
