@@ -102,6 +102,48 @@ class TestReplaceAttentionAPI:
         assert hasattr(replaced, "_neuralops_metadata")
         assert replaced._neuralops_metadata[-1]["kwargs"]["layers"] == [0]
 
+    @pytest.mark.parametrize("attn_name", ["full_attention", "cosformer", "gla"])
+    def test_replace_attention_three_types(self, attn_name: str):
+        torch.manual_seed(42)
+        model = DummyTransformerModel(num_layers=2, d_model=32)
+        replaced = replace_attention(model, attention=attn_name)
+        assert hasattr(replaced, "_neuralops_metadata")
+        assert replaced._neuralops_metadata[-1]["op"] == "replace"
+
+        # Verify forward pass succeeds with correct dimensions
+        x = torch.randn(2, 4, 32)
+        out = replaced(x)
+        assert out.shape == (2, 4, 32)
+        assert torch.isfinite(out).all()
+
+    def test_transplant_attention_with_calibrate(self):
+        torch.manual_seed(42)
+        model = DummyTransformerModel(num_layers=2, d_model=32)
+        calib_inputs = torch.randn(2, 4, 32)
+        transplanted = transplant_attention(
+            model,
+            attention="cosformer",
+            calibrate=True,
+            calibration_inputs=calib_inputs,
+        )
+        assert hasattr(transplanted, "_neuralops_metadata")
+
+        # Verify forward pass succeeds post-calibration
+        out = transplanted(calib_inputs)
+        assert out.shape == (2, 4, 32)
+        assert torch.isfinite(out).all()
+
+    def test_replace_attention_none_model_raises(self):
+        with pytest.raises(ValueError, match="model cannot be None"):
+            replace_attention(None, attention="full_attention")
+
+    def test_replace_attention_unknown_raises(self):
+        from neuralops.core.exceptions import AttentionNotRegisteredError
+
+        model = DummyTransformerModel(num_layers=1, d_model=32)
+        with pytest.raises(AttentionNotRegisteredError):
+            replace_attention(model, attention="non_existent_attention_mechanism_xyz")
+
 
 class TestComposeAttentionAPI:
     """Verifies compose_attention modular factory."""
