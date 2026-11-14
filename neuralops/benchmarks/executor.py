@@ -559,8 +559,9 @@ def execute_single(
                     msg_type, payload = parent_conn.recv()
                     if msg_type == "error":
                         err_msg, tb_str = payload
-                except Exception:
-                    pass
+                except (EOFError, ConnectionResetError, BrokenPipeError, Exception):
+                    err_msg = "Worker process terminated abruptly (likely OOM or segfault)."
+                    tb_str = ""
 
             run_logger.error("Run %s failed with %s: %s", run_id, status_val, err_msg)
             _record_event(
@@ -591,8 +592,8 @@ def execute_single(
         # 3. Clean exit (exitcode == 0)
         try:
             msg_type, payload = parent_conn.recv()
-        except EOFError:
-            msg_type, payload = "error", ("Worker process closed without sending output", "")
+        except (EOFError, ConnectionResetError, BrokenPipeError):
+            msg_type, payload = "error", ("Worker process terminated abruptly (likely OOM or segfault).", "")
 
         if msg_type == "error":
             duration_s = time.perf_counter() - start_t

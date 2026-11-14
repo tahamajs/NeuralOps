@@ -1173,6 +1173,9 @@ build_parser = _build_parser
 
 def handle_list(args: argparse.Namespace) -> int:
     """Lists registered attention mechanisms and compression engines."""
+    from neuralops.benchmarks.registry import ensure_registry_populated
+
+    ensure_registry_populated()
     from neuralops.cli.list_cmd import cmd_list
 
     return cmd_list(args)
@@ -1593,8 +1596,9 @@ def resolve_benchmark_selector(selector: str) -> list[str]:
     unprefixed names ('cosformer', 'direct_svd'), and comma-separated combinations.
     Raises ValueError listing valid benchmark names if any selector token is invalid.
     """
-    from neuralops.benchmarks.registry import BENCHMARK_REGISTRY
+    from neuralops.benchmarks.registry import BENCHMARK_REGISTRY, ensure_registry_populated
 
+    ensure_registry_populated()
     valid_names = sorted(list(BENCHMARK_REGISTRY.keys()))
     tokens = [t.strip() for t in selector.split(",") if t.strip()]
     resolved: list[str] = []
@@ -1688,6 +1692,8 @@ def handle_run(args: argparse.Namespace) -> None:
         logger.info("No benchmark/module selector specified; resolving to 'all'")
 
     if getattr(args, "device", None) == "cpu":
+        # Explicitly enforce CPU execution across all downstreams
+        args.device = "cpu"
         # Worker subprocesses inherit this and cannot initialize CUDA.
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
     is_operation_request = (

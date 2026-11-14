@@ -156,6 +156,9 @@ def list_benchmarks(mode: Optional[str] = None, hardware: Optional[str] = None) 
     return sorted(results)
 
 
+_REGISTRY_POPULATED: bool = False
+
+
 class BenchmarkRegistry:
     """Registry accessor for benchmarks discovery, validation, and operational modes."""
 
@@ -199,121 +202,184 @@ class BenchmarkRegistry:
         """Populate BENCHMARK_REGISTRY and _BENCHMARK_METADATA with canonical inventory.
 
         Registers all 131 attention mechanisms, 72 compressor engines, and verified ops
-        under strict canonical names ('attention:<name>', 'compressor:<name>', 'cuda:<name>', 'triton:<name>').
+        under strict canonical names ('attention:<name>', 'compressor:<name>', 'cuda:<name>', 'triton:<name>'),
+        as well as meta benchmarks for all 12 operational benchmark modes.
         """
-        from neuralops.benchmarks.adapters.cuda_adapter import CANONICAL_CUDA_MODULES
-        from neuralops.benchmarks.adapters.triton_adapter import CANONICAL_TRITON_MODULES
-        from neuralops.benchmarks.discovery import discover_all_modules
-        from neuralops.benchmarks.ops_registry import OPS_REGISTRY
+        global _REGISTRY_POPULATED
+        if _REGISTRY_POPULATED:
+            return len(BENCHMARK_REGISTRY)
 
         count = 0
-        modules = discover_all_modules()
-        for m in modules:
-            cat = getattr(m, "type", None) or getattr(m, "module_type", "attention")
-            canon_name = f"{cat}:{m.name}"
-            spec = BenchmarkSpec(
-                canonical_name=canon_name,
-                category=cat,
-                target_name=m.name,
-                requires_cuda=getattr(m, "requires_cuda", False),
-                supports_causal=getattr(m, "supports_causal", True),
-                supports_backward=True,
-                supports_gqa=getattr(m, "supports_gqa", False),
-                supports_rope=getattr(m, "supports_rope", False),
-                default_timeout_s=getattr(m, "timeout_s", 1800),
-            )
-            BENCHMARK_REGISTRY[canon_name] = spec
-            _BENCHMARK_METADATA[canon_name] = {
-                "name": canon_name,
-                "category": cat,
-                "target_name": m.name,
-                "mode": f"sweep-{cat}s" if cat in ("attention", "compressor") else "any",
-                "hardware": "cuda" if spec.requires_cuda else "any",
-                "description": f"Canonical {cat} benchmark for {m.name}",
-                "spec": spec,
-            }
-            count += 1
 
-        for mod in CANONICAL_CUDA_MODULES:
-            canon_name = mod if ":" in mod else f"cuda:{mod}"
-            target_name = mod.split(":", 1)[1] if ":" in mod else mod
-            if canon_name not in BENCHMARK_REGISTRY:
-                spec = BenchmarkSpec(
-                    canonical_name=canon_name,
-                    category="cuda",
-                    target_name=target_name,
-                    requires_cuda=True,
-                    default_timeout_s=1800,
-                    reference_backend="pytorch",
-                )
-                BENCHMARK_REGISTRY[canon_name] = spec
-                _BENCHMARK_METADATA[canon_name] = {
-                    "name": canon_name,
-                    "category": "cuda",
-                    "target_name": target_name,
-                    "mode": "any",
-                    "hardware": "cuda",
-                    "description": f"Canonical CUDA kernel module {target_name}",
-                    "spec": spec,
-                }
-                count += 1
+        # 1. Discover registered attention and compressor modules
+        try:
+            from neuralops.benchmarks.discovery import discover_all_modules
 
-        for mod in CANONICAL_TRITON_MODULES:
-            canon_name = mod if ":" in mod else f"triton:{mod}"
-            target_name = mod.split(":", 1)[1] if ":" in mod else mod
-            if canon_name not in BENCHMARK_REGISTRY:
-                spec = BenchmarkSpec(
-                    canonical_name=canon_name,
-                    category="triton",
-                    target_name=target_name,
-                    requires_triton=True,
-                    default_timeout_s=1800,
-                    reference_backend="pytorch",
-                )
-                BENCHMARK_REGISTRY[canon_name] = spec
-                _BENCHMARK_METADATA[canon_name] = {
-                    "name": canon_name,
-                    "category": "triton",
-                    "target_name": target_name,
-                    "mode": "any",
-                    "hardware": "cuda",
-                    "description": f"Canonical Triton kernel module {target_name}",
-                    "spec": spec,
-                }
-                count += 1
-
-        for raw_op_name, op_cfg in OPS_REGISTRY.items():
-            cat = op_cfg.category
-            if cat in ("attention", "compressor"):
-                continue
-            canon_name = raw_op_name if ":" in raw_op_name else f"{cat}:{raw_op_name}"
-            target_name = raw_op_name.split(":", 1)[1] if ":" in raw_op_name else raw_op_name
-            if canon_name not in BENCHMARK_REGISTRY:
+            modules = discover_all_modules()
+            for m in modules:
+                cat = getattr(m, "type", None) or getattr(m, "module_type", "attention")
+                canon_name = f"{cat}:{m.name}"
                 spec = BenchmarkSpec(
                     canonical_name=canon_name,
                     category=cat,
-                    target_name=target_name,
-                    requires_cuda=(cat == "cuda"),
-                    requires_triton=(cat == "triton"),
-                    reference_backend="pytorch",
+                    target_name=m.name,
+                    requires_cuda=getattr(m, "requires_cuda", False),
+                    supports_causal=getattr(m, "supports_causal", True),
+                    supports_backward=True,
+                    supports_gqa=getattr(m, "supports_gqa", False),
+                    supports_rope=getattr(m, "supports_rope", False),
+                    default_timeout_s=getattr(m, "timeout_s", 1800),
                 )
                 BENCHMARK_REGISTRY[canon_name] = spec
                 _BENCHMARK_METADATA[canon_name] = {
                     "name": canon_name,
                     "category": cat,
-                    "target_name": target_name,
-                    "mode": "any",
-                    "hardware": "cuda" if cat == "cuda" else "any",
-                    "description": f"Verified {cat} kernel operation {target_name}",
+                    "target_name": m.name,
+                    "mode": f"sweep-{cat}s" if cat in ("attention", "compressor") else "any",
+                    "hardware": "cuda" if spec.requires_cuda else "any",
+                    "description": f"Canonical {cat} benchmark for {m.name}",
                     "spec": spec,
                 }
                 count += 1
+        except Exception as exc:
+            LOG.warning("Failed to populate attention/compressor benchmark modules: %s", exc)
 
+        # 2. Register canonical CUDA modules
+        try:
+            from neuralops.benchmarks.adapters.cuda_adapter import CANONICAL_CUDA_MODULES
+
+            for mod in CANONICAL_CUDA_MODULES:
+                canon_name = mod if ":" in mod else f"cuda:{mod}"
+                target_name = mod.split(":", 1)[1] if ":" in mod else mod
+                if canon_name not in BENCHMARK_REGISTRY:
+                    spec = BenchmarkSpec(
+                        canonical_name=canon_name,
+                        category="cuda",
+                        target_name=target_name,
+                        requires_cuda=True,
+                        default_timeout_s=1800,
+                        reference_backend="pytorch",
+                    )
+                    BENCHMARK_REGISTRY[canon_name] = spec
+                    _BENCHMARK_METADATA[canon_name] = {
+                        "name": canon_name,
+                        "category": "cuda",
+                        "target_name": target_name,
+                        "mode": "any",
+                        "hardware": "cuda",
+                        "description": f"Canonical CUDA kernel module {target_name}",
+                        "spec": spec,
+                    }
+                    count += 1
+        except Exception as exc:
+            LOG.warning("Failed to populate canonical CUDA benchmark modules: %s", exc)
+
+        # 3. Register canonical Triton modules
+        try:
+            from neuralops.benchmarks.adapters.triton_adapter import CANONICAL_TRITON_MODULES
+
+            for mod in CANONICAL_TRITON_MODULES:
+                canon_name = mod if ":" in mod else f"triton:{mod}"
+                target_name = mod.split(":", 1)[1] if ":" in mod else mod
+                if canon_name not in BENCHMARK_REGISTRY:
+                    spec = BenchmarkSpec(
+                        canonical_name=canon_name,
+                        category="triton",
+                        target_name=target_name,
+                        requires_triton=True,
+                        default_timeout_s=1800,
+                        reference_backend="pytorch",
+                    )
+                    BENCHMARK_REGISTRY[canon_name] = spec
+                    _BENCHMARK_METADATA[canon_name] = {
+                        "name": canon_name,
+                        "category": "triton",
+                        "target_name": target_name,
+                        "mode": "any",
+                        "hardware": "cuda",
+                        "description": f"Canonical Triton kernel module {target_name}",
+                        "spec": spec,
+                    }
+                    count += 1
+        except Exception as exc:
+            LOG.warning("Failed to populate canonical Triton benchmark modules: %s", exc)
+
+        # 4. Register verified ops from OPS_REGISTRY
+        try:
+            from neuralops.benchmarks.ops_registry import OPS_REGISTRY
+
+            for raw_op_name, op_cfg in OPS_REGISTRY.items():
+                cat = op_cfg.category
+                if cat in ("attention", "compressor"):
+                    continue
+                canon_name = raw_op_name if ":" in raw_op_name else f"{cat}:{raw_op_name}"
+                target_name = raw_op_name.split(":", 1)[1] if ":" in raw_op_name else raw_op_name
+                if canon_name not in BENCHMARK_REGISTRY:
+                    spec = BenchmarkSpec(
+                        canonical_name=canon_name,
+                        category=cat,
+                        target_name=target_name,
+                        requires_cuda=(cat == "cuda"),
+                        requires_triton=(cat == "triton"),
+                        reference_backend="pytorch",
+                    )
+                    BENCHMARK_REGISTRY[canon_name] = spec
+                    _BENCHMARK_METADATA[canon_name] = {
+                        "name": canon_name,
+                        "category": cat,
+                        "target_name": target_name,
+                        "mode": "any",
+                        "hardware": "cuda" if cat == "cuda" else "any",
+                        "description": f"Verified {cat} kernel operation {target_name}",
+                        "spec": spec,
+                    }
+                    count += 1
+        except Exception as exc:
+            LOG.warning("Failed to populate ops registry benchmark modules: %s", exc)
+
+        # 5. Register meta benchmarks for the 12 OPERATIONAL_BENCHMARK_MODES
+        for op_mode in OPERATIONAL_BENCHMARK_MODES:
+            meta_name = f"mode:{op_mode}"
+            if meta_name not in BENCHMARK_REGISTRY:
+                spec = BenchmarkSpec(
+                    canonical_name=meta_name,
+                    category="mode",
+                    target_name=op_mode,
+                    requires_cuda=(op_mode in ("flash-compute", "distributed-mfu")),
+                    default_timeout_s=3600,
+                    metadata={"operational_mode": op_mode, "is_meta": True},
+                )
+                BENCHMARK_REGISTRY[meta_name] = spec
+                _BENCHMARK_METADATA[meta_name] = {
+                    "name": meta_name,
+                    "category": "mode",
+                    "target_name": op_mode,
+                    "mode": op_mode,
+                    "hardware": "cuda" if spec.requires_cuda else "any",
+                    "description": f"Operational benchmark mode meta-runner: {op_mode}",
+                    "spec": spec,
+                }
+                # Also allow direct access via mode name if not already registered
+                if op_mode not in BENCHMARK_REGISTRY:
+                    BENCHMARK_REGISTRY[op_mode] = spec
+                    _BENCHMARK_METADATA[op_mode] = _BENCHMARK_METADATA[meta_name]
+                count += 1
+
+        _REGISTRY_POPULATED = True
         return count
 
 
-# Auto-populate canonical benchmarks on initial import
-BenchmarkRegistry.populate_canonical_benchmarks()
+def ensure_registry_populated() -> int:
+    """Ensure that canonical benchmarks are populated in BENCHMARK_REGISTRY lazily and idempotently."""
+    return BenchmarkRegistry.populate_canonical_benchmarks()
+
+
+# Idempotent lazy population helper is exposed via ensure_registry_populated()
+# Auto-populate canonical benchmarks on initial import if possible, without crashing on import error
+try:
+    BenchmarkRegistry.populate_canonical_benchmarks()
+except Exception as _init_exc:
+    LOG.warning("Initial benchmark registry population deferred: %s", _init_exc)
 
 
 __all__ = [
@@ -324,6 +390,7 @@ __all__ = [
     "register_benchmark",
     "get_benchmark",
     "list_benchmarks",
+    "ensure_registry_populated",
     "CANONICAL_BENCHMARK_MODELS",
     "CANONICAL_BENCHMARK_DATASETS",
     "OPERATIONAL_BENCHMARK_MODES",
