@@ -203,14 +203,19 @@ def apply_attention_module(
         )
 
     LOG.info("Injecting attention replacement: '%s' (rank=%d)...", module_name, rank)
+    import inspect
     from neuralops.core.attention_utils import inject_attention
+
+    sig = inspect.signature(inject_attention)
+    valid_params = set(sig.parameters.keys())
+    filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_params}
 
     return inject_attention(
         model,
         attention_type=module_name,
         rank=rank,
         copy_weights=copy_weights,
-        **kwargs,
+        **filtered_kwargs,
     )
 
 
@@ -231,19 +236,25 @@ def apply_compressor(
         )
 
     LOG.info("Applying compressor: '%s' (rank=%d)...", module_name, rank)
+    import inspect
+
     compressor_cls = COMPRESSOR_REGISTRY[module_name]
+
+    init_sig = inspect.signature(compressor_cls.__init__)
+    valid_init_params = set(init_sig.parameters.keys())
+    filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_init_params}
 
     compressor = None
     try:
-        compressor = compressor_cls(model=model, rank=rank, **kwargs)
+        compressor = compressor_cls(model=model, rank=rank, **filtered_kwargs)
     except TypeError:
         try:
-            compressor = compressor_cls(rank=rank, **kwargs)
+            compressor = compressor_cls(rank=rank, **filtered_kwargs)
         except TypeError:
             try:
-                compressor = compressor_cls(model, **kwargs)
+                compressor = compressor_cls(model, **filtered_kwargs)
             except TypeError:
-                compressor = compressor_cls(**kwargs)
+                compressor = compressor_cls(**filtered_kwargs)
 
     if hasattr(compressor, "compress"):
         comp_kwargs = {}

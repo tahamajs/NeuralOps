@@ -325,12 +325,16 @@ def load_wikitext_dataset(
     return load_dataset_by_name(name=ds_name, tokenizer=tokenizer, max_length=max_length, split=split)
 
 
-def load_preprocess_script(path: str | Path) -> Callable[[Any], Any]:
+def load_preprocess_script(path: str | Path, trust: bool = False) -> Callable[[Any], Any]:
     """Load and validate custom preprocessing script exposing `preprocess(batch) -> batch`.
 
     WARNING: Executing a preprocessing script executes arbitrary Python code.
-    Ensure the script is sourced from a trusted origin.
+    Requires explicit trust=True opt-in to protect against untrusted code execution.
     """
+    if not trust:
+        raise PermissionError(
+            f"Loading preprocessing script '{path}' requires explicit trust=True to allow code execution."
+        )
     path_obj = Path(path).resolve()
     if not path_obj.is_file():
         raise FileNotFoundError(f"Preprocessing script not found: {path_obj}")
