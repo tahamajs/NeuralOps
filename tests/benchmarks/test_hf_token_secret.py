@@ -22,7 +22,7 @@ from neuralops.hub.uploader import AsyncHFHubUploader, _redact_secrets, retry_hf
 def test_to_dict_excludes_token():
     """Assert to_dict and repr do not expose plaintext HF token."""
     secret = "hf_xxx_secret"
-    cfg = BenchmarkConfig(hf_token=secret)
+    cfg = BenchmarkConfig(hf_token=secret, device="cpu")
     serialized = json.dumps(cfg.to_dict())
     assert secret not in serialized, f"Plaintext secret {secret!r} found in to_dict() serialization"
     assert secret not in repr(cfg), f"Plaintext secret {secret!r} found in repr(config)"
@@ -31,7 +31,7 @@ def test_to_dict_excludes_token():
 def test_save_excludes_token(tmp_path: Path):
     """Assert config.save() writes JSON without exposing plaintext HF token."""
     secret = "hf_xxx_secret"
-    cfg = BenchmarkConfig(hf_token=secret)
+    cfg = BenchmarkConfig(hf_token=secret, device="cpu")
     save_file = tmp_path / "benchmark_config.json"
     cfg.save(save_file)
 
@@ -89,6 +89,7 @@ def test_async_uploader_redacts_token_on_failure(tmp_path: Path):
 
 def test_uploader_retry_hf_api_call_rate_limit():
     """Assert retry_hf_api_call handles HTTP 429 rate limit with backoff."""
+
     class Mock429(Exception):
         status_code = 429
 
@@ -117,10 +118,9 @@ def test_upload_with_retry_requires_token(monkeypatch: pytest.MonkeyPatch, tmp_p
     monkeypatch.setenv("HOME", str(fake_home))
     try:
         import huggingface_hub
+
         monkeypatch.setattr(huggingface_hub, "get_token", lambda: None)
     except Exception:
         pass
     with pytest.raises(ValueError, match="HF_TOKEN environment variable is strictly required"):
         upload_with_retry("test/repo", tmp_path, token=None)
-
-
