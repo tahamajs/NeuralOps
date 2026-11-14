@@ -250,7 +250,7 @@ def __getattr__(name: str) -> Any:
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
-__all__ = [
+__all__ = [  # noqa: F822
     "replace_attention",
     "inject_attention",
     "available_attention_types",

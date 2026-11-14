@@ -183,9 +183,7 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
     from neuralops.core.base import BaseAttention
     from neuralops.core.registry import ATTENTION_REGISTRY
 
-    registered_attn_classes = tuple(
-        c for c in ATTENTION_REGISTRY.values() if isinstance(c, type)
-    )
+    registered_attn_classes = tuple(c for c in ATTENTION_REGISTRY.values() if isinstance(c, type))
     cataloged_attn_names: list[str] = []
     has_frozen_backbone = any(not p.requires_grad for p in model.parameters())
 
@@ -354,10 +352,10 @@ def extract_surgical_manifest(model: nn.Module) -> Dict[str, Any]:
             direct_params = list(sub.named_parameters(recurse=False))
             if direct_params and any(p.requires_grad for _, p in direct_params):
                 leaf = name.rsplit(".", 1)[-1].lower()
-                is_norm = "layernorm" in cls_name.lower() or "rmsnorm" in cls_name.lower() or isinstance(sub, nn.LayerNorm)
-                is_head = leaf in _HEAD_LEAF_NAMES or any(
-                    name.endswith(f".{h}") or name == h for h in _HEAD_LEAF_NAMES
+                is_norm = (
+                    "layernorm" in cls_name.lower() or "rmsnorm" in cls_name.lower() or isinstance(sub, nn.LayerNorm)
                 )
+                is_head = leaf in _HEAD_LEAF_NAMES or any(name.endswith(f".{h}") or name == h for h in _HEAD_LEAF_NAMES)
                 if is_norm:
                     manifest["submodules"][name] = {
                         "category": "trained_norm",
@@ -611,7 +609,9 @@ def load_surgical_checkpoint(
             if existing is None:
                 if strict:
                     raise KeyError(f"Target module path '{module_path}' for LoRA adapter not found in base_model")
-                logger.warning("Target module path '%s' for LoRA adapter not found in base_model; skipping", module_path)
+                logger.warning(
+                    "Target module path '%s' for LoRA adapter not found in base_model; skipping", module_path
+                )
                 continue
 
             if hasattr(existing, "lora_A") and hasattr(existing, "lora_B"):
@@ -792,7 +792,9 @@ def load_surgical_checkpoint(
                 replace_module(base_model, module_path, new_sub)
             except (AttributeError, KeyError, IndexError) as e_replace:
                 if strict:
-                    raise KeyError(f"Failed to replace compressed linear at '{module_path}': {e_replace}") from e_replace
+                    raise KeyError(
+                        f"Failed to replace compressed linear at '{module_path}': {e_replace}"
+                    ) from e_replace
                 logger.warning("Failed to replace compressed linear at '%s': %s", module_path, e_replace)
         else:
             if strict:
@@ -833,8 +835,7 @@ def load_surgical_checkpoint(
         raise FileNotFoundError(f"No valid state dict found in {load_dir}")
 
     is_delta_ckpt = (
-        manifest.get("schema_version") == "neuralops.surgery/v2"
-        or loaded_file.name == "attention_weights.safetensors"
+        manifest.get("schema_version") == "neuralops.surgery/v2" or loaded_file.name == "attention_weights.safetensors"
     )
     effective_strict = False if is_delta_ckpt else strict
     load_res = base_model.load_state_dict(state_dict, strict=effective_strict)

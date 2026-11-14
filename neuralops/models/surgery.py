@@ -777,7 +777,11 @@ def calibrate_surgically_replaced_model(
             parent_mod = curr
 
             if parent_mod is not None:
-                if hasattr(parent_mod, "output") and hasattr(parent_mod.output, "dense") and isinstance(parent_mod.output.dense, nn.Linear):
+                if (
+                    hasattr(parent_mod, "output")
+                    and hasattr(parent_mod.output, "dense")
+                    and isinstance(parent_mod.output.dense, nn.Linear)
+                ):
                     downstream_proj = parent_mod.output.dense
                 elif hasattr(parent_mod, "dense") and isinstance(parent_mod.dense, nn.Linear):
                     downstream_proj = parent_mod.dense
@@ -786,12 +790,16 @@ def calibrate_surgically_replaced_model(
             W_cur = downstream_proj.weight.data.float().clone()
             W_target = torch.matmul(W_cur, W_align.t())
             W_new = (1.0 - blend_alpha) * W_cur + blend_alpha * W_target
-            downstream_proj.weight.data.copy_(W_new.to(dtype=downstream_proj.weight.dtype, device=downstream_proj.weight.device))
+            downstream_proj.weight.data.copy_(
+                W_new.to(dtype=downstream_proj.weight.dtype, device=downstream_proj.weight.device)
+            )
             if getattr(downstream_proj, "bias", None) is not None:
                 b_cur = downstream_proj.bias.data.float().clone()
                 b_target = b_cur + torch.matmul(b_align.unsqueeze(0), W_cur.t()).squeeze(0)
                 b_new = (1.0 - blend_alpha) * b_cur + blend_alpha * b_target
-                downstream_proj.bias.data.copy_(b_new.to(dtype=downstream_proj.bias.dtype, device=downstream_proj.bias.device))
+                downstream_proj.bias.data.copy_(
+                    b_new.to(dtype=downstream_proj.bias.dtype, device=downstream_proj.bias.device)
+                )
         else:
             # 2. Check for upstream internal projection inside surg_mod (e.g. decoder models where hook is on self_attn)
             out_proj = None
@@ -904,16 +912,18 @@ def _heal_replaced_model_impl(
     )
 
     if isinstance(calibration_inputs, dict):
-        batches.append({
-            k: (
-                v.to(device=teacher_dev, dtype=teacher_float_dtype)
-                if v.is_floating_point()
-                else v.to(device=teacher_dev)
-            )
-            if isinstance(v, torch.Tensor)
-            else v
-            for k, v in calibration_inputs.items()
-        })
+        batches.append(
+            {
+                k: (
+                    v.to(device=teacher_dev, dtype=teacher_float_dtype)
+                    if v.is_floating_point()
+                    else v.to(device=teacher_dev)
+                )
+                if isinstance(v, torch.Tensor)
+                else v
+                for k, v in calibration_inputs.items()
+            }
+        )
     elif isinstance(calibration_inputs, torch.Tensor):
         batches.append(
             calibration_inputs.to(device=teacher_dev, dtype=teacher_float_dtype)
@@ -923,16 +933,18 @@ def _heal_replaced_model_impl(
     elif isinstance(calibration_inputs, (list, tuple)):
         for item in calibration_inputs:
             if isinstance(item, dict):
-                batches.append({
-                    k: (
-                        v.to(device=teacher_dev, dtype=teacher_float_dtype)
-                        if v.is_floating_point()
-                        else v.to(device=teacher_dev)
-                    )
-                    if isinstance(v, torch.Tensor)
-                    else v
-                    for k, v in item.items()
-                })
+                batches.append(
+                    {
+                        k: (
+                            v.to(device=teacher_dev, dtype=teacher_float_dtype)
+                            if v.is_floating_point()
+                            else v.to(device=teacher_dev)
+                        )
+                        if isinstance(v, torch.Tensor)
+                        else v
+                        for k, v in item.items()
+                    }
+                )
             elif isinstance(item, torch.Tensor):
                 batches.append(
                     item.to(device=teacher_dev, dtype=teacher_float_dtype)
@@ -982,6 +994,7 @@ def _heal_replaced_model_impl(
     hooks = []
 
     for name, t_mod, _ in layer_pairs:
+
         def _make_capture_hook(layer_name: str):
             def _hook(mod, inp, out):
                 out_tensor = out[0] if isinstance(out, tuple) else out

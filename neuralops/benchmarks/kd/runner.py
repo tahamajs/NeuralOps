@@ -317,7 +317,7 @@ class KDRunner:
         labels: List[int] = []
         for batch in loader:
             batch = {k: v.to(self.device) for k, v in batch.items()}
-            with autocast("cuda", enabled=(self.config.use_fp16 and self.device == "cuda")):
+            with _autocast_context(self.device, enabled=(self.config.use_fp16 and self.device == "cuda")):
                 out = model(**batch)
             preds.extend(out.logits.argmax(-1).cpu().tolist())
             labels.extend(batch["labels"].cpu().tolist())

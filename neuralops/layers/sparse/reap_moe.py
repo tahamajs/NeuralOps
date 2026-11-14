@@ -127,7 +127,7 @@ class REAPMoE(nn.Module):
         topk_weights = (topk_weights / topk_weights.sum(dim=-1, keepdim=True).clamp(min=1e-8)).to(target_dtype)
 
         router_probs = F.softmax(logits.float(), dim=-1).view(-1, self.n_experts)
-        expert_mask = F.one_hot(topk_indices, num_classes=self.n_experts).float()
+        expert_mask = F.one_hot(topk_indices.long(), num_classes=self.n_experts).float()
 
         expert_assignment = expert_mask.sum(dim=2).clamp(max=1.0)
         density = expert_assignment.view(-1, self.n_experts).mean(dim=0)

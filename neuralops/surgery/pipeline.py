@@ -408,17 +408,30 @@ def apply_mla_attention_surgery(
     from neuralops.surgery.mla_surgery import DeepSeekMLASurgeryBridge
     from neuralops.surgery.scanner import UniversalArchitectureScanner
 
-    scanner = UniversalArchitectureScanner(model)
-    targets = scanner.scan()
+    scanner = UniversalArchitectureScanner()
+    targets = scanner.scan(model)
     for spec in targets:
         mla_bridge = DeepSeekMLASurgeryBridge(
             latent_kv_dim=latent_kv_dim,
             decoupled_rope_dim=decoupled_rope_dim,
             decay=decay,
-            hidden_dim=spec.hidden_dim,
+            hidden_dim=spec.embed_dim,
             **kwargs,
         )
-        spec.parent_module.register_module(spec.child_name, mla_bridge)
+        attr = spec.attr_name
+        if isinstance(spec.parent_module, (dict, nn.ModuleDict)):
+            spec.parent_module[attr] = mla_bridge
+        elif hasattr(spec.parent_module, "__setitem__") and (
+            attr.isdigit() or isinstance(spec.parent_module, (list, nn.ModuleList))
+        ):
+            idx = int(attr) if attr.isdigit() else 0
+            spec.parent_module[idx] = mla_bridge
+        elif hasattr(spec.parent_module, "__setitem__") and not hasattr(spec.parent_module, "__setattr__"):
+            spec.parent_module[attr] = mla_bridge
+        elif attr:
+            setattr(spec.parent_module, attr, mla_bridge)
+        else:
+            setattr(spec.parent_module, spec.module_path.split(".")[-1], mla_bridge)
     return model
 
 
