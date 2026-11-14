@@ -41,7 +41,7 @@ Download and run any pre-surgeried attention checkpoint from the official `Hoosh
 
 ```python
 import torch
-from neuralops.models import load_surgeried_model
+from neuralops.hub import load_surgeried_model
 
 # Load FlashAttention-3 surgeried BERT directly from Hooshaai hub
 model, tokenizer = load_surgeried_model("Hooshaai/bert-flash_attention-sst2")
@@ -57,29 +57,34 @@ Perform in-place topological attention surgery on any standard Hugging Face mode
 ```python
 import torch
 from transformers import AutoModelForSequenceClassification
-from neuralops.surgery import UniversalAttentionTransplanter
+from neuralops import replace_attention
 
 model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased")
 
 # Transplant standard SDPA attention with Subquadratic Gated DeltaNet
-transplanter = UniversalAttentionTransplanter(target_attention="gated_delta_net")
-surgeried_model, manifest = transplanter.transplant(model)
+surgeried_model = replace_attention(model, attention="gated_delta_net")
 
-print(f"Surgery successfully applied across {len(manifest.modified_layers)} layers!")
+inputs = model.dummy_inputs if hasattr(model, "dummy_inputs") else {"input_ids": torch.randint(0, 1000, (1, 128))}
+outputs = surgeried_model(**inputs)
+print("Surgeried model logits shape:", outputs.logits.shape)
 ```
 
 ### 3. Low-Rank Model Compression via 82-Compressor Zoo
 Compress transformer projection layers using hardware-aware low-rank SVD factorization:
 
 ```python
-from neuralops.compression import UniversalModelCompressor
+import torch
+from transformers import AutoModelForSequenceClassification
+from neuralops import compress
+
+model = AutoModelForSequenceClassification.from_pretrained("bert-base-uncased")
 
 # Apply Direct SVD compression with rank=32
-compressor = UniversalModelCompressor(algorithm="direct_svd", rank=32)
-compressed_model, metrics = compressor.compress(model)
+compressed_model = compress(model, method="direct_svd", rank=32)
 
-print(f"Parameter reduction ratio: {metrics.compression_ratio:.2f}x")
-print(f"Memory footprint reduction: {metrics.memory_reduction_pct:.1f}%")
+inputs = {"input_ids": torch.randint(0, 1000, (1, 128))}
+outputs = compressed_model(**inputs)
+print("Compressed model logits shape:", outputs.logits.shape)
 ```
 
 ---

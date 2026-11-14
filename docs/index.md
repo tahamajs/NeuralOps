@@ -1,8 +1,8 @@
 # 🚀 NeuralOps: Unified Platform for Subquadratic Attention and Compression
 
-**NeuralOps** (`SVD_linear_Attention` **v1.6.0**) is an open-source, publication-grade deep learning acceleration platform developed at the **Department of Computer Engineering, College of Engineering, University of Tehran**, bringing together subquadratic sequence modeling, in-place neural surgery, low-rank model compression, and high-throughput inference serving.
+**NeuralOps** (`SVD_linear_Attention` **v2.1.0**) is an open-source, publication-grade deep learning systems framework and neural model surgery ecosystem developed at the **Department of Computer Engineering, College of Engineering, University of Tehran**, bringing together subquadratic sequence modeling, in-place neural surgery, low-rank model compression, and high-throughput inference serving.
 
-[![Release](https://img.shields.io/badge/release-v1.6.0-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v1.6.0)
+[![Release](https://img.shields.io/badge/release-v2.1.0-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v2.1.0)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/)
 [![Hardware Verified](https://img.shields.io/badge/Hardware%20Verified-RTX%204070%20(SM%208.9)-76B900?logo=nvidia&logoColor=white)](https://huggingface.co/datasets/Hooshaai/neuralops-results)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Benchmark%20Ledger-Hooshaai%2Fneuralops--results-ffcc00)](https://huggingface.co/datasets/Hooshaai/neuralops-results)
@@ -14,12 +14,36 @@
 
 NeuralOps maintains a strictly audited, immutable contract across registries, kernel dispatch hierarchies, and demonstration suites:
 
-- **131 Attention Mechanisms (14 Architectural Families)**: Linear attention (Cosformer, Performer, GLA), state-space models (Mamba S6, SSD Mamba-2), gated linear recurrences (RetNet, RWKV-6, HGRN2), delta-rule recurrences (Gated DeltaNet, KDA), low-rank SVD projections, and hybrid architectures unified under `neuralops.core.registry.ATTENTION_REGISTRY`.
-- **72 Compression Engines (8 Paradigms)**: Low-rank SVD factorization (FWSVD, AdaSVD, ASVD, Direct SVD), dynamic rank budgeting, structured pruning (SparseGPT, Wanda, ADMM, SliceGPT), subspace projection, tensor networks (Kronecker, TT), integer/floating-point quantization (FAQ, SmoothQuant, QuaRot), KV-cache optimization, and rotational transforms unified under `neuralops.core.registry.COMPRESSOR_REGISTRY`.
-- **203 Unified Modules Total**: Exactly 131 attention mechanisms + 72 compression engines verified on physical hardware.
-- **26 Categorized Triton Kernel Modules (62 Unified Operators)**: High-performance fused JIT operators spanning 4 architectural tiers, eliminating global memory roundtrips and executing within on-chip GPU SRAM/registers.
-- **110 Canonical CUDA Modules (114 Native Implementations)**: Production-grade NVCC warp-shuffle primitives, tensor core MMA intrinsics, shared memory bank conflict elimination, and register tiling. Compatibility/support directories remain in the raw CUDA tree.
-- **29 Master Jupyter Notebooks**: Complete reproducible demonstration tutorials (00–25 plus paper empirical master and integration showcases) covering end-to-end surgery, distillation healing, roofline profiling, and production serving.
+- **115 Canonical Physical Attention Mechanisms (131 Registry Keys across 14 Architectural Families)**: Linear attention (Cosformer, Performer, GLA), state-space models (Mamba S6, SSD Mamba-2), gated linear recurrences (RetNet, RWKV-6, HGRN2), delta-rule recurrences (Gated DeltaNet, KDA), low-rank SVD projections, and hybrid architectures unified under `neuralops.core.registry.ATTENTION_REGISTRY`.
+- **82 Model Surgery Compression Engines (8 Paradigms)**: Low-rank SVD factorization (FWSVD, AdaSVD, ASVD, Direct SVD), dynamic rank budgeting, structured pruning (SparseGPT, Wanda, ADMM, SliceGPT), subspace projection, tensor networks (Kronecker, TT), integer/floating-point quantization (FAQ, SmoothQuant, QuaRot), KV-cache optimization, and rotational transforms unified under `neuralops.core.registry.COMPRESSOR_REGISTRY`.
+- **58 Native Triton JIT GPU Acceleration Kernels**: High-performance fused JIT operators spanning 4 architectural tiers, eliminating global memory roundtrips and executing within on-chip GPU SRAM/registers.
+- **140 Native CUDA Kernel Packages**: Production-grade NVCC warp-shuffle primitives, tensor core MMA intrinsics, shared memory bank conflict elimination, and register tiling.
+- **94 Canonical Interactive Jupyter Notebooks**: Complete reproducible demonstration tutorials covering end-to-end surgery, distillation healing, roofline profiling, and production serving.
+- **432 Surgeried Checkpoints**: Published on Hugging Face Hub under official organization [`Hooshaai`](https://huggingface.co/Hooshaai).
+
+---
+
+## 📦 Official Production Installation
+
+Install NeuralOps directly from PyPI:
+
+```bash
+# Core framework and torch-free utilities
+pip install neuralops==2.1.0
+
+# With full CUDA GPU acceleration dependencies
+pip install "neuralops[cuda]==2.1.0"
+
+# With CPU-only baseline support
+pip install "neuralops[cpu]==2.1.0"
+```
+
+To install from source for development:
+```bash
+git clone https://github.com/tahamajs/NeuralOps.git
+cd NeuralOps
+pip install -e ".[all]"
+```
 
 ---
 
@@ -43,20 +67,22 @@ Every kernel operation in NeuralOps adheres to a zero-overhead, multi-tier execu
   SM >= 7.0 / Ampere/Ada         FP16 / BF16 / FP32             Reference Parity
 ```
 
-1. **Level 1 (Native CUDA C++ / HIP)**: Compiled NVCC extensions leveraging 128-bit vector loads, warp-level shuffles, and shared memory tiling across 110 canonical modules.
-2. **Level 2 (Triton JIT)**: Autotuned 2D/3D tiled Triton JIT kernels compiling directly to PTX for FP16, BF16, and FP32 datatypes across 26 canonical modules (62 operators).
+1. **Level 1 (Native CUDA C++ / HIP)**: Compiled NVCC extensions leveraging 128-bit vector loads, warp-level shuffles, and shared memory tiling across 140 native CUDA kernel packages.
+2. **Level 2 (Triton JIT)**: Autotuned 2D/3D tiled Triton JIT kernels compiling directly to PTX for FP16, BF16, and FP32 datatypes across 58 native Triton modules.
 3. **Level 3 (Vectorized PyTorch Reference)**: Numerically validated PyTorch tensor reference guaranteeing seamless execution on CPU, Apple Silicon (MPS), and non-CUDA environments.
 
 ---
 
-## Key Capabilities in v1.6.0
+## Key Capabilities in v2.1.0
 
-1. **One-Line In-Place Surgery**: Drop-in attention and linear layer replacement without altering downstream transformer architecture or retraining from scratch.
-2. **Bit-Exact Hugging Face Roundtrip**: Zero weight drift between exported and reloaded model checkpoints via native `AutoConfig` and `AutoModel` bindings.
-3. **Multi-Pillar Knowledge Distillation (KD)**: 6-pillar distillation framework (Logits KL, Feature MSE, Attention Map, Hidden Cosine, Layer Norm, Gram Matrix) recovering baseline accuracy post-surgery.
-4. **Production Serving Adapters**: High-throughput integrations for vLLM (virtualized `PagedStateTable` with Copy-on-Write page isolation), Text Generation Inference (TGI continuous batching), SGLang (Radix tree prefix caching), and TensorRT-LLM.
-5. **Experiment Results Ledger & Provenance Engine**: Immutable dual-storage (`.jsonl` + indexed `.sqlite`) tracking exact Git SHAs, timestamps, versions, revisions, and automated vector plotting. See [Results Ledger API](api/results_ledger.md).
-6. **Interactive Visualization & Telemetry**: Live browser-based systems monitoring, WebGL 3D architecture graphs, interactive roofline profilers, and latent manifold geometry.
+1. **One-Line In-Place Surgery**: Drop-in attention and linear layer replacement (`neuralops.replace_attention`) without altering downstream transformer architecture or retraining from scratch.
+2. **Universal Hub Checkpoint Loader**: Instant reconstitution of 432 pre-surgeried models via `neuralops.hub.load_surgeried_model("Hooshaai/...")`.
+3. **82-Compressor Zoo**: Dynamic rank allocation, SVD factorization, structured pruning, and quantization with automated parameter reduction tracking via `neuralops.compress`.
+4. **Multi-Pillar Knowledge Distillation (KD)**: 6-pillar distillation framework (Logits KL, Feature MSE, Attention Map, Hidden Cosine, Layer Norm, Gram Matrix) recovering baseline accuracy post-surgery.
+5. **Offline Teacher Representation Caching**: 0 MB teacher GPU VRAM allocation, 2x training throughput, and zero teacher CUDA OOM risk.
+6. **Production Serving Adapters**: High-throughput integrations for vLLM (virtualized `PagedStateTable` with Copy-on-Write page isolation), Text Generation Inference (TGI continuous batching), SGLang (Radix tree prefix caching), and TensorRT-LLM.
+7. **Experiment Results Ledger & Provenance Engine**: Canonical `BenchmarkResult` persistence across all 5 formats (JSON, JSONL, CSV, Markdown, Parquet) tracking exact Git SHAs, hardware telemetry, and hyperparameters. See [Results Ledger API](api/results_ledger.md).
+8. **Interactive Visualization & Telemetry**: Live browser-based systems monitoring, WebGL 3D architecture graphs, interactive roofline profilers, and latent manifold geometry.
 
 ---
 
@@ -84,13 +110,13 @@ NeuralOps bans hardcoded numeric fallbacks and unverified placeholder outputs. T
     Live GPU telemetry, dynamic VRAM tracking, throughput metrics, and hardware temperature monitor.
 
 -   :material-chart-bell-curve: __[Ada Roofline Interactive](roofline_interactive.html)__
-    Explore arithmetic intensity vs. attained TFLOPS across all 26 Triton and 110 canonical CUDA modules.
+    Explore arithmetic intensity vs. attained TFLOPS across all 58 Triton and 140 native CUDA modules.
 
 -   :material-cube-scan: __[3D Attention Lab](visualizer/index.html)__
-    WebGL 3D interactive atlas inspecting the latent manifolds of 203 unified modules (131 attentions + 72 compressors). Also explore the standalone __[3D Latent Manifold](visualizer/latent_manifold.html)__.
+    WebGL 3D interactive atlas inspecting the latent manifolds of all registered attention mechanisms and compressors. Also explore the standalone __[3D Latent Manifold](visualizer/latent_manifold.html)__.
 
 -   :material-database-search: __[HuggingFace Benchmark Dataset](https://huggingface.co/datasets/Hooshaai/neuralops-results)__
-    Official published empirical benchmark telemetry, latency, perplexity, and error records across all 203 unified modules.
+    Official published empirical benchmark telemetry, latency, perplexity, and error records across all unified modules.
 
 -   :material-file-pdf-box: __[Academic Theses & Manuscripts](academic_monographs.md)__
     Direct PDF downloads: Master of Science Thesis (317 pages), Defense Slide Deck (50 slides), and NeurIPS 2026, ICLR 2027, and MLSys 2027 conference submissions.
@@ -102,6 +128,6 @@ NeuralOps bans hardcoded numeric fallbacks and unverified placeholder outputs. T
     Exhaustive documentation for [Attentions](api/attentions.md), [Compression](api/compression.md), [Kernels](api/kernels.md), [Serving](api/integrations.md), and [Results Ledger](api/results_ledger.md).
 
 -   :material-history: __[Changelog](changelog.md)__
-    Release history, migration guides, and new features across all versions through v1.6.0.
+    Release history, migration guides, and new features across all versions through v2.1.0.
 
 </div>

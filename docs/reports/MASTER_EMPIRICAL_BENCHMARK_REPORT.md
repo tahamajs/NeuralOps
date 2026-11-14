@@ -121,8 +121,7 @@ The framework provides native GPU execution blueprints in Triton:
 
 ## 6. Artifact & File References
 
-- **Consolidated Metrics (CSV)**: [`results/master_benchmark_summary.csv`](results/master_benchmark_summary.csv)
-- **Consolidated Metrics (JSON)**: [`results/master_benchmark_summary.json`](results/master_benchmark_summary.json)
-- **Interactive Research Hub Web UI**: [`Docs/index.html`](Docs/index.html)
-- **Master Compendium**: [`Docs/content/framework/NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md`](Docs/content/framework/NEXT_GEN_INNOVATIONS_AND_SYNTHESIS_MASTER_COMPENDIUM.md)
-- **Django REST API Schema**: [`Codes/django_api/ConfigurationSchema.json`](Codes/django_api/ConfigurationSchema.json)
+- **Consolidated Metrics (CSV)**: `results/benchmarks/`
+- **Consolidated Metrics (JSON)**: `results/benchmarks/`
+- **Master Benchmark Ledger Dataset**: [Hooshaai/neuralops-results](https://huggingface.co/datasets/Hooshaai/neuralops-results)
+- **Interactive Documentation Index**: [Documentation Index](../index.md)

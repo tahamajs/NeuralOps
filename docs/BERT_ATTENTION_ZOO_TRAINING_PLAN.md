@@ -45,19 +45,19 @@ model_comp, tok = neuralops.load_pretrained_compressed_bert(
 
 ## Table of Contents
 
-1. [Architectural Principles & 5 Critical Surgery Upgrades](#1-architectural-principles--5-critical-surgery-upgrades)
-2. [Dual-Track Ecosystem: BERT Encoder Zoo & Modern Causal LM Roadmap](#2-dual-track-ecosystem-bert-encoder-zoo--modern-causal-lm-roadmap)
-3. [Mathematical Formulation: MLM Pseudo-Perplexity & Metric Integrity](#3-mathematical-formulation-mlm-pseudo-perplexity--metric-integrity)
+1. [Architectural Principles & 5 Critical Surgery Upgrades](#1-architectural-principles-5-critical-surgery-upgrades)
+2. [Dual-Track Ecosystem: BERT Encoder Zoo & Modern Causal LM Roadmap](#2-dual-track-ecosystem-bert-encoder-zoo-modern-causal-lm-roadmap)
+3. [Mathematical Formulation: MLM Pseudo-Perplexity & Metric Integrity](#3-mathematical-formulation-mlm-pseudo-perplexity-metric-integrity)
 4. [The 5-Minute (300s) 3-Stage Distillation Curriculum](#4-the-5-minute-300s-3-stage-distillation-curriculum)
-5. [Hardware Saturation Architecture (100% RTX 3090 SM & VRAM Load)](#5-hardware-saturation-architecture-100-rtx-3090-sm--vram-load)
-6. [Asynchronous Background HF Uploader Daemon & Storage Protection](#6-asynchronous-background-hf-uploader-daemon--storage-protection)
-7. [Self-Contained Model Export (`auto_map` & `modeling_neuralops_bert.py`)](#7-self-contained-model-export-auto_map--modeling_neuralops_bertpy)
+5. [Hardware Saturation Architecture (100% RTX 3090 SM & VRAM Load)](#5-hardware-saturation-architecture-100-rtx-3090-sm-vram-load)
+6. [Asynchronous Background HF Uploader Daemon & Storage Protection](#6-asynchronous-background-hf-uploader-daemon-storage-protection)
+7. [Self-Contained Model Export (`auto_map` & `modeling_neuralops_bert.py`)](#7-self-contained-model-export-auto_map-modeling_neuralops_bertpy)
 8. [Automated Model Card Specification (`README.md`)](#8-automated-model-card-specification-readmemd)
-9. [Public APIs & CLI Command Interfaces](#9-public-apis--cli-command-interfaces)
+9. [Public APIs & CLI Command Interfaces](#9-public-apis-cli-command-interfaces)
 10. [Sharif HPC Production PBS Execution Job](#10-sharif-hpc-production-pbs-execution-job)
 11. [Gradio Interactive Model Arena (`Hooshaai/bert-attention-zoo-demo`)](#11-gradio-interactive-model-arena-hooshaaibert-attention-zoo-demo)
-12. [Registry Manifest: All 131 Canonical Attention Units](#12-registry-manifest-all-131-canonical-attention-units)
-13. [Failure Policies, Recovery Matrix & Verification Protocol](#13-failure-policies-recovery-matrix--verification-protocol)
+12. [Registry Manifest: All 131 Canonical Attention Units](#12-registry-manifest-all-131-canonical-attention-units-110-verified-on-gpu)
+13. [Failure Policies, Recovery Matrix & Verification Protocol](#16-failure-policies-recovery-matrix-verification-protocol)
 
 ---
 

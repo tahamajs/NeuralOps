@@ -21,16 +21,37 @@ All checkpoints are verified for numerical stability, clean forward execution wi
 
 ## Universal Loading Instructions
 
-Any published model can be instantiated with single-line universal loading:
+Any published model can be instantiated with single-line universal loading via `neuralops.hub.load_surgeried_model`:
 
 ```python
-from neuralops.models import load_surgeried_model
+from neuralops.hub import load_surgeried_model
 
 # Load Subquadratic Gated Linear Attention BERT
 model, tokenizer = load_surgeried_model("Hooshaai/bert-gla-attention-sst2")
 
 # Load Vision-Language Multimodal ScienceQA Checkpoint
 vlm_model, vlm_tokenizer = load_surgeried_model("Hooshaai/llava-qwen-0.5b-chunk_gla-scienceqa")
+```
+
+### Delta Weight Extraction and Application
+
+Checkpoints hosted under `Hooshaai/` follow the **Zero-Fake Modular Surgical Delta Specification** (`surgical_manifest.json` + `attention_weights.safetensors`). You can also export and apply surgical deltas locally:
+
+```python
+from neuralops.models.surgical_io import save_surgical_delta
+from neuralops.hub import load_surgeried_model
+
+# 1. Save delta weights and surgical manifest for surgeried layers
+save_surgical_delta(
+    model=surgeried_model,
+    save_dir="./dist/exported_checkpoint",
+    base_model_id="bert-base-uncased",
+    weights_filename="attention_weights.safetensors",
+    half_precision=True,
+)
+
+# 2. Reconstitute model in sub-450ms from local directory or Hugging Face Hub
+loaded_model, tokenizer = load_surgeried_model("./dist/exported_checkpoint")
 ```
 
 ---
