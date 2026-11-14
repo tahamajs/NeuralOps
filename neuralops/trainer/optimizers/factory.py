@@ -55,10 +55,13 @@ def create_muon_adamw_reg(
     params: Any,
     lr: float = 0.02,
     lr_adam: float = 5e-5,
+    lr_adamw: float | None = None,
     weight_decay: float = 0.01,
     **kwargs: Any,
 ) -> Any:
     """Build and return MuonAdamW hybrid optimizer."""
+    if lr_adamw is not None:
+        lr_adam = lr_adamw
     return create_muon_adamw_optimizer(params, lr_muon=lr, lr_adam=lr_adam, weight_decay=weight_decay, **kwargs)
 
 
@@ -159,6 +162,7 @@ __all__ = [
     "create_lion",
     "create_muon",
     "create_muon_adamw_reg",
+    "create_muon_adamw_optimizer",
     "create_riemannian_stiefel",
     "create_adamw",
     "create_sgd",

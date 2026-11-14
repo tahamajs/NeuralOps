@@ -215,8 +215,23 @@ def create_muon_adamw_optimizer(
     weight_decay: float = 0.01,
     momentum: float = 0.95,
     ns_steps: int = 5,
+    lr_adamw: float | None = None,
+    **kwargs: Any,
 ) -> Optimizer:
-    """Split parameters into 2D matrices (Muon) and other parameters (AdamW)."""
+    """Split parameters into 2D matrices (Muon) and other parameters (AdamW).
+
+    Args:
+        model_or_params: nn.Module or iterable of parameters.
+        lr_muon: Learning rate for 2D matrix parameters (default: 0.02).
+        lr_adam: Learning rate for 1D and non-matrix parameters (default: 5e-5).
+        weight_decay: Decoupled weight decay coefficient (default: 0.01).
+        momentum: Momentum factor for Muon (default: 0.95).
+        ns_steps: Number of Newton-Schulz iterations (default: 5).
+        lr_adamw: Alias for lr_adam, matching benchmark caller conventions.
+        **kwargs: Additional keyword arguments.
+    """
+    if lr_adamw is not None:
+        lr_adam = lr_adamw
     if isinstance(model_or_params, nn.Module):
         params = list(model_or_params.parameters())
     elif isinstance(model_or_params, Iterable):

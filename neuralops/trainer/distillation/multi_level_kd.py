@@ -32,18 +32,23 @@ torch.no_grad() contexts, guaranteeing zero gradient leakage and minimal VRAM fo
 
 from __future__ import annotations
 
+import logging
 import math
+import random
 from typing import Any, Dict, Optional, Tuple, Union
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+logger = logging.getLogger("neuralops.trainer.distillation.multi_level_kd")
 
 try:
     from neuralops.core.triton_kernels.fused_kd import fused_linear_kl_loss
 
     _HAS_FUSED_KD = True
-except Exception:
+except (ImportError, Exception):  # allowed-swallow: optional triton kernel dependency
     _HAS_FUSED_KD = False
 
 
@@ -132,7 +137,7 @@ class LogitDistillationLoss(nn.Module):
             p_t = t_prob.gather(1, labels)
 
             tckd = F.kl_div(
-                torch.log(torch.cat([p_s, (1.0 - p_s).clamp(min=1e-7)], dim=1)),
+                torch.log(torch.cat([p_s, (1.0 - p_s).clamp(min=1e-7)], dim=1).clamp(min=1e-8)),
                 torch.cat([p_t, (1.0 - p_t).clamp(min=1e-7)], dim=1),
                 reduction="batchmean",
             )
@@ -146,7 +151,7 @@ class LogitDistillationLoss(nn.Module):
             return (self.alpha_tckd * tckd + self.beta_nckd * nckd) * (tau**2)
 
         elif self.mode == "topk_sparse_kd":
-            K = min(self.top_k, t_logits.size(-1) - 1)
+            K = max(1, min(self.top_k, t_logits.size(-1)))
             t_topk_vals, t_topk_idx = torch.topk(t_logits, k=K, dim=-1)
             s_topk_vals = torch.gather(s_logits, -1, t_topk_idx)
 
@@ -159,6 +164,7 @@ class LogitDistillationLoss(nn.Module):
 
 
 SoftKLDivergenceLoss = LogitDistillationLoss
+LogitKLLoss = LogitDistillationLoss
 
 
 class AttentionStabilityReg(nn.Module):
@@ -269,9 +275,13 @@ class MiniLMValueRelationKDLoss(nn.Module):
         self.eps = eps
 
     def forward(self, v_student: torch.Tensor, v_teacher: torch.Tensor) -> torch.Tensor:
-        if v_student.dim() == 3:
+        if v_student.dim() == 2:
+            v_student = v_student.unsqueeze(1).unsqueeze(1)
+        elif v_student.dim() == 3:
             v_student = v_student.unsqueeze(1)
-        if v_teacher.dim() == 3:
+        if v_teacher.dim() == 2:
+            v_teacher = v_teacher.unsqueeze(1).unsqueeze(1)
+        elif v_teacher.dim() == 3:
             v_teacher = v_teacher.unsqueeze(1)
         Bs, Hs, N, Ds = v_student.shape
         Bt, Ht, _, Dt = v_teacher.shape
@@ -305,6 +315,117 @@ class BlockwiseOperatorCloningLoss(nn.Module):
         norm_diff = torch.abs(s.norm(p=2, dim=-1) - t.norm(p=2, dim=-1)).mean()
 
         return mse + self.lambda_cos * cos_dist + self.lambda_norm * norm_diff
+
+
+ValueRelationLoss = MiniLMValueRelationKDLoss
+
+
+class HiddenMSELoss(nn.Module):
+    """Pillar 2: Hidden-state MSE loss between student and teacher representations."""
+
+    def __init__(self, normalize: bool = False) -> None:
+        super().__init__()
+        self.normalize = normalize
+
+    def forward(
+        self,
+        student_hidden: torch.Tensor,
+        teacher_hidden: torch.Tensor,
+    ) -> torch.Tensor:
+        s = student_hidden.float()
+        t = teacher_hidden.float()
+        if self.normalize:
+            s = F.normalize(s, p=2, dim=-1)
+            t = F.normalize(t, p=2, dim=-1)
+        if s.shape != t.shape and s.dim() == t.dim() and s.shape[:-1] == t.shape[:-1]:
+            min_d = min(s.size(-1), t.size(-1))
+            s = s[..., :min_d]
+            t = t[..., :min_d]
+        return F.mse_loss(s, t)
+
+
+class AttentionDistillationLoss(nn.Module):
+    """Pillar 3: Attention map distribution parity (KL divergence over attention weights)."""
+
+    def __init__(self, temperature: float = 1.0, eps: float = 1e-8) -> None:
+        super().__init__()
+        self.temperature = float(temperature)
+        self.eps = float(eps)
+
+    def forward(
+        self,
+        student_attn: torch.Tensor,
+        teacher_attn: torch.Tensor,
+    ) -> torch.Tensor:
+        tau = self.temperature
+        if student_attn.dim() == 4 and teacher_attn.dim() == 4 and student_attn.size(1) != teacher_attn.size(1):
+            s = student_attn.mean(dim=1)
+            t = teacher_attn.mean(dim=1)
+        else:
+            s = student_attn
+            t = teacher_attn
+        s_prob = F.softmax(s.float() / tau, dim=-1)
+        t_prob = F.softmax(t.float() / tau, dim=-1)
+        s_log = torch.log(s_prob.clamp(min=self.eps))
+        return F.kl_div(s_log, t_prob, reduction="batchmean") * (tau**2)
+
+
+class GramMatrixLoss(nn.Module):
+    """Pillar 5: Gram matrix covariance alignment across feature representations."""
+
+    def __init__(self, normalize: bool = True, eps: float = 1e-8) -> None:
+        super().__init__()
+        self.normalize = normalize
+        self.eps = eps
+
+    def forward(
+        self,
+        student_repr: torch.Tensor,
+        teacher_repr: torch.Tensor,
+    ) -> torch.Tensor:
+        s = student_repr.float()
+        t = teacher_repr.float()
+        dim_s = s.size(-1)
+        dim_t = t.size(-1)
+        if dim_s != dim_t:
+            min_d = min(dim_s, dim_t)
+            s = s[..., :min_d]
+            t = t[..., :min_d]
+
+        s_flat = s.reshape(-1, s.size(-1))
+        t_flat = t.reshape(-1, t.size(-1))
+
+        if self.normalize:
+            s_flat = s_flat - s_flat.mean(dim=0, keepdim=True)
+            t_flat = t_flat - t_flat.mean(dim=0, keepdim=True)
+
+        n = max(s_flat.size(0) - 1, 1)
+        g_s = torch.mm(s_flat.t(), s_flat) / n
+        g_t = torch.mm(t_flat.t(), t_flat) / n
+
+        return F.mse_loss(g_s, g_t)
+
+
+class CosineAlignmentLoss(nn.Module):
+    """Pillar 6: Angular directional alignment loss via cosine similarity."""
+
+    def __init__(self, eps: float = 1e-8) -> None:
+        super().__init__()
+        self.eps = eps
+
+    def forward(
+        self,
+        student_repr: torch.Tensor,
+        teacher_repr: torch.Tensor,
+    ) -> torch.Tensor:
+        s = student_repr.float()
+        t = teacher_repr.float()
+        if s.shape != t.shape and s.dim() == t.dim() and s.shape[:-1] == t.shape[:-1]:
+            min_d = min(s.size(-1), t.size(-1))
+            s = s[..., :min_d]
+            t = t[..., :min_d]
+        cos_sim = F.cosine_similarity(s, t, dim=-1, eps=self.eps)
+        return (1.0 - cos_sim).mean()
 
 
 def _get_streaming_cka_loss_cls() -> Any:
@@ -435,7 +556,8 @@ class MultiLevelKDTrainer:
     6-Pillar Knowledge Distillation & Post-Surgery Healing Engine.
 
     Coordinates multi-objective distillation loss between teacher and student backbones:
-        L_{total} = lambda_{KD} * L_{KL} + lambda_{MSE} * L_{MSE} + lambda_{Rel} * L_{MiniLM}
+        L_{total} = lambda_{KD} * L_{KL} + lambda_{MSE} * L_{MSE} + lambda_{Attn} * L_{Attn}
+                  + lambda_{Rel} * L_{MiniLM} + lambda_{Gram} * L_{Gram} + lambda_{Cos} * L_{Cos}
                   + lambda_{CKA} * L_{CKA} + lambda_{Frob} * L_{Frobenius} + lambda_{Stab} * L_{AttentionStability}
     """
 
@@ -452,6 +574,9 @@ class MultiLevelKDTrainer:
         lambda_frob: float = 0.05,
         lambda_stab: float = 0.01,
         lambda_feat: float = 0.0,
+        lambda_attn: float = 0.0,
+        lambda_gram: float = 0.0,
+        lambda_cos: float = 0.0,
         use_streaming_cka: bool = False,
         chunk_size: int = 128,
         memory_mode: str = "standard",
@@ -476,17 +601,24 @@ class MultiLevelKDTrainer:
         self.lambda_frob = float(lambda_frob)
         self.lambda_stab = float(lambda_stab)
         self.lambda_feat = float(lambda_feat)
+        self.lambda_attn = float(lambda_attn)
+        self.lambda_gram = float(lambda_gram)
+        self.lambda_cos = float(lambda_cos)
         self.use_streaming_cka = bool(use_streaming_cka or memory_mode == "streaming_checkpointed")
         self.chunk_size = int(chunk_size)
         self.memory_mode = str(memory_mode)
 
         self.logit_loss_fn = LogitDistillationLoss(temperature=temperature)
+        self.hidden_mse_loss_fn = HiddenMSELoss()
+        self.attn_loss_fn = AttentionDistillationLoss(temperature=temperature)
+        self.rel_loss_fn = MiniLMValueRelationKDLoss()
+        self.gram_loss_fn = GramMatrixLoss()
+        self.cos_loss_fn = CosineAlignmentLoss()
         self.cka_loss_fn = SmoothMaxOverLayersCKASteeringLoss(
             temperature=0.1,
             use_streaming=self.use_streaming_cka,
             chunk_size=self.chunk_size,
         )
-        self.rel_loss_fn = MiniLMValueRelationKDLoss()
         self.feature_loss_fn = HedgehogFeatureMapKDLoss(chunk_size=64, temperature=temperature)
         self.stab_reg_fn = AttentionStabilityReg(lambda_sat=1.0)
 
@@ -503,7 +635,7 @@ class MultiLevelKDTrainer:
             return "output_hidden_states" in sig.parameters or any(
                 p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
             )
-        except Exception:
+        except (ValueError, TypeError, AttributeError):  # allowed-swallow: inspect fallback on non-standard callables
             code = getattr(forward_fn, "__code__", None)
             return code is not None and "output_hidden_states" in getattr(code, "co_varnames", ())
 
@@ -560,32 +692,73 @@ class MultiLevelKDTrainer:
         total_loss = torch.tensor(0.0, device=self.device)
         losses_tracked: Dict[str, Any] = {}
 
-        # Pillar 1: Logit Divergence (L_KD) & Logit MSE
+        # Pillar 1: Logit Divergence (L_KD)
         if s_logits is not None and t_logits is not None:
             kd_loss = self.logit_loss_fn(s_logits, t_logits)
             total_loss = total_loss + self.lambda_kd * kd_loss
             losses_tracked["kd_loss"] = kd_loss.item()
             losses_tracked["pillar1_loss"] = kd_loss.item()
 
-            if self.lambda_mse > 0.0:
-                mse_loss = F.mse_loss(s_logits.float(), t_logits.float())
+        # Pillar 2: Hidden MSE (L_MSE)
+        if s_hidden is not None and t_hidden is not None and self.lambda_mse > 0.0:
+            s_top = s_hidden[-1] if len(s_hidden) > 0 else None
+            t_top = t_hidden[-1] if len(t_hidden) > 0 else None
+            if s_top is not None and t_top is not None:
+                mse_loss = self.hidden_mse_loss_fn(s_top, t_top)
                 total_loss = total_loss + self.lambda_mse * mse_loss
                 losses_tracked["mse_loss"] = mse_loss.item()
+                losses_tracked["pillar2_loss"] = mse_loss.item()
+        elif s_logits is not None and t_logits is not None and self.lambda_mse > 0.0:
+            mse_loss = F.mse_loss(s_logits.float(), t_logits.float())
+            total_loss = total_loss + self.lambda_mse * mse_loss
+            losses_tracked["mse_loss"] = mse_loss.item()
+            losses_tracked["pillar2_loss"] = mse_loss.item()
 
-        # Pillar 2: Centered Kernel Alignment (CKA) Hidden-State Representation Distillation
+        # Pillar 3: Attention Parity (L_Attn)
+        if self.lambda_attn > 0.0 and s_hidden is not None and t_hidden is not None:
+            s_top = s_hidden[-1] if len(s_hidden) > 0 else None
+            t_top = t_hidden[-1] if len(t_hidden) > 0 else None
+            if s_top is not None and t_top is not None:
+                attn_loss = self.attn_loss_fn(s_top, t_top)
+                total_loss = total_loss + self.lambda_attn * attn_loss
+                losses_tracked["attn_loss"] = attn_loss.item()
+                losses_tracked["pillar3_loss"] = attn_loss.item()
+
+        # Pillar 4: Value Relation (L_Rel)
         if s_hidden is not None and t_hidden is not None:
-            if self.lambda_cka > 0.0:
-                cka_loss = self.cka_loss_fn(s_hidden, t_hidden)
-                total_loss = total_loss + self.lambda_cka * cka_loss
-                losses_tracked["cka_loss"] = cka_loss.item()
-                losses_tracked["pillar2_loss"] = cka_loss.item()
-
             if self.lambda_rel > 0.0 and len(s_hidden) > 0 and len(t_hidden) > 0:
                 rel_loss = self.rel_loss_fn(s_hidden[-1], t_hidden[-1])
                 total_loss = total_loss + self.lambda_rel * rel_loss
                 losses_tracked["rel_loss"] = rel_loss.item()
+                losses_tracked["pillar4_loss"] = rel_loss.item()
 
-        # Pillar 5: Frobenius Feature Alignment
+        # Pillar 5: Gram Matrix Alignment (L_Gram)
+        if self.lambda_gram > 0.0 and s_hidden is not None and t_hidden is not None:
+            s_top = s_hidden[-1] if len(s_hidden) > 0 else None
+            t_top = t_hidden[-1] if len(t_hidden) > 0 else None
+            if s_top is not None and t_top is not None:
+                gram_loss = self.gram_loss_fn(s_top, t_top)
+                total_loss = total_loss + self.lambda_gram * gram_loss
+                losses_tracked["gram_loss"] = gram_loss.item()
+                losses_tracked["pillar5_loss"] = gram_loss.item()
+
+        # Pillar 6: Cosine Alignment (L_Cos)
+        if self.lambda_cos > 0.0 and s_hidden is not None and t_hidden is not None:
+            s_top = s_hidden[-1] if len(s_hidden) > 0 else None
+            t_top = t_hidden[-1] if len(t_hidden) > 0 else None
+            if s_top is not None and t_top is not None:
+                cos_loss = self.cos_loss_fn(s_top, t_top)
+                total_loss = total_loss + self.lambda_cos * cos_loss
+                losses_tracked["cos_loss"] = cos_loss.item()
+                losses_tracked["pillar6_loss"] = cos_loss.item()
+
+        # Centered Kernel Alignment (CKA)
+        if s_hidden is not None and t_hidden is not None and self.lambda_cka > 0.0:
+            cka_loss = self.cka_loss_fn(s_hidden, t_hidden)
+            total_loss = total_loss + self.lambda_cka * cka_loss
+            losses_tracked["cka_loss"] = cka_loss.item()
+
+        # Frobenius Feature Alignment
         if self.lambda_frob > 0.0 and s_hidden is not None and t_hidden is not None:
             s_last = s_hidden[-1].float()
             t_last = t_hidden[-1].float()
@@ -601,7 +774,7 @@ class MultiLevelKDTrainer:
             total_loss = total_loss + self.lambda_frob * frob_loss
             losses_tracked["frob_loss"] = frob_loss.item()
 
-        # Pillar 6: Attention Stability Regularizer (Gate saturation prevention)
+        # Attention Stability Regularizer (Gate saturation prevention)
         if self.lambda_stab > 0.0:
             stab_penalties = []
             for name, param in self.student.named_parameters():
@@ -625,22 +798,67 @@ class MultiLevelKDTrainer:
 
 
 def distill(
-    student: nn.Module,
-    teacher: nn.Module,
-    train_loader: Any,
+    student: Optional[nn.Module] = None,
+    teacher: Optional[nn.Module] = None,
+    train_loader: Any = None,
     epochs: int = 3,
     lr: float = 2e-5,
     device: Optional[Union[str, torch.device]] = None,
     temperature: float = 2.0,
     alpha: float = 0.5,
     max_steps: Optional[int] = None,
+    mixed_precision: str = "no",
+    tracker: Any = None,
+    log_interval: int = 10,
+    seed: Optional[int] = 42,
     **kwargs: Any,
 ) -> Dict[str, Any]:
-    """Execute canonical knowledge distillation training using MultiLevelKDTrainer."""
+    """Execute canonical knowledge distillation training using MultiLevelKDTrainer.
+
+    Args:
+        student: Student model to optimize (positional or keyword).
+        teacher: Teacher model providing distillation signals (positional or keyword).
+        train_loader: DataLoader or iterable yielding training batches.
+        epochs: Number of training epochs (default: 3).
+        lr: Learning rate for student optimizer (default: 2e-5).
+        device: Device to place models and run distillation on (default: auto).
+        temperature: Softmax temperature for KD scaling (default: 2.0).
+        alpha: Weight for logit KD loss (default: 0.5).
+        max_steps: Maximum distillation steps across epochs (optional).
+        mixed_precision: Precision mode: "no", "fp16", or "bf16" (default: "no").
+        tracker: Optional experiment tracker instance for metric logging.
+        log_interval: Logging step frequency (default: 10).
+        seed: Random seed for reproducible training (default: 42).
+        **kwargs: Additional hyperparameters forwarded to MultiLevelKDTrainer.
+
+    Returns:
+        Dictionary with final_loss, epochs_completed, steps_completed, status.
+    """
+    if student is None and "student" in kwargs:
+        student = kwargs.pop("student")
+    if teacher is None and "teacher" in kwargs:
+        teacher = kwargs.pop("teacher")
+    if student is None or teacher is None:
+        raise ValueError("Both 'student' and 'teacher' models must be provided to distill()")
+
+    if train_loader is None and "dataset" in kwargs:
+        train_loader = kwargs.pop("dataset")
+    if train_loader is None:
+        raise ValueError("train_loader (or dataset) must be provided to distill()")
+
+    if seed is not None:
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
+
     dev = (
         torch.device(device)
         if device is not None
-        else (torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
+        else (next(student.parameters()).device if list(student.parameters()) else torch.device("cpu"))
     )
     kd_kwargs = {
         k: v
@@ -653,6 +871,9 @@ def distill(
             "lambda_frob",
             "lambda_stab",
             "lambda_feat",
+            "lambda_attn",
+            "lambda_gram",
+            "lambda_cos",
             "use_streaming_cka",
             "chunk_size",
             "memory_mode",
@@ -672,6 +893,12 @@ def distill(
         lr=lr,
     )
 
+    dev_type = dev.type if hasattr(dev, "type") else ("cuda" if str(dev).startswith("cuda") else "cpu")
+    amp_enabled = mixed_precision.lower() in ("fp16", "float16", "bf16", "bfloat16")
+    amp_dtype = torch.bfloat16 if mixed_precision.lower() in ("bf16", "bfloat16") else torch.float16
+    use_scaler = amp_enabled and (mixed_precision.lower() in ("fp16", "float16")) and (dev_type == "cuda")
+    scaler = torch.amp.GradScaler("cuda", enabled=use_scaler)
+
     step = 0
     epoch_losses = []
     for epoch in range(epochs):
@@ -679,12 +906,39 @@ def distill(
         count = 0
         for batch in train_loader:
             optimizer.zero_grad()
-            step_losses = trainer.training_step(batch)
-            loss = step_losses.get("total_loss")
+            with torch.amp.autocast(device_type=dev_type, dtype=amp_dtype, enabled=amp_enabled):
+                step_losses = trainer.training_step(batch)
+                loss = step_losses.get("total_loss")
+
+            loss_val = 0.0
             if isinstance(loss, torch.Tensor) and loss.requires_grad:
-                loss.backward()
-                optimizer.step()
-                running_loss += float(loss.detach().item())
+                if use_scaler:
+                    scaler.scale(loss).backward()
+                    scaler.step(optimizer)
+                    scaler.update()
+                else:
+                    loss.backward()
+                    optimizer.step()
+                loss_val = float(loss.detach().item())
+                running_loss += loss_val
+            elif isinstance(loss, torch.Tensor):
+                loss_val = float(loss.item())
+
+            if tracker is not None and (step % log_interval == 0):
+                log_data = {"loss": loss_val, "step": step, "epoch": epoch}
+                if hasattr(tracker, "log_metrics"):
+                    try:
+                        tracker.log_metrics(log_data, step=step)
+                    except Exception as tracker_e:
+                        # allowed-swallow: optional tracker metric logging failure
+                        logger.debug("Tracker log_metrics failed: %s", tracker_e)
+                elif hasattr(tracker, "log"):
+                    try:
+                        tracker.log(log_data, step=step)
+                    except Exception as tracker_e:
+                        # allowed-swallow: optional tracker log failed
+                        logger.debug("Tracker log failed: %s", tracker_e)
+
             count += 1
             step += 1
             if max_steps is not None and step >= max_steps:
@@ -700,6 +954,7 @@ def distill(
         "epochs_completed": len(epoch_losses),
         "steps_completed": step,
         "status": "success",
+        "training_type": "kd",
     }
 
 
@@ -718,13 +973,19 @@ __all__ = [
     "distill",
     "LogitDistillationLoss",
     "SoftKLDivergenceLoss",
+    "LogitKLLoss",
     "AttentionStabilityReg",
     "SpikyFeatureMap",
     "HedgehogFeatureMapKDLoss",
     "MiniLMValueRelationKDLoss",
+    "ValueRelationLoss",
     "BlockwiseOperatorCloningLoss",
     "LinearCKALoss",
     "SmoothMaxOverLayersCKASteeringLoss",
     "StreamingCKALoss",
     "MultiLevelKDTrainer",
+    "HiddenMSELoss",
+    "AttentionDistillationLoss",
+    "GramMatrixLoss",
+    "CosineAlignmentLoss",
 ]
