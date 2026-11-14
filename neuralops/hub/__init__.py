@@ -11,6 +11,7 @@ NeuralOps Hugging Face Hub Integration Package.
 Provides high-level APIs to download, reconstruct, inspect, and upload
 surgeried and compressed models hosted on the Hugging Face Hub (org: Hooshaai).
 """
+
 from __future__ import annotations
 
 from neuralops.hub.bert_zoo import (
@@ -37,7 +38,16 @@ from neuralops.hub.uploader import (
     retry_hf_api_call,
     upload_with_retry,
 )
-from neuralops.models.surgical_io import save_surgical_delta
+from typing import Any
+
+
+def __getattr__(name: str) -> Any:
+    if name == "save_surgical_delta":
+        from neuralops.models.surgical_io import save_surgical_delta
+
+        return save_surgical_delta
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = [
     "load_surgeried_model",

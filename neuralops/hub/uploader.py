@@ -14,6 +14,7 @@ background thread pool, confirms remote commit integrity, and automatically dele
 weight files (attention_weights.safetensors / pytorch_model.bin / model.safetensors)
 to maintain local disk usage under quota constraints.
 """
+
 from __future__ import annotations
 
 import concurrent.futures
@@ -74,7 +75,12 @@ def retry_hf_api_call(
             )
 
             if attempt == max_retries or (not is_rate_limit and not is_timeout):
-                logger.error("HF Hub API call fatal failure on attempt %d/%d: %s", attempt, max_retries, _redact_secrets(str(exc)))
+                logger.error(
+                    "HF Hub API call fatal failure on attempt %d/%d: %s",
+                    attempt,
+                    max_retries,
+                    _redact_secrets(str(exc)),
+                )
                 raise exc
 
             retry_after: float | None = None
@@ -117,6 +123,7 @@ def upload_with_retry(
     if not resolved_token:
         try:
             from huggingface_hub import get_token
+
             resolved_token = get_token()
         except Exception:
             pass
@@ -182,6 +189,7 @@ class AsyncHFHubUploader:
         if not resolved_token:
             try:
                 from huggingface_hub import get_token
+
                 resolved_token = get_token()
             except Exception:
                 pass
@@ -190,9 +198,7 @@ class AsyncHFHubUploader:
             if token_path.exists():
                 resolved_token = token_path.read_text(encoding="utf-8").strip()
         self.token = resolved_token
-        self.executor = concurrent.futures.ThreadPoolExecutor(
-            max_workers=max_workers, thread_name_prefix="hf_upload"
-        )
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix="hf_upload")
         self.futures: list[concurrent.futures.Future[Any]] = []
 
     def __repr__(self) -> str:
@@ -237,11 +243,7 @@ class AsyncHFHubUploader:
             combined_hint = f"{combined_hint} {manifest_zoo}".strip()
 
         model_type = str(cfg_dict.get("model_type") or "").lower()
-        is_comp = bool(
-            cfg_dict.get("compression_method")
-            or cfg_dict.get("compressor_key")
-            or "comp" in combined_hint
-        )
+        is_comp = bool(cfg_dict.get("compression_method") or cfg_dict.get("compressor_key") or "comp" in combined_hint)
 
         if "vlm" in combined_hint or "llava" in combined_hint or model_type == "llava":
             return f"{self.hf_org}/llava-qwen-0.5b-{slug}-scienceqa"
@@ -259,22 +261,56 @@ class AsyncHFHubUploader:
 
     def submit_upload(
         self,
-        attn_key: str,
-        staging_dir: str | Path,
-        metrics: dict[str, Any],
+        attn_key: Any = None,
+        staging_dir: Any = None,
+        metrics: Optional[dict[str, Any]] = None,
         *,
         repo_id: Optional[str] = None,
         zoo_type: Optional[str] = None,
+        mechanism_name: Optional[str] = None,
+        **kwargs: Any,
     ) -> concurrent.futures.Future[Any]:
-        """Submit a completed checkpoint folder for background upload and cleanup."""
-        path = Path(staging_dir)
+        """Submit a completed checkpoint folder for background upload and cleanup.
+
+        Supports both standard signature:
+            submit_upload(attn_key, staging_dir, metrics, *, repo_id=..., zoo_type=...)
+        and caller pattern:
+            submit_upload(ckpt_dir, repo_id, mechanism_name=key)
+        """
+        is_caller_pattern = False
+        if mechanism_name is not None:
+            is_caller_pattern = True
+        elif isinstance(attn_key, Path):
+            is_caller_pattern = True
+        elif isinstance(attn_key, str):
+            try:
+                p = Path(attn_key)
+                if p.is_dir() or "/" in attn_key or "\\" in attn_key:
+                    if staging_dir is None or not (
+                        isinstance(staging_dir, Path) or (isinstance(staging_dir, str) and Path(staging_dir).is_dir())
+                    ):
+                        is_caller_pattern = True
+            except OSError:
+                pass
+
+        if is_caller_pattern:
+            final_staging_dir = Path(attn_key) if attn_key is not None else Path(".")
+            final_attn_key = mechanism_name or kwargs.get("key") or final_staging_dir.name
+            final_repo_id = repo_id or (str(staging_dir) if isinstance(staging_dir, str) else None)
+            final_metrics = metrics if isinstance(metrics, dict) else (kwargs.get("metrics") or {})
+        else:
+            final_attn_key = str(attn_key) if attn_key is not None else (mechanism_name or "unknown")
+            final_staging_dir = Path(staging_dir) if staging_dir is not None else Path(".")
+            final_repo_id = repo_id
+            final_metrics = metrics if isinstance(metrics, dict) else (kwargs.get("metrics") or {})
+
         future = self.executor.submit(
             self._worker_upload_and_cleanup,
-            attn_key,
-            path,
-            metrics,
-            repo_id,
-            zoo_type,
+            final_attn_key,
+            final_staging_dir,
+            final_metrics,
+            final_repo_id,
+            zoo_type or kwargs.get("zoo_type"),
         )
         self.futures.append(future)
         return future
@@ -288,6 +324,7 @@ class AsyncHFHubUploader:
         zoo_type: Optional[str] = None,
     ) -> dict[str, Any]:
         """Background worker uploading directory and deleting heavy weights."""
+        staging_dir.mkdir(parents=True, exist_ok=True)
         if not self.token:
             err_msg = "HF_TOKEN is unset — skipping remote upload. Weights preserved."
             logger.warning("[%s] %s", attn_key, err_msg)
@@ -327,7 +364,9 @@ class AsyncHFHubUploader:
             # 2. Strip legacy full weights before upload if surgical delta safetensors exists
             ignore_patterns = ["upload_success.json", "upload_error.json", "*.tmp"]
             if (staging_dir / "attention_weights.safetensors").exists():
-                ignore_patterns.extend(["pytorch_model.bin", "model.safetensors", "surgical_model_state.pt", "optimizer.pt"])
+                ignore_patterns.extend(
+                    ["pytorch_model.bin", "model.safetensors", "surgical_model_state.pt", "optimizer.pt"]
+                )
 
             ppl_val = metrics.get("post_kd_ppl", metrics.get("ppl_after"))
             acc_val = metrics.get("post_kd_acc", metrics.get("acc_after", metrics.get("healed_acc")))

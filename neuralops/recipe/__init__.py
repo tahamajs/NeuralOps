@@ -10,14 +10,15 @@ NeuralOps Recipe Language (NRL) Subpackage.
 """
 
 from neuralops.recipe.canonical import canonical_bytes, canonicalize, recipe_hash
-from neuralops.recipe.errors import RecipeError, RecipeParseError, RecipeSchemaError
+from neuralops.recipe.errors import E_PARSE_EMPTY, RecipeError, RecipeParseError, RecipeSchemaError
 from neuralops.recipe.loader import load_recipe, loads_recipe
 from neuralops.recipe.schema import ArtifactsSpec, ExecutionSpec, Metadata, ModelSpec, Operation, Recipe, ValidationSpec
 from neuralops.recipe.serializer import dumps_recipe, save_recipe
-from neuralops.recipe.versioning import check_language_version
+from neuralops.recipe.versioning import check_language_version, check_operation_versions
 
 __all__ = [
     "ArtifactsSpec",
+    "E_PARSE_EMPTY",
     "ExecutionSpec",
     "Metadata",
     "ModelSpec",
@@ -30,6 +31,7 @@ __all__ = [
     "canonical_bytes",
     "canonicalize",
     "check_language_version",
+    "check_operation_versions",
     "dumps_recipe",
     "load_recipe",
     "loads_recipe",

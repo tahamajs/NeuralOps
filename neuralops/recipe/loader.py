@@ -17,9 +17,49 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from neuralops.core.exceptions import IntegrationNotImplementedError
-from neuralops.recipe.errors import E_PARSE_DUP_KEY, E_PARSE_JSON_SYNTAX, E_PARSE_YAML_SYNTAX, RecipeParseError
+from neuralops.recipe.errors import (
+    E_PARSE_DUP_KEY,
+    E_PARSE_EMPTY,
+    E_PARSE_JSON_SYNTAX,
+    E_PARSE_YAML_SYNTAX,
+    RecipeParseError,
+)
 from neuralops.recipe.schema import Recipe
 from neuralops.recipe.versioning import check_language_version
+
+try:
+    import yaml
+
+    try:
+        from yaml import CSafeLoader as SafeLoader
+    except ImportError:
+        from yaml import SafeLoader
+
+    class UniqueKeyLoader(SafeLoader):
+        """YAML Loader enforcing unique keys in mappings."""
+
+    def _construct_yaml_mapping(loader: Any, node: Any, deep: bool = False) -> Dict[str, Any]:
+        loader.flatten_mapping(node)
+        mapping: Dict[str, Any] = {}
+        for key_node, value_node in node.value:
+            key = loader.construct_object(key_node, deep=deep)
+            if key in mapping:
+                raise RecipeParseError(
+                    f"Duplicate key '{key}' detected in YAML mapping",
+                    E_PARSE_DUP_KEY,
+                    str(key),
+                )
+            mapping[key] = loader.construct_object(value_node, deep=deep)
+        return mapping
+
+    UniqueKeyLoader.add_constructor(
+        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+        _construct_yaml_mapping,
+    )
+    _YAML_AVAILABLE = True
+except ImportError:
+    UniqueKeyLoader = None  # type: ignore[assignment,misc]
+    _YAML_AVAILABLE = False
 
 
 def _json_check_dup_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -39,19 +79,14 @@ def _format_syntax_error(raw_text: str, line: Optional[int], col: Optional[int],
     snippet = lines[line - 1] if 0 <= line - 1 < len(lines) else ""
     col_idx = max(0, (col or 1) - 1)
     pointer = " " * col_idx + "^"
-    return (
-        f"\n  Line {line}, Col {col or 1}:\n"
-        f"    {line} | {snippet}\n"
-        f"      | {pointer}\n"
-        f"  Syntax Error: {message}"
-    )
+    return f"\n  Line {line}, Col {col or 1}:\n    {line} | {snippet}\n      | {pointer}\n  Syntax Error: {message}"
 
 
 def loads_recipe(text: str, format: Optional[str] = None) -> Recipe:
     """Parse recipe from raw text (YAML or JSON) with line-level diagnostics."""
     stripped = text.strip()
     if not stripped:
-        raise RecipeParseError("Recipe payload is empty", E_PARSE_JSON_SYNTAX)
+        raise RecipeParseError("Recipe payload is empty", E_PARSE_EMPTY)
 
     # Determine format
     is_json = False
@@ -70,43 +105,13 @@ def loads_recipe(text: str, format: Optional[str] = None) -> Recipe:
         except Exception as exc:
             raise RecipeParseError(f"Failed to parse recipe JSON: {exc}", E_PARSE_JSON_SYNTAX) from exc
     else:
-        try:
-            import yaml
-
-            try:
-                from yaml import CSafeLoader as SafeLoader
-            except ImportError:
-                from yaml import SafeLoader
-        except ImportError as exc:
+        if not _YAML_AVAILABLE or UniqueKeyLoader is None:
             raise IntegrationNotImplementedError(
                 "PyYAML is required to parse YAML recipe files. "
                 "Install with 'pip install pyyaml' or supply recipes in canonical JSON format."
-            ) from exc
-
-        try:
-            # Custom loader to detect duplicate keys in YAML
-            class UniqueKeyLoader(SafeLoader):
-                pass
-
-            def construct_mapping(loader: Any, node: Any, deep: bool = False) -> Dict[str, Any]:
-                loader.flatten_mapping(node)
-                mapping: Dict[str, Any] = {}
-                for key_node, value_node in node.value:
-                    key = loader.construct_object(key_node, deep=deep)
-                    if key in mapping:
-                        raise RecipeParseError(
-                            f"Duplicate key '{key}' detected in YAML mapping",
-                            E_PARSE_DUP_KEY,
-                            str(key),
-                        )
-                    mapping[key] = loader.construct_object(value_node, deep=deep)
-                return mapping
-
-            UniqueKeyLoader.add_constructor(
-                yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
-                construct_mapping,
             )
 
+        try:
             data = yaml.load(stripped, Loader=UniqueKeyLoader)
             if not isinstance(data, dict):
                 raise RecipeParseError(
