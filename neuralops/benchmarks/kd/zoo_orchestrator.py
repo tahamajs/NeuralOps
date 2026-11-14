@@ -33,6 +33,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, Dataset
 
+from neuralops.benchmarks.kd.teacher_cache import _safe_torch_load
 from neuralops.core.registry import ATTENTION_REGISTRY, create_attention
 from neuralops.hub.model_card import generate_unified_model_card
 from neuralops.hub.uploader import AsyncHFHubUploader
@@ -94,7 +95,7 @@ def load_tokenized_qwen_corpus(
     if cache_path.exists():
         try:
             logger.info("Loading pre-tokenized corpus from RAM cache: %s", cache_path)
-            data = torch.load(cache_path, map_location="cpu")
+            data = _safe_torch_load(cache_path)
             return data["train_chunks"], data["val_chunks"]
         except Exception as e:
             logger.warning("RAM cache load failed (%s); re-tokenizing...", e)
@@ -562,7 +563,13 @@ class ZooOrchestrator:
 
                 if self.uploader is not None:
                     repo_id = res.get("repo_id") or f"{self.hf_org}/{key}"
-                    self.uploader.submit_upload(ckpt_dir, repo_id, mechanism_name=key)
+                    self.uploader.submit_upload(
+                        attn_key=key,
+                        staging_dir=ckpt_dir,
+                        metrics=res,
+                        repo_id=repo_id,
+                        zoo_type=self.zoo_type,
+                    )
             except Exception as exc:
                 logger.error("[%d/%d] Execution failed for %s: %s", i + 1, len(keys), key, exc, exc_info=True)
                 fail_res = {

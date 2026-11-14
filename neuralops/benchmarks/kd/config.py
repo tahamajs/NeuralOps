@@ -111,12 +111,21 @@ class BenchmarkConfig:
         payload = {
             "task": self.task,
             "teacher": self.teacher,
+            "pre_kd_samples": self.pre_kd_samples,
+            "post_kd_samples": self.post_kd_samples,
+            "batch_size": self.batch_size,
+            "grad_accum_steps": self.grad_accum_steps,
+            "max_length": self.max_length,
             "kd_steps": self.kd_steps,
             "kd_lr": self.kd_lr,
+            "eval_every": self.eval_every,
             "temperature": self.temperature,
             "alpha": self.alpha,
-            "max_length": self.max_length,
             "rank": self.rank,
+            "seed": self.seed,
+            "use_fp16": self.use_fp16,
+            "module_whitelist": sorted(self.module_whitelist) if self.module_whitelist is not None else None,
+            "fast_fail_threshold": self.fast_fail_threshold,
         }
         encoded = json.dumps(payload, sort_keys=True).encode("utf-8")
         return hashlib.sha256(encoded).hexdigest()[:16]

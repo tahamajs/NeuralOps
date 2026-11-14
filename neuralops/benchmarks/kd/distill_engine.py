@@ -75,24 +75,26 @@ def _forward_hidden(mod: nn.Module, in_ids: torch.Tensor, att_m: Optional[torch.
 
 
 def _make_grad_scaler(device: torch.device, enabled: bool = True, init_scale: float = 1024.0) -> Any:
-    """Create a GradScaler compatible across PyTorch 1.12, 2.0, and 2.6+ without deprecation warnings."""
+    """Create a GradScaler compatible across PyTorch 1.12, 2.0, and 2.6+ using torch.amp."""
+    dev_str = device.type if hasattr(device, "type") else str(device)
+    cuda_dev = dev_str if dev_str.startswith("cuda") else "cuda"
     if hasattr(torch, "amp") and hasattr(torch.amp, "GradScaler"):
         try:
-            dev_str = device.type if hasattr(device, "type") else str(device)
-            return torch.amp.GradScaler(dev_str if dev_str.startswith("cuda") else "cuda", enabled=enabled, init_scale=init_scale)
+            return torch.amp.GradScaler(cuda_dev, enabled=enabled, init_scale=init_scale)
         except (TypeError, ValueError):
             pass
+    try:
+        from torch.amp import GradScaler
+
+        return GradScaler(cuda_dev, enabled=enabled, init_scale=init_scale)
+    except Exception:
+        pass
     if hasattr(torch, "cuda") and hasattr(torch.cuda, "amp") and hasattr(torch.cuda.amp, "GradScaler"):
         try:
             return torch.cuda.amp.GradScaler(enabled=enabled, init_scale=init_scale)
         except (TypeError, ValueError):
             pass
-    try:
-        from torch.cuda.amp import GradScaler
-        return GradScaler(enabled=enabled, init_scale=init_scale)
-    except Exception:
-        from torch.amp import GradScaler
-        return GradScaler("cuda", enabled=enabled, init_scale=init_scale)
+    return None
 
 
 def _compute_masked_representation_loss(
@@ -166,7 +168,7 @@ def evaluate_causal_ppl(
             att_m = batch["attention_mask"].to(device, non_blocking=True)
             lbls = batch.get("labels", in_ids).to(device, non_blocking=True)
 
-            with (torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16) if device.type == "cuda" else contextlib.nullcontext()):
+            with (torch.amp.autocast("cuda", enabled=(device.type == "cuda"), dtype=torch.float16) if device.type == "cuda" else contextlib.nullcontext()):
                 lm_sub = getattr(model, "model", getattr(model, "language_model", model))
                 if hasattr(lm_sub, "model") and hasattr(lm_sub.model, "layers"):
                     lm_core = lm_sub.model
@@ -252,7 +254,7 @@ def evaluate_sst2_accuracy(
             in_ids = enc["input_ids"].to(device)
             att_m = enc["attention_mask"].to(device) if "attention_mask" in enc else None
 
-            with (torch.cuda.amp.autocast(enabled=(device.type == "cuda"), dtype=torch.float16) if device.type == "cuda" else contextlib.nullcontext()):
+            with (torch.amp.autocast("cuda", enabled=(device.type == "cuda"), dtype=torch.float16) if device.type == "cuda" else contextlib.nullcontext()):
                 fwd_kwargs: dict[str, Any] = {}
                 if att_m is not None:
                     fwd_kwargs["attention_mask"] = att_m
@@ -297,6 +299,7 @@ class TwoStageDistillationEngine:
         device: Optional[torch.device] = None,
         use_cosine_scheduler: bool = True,
         margin_loss_weight: float = 0.5,
+        max_steps: Optional[int] = None,
     ) -> None:
         self.train_secs = float(train_secs)
         self.stage1_frac = float(stage1_frac)
@@ -311,6 +314,7 @@ class TwoStageDistillationEngine:
         self.device = device or torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.use_cosine_scheduler = bool(use_cosine_scheduler)
         self.margin_loss_weight = float(margin_loss_weight)
+        self.max_steps = int(max_steps) if max_steps is not None else None
 
     def run(
         self,
@@ -324,6 +328,8 @@ class TwoStageDistillationEngine:
         gradient_checkpointing: bool = False,
         train_secs: Optional[float] = None,
         letter_token_ids: Optional[List[int]] = None,
+        max_steps: Optional[int] = None,
+        train_steps: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Execute the two-stage distillation procedure."""
         if teacher_cache is None and teacher_model is None:
@@ -339,6 +345,10 @@ class TwoStageDistillationEngine:
         evaluator = eval_fn or evaluate_causal_ppl
         pre_metric = evaluator(student, val_loader, dev)
         logger.info("%sPre-Distillation Metric: %.2f", log_prefix, pre_metric)
+
+        eff_max_steps = max_steps if max_steps is not None else (train_steps if train_steps is not None else self.max_steps)
+        max_steps_s1: Optional[int] = max(1, int(eff_max_steps * self.stage1_frac)) if eff_max_steps is not None else None
+        max_steps_s2: Optional[int] = max(1, eff_max_steps - max_steps_s1) if eff_max_steps is not None else None
 
         total_budget_secs = float(train_secs) if train_secs is not None else self.train_secs
         t_start = time.time()
@@ -361,14 +371,14 @@ class TwoStageDistillationEngine:
         step_s1 = 0
         t0_s1 = time.time()
 
-        while time.time() < t_s1_end:
+        while (time.time() < t_s1_end) and (max_steps_s1 is None or step_s1 < max_steps_s1):
             for batch in train_loader:
-                if time.time() >= t_s1_end:
+                if (time.time() >= t_s1_end) or (max_steps_s1 is not None and step_s1 >= max_steps_s1):
                     break
                 in_ids = batch["input_ids"].to(dev, non_blocking=True)
                 att_m = batch["attention_mask"].to(dev, non_blocking=True)
 
-                with (torch.cuda.amp.autocast(enabled=(dev.type == "cuda"), dtype=torch.float16) if dev.type == "cuda" else contextlib.nullcontext()):
+                with (torch.amp.autocast("cuda", enabled=(dev.type == "cuda"), dtype=torch.float16) if dev.type == "cuda" else contextlib.nullcontext()):
                     core = getattr(student, "model", getattr(student, "language_model", student))
                     target_s = core.model if (hasattr(core, "model") and hasattr(core.model, "layers")) else core
                     s_out = _forward_hidden(target_s, in_ids, att_m)
@@ -424,12 +434,15 @@ class TwoStageDistillationEngine:
         t0_s2 = time.time()
         dur_s2_total = max(1e-5, t_s2_end - t0_s2)
 
-        while time.time() < t_s2_end:
+        while (time.time() < t_s2_end) and (max_steps_s2 is None or step_s2 < max_steps_s2):
             for batch in train_loader:
-                if time.time() >= t_s2_end:
+                if (time.time() >= t_s2_end) or (max_steps_s2 is not None and step_s2 >= max_steps_s2):
                     break
                 if self.use_cosine_scheduler:
-                    progress = min(1.0, max(0.0, (time.time() - t0_s2) / dur_s2_total))
+                    if max_steps_s2 is not None:
+                        progress = min(1.0, max(0.0, step_s2 / max(1, max_steps_s2)))
+                    else:
+                        progress = min(1.0, max(0.0, (time.time() - t0_s2) / dur_s2_total))
                     cur_lr = self.min_lr_s2 + 0.5 * (self.lr_s2 - self.min_lr_s2) * (1.0 + math.cos(math.pi * progress))
                     for pg in opt2.param_groups:
                         pg["lr"] = cur_lr
@@ -437,7 +450,7 @@ class TwoStageDistillationEngine:
                 in_ids = batch["input_ids"].to(dev, non_blocking=True)
                 att_m = batch["attention_mask"].to(dev, non_blocking=True)
 
-                with (torch.cuda.amp.autocast(enabled=(dev.type == "cuda"), dtype=torch.float16) if dev.type == "cuda" else contextlib.nullcontext()):
+                with (torch.amp.autocast("cuda", enabled=(dev.type == "cuda"), dtype=torch.float16) if dev.type == "cuda" else contextlib.nullcontext()):
                     core = getattr(student, "model", getattr(student, "language_model", student))
                     target_s = core.model if (hasattr(core, "model") and hasattr(core.model, "layers")) else core
                     s_out = _forward_hidden(target_s, in_ids, att_m)
@@ -522,7 +535,10 @@ class TwoStageDistillationEngine:
                     scaler2.update()
                     opt2.zero_grad(set_to_none=True)
                     if self.use_cosine_scheduler:
-                        progress = min(1.0, max(0.0, (time.time() - t0_s2) / dur_s2_total))
+                        if max_steps_s2 is not None:
+                            progress = min(1.0, max(0.0, step_s2 / max(1, max_steps_s2)))
+                        else:
+                            progress = min(1.0, max(0.0, (time.time() - t0_s2) / dur_s2_total))
                         cur_lr = self.min_lr_s2 + 0.5 * (self.lr_s2 - self.min_lr_s2) * (1.0 + math.cos(math.pi * progress))
                         for pg in opt2.param_groups:
                             pg["lr"] = cur_lr
@@ -534,14 +550,20 @@ class TwoStageDistillationEngine:
             scaler2.update()
             opt2.zero_grad(set_to_none=True)
             if self.use_cosine_scheduler:
-                progress = min(1.0, max(0.0, (time.time() - t0_s2) / dur_s2_total))
+                if max_steps_s2 is not None:
+                    progress = min(1.0, max(0.0, step_s2 / max(1, max_steps_s2)))
+                else:
+                    progress = min(1.0, max(0.0, (time.time() - t0_s2) / dur_s2_total))
                 cur_lr = self.min_lr_s2 + 0.5 * (self.lr_s2 - self.min_lr_s2) * (1.0 + math.cos(math.pi * progress))
                 for pg in opt2.param_groups:
                     pg["lr"] = cur_lr
 
         dur_s2 = time.time() - t0_s2
         if self.use_cosine_scheduler:
-            final_progress = min(1.0, max(0.0, dur_s2 / dur_s2_total))
+            if max_steps_s2 is not None:
+                final_progress = min(1.0, max(0.0, step_s2 / max(1, max_steps_s2)))
+            else:
+                final_progress = min(1.0, max(0.0, dur_s2 / dur_s2_total))
             final_lr_s2 = self.min_lr_s2 + 0.5 * (self.lr_s2 - self.min_lr_s2) * (1.0 + math.cos(math.pi * final_progress))
         else:
             final_lr_s2 = float(opt2.param_groups[0]["lr"])

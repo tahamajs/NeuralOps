@@ -55,10 +55,10 @@ else:
 VLM_MAX_CACHE_BYTES = int(1.75 * 1024 * 1024 * 1024)
 
 
-def _safe_torch_load(path: Path) -> Any:
-    """Load a torch checkpoint across PyTorch 1.12 and 2.6+ without weights_only mismatch."""
+def _safe_torch_load(path: Path, weights_only: bool = True) -> Any:
+    """Load a torch checkpoint across PyTorch versions defaulting to weights_only=True for security."""
     try:
-        return torch.load(path, map_location="cpu", weights_only=False)
+        return torch.load(path, map_location="cpu", weights_only=weights_only)
     except TypeError:
         return torch.load(path, map_location="cpu")
 
@@ -425,7 +425,7 @@ def build_or_load_causal_teacher_cache(
                             end = min(start + cur_bs, n_samples)
                             in_ids = sub_chunks[start:end].to(device=device, dtype=torch.long, non_blocking=True)
                             att_m = torch.ones_like(in_ids, dtype=torch.long)
-                            with (torch.cuda.amp.autocast(dtype=torch.float16) if device.type == "cuda" else contextlib.nullcontext()):
+                            with (torch.amp.autocast("cuda", dtype=torch.float16) if device.type == "cuda" else contextlib.nullcontext()):
                                 out = teacher(
                                     input_ids=in_ids,
                                     attention_mask=att_m,
@@ -670,7 +670,7 @@ def build_or_load_vlm_teacher_cache(
                                 dtype=torch.float16 if device.type == "cuda" else torch.float32,
                                 non_blocking=True,
                             )
-                            with (torch.cuda.amp.autocast(dtype=torch.float16) if device.type == "cuda" else contextlib.nullcontext()):
+                            with (torch.amp.autocast("cuda", dtype=torch.float16) if device.type == "cuda" else contextlib.nullcontext()):
                                 out = teacher(
                                     input_ids=in_ids,
                                     attention_mask=att_m,

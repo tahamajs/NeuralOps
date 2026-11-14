@@ -125,7 +125,12 @@ class RulerAdapter:
         needle = f" The special magic passcode is {secret_number}. Remember this passcode."
         haystack_filler = " The grass is green. The sky is blue. Numbers and facts surround us every day."
 
-        tokens_per_filler = max(len(self.tokenizer(haystack_filler).input_ids), 1) if self.tokenizer else 15
+        if self.tokenizer:
+            tok_out = self.tokenizer(haystack_filler)
+            t_ids = tok_out["input_ids"] if isinstance(tok_out, dict) or hasattr(tok_out, "__getitem__") else tok_out.input_ids
+            tokens_per_filler = max(len(t_ids), 1)
+        else:
+            tokens_per_filler = 15
         needed_fillers = max(self.context_length // tokens_per_filler, 20)
 
         insertion_index = int(needed_fillers * depth)
@@ -153,7 +158,7 @@ class RulerAdapter:
             prompt, expected, _ = self._generate_synthetic_niah(depth)
 
             inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=self.context_length)
-            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            inputs = {k: v.to(self.device) for k, v in inputs.items() if k in ("input_ids", "attention_mask")}
 
             start_t = time.perf_counter()
             with torch.no_grad():

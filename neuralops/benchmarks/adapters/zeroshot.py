@@ -186,15 +186,23 @@ class ZeroShotAdapter:
             return 0.0
 
         full_text = prompt + " " + choice
-        enc_full = self.tokenizer(full_text, return_tensors="pt").to(self.device)
+        enc_full = self.tokenizer(full_text, return_tensors="pt")
+        inputs = {k: v.to(self.device) for k, v in enc_full.items() if k in ("input_ids", "attention_mask")}
         enc_prompt = self.tokenizer(prompt, return_tensors="pt")
-
-        prompt_len = enc_prompt.input_ids.shape[1]
-        input_ids = enc_full.input_ids
+        prompt_ids = enc_prompt["input_ids"] if isinstance(enc_prompt, dict) or hasattr(enc_prompt, "__getitem__") else enc_prompt.input_ids
+        prompt_len = prompt_ids.shape[1]
+        input_ids = inputs["input_ids"]
 
         with torch.no_grad():
-            outputs = self.model(**enc_full)
-            logits = outputs.logits
+            outputs = self.model(**inputs)
+            if hasattr(outputs, "logits"):
+                logits = outputs.logits
+            elif isinstance(outputs, torch.Tensor):
+                logits = outputs
+            elif isinstance(outputs, (tuple, list)):
+                logits = outputs[0]
+            else:
+                logits = outputs
 
         log_probs = torch.log_softmax(logits, dim=-1)
 

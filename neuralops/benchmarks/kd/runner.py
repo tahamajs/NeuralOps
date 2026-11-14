@@ -40,30 +40,33 @@ from neuralops.trainer.metrics import accuracy_score
 
 
 def _make_grad_scaler(device: str = "cuda", enabled: bool = True, init_scale: float = 1024.0) -> Any:
-    """Create a GradScaler compatible across PyTorch 1.12, 2.0, and 2.6+."""
+    """Create a GradScaler compatible across PyTorch 1.12, 2.0, and 2.6+ using torch.amp."""
+    cuda_dev = device if device.startswith("cuda") else "cuda"
     if hasattr(torch, "amp") and hasattr(torch.amp, "GradScaler"):
         try:
-            return torch.amp.GradScaler(device if device.startswith("cuda") else "cuda", enabled=enabled, init_scale=init_scale)
+            return torch.amp.GradScaler(cuda_dev, enabled=enabled, init_scale=init_scale)
         except (TypeError, ValueError):
             pass
+    try:
+        from torch.amp import GradScaler
+
+        return GradScaler(cuda_dev, enabled=enabled, init_scale=init_scale)
+    except Exception:
+        pass
     if hasattr(torch, "cuda") and hasattr(torch.cuda, "amp") and hasattr(torch.cuda.amp, "GradScaler"):
         try:
             return torch.cuda.amp.GradScaler(enabled=enabled, init_scale=init_scale)
         except (TypeError, ValueError):
             pass
-    try:
-        from torch.cuda.amp import GradScaler
-        return GradScaler(enabled=enabled, init_scale=init_scale)
-    except Exception:
-        from torch.amp import GradScaler
-        return GradScaler("cuda", enabled=enabled, init_scale=init_scale)
+    return None
 
 
 def _autocast_context(device: str = "cuda", enabled: bool = True, dtype: torch.dtype = torch.float16) -> Any:
-    """Create an autocast context compatible across PyTorch 1.12, 2.0, and 2.6+."""
+    """Create an autocast context compatible across PyTorch 1.12, 2.0, and 2.6+ using torch.amp."""
+    cuda_dev = device if device.startswith("cuda") else "cuda"
     if hasattr(torch, "amp") and hasattr(torch.amp, "autocast"):
         try:
-            return torch.amp.autocast(device if device.startswith("cuda") else "cuda", enabled=enabled, dtype=dtype)
+            return torch.amp.autocast(cuda_dev, enabled=enabled, dtype=dtype)
         except (TypeError, ValueError):
             pass
     if hasattr(torch, "cuda") and hasattr(torch.cuda, "amp") and hasattr(torch.cuda.amp, "autocast"):
@@ -176,7 +179,8 @@ class KDRunner:
         for obj in objs:
             if obj is not None:
                 try:
-                    del obj
+                    if hasattr(obj, "zero_grad"):
+                        obj.zero_grad(set_to_none=True)
                 except Exception:
                     # allowed-swallow: best-effort-telemetry
                     pass
@@ -313,7 +317,7 @@ class KDRunner:
         labels: List[int] = []
         for batch in loader:
             batch = {k: v.to(self.device) for k, v in batch.items()}
-            with autocast("cuda", enabled=(self.config.use_fp16 and self.device == "cuda")):
+            with _autocast_context(self.device, enabled=(self.config.use_fp16 and self.device == "cuda")):
                 out = model(**batch)
             preds.extend(out.logits.argmax(-1).cpu().tolist())
             labels.extend(batch["labels"].cpu().tolist())
@@ -368,6 +372,14 @@ class KDRunner:
             Benchmark performance metrics and status.
         """
         t_start = time.time()
+        if torch.cuda.is_available():
+            torch.cuda.reset_peak_memory_stats()
+
+        # Enforce teacher evaluation mode and complete parameter freezing for isolation
+        teacher.eval()
+        for p in teacher.parameters():
+            p.requires_grad = False
+
         result: Dict[str, Any] = {
             "module": module_name,
             "dataset": dataset_name,
@@ -524,7 +536,11 @@ class KDRunner:
             result["status"] = "ERROR"
             result["error"] = str(exc)[:200]
         finally:
+            if optimizer is not None:
+                optimizer.zero_grad(set_to_none=True)
             self._cleanup_gpu(optimizer, student)
+            del student
+            del optimizer
 
         result["duration_s"] = round(time.time() - t_start, 1)
         return result
