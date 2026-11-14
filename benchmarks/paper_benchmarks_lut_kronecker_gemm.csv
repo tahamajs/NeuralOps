@@ -1,0 +1,7 @@
+Kernel,Dimension_D,Batch_M,CUDA_ms,PyTorch_Ref_ms,cuBLAS_FP16_ms,Speedup_vs_cuBLAS,Speedup_vs_Ref,Max_Abs_Diff,Zero_NaN,Zero_Inf
+lut_gemm,1024,16,0.0505,0.2231,0.0071,0.14x,4.42x,6.25e-02,PASS,PASS
+lut_gemm,2048,16,0.185,0.9561,0.0121,0.07x,5.17x,6.25e-02,PASS,PASS
+lut_gemm,4096,16,0.551,3.8479,0.0407,0.07x,6.98x,1.25e-01,PASS,PASS
+kronecker_gemm,1024,16,0.0634,0.0246,0.0061,0.10x,0.39x,6.10e-05,PASS,PASS
+kronecker_gemm,2048,16,0.4642,0.0244,0.0104,0.02x,0.05x,1.22e-04,PASS,PASS
+kronecker_gemm,4096,16,1.8508,0.0242,0.0354,0.02x,0.01x,1.22e-04,PASS,PASS

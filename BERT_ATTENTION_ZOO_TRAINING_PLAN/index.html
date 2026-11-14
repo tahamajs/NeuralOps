@@ -1,0 +1,4186 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Unified Platform for Subquadratic Attention and Deep Low-Rank Model Compression">
+      
+      
+        <meta name="author" content="Taha Majlesi (Department of Computer Engineering, College of Engineering, University of Tehran)">
+      
+      
+        <link rel="canonical" href="https://tahamajs.github.io/NeuralOps/BERT_ATTENTION_ZOO_TRAINING_PLAN/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>🏛️ NeuralOps Pretrained Attention & Compression Hub Zoo — Master Architectural Plan - NeuralOps</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#neuralops-pretrained-attention-compression-hub-zoo-master-architectural-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="NeuralOps" class="md-header__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NeuralOps
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              🏛️ NeuralOps Pretrained Attention &amp; Compression Hub Zoo — Master Architectural Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../QUICKSTART/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quickstart
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../TROUBLESHOOTING.md" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Troubleshooting
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../MIGRATION_GUIDE/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Migration Guide
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../guides/getting_started/" class="md-tabs__link">
+          
+  
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../dashboard.html" class="md-tabs__link">
+          
+  
+  
+  Visualizer & Dashboards
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../ARCHITECTURE.md" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../API_REFERENCE.md" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../COMPRESSOR_ZOO_CATALOG/" class="md-tabs__link">
+          
+  
+  
+  Technical Specifications (v2.1.0)
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../tutorials/01_quickstart/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../benchmarks/triton_kernels/" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../upstream/VLLM_RFC/" class="md-tabs__link">
+          
+  
+  
+  Upstream RFCs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../academic_monographs/" class="md-tabs__link">
+          
+  
+  
+  Academic & Theses
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reports/MASTER_PROJECT_RESULTS/" class="md-tabs__link">
+          
+  
+  
+  Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../ROADMAP/" class="md-tabs__link">
+          
+  
+  
+  Roadmap
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../model_zoo/" class="md-tabs__link">
+          
+  
+  
+  Ecosystem
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="NeuralOps" class="md-nav__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NeuralOps
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../QUICKSTART/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TROUBLESHOOTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIGRATION_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/how_neuralops_works/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How NeuralOps Works
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/attention_surgery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attention Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/model_compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Compression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/kernel_dispatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernel Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/production_serving/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Serving
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualizer & Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Visualizer & Dashboards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dashboard.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture & Telemetry Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Attention Lab & Atlas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer/latent_manifold.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Latent Manifold Geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roofline_interactive.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ada Roofline Interactive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ARCHITECTURE.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whole Framework Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/01_REGISTRY_AND_LAZY_DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registry & Lazy Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/02_THREE_LEVEL_DISPATCH_HIERARCHY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3-Level Fallback Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/03_CUDA_CPP_NATIVE_KERNEL_SUITE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA Native Kernel Suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/04_TRITON_JIT_COMPILATION_AND_AUTOTUNING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton JIT & Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/05_MODEL_SURGERY_AND_INPLACE_TRANSPLANT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In-Place Model Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/06_HNC_SVD_AND_STREAMING_WHITENING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD & Streaming Whitening
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/07_SIX_PILLAR_KNOWLEDGE_DISTILLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6-Pillar Knowledge Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/08_REALTIME_SERVING_AND_PAGED_KVCACHE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Realtime Serving & PagedKV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Telemetry & Roofline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Suite & Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_REFERENCE.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/api.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Python API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/attentions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    131 Attention Mechanisms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    82 Compression Engines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernels & 3-Level Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serving Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/results_ledger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results Ledger & Provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/cli_reference.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Technical Specifications (v2.1.0)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Technical Specifications (v2.1.0)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../COMPRESSOR_ZOO_CATALOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    82-Compressor Zoo Catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ATTENTION_TAXONOMY_CATALOG.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    115 Attention Mechanisms Taxonomy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MODULAR_SURGICAL_DELTA_SPEC.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modular Surgical Delta Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OFFLINE_TEACHER_CACHING_GUIDE.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Offline Teacher Representation Caching
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BENCHMARK_PERSISTENCE_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5-Format Unified Persistence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KERNEL_SYSTEMS_GUIDE.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA & Triton Systems Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/01_quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/02_roofline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 Roofline Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/03_plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 Serving Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmarks/triton_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmarks/cuda_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Native CUDA Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upstream RFCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Upstream RFCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upstream/VLLM_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vLLM PagedState RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upstream/TGI_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TGI Continuous Batching RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upstream/SGLANG_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SGLang RadixAttention RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic & Theses
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Academic & Theses
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../academic_monographs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manuscripts & PDFs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_14" >
+        
+          
+          <label class="md-nav__link" for="__nav_14" id="__nav_14_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_14">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/MASTER_PROJECT_RESULTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Master Project Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/FULL_BENCHMARK_ANALYSIS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Full Benchmark Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/MASTER_EMPIRICAL_BENCHMARK_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Master Empirical Benchmark Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/PROJECT_INCOMPLETION_AND_GAPS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaps & Incompletion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/PAPER_THESIS_CONSISTENCY_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paper/Thesis Consistency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/BENCHMARK_RECONCILIATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reconciliation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/HNC_SVD_STATUS_DECISION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD Decision
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Historical v1.3.7 Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Roadmap
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strategic Roadmap Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP_V1_7_KERNELS_AND_FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Throughput FLA Kernels & Microarchitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems, Surgery & Serving Ergonomics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_16" >
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ecosystem
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model_zoo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Visualizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../COMPARISON.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Framework Comparison
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HUGGINGFACE_UPLOAD.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hugging Face Upload
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RENAME_MAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Legacy Rename Map
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#unified-pretrained-foundation-model-zoo-131-canonical-attention-mechanisms-82-compression-engines-on-hugging-face-hub-hooshaai" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Unified Pretrained Foundation Model Zoo: 131 Canonical Attention Mechanisms &amp; 82 Compression Engines on Hugging Face Hub (Hooshaai)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#executive-summary-vision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Executive Summary &amp; Vision
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#table-of-contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Table of Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-architectural-principles-5-critical-surgery-upgrades" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Architectural Principles &amp; 5 Critical Surgery Upgrades
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. Architectural Principles &amp; 5 Critical Surgery Upgrades">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#upgrade-1-the-canonical-single-w_o-output-projection-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upgrade 1: The Canonical Single-\(W_O\) Output Projection Contract
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upgrade-2-family-specific-smart-weight-transplantation-forget-gate-bias" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upgrade 2: Family-Specific Smart Weight Transplantation &amp; Forget-Gate Bias
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upgrade-3-instant-closed-form-centered-stage-0-ridge-calibration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upgrade 3: Instant Closed-Form Centered Stage 0 Ridge Calibration
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upgrade-4-self-contained-hugging-face-automodel-export-reload" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upgrade 4: Self-Contained Hugging Face AutoModel Export &amp; Reload
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#upgrade-5-fast-tensor-core-pillar-4-auto-cleanup-daemon" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Upgrade 5: Fast Tensor-Core Pillar 4 &amp; Auto-Cleanup Daemon
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-dual-track-ecosystem-bert-encoder-zoo-modern-causal-lm-roadmap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Dual-Track Ecosystem: BERT Encoder Zoo &amp; Modern Causal LM Roadmap
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-mathematical-formulation-mlm-pseudo-perplexity-metric-integrity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Mathematical Formulation: MLM Pseudo-Perplexity &amp; Metric Integrity
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-the-5-minute-300s-3-stage-distillation-curriculum" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. The 5-Minute (300s) 3-Stage Distillation Curriculum
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-hardware-saturation-architecture-100-rtx-3090-sm-vram-load" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Hardware Saturation Architecture (100% RTX 3090 SM &amp; VRAM Load)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-asynchronous-background-hf-uploader-daemon-storage-protection" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Asynchronous Background HF Uploader Daemon &amp; Storage Protection
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-self-contained-model-export-auto_map-modeling_neuralops_bertpy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Self-Contained Model Export (auto_map &amp; modeling_neuralops_bert.py)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-automated-model-card-specification-readmemd" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Automated Model Card Specification (README.md)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-public-apis-cli-command-interfaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Public APIs &amp; CLI Command Interfaces
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. Public APIs &amp; CLI Command Interfaces">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#high-level-python-client-api-neuralopshubbert_zoopy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        High-Level Python Client API (neuralops/hub/bert_zoo.py)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cli-command-interfaces-neuralopsbenchmarksclipy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI Command Interfaces (neuralops/benchmarks/cli.py)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-sharif-hpc-production-pbs-execution-job" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Sharif HPC Production PBS Execution Job
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-gradio-interactive-model-arena-hooshaaibert-attention-zoo-demo" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Gradio Interactive Model Arena (Hooshaai/bert-attention-zoo-demo)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-registry-manifest-all-131-canonical-attention-units-110-verified-on-gpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. Registry Manifest: All 131 Canonical Attention Units (110 Verified on GPU)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13-compressor-zoo-manifest-82-engines-audited-33-verified-functional" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13. Compressor Zoo Manifest: 82 Engines Audited (33 Verified Functional)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14-physical-ground-truth-baseline-metrics-sharif-hpc-gpu-3090-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14. Physical Ground Truth Baseline Metrics (Sharif HPC GPU-3090-1)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15-production-execution-commands" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15. Production Execution Commands
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="15. Production Execution Commands">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#151-track-a-bert-attention-zoo-distillation-110-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15.1 Track A: BERT Attention Zoo Distillation (110 models)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#152-track-a-comp-bert-compressor-zoo-distillation-33-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15.2 Track A-Comp: BERT Compressor Zoo Distillation (33 models)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#153-track-b-qwen-generative-lm-attention-zoo-distillation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15.3 Track B: Qwen Generative LM Attention Zoo Distillation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#154-track-b-comp-qwen-compressor-zoo-distillation-33-models" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15.4 Track B-Comp: Qwen Compressor Zoo Distillation (33 models)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#16-failure-policies-recovery-matrix-verification-protocol" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16. Failure Policies, Recovery Matrix &amp; Verification Protocol
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="neuralops-pretrained-attention-compression-hub-zoo-master-architectural-plan">🏛️ NeuralOps Pretrained Attention &amp; Compression Hub Zoo — Master Architectural Plan</h1>
+<h2 id="unified-pretrained-foundation-model-zoo-131-canonical-attention-mechanisms-82-compression-engines-on-hugging-face-hub-hooshaai">Unified Pretrained Foundation Model Zoo: 131 Canonical Attention Mechanisms &amp; 82 Compression Engines on Hugging Face Hub (<code>Hooshaai</code>)</h2>
+<p><strong>Document ID:</strong> <code>NOP-ARCH-ZOO-MASTER-v5.0</code>
+<strong>Status:</strong> Authoritative Architectural Master Plan (Synchronized with <code>NOP-MASTER-ZOO-SELECTION-v8.0</code>)
+<strong>Current Package Alignment:</strong> NeuralOps <code>v2.1.0</code>
+<strong>Author Attribution:</strong> <code>taha &lt;tahamaj4@gmail.com&gt;</code>
+<strong>Primary Backbones:</strong>
+- <strong>Track A-Attn (BERT Attention Zoo):</strong> <code>bert-base-uncased</code> (110M params, 12 layers, 768-dim, 12 heads) on <code>WikiText-2</code>
+- <strong>Track A-Comp (BERT Compressor Zoo):</strong> <code>bert-base-uncased</code> (110M params) across 82 compression engines on <code>WikiText-2</code> &amp; <code>GLUE SST-2</code>
+- <strong>Track B-Attn (Qwen Attention Zoo):</strong> <code>Qwen/Qwen2.5-0.5B</code> (490M params, 24 layers, 896-dim, GQA 14:2 heads) on <code>WikiText-103</code> &amp; <code>SmolLM2-135M</code>
+- <strong>Track B-Comp (Qwen Compressor Zoo):</strong> <code>Qwen/Qwen2.5-0.5B</code> low-rank SVD and KV-cache compression engines
+- <strong>Teacher Calibration Baseline:</strong> Fine-tuned <code>bert-base-uncased</code> on GLUE SST-2 (<code>models/bert_sst2_teacher</code>, ~92% accuracy) and WikiText-2 (PPL 10.48, Acc 59.92%)</p>
+<p><strong>HPC Compute Target:</strong> Sharif HPC Cluster (<code>GPU-3090-1</code>, NVIDIA RTX 3090 24GB GDDR6X, Rocks 6.1, Torque PBS, queue <code>N3090</code>, CUDA 11.3, GCC 8.2, PyTorch 2.2.2+cu124)
+<strong>Distributed Secondary Nodes:</strong> <code>ssh gpu</code> (RTX 4070 Laptop 8GB SM 8.9) &amp; <code>ssh tahoora</code> (GTX 1060 6GB SM 6.1)
+<strong>Target Hugging Face Hub Organization:</strong> <code>Hooshaai</code> (Official Research Laboratory Organization)
+<strong>Security Policy:</strong> Absolute redaction of <code>$HF_TOKEN</code> — passed via environment variables only</p>
+<hr />
+<h2 id="executive-summary-vision">Executive Summary &amp; Vision</h2>
+<p>This master specification establishes the engineering protocol to transition <code>NeuralOps</code> from a high-performance attention and compression kernel repository into an <strong>open, consumable Pretrained Foundation Model Zoo on the Hugging Face Hub</strong>.</p>
+<p>Rather than requiring downstream researchers to train transformers from scratch or perform fragile code-level monkey patching, <code>NeuralOps</code> delivers <strong>both 131 fully pre-distilled attention models and 82 compressed models</strong> on the Hugging Face Hub under the <strong><code>Hooshaai</code></strong> organization. Researchers can load, evaluate, or fine-tune any attention or compressed model with a single line of standard Python:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">neuralops</span>
+
+<span class="c1"># 1-Line download for Pretrained Attention Zoo</span>
+<span class="n">model_attn</span><span class="p">,</span> <span class="n">tok</span> <span class="o">=</span> <span class="n">neuralops</span><span class="o">.</span><span class="n">load_pretrained_bert</span><span class="p">(</span>
+    <span class="n">attention_type</span><span class="o">=</span><span class="s2">"gated_delta_net"</span><span class="p">,</span>        <span class="c1"># Any of the 131 canonical attentions</span>
+    <span class="n">task</span><span class="o">=</span><span class="s2">"masked-lm"</span><span class="p">,</span>                        <span class="c1"># Or "sequence-classification", "feature-extraction"</span>
+<span class="p">)</span>
+
+<span class="c1"># 1-Line download for Pretrained Compressor Zoo</span>
+<span class="n">model_comp</span><span class="p">,</span> <span class="n">tok</span> <span class="o">=</span> <span class="n">neuralops</span><span class="o">.</span><span class="n">load_pretrained_compressed_bert</span><span class="p">(</span>
+    <span class="n">compressor_type</span><span class="o">=</span><span class="s2">"direct_svd"</span><span class="p">,</span>            <span class="c1"># Any of the verified compression engines</span>
+    <span class="n">task</span><span class="o">=</span><span class="s2">"masked-lm"</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="table-of-contents">Table of Contents</h2>
+<ol>
+<li><a href="#1-architectural-principles-5-critical-surgery-upgrades">Architectural Principles &amp; 5 Critical Surgery Upgrades</a></li>
+<li><a href="#2-dual-track-ecosystem-bert-encoder-zoo-modern-causal-lm-roadmap">Dual-Track Ecosystem: BERT Encoder Zoo &amp; Modern Causal LM Roadmap</a></li>
+<li><a href="#3-mathematical-formulation-mlm-pseudo-perplexity-metric-integrity">Mathematical Formulation: MLM Pseudo-Perplexity &amp; Metric Integrity</a></li>
+<li><a href="#4-the-5-minute-300s-3-stage-distillation-curriculum">The 5-Minute (300s) 3-Stage Distillation Curriculum</a></li>
+<li><a href="#5-hardware-saturation-architecture-100-rtx-3090-sm-vram-load">Hardware Saturation Architecture (100% RTX 3090 SM &amp; VRAM Load)</a></li>
+<li><a href="#6-asynchronous-background-hf-uploader-daemon-storage-protection">Asynchronous Background HF Uploader Daemon &amp; Storage Protection</a></li>
+<li><a href="#7-self-contained-model-export-auto_map-modeling_neuralops_bertpy">Self-Contained Model Export (<code>auto_map</code> &amp; <code>modeling_neuralops_bert.py</code>)</a></li>
+<li><a href="#8-automated-model-card-specification-readmemd">Automated Model Card Specification (<code>README.md</code>)</a></li>
+<li><a href="#9-public-apis-cli-command-interfaces">Public APIs &amp; CLI Command Interfaces</a></li>
+<li><a href="#10-sharif-hpc-production-pbs-execution-job">Sharif HPC Production PBS Execution Job</a></li>
+<li><a href="#11-gradio-interactive-model-arena-hooshaaibert-attention-zoo-demo">Gradio Interactive Model Arena (<code>Hooshaai/bert-attention-zoo-demo</code>)</a></li>
+<li><a href="#12-registry-manifest-all-131-canonical-attention-units-110-verified-on-gpu">Registry Manifest: All 131 Canonical Attention Units</a></li>
+<li><a href="#16-failure-policies-recovery-matrix-verification-protocol">Failure Policies, Recovery Matrix &amp; Verification Protocol</a></li>
+</ol>
+<hr />
+<h2 id="1-architectural-principles-5-critical-surgery-upgrades">1. Architectural Principles &amp; 5 Critical Surgery Upgrades</h2>
+<p>To guarantee that transplanted attention mechanisms preserve zero-shot semantic capabilities and converge smoothly during distillation, the core Model Surgery Engine (<code>neuralops/core/</code>) incorporates five definitive architectural upgrades:</p>
+<div class="highlight"><pre><span></span><code>┌──────────────────────────────────────────────────────────────────────────────────┐
+│                    THE SINGLE-W_O OUTPUT PROJECTION CONTRACT                     │
+├──────────────────────────────────────────────────────────────────────────────────┤
+│ BERT / RoBERTa Surgery Protocol:                                                 │
+│   1. layer.attention.output.dense (nn.Linear(768, 768)) is PRESERVED as the     │
+│      single authoritative canonical output projection.                           │
+│   2. If injected core attention has an internal full-rank out_proj(768, 768),    │
+│      it is bypassed with nn.Identity() to prevent double output projection.      │
+│   3. If core attention uses factorized low-rank projections (e.g. rank r -&gt; 768) │
+│      or custom mixers, they map to 768, and dense performs canonical mapping.    │
+│   4. Stage 0 Centered Ridge calibration aligns layer.attention.output.dense      │
+│      directly using exact row-major transpose algebra.                           │
+│   Result: Universal compatibility across all 131 full-rank and low-rank models!  │
+└──────────────────────────────────────────────────────────────────────────────────┘
+</code></pre></div>
+<h3 id="upgrade-1-the-canonical-single-w_o-output-projection-contract">Upgrade 1: The Canonical Single-<span class="arithmatex">\(W_O\)</span> Output Projection Contract</h3>
+<ul>
+<li><strong>Root Cause &amp; Low-Rank Constraint:</strong> In Hugging Face BERT/RoBERTa, <code>layer.attention</code> is composed of <code>self</code> (<code>BertSelfAttention</code>, projecting Q, K, V) and <code>output</code> (<code>BertSelfOutput</code>, which applies <code>dense</code> <span class="arithmatex">\(W_O\)</span>, dropout, and LayerNorm). However, 30% of attention mechanisms in <code>ATTENTION_REGISTRY</code> use low-rank factorized projections (<span class="arithmatex">\(r = 32 \ll 768\)</span>). Replacing <code>dense</code> with <code>nn.Identity()</code> forces the core attention to project to 768, but it cannot absorb a full-rank <span class="arithmatex">\(768 \times 768\)</span> Ridge alignment matrix without expanding rank.</li>
+<li><strong>Canonical Fix:</strong></li>
+<li><code>layer.attention.output.dense</code> (<code>nn.Linear(768, 768)</code>) is preserved as the single canonical projection for all 131 models.</li>
+<li>If the injected core attention has an internal square <code>out_proj</code>, <code>BertAttentionAdapter</code> bypasses it with <code>nn.Identity()</code>.</li>
+<li>If the core module uses factorized low-rank projections (<span class="arithmatex">\(r \to 768\)</span>), they map to 768, and <code>dense</code> performs the final linear transformation.</li>
+<li><code>UniversalAttentionWrapper</code> and <code>BertAttentionAdapter</code> force <code>is_causal=False</code> (bidirectional encoder mode) when the model is an encoder (<code>not config.is_decoder</code>), returning <code>(context_layer, None)</code>.</li>
+</ul>
+<h3 id="upgrade-2-family-specific-smart-weight-transplantation-forget-gate-bias">Upgrade 2: Family-Specific Smart Weight Transplantation &amp; Forget-Gate Bias</h3>
+<p>During <code>replace_attention(..., copy_weights=True)</code>, weight initialization matches the operator's mathematical paradigm:
+- <strong>Standard / Linear / Sparse / Gated:</strong> Direct tensor copy. For gated mechanisms (<code>gated_delta_net</code>, <code>gla_attention</code>, <code>hgrn2</code>, <code>kda_attention</code>), initialize the forget-gate bias vector <span class="arithmatex">\(b_g\)</span> such that the initial state retention gate is high:
+  $<span class="arithmatex">\(\sigma(b_g) \approx 0.88 - 0.95 \implies b_g \sim \mathcal{U}(2.0, 3.0)\)</span>$
+- <strong>SVD &amp; Low-Rank Attention (<code>svd_linear_attention</code>, <code>asvd_attention</code>, <code>compressed_mha_attention</code>):</strong> Perform exact truncated SVD (<span class="arithmatex">\(\text{SVD}(W) = U \Sigma V^\top\)</span>) on the pretrained <span class="arithmatex">\(W_Q, W_K, W_V\)</span> matrices at surgery time. Factorize into rank-<span class="arithmatex">\(r\)</span> factors:
+  $<span class="arithmatex">\(U_r = U_{:, :r} \sqrt{\Sigma_{:r}}, \quad V_r = \sqrt{\Sigma_{:r}} V_{:r, :}^\top\)</span>$
+- <strong>State-Space &amp; Mamba Modules (<code>mamba_block</code>, <code>selective_ssm</code>, <code>simple_ssm</code>, <code>svd_mamba</code>):</strong> Map <span class="arithmatex">\([W_V; W_Q]\)</span> into the primary input projections of <code>in_proj</code>, preserving the principal semantic subspace on step 0.</p>
+<h3 id="upgrade-3-instant-closed-form-centered-stage-0-ridge-calibration">Upgrade 3: Instant Closed-Form Centered Stage 0 Ridge Calibration</h3>
+<ul>
+<li><strong>Mathematical Principle:</strong> Before gradient backpropagation begins, collect layer input activations across 16 calibration sequences (<span class="arithmatex">\(&lt; 2.5\)</span> seconds on GPU). Let <span class="arithmatex">\(Z \in \mathbb{R}^{N \times D}\)</span> be the output of the new attention module, and <span class="arithmatex">\(Y \in \mathbb{R}^{N \times D}\)</span> be the output of the teacher's original attention.</li>
+<li>Mean centering: <span class="arithmatex">\(Z_c = Z - \mu_Z\)</span>, <span class="arithmatex">\(Y_c = Y - \mu_Y\)</span>.</li>
+<li>Solve Tikhonov-regularized Ridge problem:
+  $<span class="arithmatex">\(W_{\text{align}} = \left( Z_c^\top Z_c + \lambda I \right)^{-1} Z_c^\top Y_c, \quad b_{\text{align}} = \mu_Y - \mu_Z W_{\text{align}}\)</span>$</li>
+<li>Fold directly into <code>layer.attention.output.dense</code> using PyTorch row-major linear algebra (<span class="arithmatex">\(y = x W^\top + b\)</span>):
+  $<span class="arithmatex">\(\boxed{W_{\text{dense, new}} = W_{\text{dense}} W_{\text{align}}^\top}\)</span>$
+  $<span class="arithmatex">\(\boxed{b_{\text{dense, new}} = b_{\text{dense}} + b_{\text{align}} W_{\text{dense}}^\top}\)</span>$</li>
+<li>Verified to machine precision: <span class="arithmatex">\(\max |y_{\text{expected}} - y_{\text{fused}}| = 3.55 \times 10^{-15}\)</span> in <code>float64</code>.</li>
+</ul>
+<h3 id="upgrade-4-self-contained-hugging-face-automodel-export-reload">Upgrade 4: Self-Contained Hugging Face <code>AutoModel</code> Export &amp; Reload</h3>
+<ul>
+<li>Each checkpoint directory generates:</li>
+<li><code>model.safetensors</code> (or <code>pytorch_model.bin</code>)</li>
+<li><code>config.json</code> containing <code>"auto_map"</code> linking <code>AutoModelForMaskedLM</code> to <code>modeling_neuralops_bert.NeuralOpsBertForMaskedLM</code></li>
+<li><code>modeling_neuralops_bert.py</code>: A self-contained Python module embedding <code>BertAttentionAdapter</code> that reconstructs the architecture dynamically upon loading.</li>
+<li><code>requirements.txt</code>: Clear dependency specification (<code>neuralops&gt;=2.1.0</code>) with actionable fallback instructions (<code>pip install "neuralops[core]"</code>).</li>
+<li>Enables downstream researchers to execute:
+  <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoModelForMaskedLM</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForMaskedLM</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="s2">"Hooshaai/bert-gated-delta-net-wiki"</span><span class="p">,</span> <span class="n">trust_remote_code</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div></li>
+</ul>
+<h3 id="upgrade-5-fast-tensor-core-pillar-4-auto-cleanup-daemon">Upgrade 5: Fast Tensor-Core Pillar 4 &amp; Auto-Cleanup Daemon</h3>
+<ul>
+<li>Replaces iterative, CPU-blocking SVD calls with <strong>Fast Normalized Gram Covariance Matching</strong> in FP16 Tensor Cores:
+  $<span class="arithmatex">\(\mathcal{L}_{\text{Cov}} = \frac{1}{D^2} \left\| \frac{h_S^\top h_S}{\|h_S\|_F} - \frac{h_T^\top h_T}{\|h_T\|_F} \right\|_F^2\)</span>$</li>
+<li>The background upload daemon automatically deletes local <code>.safetensors</code> files once Hugging Face confirms the remote commit hash, keeping local disk footprint strictly under <strong>2 GB</strong> across the entire 131-module sweep.</li>
+</ul>
+<hr />
+<h2 id="2-dual-track-ecosystem-bert-encoder-zoo-modern-causal-lm-roadmap">2. Dual-Track Ecosystem: BERT Encoder Zoo &amp; Modern Causal LM Roadmap</h2>
+<div class="highlight"><pre><span></span><code>┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                NEURALOPS DUAL-TRACK ARCHITECTURE                                 │
+├─────────────────────────────────────────────┬────────────────────────────────────────────────────┤
+│ TRACK A: Encoder Foundation (Immediate)     │ TRACK B: Modern Generative LM (Expansion)          │
+├─────────────────────────────────────────────┼────────────────────────────────────────────────────┤
+│ • Model: bert-base-uncased (110M params)    │ • Model: Qwen/Qwen2.5-0.5B (490M params)           │
+│ • Topology: 12 Layers, 768 Dim, 12 Heads    │ • Topology: 24 Layers, 896 Dim, GQA 14:2 Heads     │
+│ • Task: Masked LM (Bidirectional Encoder)   │ • Task: Autoregressive Causal LM (Decoder-Only)    │
+│ • Dataset: WikiText-2 (seq_len = 128)       │ • Dataset: WikiText-103 (seq_len = 512 to 32k)     │
+│ • State Complexity: Standard O(S)           │ • State Complexity: Constant O(1) Memory!          │
+│ • Scope: All 131 Canonical Mechanisms       │ • Scope: Top-20 High-Speed Linear Champions        │
+│ • Target Hub Org: Hooshaai                  │ • Target Hub Org: Hooshaai                         │
+│ • Primary Metric: Masked LM Perplexity      │ • Primary Metric: Autoregressive Causal PPL        │
+└─────────────────────────────────────────────┴────────────────────────────────────────────────────┘
+</code></pre></div>
+<p>Track A establishes the comprehensive scientific baseline across all 131 attention mechanisms under strictly controlled conditions. Track B takes the Pareto champions (<code>gated_delta_net</code>, <code>gla_attention</code>, <code>cosformer</code>, <code>svd_linear_attention</code>) and applies them to <code>Qwen2.5-0.5B</code>, demonstrating practical linear-time generative speedups and eliminating the quadratic KV-cache memory wall.</p>
+<hr />
+<h2 id="3-mathematical-formulation-mlm-pseudo-perplexity-metric-integrity">3. Mathematical Formulation: MLM Pseudo-Perplexity &amp; Metric Integrity</h2>
+<p>For bidirectional encoder models like BERT, unmasked evaluation leaks the target token into self-attention, collapsing loss to zero. Therefore, Perplexity is evaluated strictly as Masked Language Modeling Pseudo-Perplexity:</p>
+<ol>
+<li><strong>Deterministic Masking:</strong> For validation sequence <span class="arithmatex">\(X = (x_1, \dots, x_S)\)</span> with <span class="arithmatex">\(S=128\)</span>, generator seed <span class="arithmatex">\(\text{seed} = 42 + \text{batch\_idx}\)</span> selects 15% of token positions <span class="arithmatex">\(\mathcal{M} \subset \{1, \dots, S\}\)</span> (excluding <code>[CLS]</code> and <code>[SEP]</code>).</li>
+<li><strong>80/10/10 Token Distribution:</strong></li>
+<li>80% of tokens in <span class="arithmatex">\(\mathcal{M}\)</span> become <code>[MASK]</code> (token ID 103).</li>
+<li>10% become a uniform random token <span class="arithmatex">\(v \in \mathcal{V}\)</span> (<span class="arithmatex">\(|\mathcal{V}| = 30,522\)</span>).</li>
+<li>10% remain unchanged.</li>
+<li><strong>Loss Function:</strong> Non-masked tokens receive target <span class="arithmatex">\(-100\)</span>. Loss is strictly the cross-entropy over masked positions:
+   $<span class="arithmatex">\(\mathcal{L}_{\text{MLM}} = -\frac{1}{|\mathcal{M}|} \sum_{i \in \mathcal{M}} \log P_{\text{model}}(x_i \mid \tilde{X})\)</span>$</li>
+<li><strong>Metric Equations:</strong>
+   $<span class="arithmatex">\(\boxed{\text{MLM-PPL} = \exp\left( \min\left( \mathcal{L}_{\text{MLM}}, 20.0 \right) \right)}\)</span>$
+   $<span class="arithmatex">\(\boxed{\text{Masked Token Accuracy (\%)} = \frac{1}{|\mathcal{M}|} \sum_{i \in \mathcal{M}} \mathbb{I}\left( \arg\max_{v \in \mathcal{V}} z_i(v) = x_i \right) \times 100\%}\)</span>$</li>
+</ol>
+<hr />
+<h2 id="4-the-5-minute-300s-3-stage-distillation-curriculum">4. The 5-Minute (300s) 3-Stage Distillation Curriculum</h2>
+<div class="highlight"><pre><span></span><code>┌────────────────────────────────────────────────────────────────────────────────────────┐
+│                        3-STAGE 5-MINUTE DISTILLATION CURRICULUM                        │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│ Stage 0: Instant Closed-Form Ridge Calibration (t = 0 ... 5s)                          │
+│   ├── Run 16 calibration batches through teacher and student                            │
+│   ├── Solve centered Ridge: W_align = (Z_c^T Z_c + λ I)^(-1) Z_c^T Y_c                 │
+│   ├── Fold into layer.attention.output.dense: W_dense = W_dense @ W_align.T            │
+│   └── Evaluate zero-shot PPL vs Stage 0 PPL (records immediate representation recovery)│
+│                                                                                        │
+│ Stage 1: Frozen-Backbone Subspace Alignment (t = 5 ... 95s, 30% of budget)             │
+│   ├── Freeze all weights except attention parameters and LayerNorm                     │
+│   ├── Train on 1,024-chunk subset (2.2 GB RAM, 2.3x faster)                            │
+│   ├── Skip 30,522 vocab projection head (zero logit FLOPs in Stage 1)                  │
+│   └── Optimize Hidden MSE + Cosine Direction + Fast Gram Covariance (AdamW lr=1e-3)    │
+│                                                                                        │
+│ Stage 2: Full-Model Unfrozen KD &amp; Dynamic MLM (t = 95 ... 300s, 70% of budget)         │
+│   ├── Unfreeze all parameters with differential learning rates:                        │
+│   │   ├── lr_attn = 5.0e-4 (higher plasticity for transplanted attention)             │
+│   │   └── lr_backbone = 5.0e-5 (conservative rate preserving pretrained features)      │
+│   ├── Dynamic 15% MLM masking on-the-fly with teacher in FP16 torch.no_grad()          │
+│   ├── Compute 30,522-dim MLM projection and KL loss ONLY on masked tokens (6.6x FLOPs) │
+│   └── Total 6-Pillar Loss: Fused KL + Hidden MSE + Cosine + Gram Cov + Fisher + MLM    │
+│                                                                                        │
+│ Post-Evaluation (t ≈ 305s):                                                            │
+│   └── Evaluate final post_kd_ppl and post_kd_acc on deterministic validation set       │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+</code></pre></div>
+<hr />
+<h2 id="5-hardware-saturation-architecture-100-rtx-3090-sm-vram-load">5. Hardware Saturation Architecture (100% RTX 3090 SM &amp; VRAM Load)</h2>
+<p>To maximize training throughput on Sharif HPC <code>GPU-3090-1</code> (24GB GDDR6X):
+1. <strong>Pre-Tokenized In-Memory Dataset:</strong> WikiText-2 is tokenized into contiguous 2D tensors (<code>[N, 128]</code>) resident in GPU memory, eliminating CPU DataLoader latency and worker process synchronization stalls.
+2. <strong>Batch Sizing &amp; Dynamic VRAM Saturation:</strong>
+   - Default configuration: <code>batch_size = 128</code>, <code>seq_len = 128</code>, <code>grad_accum = 2</code> (effective batch size 256, 32,768 tokens per optimization step).
+   - Memory utilization: ~18,260 MB (74.3% saturation), leaving ~6.3 GB headroom buffer.
+3. <strong>Auto-OOM Recovery:</strong> If a module with large recurrent state matrices triggers <code>torch.cuda.OutOfMemoryError</code>, the engine intercepts the exception, clears the cache, halves the batch size (<code>128 -&gt; 64</code>), doubles gradient accumulation (<code>2 -&gt; 4</code>), and retries automatically without crashing the sweep.</p>
+<hr />
+<h2 id="6-asynchronous-background-hf-uploader-daemon-storage-protection">6. Asynchronous Background HF Uploader Daemon &amp; Storage Protection</h2>
+<pre class="mermaid"><code>sequenceDiagram
+    participant Worker as GPU Distillation Worker
+    participant Disk as Local Staging Directory
+    participant Uploader as AsyncHFHubUploader Daemon
+    participant HF as Hugging Face Hub (Hooshaai)
+
+    Worker-&gt;&gt;Disk: Write model.safetensors, config.json, README.md
+    Worker-&gt;&gt;Uploader: Submit background upload task (attn_key)
+    Worker-&gt;&gt;Worker: Immediately begin next attention module (zero idle time)
+    Uploader-&gt;&gt;HF: Create repo Hooshaai/bert-{slug}-wiki
+    Uploader-&gt;&gt;HF: Upload folder (commit message with PPL metrics)
+    HF--&gt;&gt;Uploader: Confirm commit hash (verified)
+    Uploader-&gt;&gt;Disk: Write upload_success.json
+    Uploader-&gt;&gt;Disk: Delete local model.safetensors (&lt; 2GB active disk usage)</code></pre>
+<ul>
+<li><strong>Thread Pool:</strong> Non-blocking <code>concurrent.futures.ThreadPoolExecutor(max_workers=2)</code>.</li>
+<li><strong>Commit Verification:</strong> Remote commit hash confirmed before deleting local weights.</li>
+<li><strong>Master Ledger:</strong> Atomic append to <code>results/bert_attention_zoo/metrics.jsonl</code>.</li>
+</ul>
+<hr />
+<h2 id="7-self-contained-model-export-auto_map-modeling_neuralops_bertpy">7. Self-Contained Model Export (<code>auto_map</code> &amp; <code>modeling_neuralops_bert.py</code>)</h2>
+<p>Each uploaded repository contains:
+1. <code>model.safetensors</code>: In-place surgeried and distilled weights.
+2. <code>config.json</code>: Patched with <code>auto_map</code>:
+   <div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"neuralops_attention_type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"gated_delta_net"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"auto_map"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"AutoConfig"</span><span class="p">:</span><span class="w"> </span><span class="s2">"modeling_neuralops_bert.NeuralOpsBertConfig"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"AutoModelForMaskedLM"</span><span class="p">:</span><span class="w"> </span><span class="s2">"modeling_neuralops_bert.NeuralOpsBertForMaskedLM"</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+3. <code>modeling_neuralops_bert.py</code>: Self-contained loading shim:
+   <div class="highlight"><pre><span></span><code><span class="c1"># Self-contained HuggingFace Hub loading shim for NeuralOps BERT (gated_delta_net)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">BertConfig</span><span class="p">,</span> <span class="n">BertForMaskedLM</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">NeuralOpsBertConfig</span><span class="p">(</span><span class="n">BertConfig</span><span class="p">):</span>
+    <span class="n">model_type</span> <span class="o">=</span> <span class="s2">"bert"</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">NeuralOpsBertForMaskedLM</span><span class="p">(</span><span class="n">BertForMaskedLM</span><span class="p">):</span>
+    <span class="n">config_class</span> <span class="o">=</span> <span class="n">NeuralOpsBertConfig</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">neuralops.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">replace_attention</span>
+            <span class="n">replace_attention</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attention</span><span class="o">=</span><span class="s2">"gated_delta_net"</span><span class="p">,</span> <span class="n">copy_weights</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+                <span class="s2">"NeuralOps is required to run this model. Please install it via: "</span>
+                <span class="s2">"pip install 'neuralops[core]'"</span>
+            <span class="p">)</span>
+</code></pre></div>
+4. <code>requirements.txt</code>: Specifying <code>neuralops&gt;=2.1.0</code>.</p>
+<hr />
+<h2 id="8-automated-model-card-specification-readmemd">8. Automated Model Card Specification (<code>README.md</code>)</h2>
+<p>Each repository automatically receives a publication-grade Model Card:
+- Structured YAML frontmatter with tags: <code>neuralops</code>, <code>bert</code>, <code>attention-zoo</code>, <code>subquadratic-attention</code>, <code>{module_name}</code>.
+- Summary table comparing Vanilla Teacher PPL vs Stage 0 Ridge PPL vs Post-KD PPL and Token Accuracy.
+- Distillation hardware telemetry: RTX 3090, training duration (300s), throughput (tokens/sec), peak VRAM.
+- 1-line Python usage snippets for both <code>neuralops.load_pretrained_bert</code> and standard <code>transformers.pipeline("fill-mask")</code>.
+- Canonical BibTeX citation linking to the repository and manuscript.</p>
+<hr />
+<h2 id="9-public-apis-cli-command-interfaces">9. Public APIs &amp; CLI Command Interfaces</h2>
+<h3 id="high-level-python-client-api-neuralopshubbert_zoopy">High-Level Python Client API (<code>neuralops/hub/bert_zoo.py</code>)</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">neuralops</span>
+
+<span class="c1"># Instant load from Hugging Face Hub</span>
+<span class="n">model</span><span class="p">,</span> <span class="n">tokenizer</span> <span class="o">=</span> <span class="n">neuralops</span><span class="o">.</span><span class="n">load_pretrained_bert</span><span class="p">(</span>
+    <span class="n">attention_type</span><span class="o">=</span><span class="s2">"gated_delta_net"</span><span class="p">,</span>
+    <span class="n">task</span><span class="o">=</span><span class="s2">"masked-lm"</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="s2">"auto"</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">text</span> <span class="o">=</span> <span class="s2">"NeuralOps makes subquadratic attention [MASK] and scalable."</span>
+<span class="n">inputs</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">return_tensors</span><span class="o">=</span><span class="s2">"pt"</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+<span class="n">logits</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="o">**</span><span class="n">inputs</span><span class="p">)</span><span class="o">.</span><span class="n">logits</span>
+</code></pre></div>
+<h3 id="cli-command-interfaces-neuralopsbenchmarksclipy">CLI Command Interfaces (<code>neuralops/benchmarks/cli.py</code>)</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># List all published pretrained attention models with their PPL scores</span>
+neuralops<span class="w"> </span>hub<span class="w"> </span>list
+
+<span class="c1"># Download and inspect a specific model</span>
+neuralops<span class="w"> </span>hub<span class="w"> </span>pull<span class="w"> </span>--attention<span class="w"> </span>gated_delta_net
+
+<span class="c1"># Launch full 5-minute zoo distillation sweep</span>
+neuralops<span class="w"> </span>hub<span class="w"> </span>train-zoo<span class="w"> </span>--minutes-per-module<span class="w"> </span><span class="m">5</span>.0<span class="w"> </span>--upload-hf<span class="w"> </span>--hf-org<span class="w"> </span>Hooshaai
+</code></pre></div>
+<hr />
+<h2 id="10-sharif-hpc-production-pbs-execution-job">10. Sharif HPC Production PBS Execution Job</h2>
+<p>File: <code>scripts/benchmarks/run_bert_zoo_orchestrator.py</code></p>
+<div class="highlight"><pre><span></span><code><span class="ch">#!/bin/bash</span>
+
+<span class="nb">set</span><span class="w"> </span>-euo<span class="w"> </span>pipefail
+
+<span class="nb">cd</span><span class="w"> </span>/home/tahamajlesi.ut/NeuralOps
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"=== Node Information ==="</span>
+hostname
+date
+nvidia-smi
+
+<span class="nb">export</span><span class="w"> </span><span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span>/share/apps/gcc/gcc-8.2.0/lib64:/usr/local/cuda-11.3/lib64:/share/apps/Anaconda/anaconda3.8/lib:<span class="si">${</span><span class="nv">LD_LIBRARY_PATH</span><span class="k">:-</span><span class="si">}</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span>/home/tahamajlesi.ut/NeuralOps:<span class="si">${</span><span class="nv">PYTHONPATH</span><span class="k">:-</span><span class="si">}</span>
+<span class="nv">PYTHON</span><span class="o">=</span><span class="s2">"/home/tahamajlesi.ut/.conda/envs/neuralops_cu113/bin/python"</span>
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"=== PyTorch GPU Verification ==="</span>
+<span class="nv">$PYTHON</span><span class="w"> </span>-c<span class="w"> </span><span class="s2">"import torch; print('CUDA Available:', torch.cuda.is_available()); print('Device Name:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'None')"</span>
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"=== Phase 0 &amp; 3: Discovering Valid Attention Keys ==="</span>
+<span class="nv">$PYTHON</span><span class="w"> </span>scripts/benchmarks/bert_zoo_discover_keys.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output<span class="w"> </span>results/bert_attention_zoo/registry_keys.json<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--skipped_output<span class="w"> </span>results/bert_attention_zoo/skipped_keys.json<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--device<span class="w"> </span>cuda
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"=== Phase 2: Recording Baseline Vanilla BERT MLM-PPL ==="</span>
+<span class="nv">$PYTHON</span><span class="w"> </span>scripts/benchmarks/bert_zoo_baseline_ppl.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output<span class="w"> </span>results/bert_attention_zoo/baseline_ppl.json<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--device<span class="w"> </span>cuda
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"=== Phase 7 &amp; 8: Executing Full 5-Minute KD Distillation &amp; Asynchronous HF Upload ==="</span>
+<span class="nv">$PYTHON</span><span class="w"> </span>scripts/benchmarks/bert_zoo_train_wiki.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--keys_json<span class="w"> </span>results/bert_attention_zoo/registry_keys.json<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--train_secs<span class="w"> </span><span class="m">300</span>.0<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--batch_size<span class="w"> </span><span class="m">128</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--grad_accum<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--hf_upload<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--hf_org<span class="w"> </span>Hooshaai<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--keep_local_weights<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--device<span class="w"> </span>cuda
+
+<span class="nb">echo</span><span class="w"> </span><span class="s2">"=== Job Finished Successfully ==="</span>
+date
+</code></pre></div>
+<hr />
+<h2 id="11-gradio-interactive-model-arena-hooshaaibert-attention-zoo-demo">11. Gradio Interactive Model Arena (<code>Hooshaai/bert-attention-zoo-demo</code>)</h2>
+<p>Location: <code>spaces/bert_attention_demo/app.py</code>
+Live Demo: <code>https://huggingface.co/spaces/Hooshaai/bert-attention-zoo-demo</code></p>
+<p>Features:
+- <strong>Interactive Attention Dropdown:</strong> Dynamically populates all published attention models from <code>results/bert_attention_zoo/metrics.jsonl</code>.
+- <strong>Live Masked Token Prediction:</strong> Users input text containing <code>[MASK]</code>, and the selected attention model predicts top-5 tokens with probabilities in real time.
+- <strong>Telemetry &amp; Score Cards:</strong> Shows Vanilla Teacher PPL, Stage 0 Ridge PPL, and Final Post-KD PPL with throughput and VRAM footprint.
+- <strong>Copy-Paste Code Snippet:</strong> Generates 1-click Python snippet for fine-tuning.</p>
+<hr />
+<h2 id="12-registry-manifest-all-131-canonical-attention-units-110-verified-on-gpu">12. Registry Manifest: All 131 Canonical Attention Units (110 Verified on GPU)</h2>
+<p>Audited physically on <code>GPU-3090-1</code> (NVIDIA RTX 3090 24GB):
+- <strong>110 Functional Valid Attention Keys</strong> (<code>results/bert_attention_zoo/registry_keys.json</code>)
+- <strong>5 Isolated Skips</strong> (<code>results/bert_attention_zoo/skipped_keys.json</code>):
+  1. <code>chela_slay</code>: Triton assertion <code>loopResult.hasOneUse()</code> during JIT compilation.
+  2. <code>expert_choice_moe</code>: MoE token routing dimension mismatch.
+  3. <code>jamba</code>: Shared expert choice MoE router dimension mismatch.
+  4. <code>ttt_linear_attention</code>: Subprocess probe timeout (&gt; 35s).
+  5. <code>vspec</code>: LoRA output rank mismatch (64 vs 768).</p>
+<div class="highlight"><pre><span></span><code>[001-010] adaptive_span_attention, adaptive_sparse_attention, adaptive_svd_attention, adasplash_attention, alibi,
+          asvd_attention, bam_umoe, block_transformer_hiba, cluster_attention, compressed_attention
+[011-020] compressed_mha_attention, cosformer, cross_attention, decay_linear_attention, delta_product_attention,
+          dynamic_conv_attention, eat, factorised_matrix_state, flash_attention3, flash_attention3_fp8
+[021-030] full_attention, fused_svd_kernel, fusion_attn, galerkin_attention, gated_delta_net,
+          gated_deltanet_block, gated_hybrid_kernel_attention, gdn2_attention, gla_attention, goldfinch_ahn
+[031-040] gqa_attention, granite_hybrid, griffin_ssd, halo_regla, hamming_attention,
+          hgrn2_gated_deltanet, hgrn2_gated_layer, hgrn2_gated_outer, hla_attention, hybrid_attention
+[041-050] hybrid_local_kernel, hymba_transx, jamba_info, kda_attention, landmark_local_attention,
+          linformer_attention, lola_attention, lora_attention, lsh_attention, mamba_block
+[051-060] mamba_svd_flash, minimal_nova, minimal_svd, mixattention_moska, mla_attention,
+          moba_attention, moe_deltakv_paged, mqa, naive_svd, nasc_attention
+[061-070] nexus, nha_attention, nsa_attention, nystrom_attention, optimized_hybrid_attention,
+          orion, padre_attention, performer_attention, phantom, positive_kernel_linear_attention
+[071-080] preconditioned_gdn_attention, primal_attention, progressive_token_pruning, projection_factorized_attn, qcqa_attention,
+          rala_attention, reap_moe, refined_landmark_attention, regla_attention, residual_svd_attention
+[081-090] routing_attention, rpc_attention, salt_attention, samba_m3, samba_moe,
+          selective_ssm, simple_ssm, sink_attention, soa_attn, spectraformer_attention
+[091-100] spectron, spectron_fp8, split_head_hybrid, svd_attention, svd_compressed,
+          svd_linear_attention, svd_linear_decay, svd_llm_v2_attention, svd_mamba, svd_projection_attention
+[101-110] token_compressed_attention, tri_branch_hybrid, triton_cosformer, triton_svd_linear_attention, unified_rope,
+          upi_stuffed_mamba, vig_attention, wgqa_attention, xattention, zeros_attention
+</code></pre></div>
+<hr />
+<h2 id="13-compressor-zoo-manifest-82-engines-audited-33-verified-functional">13. Compressor Zoo Manifest: 82 Engines Audited (33 Verified Functional)</h2>
+<p>Audited physically on Sharif HPC against strict zero-fake-artifact contracts (AGENTS.md Section 0.2 &amp; 0.3):
+- <strong>33 Verified Truly Functional Compression Engines</strong> (<code>results/compressor_zoo/registry_keys.json</code>):
+  Each physically verified with <strong><span class="arithmatex">\(R = P_{\text{orig}} / P_{\text{comp}} &gt; 1.00x\)</span></strong> and non-zero reconstruction error:
+  <code>adaptive_ranks</code>, <code>auto_svd</code>, <code>compot_compressor</code>, <code>cur_moe_compressor</code>, <code>direct_svd</code>, <code>dynamic_rank</code>, <code>entropy_budget_allocation</code>, <code>erc_svd</code>, <code>flat_llm</code>, <code>frandi_compressor</code>, <code>grecodec_compressor</code>, <code>hybrid_svd_layer</code>, <code>kmeans_quantize</code>, <code>kronecker_compressor</code>, <code>kvtc_compressor</code>, <code>mamba_shedder</code>, <code>mgie_budget</code>, <code>mlorq_compressor</code>, <code>modegpt_compressor</code>, <code>nmf_compressor</code>, <code>residual_svd_compressor</code>, <code>rotational_slicegpt_int4</code>, <code>saes_svd_v2</code>, <code>salr</code>, <code>sdrm_compressor</code>, <code>slicegpt</code>, <code>soka_compressor</code>, <code>subspace_projection</code>, <code>svd_linear</code>, <code>swift_svd</code>, <code>swift_svd_act</code>, <code>tt_compressor</code>, <code>uniql_compressor</code>.</p>
+<ul>
+<li>
+<p><strong>22 Rejected Identity Pass-Through Engines</strong> (<code>results/compressor_zoo/identity_keys.json</code>):
+  Caught and rejected for returning unmodified weights (<code>Param Reduction = 1.00x</code> and <code>Recon Rel Error = 0.0000</code>):
+  <code>a3_compressor</code>, <code>aa_svd_compressor</code>, <code>aatc_xkv_compressor</code>, <code>adasvd_compressor</code>, <code>admm_compressor</code>, <code>asvd</code>, <code>bonsai_pruner</code>, <code>cr_compressor</code>, <code>cur_compressor</code>, <code>delta_kv</code>, <code>dobi_svd</code>, <code>drone_compressor</code>, <code>fwsvd_compressor</code>, <code>hashed_net_compressor</code>, <code>hybridkv_compressor</code>, <code>lillama_compressor</code>, <code>roast_hashed_linear</code>, <code>slicegpt_pca</code>, <code>smoothquant</code>, <code>svd_llm_compressor</code>, <code>tomoe_compressor</code>, <code>zerokv_neo_compressor</code>.</p>
+</li>
+<li>
+<p><strong>27 Failed / Unmet Hardware Dependencies</strong>:
+  Engines requiring proprietary hardware packages, custom runtime extensions, or calibration datasets.</p>
+</li>
+</ul>
+<hr />
+<h2 id="14-physical-ground-truth-baseline-metrics-sharif-hpc-gpu-3090-1">14. Physical Ground Truth Baseline Metrics (Sharif HPC GPU-3090-1)</h2>
+<p>Verified empirically via <code>scripts/benchmarks/bert_zoo_baseline_ppl.py</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">"ppl_vanilla_bert"</span><span class="p">:</span><span class="w"> </span><span class="mf">10.4837</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"acc_vanilla_bert"</span><span class="p">:</span><span class="w"> </span><span class="mf">59.92</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"loss"</span><span class="p">:</span><span class="w"> </span><span class="mf">2.349818</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"num_batches"</span><span class="p">:</span><span class="w"> </span><span class="mi">30</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"num_tokens"</span><span class="p">:</span><span class="w"> </span><span class="mi">35154</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"model"</span><span class="p">:</span><span class="w"> </span><span class="s2">"bert-base-uncased"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"dataset"</span><span class="p">:</span><span class="w"> </span><span class="s2">"wikitext-2-raw-v1"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"split"</span><span class="p">:</span><span class="w"> </span><span class="s2">"validation"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"seq_len"</span><span class="p">:</span><span class="w"> </span><span class="mi">128</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"batch_size"</span><span class="p">:</span><span class="w"> </span><span class="mi">64</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"device"</span><span class="p">:</span><span class="w"> </span><span class="s2">"cuda (NVIDIA GeForce RTX 3090 24GB)"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"timestamp"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2026-11-09T15:06:59.406220Z"</span>
+<span class="p">}</span>
+</code></pre></div>
+<hr />
+<h2 id="15-production-execution-commands">15. Production Execution Commands</h2>
+<h3 id="151-track-a-bert-attention-zoo-distillation-110-models">15.1 Track A: BERT Attention Zoo Distillation (110 models)</h3>
+<div class="highlight"><pre><span></span><code><span class="nb">export</span><span class="w"> </span><span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span>/share/apps/gcc/gcc-8.2.0/lib64:/usr/local/cuda-11.3/lib64:<span class="nv">$LD_LIBRARY_PATH</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">PYTHONPATH</span><span class="o">=</span>/home/tahamajlesi.ut/NeuralOps:<span class="nv">$PYTHONPATH</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">HF_HUB_OFFLINE</span><span class="o">=</span><span class="m">1</span>
+
+python<span class="w"> </span>scripts/benchmarks/bert_zoo_train_wiki.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--keys_json<span class="w"> </span>results/bert_attention_zoo/registry_keys.json<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--train_secs<span class="w"> </span><span class="m">300</span>.0<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--batch_size<span class="w"> </span><span class="m">128</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--grad_accum<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--hf_upload<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--hf_org<span class="w"> </span>Hooshaai<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--keep_local_weights<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--device<span class="w"> </span>cuda
+</code></pre></div>
+<h3 id="152-track-a-comp-bert-compressor-zoo-distillation-33-models">15.2 Track A-Comp: BERT Compressor Zoo Distillation (33 models)</h3>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>scripts/benchmarks/bert_compressor_zoo_train_wiki.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--keys_json<span class="w"> </span>results/compressor_zoo/registry_keys.json<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--train_secs<span class="w"> </span><span class="m">300</span>.0<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--batch_size<span class="w"> </span><span class="m">128</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--grad_accum<span class="w"> </span><span class="m">2</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--hf_upload<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--hf_org<span class="w"> </span>Hooshaai<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--keep_local_weights<span class="w"> </span><span class="m">0</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--device<span class="w"> </span>cuda
+</code></pre></div>
+<h3 id="153-track-b-qwen-generative-lm-attention-zoo-distillation">15.3 Track B: Qwen Generative LM Attention Zoo Distillation</h3>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>scripts/benchmarks/qwen_zoo_train_mix.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--keys_json<span class="w"> </span>results/bert_attention_zoo/registry_keys.json<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--model<span class="w"> </span>Qwen/Qwen2.5-0.5B<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--pattern<span class="w"> </span>hybrid_3_1<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--train_secs<span class="w"> </span><span class="m">300</span>.0<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--topk<span class="w"> </span><span class="m">64</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--hf_upload<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--device<span class="w"> </span>cuda
+</code></pre></div>
+<h3 id="154-track-b-comp-qwen-compressor-zoo-distillation-33-models">15.4 Track B-Comp: Qwen Compressor Zoo Distillation (33 models)</h3>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>scripts/benchmarks/qwen_compressor_zoo_train_mix.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--keys_json<span class="w"> </span>results/compressor_zoo/registry_keys.json<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--model<span class="w"> </span>Qwen/Qwen2.5-0.5B<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--train_secs<span class="w"> </span><span class="m">300</span>.0<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--topk<span class="w"> </span><span class="m">64</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--hf_upload<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--device<span class="w"> </span>cuda
+</code></pre></div>
+<hr />
+<h2 id="16-failure-policies-recovery-matrix-verification-protocol">16. Failure Policies, Recovery Matrix &amp; Verification Protocol</h2>
+<table>
+<thead>
+<tr>
+<th>Fault Condition</th>
+<th>Automated Recovery &amp; Self-Healing Protocol</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>OOM on Module <span class="arithmatex">\(i\)</span></strong></td>
+<td>Intercept <code>torch.cuda.OutOfMemoryError</code>, empty VRAM cache, halve batch size (<span class="arithmatex">\(128 \rightarrow 64\)</span>), double accumulation (<span class="arithmatex">\(2 \rightarrow 4\)</span>), and retry once.</td>
+</tr>
+<tr>
+<td><strong>HPC Outbound Network Blocked</strong></td>
+<td>Compute node stages weights locally; login node background watcher daemon uploads asynchronously via proxy.</td>
+</tr>
+<tr>
+<td><strong>PBS Walltime Preemption</strong></td>
+<td>Resume capability: engine scans <code>training_metrics.json</code> and skips previously completed checkpoints upon re-launch.</td>
+</tr>
+<tr>
+<td><strong>Numerical Divergence / NaN</strong></td>
+<td>Flagged as <code>FAIL_NUMERICS</code> in <code>metrics.jsonl</code>; process moves cleanly to module <span class="arithmatex">\(i+1\)</span>.</td>
+</tr>
+<tr>
+<td><strong>Disk Quota Constraint</strong></td>
+<td>Local <code>.safetensors</code> deleted immediately upon upload commit verification; active disk usage strictly <span class="arithmatex">\(&lt; 2\,\text{GB}\)</span>.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><em>End of Master Pretrained Attention &amp; Compression Hub Zoo Architectural Plan (<code>NOP-ARCH-ZOO-MASTER-v5.0</code>).</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 Taha Majlesi. Department of Computer Engineering, College of Engineering, University of Tehran. Licensed under the MIT License.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/tahamajs/NeuralOps" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results" target="_blank" rel="noopener" title="huggingface.co" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M448 205.8c-14.8 9.8-31.8 17.7-49.5 24-47 16.8-108.7 26.2-174.5 26.2s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V288c0 44.2 100.3 80 224 80s224-35.8 224-80zm0-77.8V80c0-44.2-100.3-80-224-80S0 35.8 0 80v48c0 44.2 100.3 80 224 80s224-35.8 224-80m-49.5 261.8C351.6 406.5 289.9 416 224 416s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V432c0 44.2 100.3 80 224 80s224-35.8 224-80v-66.2c-14.8 9.8-31.8 17.7-49.5 24"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

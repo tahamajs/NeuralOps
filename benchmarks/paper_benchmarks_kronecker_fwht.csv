@@ -1,0 +1,9 @@
+kernel,N,dim,fwd_ms,bwd_ms,total_ms,speedup,peak_vram_mb,grad_diff,status
+kronecker_gemm,1024,256,0.2876,0.4929,0.7805,0.75x,25.26,0.00e+00,PASS
+kronecker_gemm,4096,256,1.0467,0.3939,1.4406,0.37x,52.26,0.00e+00,PASS
+kronecker_gemm,16384,256,4.1857,2.5223,6.7081,0.36x,160.26,0.00e+00,PASS
+kronecker_gemm,65536,256,1.2772,13.9996,15.2767,0.85x,592.26,0.00e+00,PASS
+fwht_transform,1024,128,0.0269,14.0437,14.0706,0.92x,401.26,1.91e-06,PASS
+fwht_transform,4096,128,0.0365,16.7128,16.7492,1.22x,34.26,1.91e-06,PASS
+fwht_transform,16384,128,0.1201,29.4637,29.5838,0.99x,88.26,1.91e-06,PASS
+fwht_transform,65536,128,11.4611,477.7862,489.2473,1.17x,304.26,0.00e+00,PASS

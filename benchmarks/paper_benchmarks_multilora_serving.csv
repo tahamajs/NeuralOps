@@ -1,0 +1,22 @@
+=== BATCHED MULTI-LORA SERVING PROFILE ===
+Adapter_ID,Rank_R,Input_Shape,Param_VRAM_KB,Scaling_Alpha_Div_R
+Adapter_1,16,4x512x1024,64.0,1.0
+Adapter_2,32,4x512x1024,128.0,0.5
+Adapter_3,16,4x512x1024,64.0,1.0
+Adapter_4,32,4x512x1024,128.0,0.5
+
+=== SERVING LATENCY & CONCURRENCY OVERLAP ===
+Execution_Mode,Sequential_Latency_MS,Concurrent_Latency_MS,Speedup_Factor,Throughput_Queries_Sec
+Forward_Inference_4_Adapters,0.812,0.732,1.11,5461.2
+Forward_Backward_Step_4_Adapters,1.68,1.621,1.04,2467.5
+
+=== 1000-ITERATION MEMORY LEAK & FRAGMENTATION ===
+Metric,Value
+Total_Iterations,1000
+Elapsed_Seconds,1.63
+Net_Memory_Drift_MB,0.0
+Zero_Leak_Verified,True
+Peak_Allocated_MB,176.7505
+Peak_Reserved_MB,2266.0
+Final_Fragmentation_Pct,94.16
+Strictly_Below_3_Pct,False
