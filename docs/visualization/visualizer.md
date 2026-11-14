@@ -1,6 +1,6 @@
 # NeuralOps Interactive 3D Visualizer & Dashboard Suite
 
-NeuralOps includes a high-performance WebGL / Three.js 3D architecture visualizer, an interactive Latent Manifold & SVD Spectral Decay engine, and an Ada Lovelace SM 8.9 Empirical Hardware Roofline analyzer. The suite enables real-time inspection, animation, and analytical auditing across 131 attention mechanisms and 72 model compression topologies.
+NeuralOps includes a high-performance WebGL / Three.js 3D architecture visualizer, an interactive Latent Manifold & SVD Spectral Decay engine, and an Ada Lovelace SM 8.9 Empirical Hardware Roofline analyzer. The suite enables real-time inspection, animation, and analytical auditing across 118 attention mechanisms and 89 model compression topologies.
 
 ---
 
@@ -22,7 +22,7 @@ The interactive dashboard suite comprises three core pillars:
 3. **Ada Lovelace SM 8.9 Roofline Analyzer (`docs/roofline_interactive.html` / `docs/visualization/roofline_interactive.html`)**:
    - Hardware-grounded Plotly empirical roofline model calibrated for NVIDIA GeForce RTX 4070 (AD104 Silicon, SM 8.9).
    - Dual-ceiling plotting: Theoretical peak (FP16 Boost @ 2475 MHz: 160.2 TFLOPS, 504.0 GB/s GDDR6 bandwidth, ridge point $I^* = 317.9\text{ FLOP/B}$) alongside measured sustained baseline (70.6 TFLOPS, 255.8 GB/s).
-   - Interactive kernel placement across 131 attention mechanisms and 72 compression operators, with custom operational arithmetic intensity and FLOPS calculators.
+   - Interactive kernel placement across 118 attention mechanisms and 89 compression operators, with custom operational arithmetic intensity and FLOPS calculators.
 
 ---
 
@@ -103,7 +103,7 @@ $$I^* = \frac{\text{Peak Throughput}}{\text{Peak Bandwidth}} = \frac{160.2 \time
 - **Operational Intensity Regions**:
   - **Memory-Bound ($I < I^*$)**: Kernels limited by GDDR6 DRAM bandwidth ($P = I \times \text{Bandwidth}$).
   - **Compute-Bound ($I \ge I^*$)**: Kernels saturating SM 8.9 4th-generation Tensor Cores ($P = P_{\text{max}}$).
-- **Kernel Datasets**: Real telemetry points for all 131 attention mechanisms and 72 compression engines.
+- **Kernel Datasets**: Real telemetry points for all 118 attention mechanisms and 89 compression engines.
 - **Custom Kernel Calculator**: Input operation counts (MFLOPs / GFLOPs) and DRAM transfer bytes to compute exact arithmetic intensity, plot attained performance, and check distance to the theoretical hardware ceiling.
 
 ---

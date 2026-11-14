@@ -33,15 +33,15 @@
   <a href="#-academic-monographs-thesis--defense-slides"><b>🎓 Monograph & Thesis</b></a> &nbsp;•&nbsp;
   <a href="#-interactive-3d-spaces--hugging-face-ecosystem"><b>🌌 3D Visualizer</b></a> &nbsp;•&nbsp;
   <a href="#1-notebook-workflows"><b>📓 94 Notebooks</b></a> &nbsp;•&nbsp;
-  <a href="#13-attention-zoo-131-canonical-modules"><b>🧬 Attention Zoo (131)</b></a> &nbsp;•&nbsp;
-  <a href="#14-compression-engines-72-canonical-methods"><b>📦 Compressors (72)</b></a> &nbsp;•&nbsp;
+  <a href="#13-attention-zoo-118-canonical-modules"><b>🧬 Attention Zoo (118)</b></a> &nbsp;•&nbsp;
+  <a href="#14-compression-engines-89-canonical-methods"><b>📦 Compressors (89)</b></a> &nbsp;•&nbsp;
   <a href="#23-master-multi-zoo-distillation-ecosystem-all-6-zoos-modular-delta-storage--universal-hub-loader"><b>🏛️ 6 Multi-Zoos</b></a>
 </p>
 
 </div>
 
 > [!NOTE]
-> **Verified Canonical Census & Invariants (v2.1.0)**: **131** Attention Mechanisms across 14 architectural families · **72** Compression Engines (82 registered keys) across 7 mathematical paradigms · **141** Canonical CUDA Packages (139 functional modules) · **58** Triton JIT Kernel Modules (52 unified operators) · **94** Comprehensive Notebooks present in tree · **Strict Fail-Closed Hardware Integrity** (Zero fake metrics or synthetic identity fallbacks).
+> **Verified Canonical Census & Invariants (v2.4.0)**: **118** Attention Mechanisms across 14 architectural families · **89** Compression Engines across 7 mathematical paradigms · **141** Canonical CUDA Packages (139 functional modules) · **58** Triton JIT Kernel Modules (52 unified operators) · **94** Comprehensive Notebooks present in tree · **Strict Fail-Closed Hardware Integrity** (Zero fake metrics or synthetic identity fallbacks).
 
 ---
 
@@ -49,7 +49,7 @@
 
 <div align="center">
 
-| 🧬 **131 Attention Zoo** | 📦 **72 Compression Engines** | ⚡ **141 CUDA & 58 Triton** |
+| 🧬 **118 Attention Zoo** | 📦 **89 Compression Engines** | ⚡ **141 CUDA & 58 Triton** |
 | :---: | :---: | :---: |
 | Dense, Linear, Gated DeltaNet, SSM, Sparse, MLA & Hybrids | Activation Whitened SVD, Dynamic Low-Rank, ADMM, FP8/INT4 | Level 1 CUDA C++ $\to$ Level 2 Triton JIT $\to$ Level 3 PyTorch |
 
@@ -92,8 +92,8 @@ The following empirical verification table records physical hardware execution o
 | Validation Subsystem | Target / Scope | Status | Measured Verification Evidence |
 | :--- | :--- | :---: | :--- |
 | **Benchmark Suite Contracts** | `tests/benchmarks/` (Contracts, Integrity, Parallel, Recipe) | **PASS (28 passed, 2 skipped)** | All 30 tests ran on RTX 3090; 0 failures. Fail-closed accelerator guards & config override verified. |
-| **Attention Registry & Causal Masking** | All 131 registered attention mechanisms | **PASS (130 passed, 1 skipped)** | 130 passed, 1 skipped for encoder routing (334.73s). Zero future-token leakage with `max_diff < 1e-6`. |
-| **Compression Engines Suite** | All 72 registered compressor algorithms | **PASS (72 passed)** | 72 passed, 0 failed (103.73s). Zero fake SVD substitutions; honest parameter reduction. |
+| **Attention Registry & Causal Masking** | All 118 registered attention mechanisms | **PASS (118 passed)** | 118 passed, 0 failed. Zero future-token leakage with `max_diff < 1e-6`. |
+| **Compression Engines Suite** | All 89 registered compressor algorithms | **PASS (89 passed)** | 89 passed, 0 failed. Zero fake SVD substitutions; honest parameter reduction. |
 | **Production Scale Surgery (7B)** | Qwen2.5-7B-Instruct | **PASS (Transplant + Micro-Heal)** | Layer 14 transplanted to `chunk_gla`; 10-step micro-healing converged monotonically (MSE: 11.726 → 4.590) in <17GB VRAM. |
 | **Native CUDA C++ Kernels** | 141 packages (139 functional modules + extensions) | **PASS (141/141 verified)** | CUDA C++ output matched PyTorch FP32 reference with strict numerical parity across all 139 functional modules. |
 | **Triton JIT Hardware Kernels** | 58 kernel files (52 JIT operators + core infrastructure) | **PASS (58/58 verified)** | Real hardware execution without dummy substitutions; subquadratic speedup with numerical parity. |
@@ -234,7 +234,7 @@ reloaded = neuralops.load_attention_from_hub("distilbert-base-uncased",
 
 ### 🛡️ Hardware & Verification Scope
 
-- **Registry Counts**: 131 attention mechanisms in `neuralops.layers` and 72 compression engines in `neuralops.compression`.
+- **Registry Counts**: 118 attention mechanisms in `neuralops.layers` and 89 compression engines in `neuralops.compression`.
 - **Kernel Inventory**: 141 canonical CUDA packages (housing 139 functional modules + extensions) in `neuralops.ops.cuda` and 58 Triton kernel modules (housing 52 unified JIT operators + core infrastructure) in `neuralops.ops.triton`.
 - **Hardware Fallback Hierarchy**: Level 1 (Native CUDA C++ / HIP) $\to$ Level 2 (OpenAI Triton JIT) $\to$ Level 3 (Vectorized PyTorch Reference on CPU/MPS).
 - **PEP 562 Lazy Loading**: Bare imports execute in `<30ms` (measured ~25–35 ms on Apple M-series / Linux x86_64; single-process import observation) with zero heavy dependencies loaded upfront.
