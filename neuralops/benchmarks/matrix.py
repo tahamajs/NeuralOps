@@ -53,7 +53,7 @@ class MatrixDimensionConfig:
     warmup: int = 5
     iters: int = 20
     flush_l2: bool = True
-    l2_cache_size_mb: int = 256
+    l2_cache_size_mb: Optional[int] = None
     device: str = "cpu"
     tolerance: float = 1e-4
     output_dir: str = "results/matrix"
@@ -90,6 +90,7 @@ class MatrixCellResult:
     latency_ms_median: float = 0.0
     latency_ms_p10: float = 0.0
     latency_ms_p90: float = 0.0
+    latency_ms_p99: float = 0.0
     latency_ms_mean: float = 0.0
     latency_ms_std: float = 0.0
     throughput_tokens_per_s: float = 0.0
@@ -110,22 +111,51 @@ class MatrixCellResult:
 class ColdCacheFlusher:
     """Manages L2 cache eviction protocol by allocating a buffer larger than hardware L2 capacity."""
 
-    def __init__(self, device: torch.device, size_mb: int = 256) -> None:
-        self.device = device
-        self.size_mb = size_mb
+    def __init__(self, device: torch.device | str, size_mb: Optional[int] = None) -> None:
+        self.device = torch.device(device) if isinstance(device, str) else device
         self._buffer: Optional[torch.Tensor] = None
-        if device.type == "cuda" and torch.cuda.is_available():
+
+        if size_mb is None:
+            if self.device.type == "cuda" and torch.cuda.is_available():
+                try:
+                    l2_bytes = torch.cuda.get_device_properties(self.device).L2_cache_size
+                    size_mb = max(32, int(l2_bytes / (1024 * 1024)) + 16)
+                except Exception as e:
+                    logger.debug("ColdCacheFlusher dynamic L2 query skipped: %s", e)
+                    size_mb = 64
+            elif self.device.type == "mps":
+                size_mb = 64
+            else:
+                size_mb = 64
+
+        self.size_mb = size_mb
+
+        if self.device.type == "cuda" and torch.cuda.is_available():
             try:
-                num_elements = (size_mb * 1024 * 1024) // 4
-                self._buffer = torch.empty(num_elements, dtype=torch.int32, device=device)
+                num_elements = (self.size_mb * 1024 * 1024) // 4
+                self._buffer = torch.empty(num_elements, dtype=torch.int32, device=self.device)
             except Exception as e:
-                logger.debug("ColdCacheFlusher buffer allocation skipped: %s", e)
+                logger.debug("ColdCacheFlusher CUDA buffer allocation skipped: %s", e)
+                self._buffer = None
+        elif self.device.type == "mps":
+            try:
+                num_elements = (self.size_mb * 1024 * 1024) // 4
+                self._buffer = torch.empty(num_elements, dtype=torch.int32, device=self.device)
+            except Exception as e:
+                logger.debug("ColdCacheFlusher MPS buffer allocation skipped: %s", e)
                 self._buffer = None
 
     def flush(self) -> None:
         """Evict device cache lines."""
         if self._buffer is not None:
             self._buffer.zero_()
+            if self.device.type == "cuda" and torch.cuda.is_available():
+                torch.cuda.synchronize(self.device)
+            elif self.device.type == "mps" and hasattr(torch, "mps") and hasattr(torch.mps, "synchronize"):
+                try:
+                    torch.mps.synchronize()
+                except Exception:
+                    pass
 
 
 class BenchmarkMatrixOrchestrator:
@@ -275,11 +305,14 @@ class BenchmarkMatrixOrchestrator:
                 mean_lat = meta.get("latency_ms_mean") or meta.get("forward_latency_ms") or 1.0
                 times_ms = [mean_lat]
 
+            import numpy as np
+
             times_sorted = sorted(times_ms)
             n = len(times_sorted)
-            median_ms = meta.get("latency_ms_median", times_sorted[n // 2])
-            p10_ms = times_sorted[max(0, int(n * 0.10))]
-            p90_ms = times_sorted[min(n - 1, int(n * 0.90))]
+            median_ms = meta.get("latency_ms_median", float(np.percentile(times_sorted, 50)) if n > 0 else 0.0)
+            p10_ms = meta.get("latency_ms_p10", float(np.percentile(times_sorted, 10)) if n > 0 else 0.0)
+            p90_ms = meta.get("latency_ms_p90", float(np.percentile(times_sorted, 90)) if n > 0 else 0.0)
+            p99_ms = meta.get("latency_ms_p99", float(np.percentile(times_sorted, 99)) if n > 0 else 0.0)
             mean_ms = meta.get("latency_ms_mean", statistics.mean(times_ms))
             std_ms = meta.get("latency_ms_std", statistics.stdev(times_ms) if len(times_ms) > 1 else 0.0)
 
@@ -328,6 +361,7 @@ class BenchmarkMatrixOrchestrator:
                 latency_ms_median=round(float(median_ms), 4),
                 latency_ms_p10=round(float(p10_ms), 4),
                 latency_ms_p90=round(float(p90_ms), 4),
+                latency_ms_p99=round(float(p99_ms), 4),
                 latency_ms_mean=round(float(mean_ms), 4),
                 latency_ms_std=round(float(std_ms), 4),
                 throughput_tokens_per_s=round(float(throughput), 2),
@@ -406,7 +440,8 @@ class BenchmarkMatrixOrchestrator:
         if self._results:
             fieldnames = [
                 "module", "regime", "batch_size", "seq_len", "hidden_dim", "dtype", "causal",
-                "status", "latency_ms_median", "throughput_tokens_per_s", "tflops",
+                "status", "latency_ms_median", "latency_ms_p10", "latency_ms_p90", "latency_ms_p99",
+                "throughput_tokens_per_s", "tflops",
                 "effective_bandwidth_gb_s", "speedup_vs_reference", "speedup_gate_passed", "error"
             ]
             with open(csv_file, "w", newline="", encoding="utf-8") as f:
@@ -423,6 +458,9 @@ class BenchmarkMatrixOrchestrator:
                         "causal": r.point.causal,
                         "status": r.status,
                         "latency_ms_median": r.latency_ms_median,
+                        "latency_ms_p10": r.latency_ms_p10,
+                        "latency_ms_p90": r.latency_ms_p90,
+                        "latency_ms_p99": r.latency_ms_p99,
                         "throughput_tokens_per_s": r.throughput_tokens_per_s,
                         "tflops": r.tflops,
                         "effective_bandwidth_gb_s": r.effective_bandwidth_gb_s,
@@ -447,6 +485,7 @@ def run_benchmark_matrix(
     warmup: int = 5,
     iters: int = 20,
     flush_l2: bool = True,
+    l2_cache_size_mb: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Top-level procedural entrypoint for orchestrating a benchmark matrix."""
     config = MatrixDimensionConfig(
@@ -461,6 +500,7 @@ def run_benchmark_matrix(
         warmup=warmup,
         iters=iters,
         flush_l2=flush_l2,
+        l2_cache_size_mb=l2_cache_size_mb,
     )
     orchestrator = BenchmarkMatrixOrchestrator(config)
     if dry_run:
