@@ -118,7 +118,7 @@ def __getattr__(name: str) -> Any:
         module = importlib.import_module(f"neuralops.benchmarks.{name}")
         globals()[name] = module
         return module
-    except ModuleNotFoundError:
+    except ModuleNotFoundError:  # allowed-swallow: lazy load fallback
         pass
 
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
