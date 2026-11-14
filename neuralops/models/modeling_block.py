@@ -102,6 +102,17 @@ class NeuralOpsBlock(nn.Module):
 
         normed_hidden_states = self.input_layernorm(hidden_states)
 
+        attn_kwargs = kwargs
+        if kwargs and hasattr(self.self_attn, "forward"):
+            try:
+                import inspect
+
+                attn_sig = inspect.signature(self.self_attn.forward)
+                if not any(p.kind == inspect.Parameter.VAR_KEYWORD for p in attn_sig.parameters.values()):
+                    attn_kwargs = {k: v for k, v in kwargs.items() if k in attn_sig.parameters}
+            except (TypeError, ValueError):
+                attn_kwargs = kwargs
+
         attn_outputs = self.self_attn(
             normed_hidden_states,
             attention_mask=attention_mask,
@@ -109,7 +120,7 @@ class NeuralOpsBlock(nn.Module):
             past_key_value=past_key_value,
             output_attentions=output_attentions,
             use_cache=use_cache,
-            **kwargs,
+            **attn_kwargs,
         )
 
         if isinstance(attn_outputs, tuple):

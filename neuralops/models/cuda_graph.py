@@ -56,12 +56,32 @@ class CUDAGraphDecodeRunner:
 
         self.graph: Optional[torch.cuda.CUDAGraph] = None
         self.static_input_ids: Optional[torch.Tensor] = None
-        self.static_cache: Optional[UnifiedHybridCache] = None
+        self.static_cache: Optional[Any] = None
         self.static_logits: Optional[torch.Tensor] = None
         self.is_captured: bool = False
 
-    def capture(self, sample_cache: Optional[UnifiedHybridCache] = None) -> None:
+    def capture(self, sample_cache: Optional[Any] = None) -> None:
         """Warm up and capture the single-token decoding forward pass."""
+        is_static = False
+        if sample_cache is not None and not isinstance(sample_cache, UnifiedHybridCache):
+            cls_name = sample_cache.__class__.__name__
+            if "Static" in cls_name or getattr(sample_cache, "is_static", False) or getattr(sample_cache, "is_compileable", False):
+                is_static = True
+            else:
+                try:
+                    from transformers.cache_utils import StaticCache
+
+                    if isinstance(sample_cache, StaticCache):
+                        is_static = True
+                except ImportError:
+                    pass
+
+        if not is_static:
+            got_desc = type(sample_cache).__name__ if sample_cache is not None else "None"
+            raise TypeError(
+                f"CUDAGraphDecodeRunner requires a static-size KV cache (e.g. StaticCache), got {got_desc}"
+            )
+
         if not torch.cuda.is_available() or self.device.type != "cuda":
             logger.warning("CUDA is not available or device is not CUDA; skipping CUDA Graph capture.")
             self.is_captured = False

@@ -13,9 +13,11 @@ Native HuggingFace-compatible CausalLM and sequence modeling architecture powere
 
 from __future__ import annotations
 
+from typing import Any
+
 import torch
 import torch.nn as nn
-from transformers import GenerationMixin, PretrainedConfig, PreTrainedModel
+from transformers import PretrainedConfig, PreTrainedModel
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
 from neuralops.layers.linear.gla_attention import GLAttention
@@ -76,7 +78,7 @@ class GLABlock(nn.Module):
         return hidden_states
 
 
-class GLAModel(PreTrainedModel, GenerationMixin):
+class GLAModel(PreTrainedModel):
     config_class = GLAConfig
     base_model_prefix = "gla"
     main_input_name = "input_ids"
@@ -88,6 +90,9 @@ class GLAModel(PreTrainedModel, GenerationMixin):
         self.h = nn.ModuleList([GLABlock(config) for _ in range(config.num_hidden_layers)])
         self.ln_f = nn.LayerNorm(config.hidden_size, eps=1e-5)
         self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
+
+    def generate(self, *args: Any, **kwargs: Any) -> Any:
+        raise NotImplementedError("Autoregressive generation for GLAHFModel is not implemented yet.")
 
     def prepare_inputs_for_generation(
         self,
@@ -131,3 +136,8 @@ class GLAModel(PreTrainedModel, GenerationMixin):
             logits=logits,
             hidden_states=hidden_states,
         )
+
+
+GLAHFModel = GLAModel
+
+__all__ = ["GLAConfig", "GLABlock", "GLAModel", "GLAHFModel"]

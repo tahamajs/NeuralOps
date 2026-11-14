@@ -31,6 +31,9 @@ class UnifiedHybridCache:
     def __len__(self) -> int:
         return len(self.layers)
 
+    def __iter__(self):
+        return iter(self.layers)
+
     def __getitem__(self, idx: int) -> Any:
         if idx < len(self.layers):
             return self.layers[idx]
@@ -83,6 +86,17 @@ class UnifiedHybridCache:
         if state is None:
             return self.layers[layer_idx]
 
+        if isinstance(state, (tuple, list)) and len(state) >= 2:
+            k = state[0]
+            added = k.shape[-2] if isinstance(k, torch.Tensor) and k.ndim == 4 else 1
+        elif isinstance(state, torch.Tensor):
+            added = state.shape[-2] if state.ndim == 4 else 1
+        else:
+            added = 1
+
+        if layer_idx == 0:
+            self._seen_tokens += added
+
         if "full" in layer_type.lower() or "dense" in layer_type.lower() or "gqa" in layer_type.lower():
             if isinstance(state, (tuple, list)) and len(state) >= 2:
                 k, v = state[0], state[1]
@@ -110,6 +124,29 @@ class UnifiedHybridCache:
 
         self.layers[layer_idx] = state
         return state
+
+    def reorder_cache(self, beam_idx: torch.LongTensor) -> UnifiedHybridCache:
+        """Reorders cache states according to beam search indices."""
+        reordered = UnifiedHybridCache(len(self.layers))
+        reordered._seen_tokens = self._seen_tokens
+        for i, layer_state in enumerate(self.layers):
+            if layer_state is None:
+                reordered.layers[i] = None
+            elif isinstance(layer_state, tuple):
+                reordered.layers[i] = tuple(
+                    s.index_select(0, beam_idx.to(s.device)) if isinstance(s, torch.Tensor) else s
+                    for s in layer_state
+                )
+            elif isinstance(layer_state, list):
+                reordered.layers[i] = [
+                    s.index_select(0, beam_idx.to(s.device)) if isinstance(s, torch.Tensor) else s
+                    for s in layer_state
+                ]
+            elif isinstance(layer_state, torch.Tensor):
+                reordered.layers[i] = layer_state.index_select(0, beam_idx.to(layer_state.device))
+            else:
+                reordered.layers[i] = layer_state
+        return reordered
 
     def update_seen_tokens(self, num_tokens: int) -> None:
         self._seen_tokens += num_tokens

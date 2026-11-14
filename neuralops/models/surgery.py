@@ -524,26 +524,6 @@ def adapt_decoder_attention_forward(
     return (attn_out, attn_weights, past_kv)
 
 
-def apply_backbone_surgery_hooks(
-    model: nn.Module,
-    model_type: str = "llama",
-) -> None:
-    """
-    Hooks RoPE & GQA backbone decoders (LLaMA, Mistral, Qwen2) to ensure
-    injected modules handle position_embeddings, position_ids, and return tuples safely.
-    """
-    mtype = model_type.lower()
-    if mtype not in ("llama", "mistral", "qwen", "qwen2", "qwen2_5", "qwen3_5"):
-        return
-
-    for name, module in model.named_modules():
-        leaf = name.split(".")[-1].lower()
-        if leaf in ("self_attn", "attention", "attn"):
-            if not hasattr(module, "supports_gqa"):
-                module.supports_gqa = True
-            if not hasattr(module, "supports_rope"):
-                module.supports_rope = True
-
 
 class SubspaceAnchorWrapper(nn.Module):
     def __init__(self, base_layer: nn.Module, surg_layer: nn.Module, alpha: float = 0.25):
@@ -941,11 +921,26 @@ def _heal_replaced_model_impl(
         if not in_list or not tgt_list:
             continue
 
-        H_in = in_list[0].to(target_dev)
-        Y_tgt = tgt_list[0].to(target_dev)
+        orig_param_dtypes = {p: p.dtype for p in s_mod.parameters()}
+        orig_buffer_dtypes = {b: b.dtype for b in s_mod.buffers()}
+        common_dtype = torch.float32
+
+        for p in s_mod.parameters():
+            p.data = p.data.to(device=target_dev, dtype=common_dtype)
+        for b in s_mod.buffers():
+            b.data = b.data.to(device=target_dev, dtype=common_dtype)
+
+        H_in = in_list[0].to(device=target_dev, dtype=common_dtype)
+        Y_tgt = tgt_list[0].to(device=target_dev, dtype=common_dtype)
 
         trainable_params = [p for p in s_mod.parameters() if p.numel() > 0]
         if not trainable_params:
+            for p in s_mod.parameters():
+                if p in orig_param_dtypes:
+                    p.data = p.data.to(orig_param_dtypes[p])
+            for b in s_mod.buffers():
+                if b in orig_buffer_dtypes:
+                    b.data = b.data.to(orig_buffer_dtypes[b])
             continue
         for p in trainable_params:
             p.requires_grad = True
@@ -953,12 +948,12 @@ def _heal_replaced_model_impl(
         with torch.no_grad():
             s_mod.eval()
             try:
-                pred0 = s_mod(H_in.to(p.dtype))
+                pred0 = s_mod(H_in)
             except Exception:
                 try:
-                    pred0 = s_mod(hidden_states=H_in.to(p.dtype))
+                    pred0 = s_mod(hidden_states=H_in)
                 except Exception:
-                    pred0 = s_mod(H_in.to(p.dtype), H_in.to(p.dtype), H_in.to(p.dtype))
+                    pred0 = s_mod(H_in, H_in, H_in)
             pred0_val = pred0[0] if isinstance(pred0, tuple) else pred0
             pred0_f = pred0_val.float()
 
@@ -985,17 +980,17 @@ def _heal_replaced_model_impl(
         for step in range(steps):
             optimizer.zero_grad()
             batch_idx = step % len(in_list)
-            H_in_step = in_list[batch_idx].to(target_dev)
-            Y_tgt_step = tgt_list[batch_idx % len(tgt_list)].to(target_dev)
+            H_in_step = in_list[batch_idx].to(device=target_dev, dtype=common_dtype)
+            Y_tgt_step = tgt_list[batch_idx % len(tgt_list)].to(device=target_dev, dtype=common_dtype)
             denom_mse_step = float(torch.norm(Y_tgt_step, p="fro").item() ** 2 + 1e-6)
 
             try:
-                pred = s_mod(H_in_step.to(p.dtype))
+                pred = s_mod(H_in_step)
             except Exception:
                 try:
-                    pred = s_mod(hidden_states=H_in_step.to(p.dtype))
+                    pred = s_mod(hidden_states=H_in_step)
                 except Exception:
-                    pred = s_mod(H_in_step.to(p.dtype), H_in_step.to(p.dtype), H_in_step.to(p.dtype))
+                    pred = s_mod(H_in_step, H_in_step, H_in_step)
 
             pred_val = pred[0] if isinstance(pred, tuple) else pred
             pred_f = pred_val.float()
@@ -1038,12 +1033,12 @@ def _heal_replaced_model_impl(
 
         with torch.no_grad():
             try:
-                pred_final = s_mod(H_in.to(p.dtype))
+                pred_final = s_mod(H_in)
             except Exception:
                 try:
-                    pred_final = s_mod(hidden_states=H_in.to(p.dtype))
+                    pred_final = s_mod(hidden_states=H_in)
                 except Exception:
-                    pred_final = s_mod(H_in.to(p.dtype), H_in.to(p.dtype), H_in.to(p.dtype))
+                    pred_final = s_mod(H_in, H_in, H_in)
             pred_final_val = pred_final[0] if isinstance(pred_final, tuple) else pred_final
             pred_final_f = pred_final_val.float()
 
@@ -1060,6 +1055,13 @@ def _heal_replaced_model_impl(
 
         for p in trainable_params:
             p.requires_grad = False
+
+        for p in s_mod.parameters():
+            if p in orig_param_dtypes:
+                p.data = p.data.to(orig_param_dtypes[p])
+        for b in s_mod.buffers():
+            if b in orig_buffer_dtypes:
+                b.data = b.data.to(orig_buffer_dtypes[b])
 
         per_layer_stats[layer_name] = {
             "initial_mse": init_mse,
@@ -1357,5 +1359,4 @@ __all__ = [
     "split_and_set_qkv_weights",
     "_svd_factorize_weights",
     "adapt_decoder_attention_forward",
-    "apply_backbone_surgery_hooks",
 ]
