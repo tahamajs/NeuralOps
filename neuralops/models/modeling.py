@@ -152,6 +152,9 @@ class NeuralOpsModel(NeuralOpsPreTrainedModel):
         layer_kwargs = {k: v for k, v in kwargs.items() if k not in ignored_keys}
         is_unified_cache = isinstance(past_key_values, UnifiedHybridCache)
 
+        # Inspect decoder_layer signature to prevent leaking unexpected kwargs
+        import inspect
+
         for idx, decoder_layer in enumerate(self.layers):
             if output_hidden_states:
                 all_hidden_states += (hidden_states,)
@@ -166,6 +169,13 @@ class NeuralOpsModel(NeuralOpsPreTrainedModel):
                     except (IndexError, TypeError):
                         past_layer_kv = None
 
+            sig = inspect.signature(decoder_layer.forward)
+            has_var_keyword = any(p.kind == inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
+            if has_var_keyword:
+                call_kwargs = layer_kwargs
+            else:
+                call_kwargs = {k: v for k, v in layer_kwargs.items() if k in sig.parameters}
+
             layer_outputs = decoder_layer(
                 hidden_states,
                 attention_mask=attention_mask,
@@ -173,7 +183,7 @@ class NeuralOpsModel(NeuralOpsPreTrainedModel):
                 past_key_value=past_layer_kv,
                 output_attentions=output_attentions,
                 use_cache=use_cache,
-                **layer_kwargs,
+                **call_kwargs,
             )
 
             hidden_states = layer_outputs[0]

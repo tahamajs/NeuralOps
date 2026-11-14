@@ -93,6 +93,9 @@ class GLAModel(PreTrainedModel):
         """GLAModel does not support autoregressive generation mixin."""
         return False
 
+    def generate(self, *args, **kwargs):
+        raise NotImplementedError("Autoregressive generation for GLAHFModel is not implemented yet.")
+
     def forward(
         self,
         input_ids: torch.Tensor,
@@ -120,3 +123,15 @@ class GLAModel(PreTrainedModel):
             logits=logits,
             hidden_states=hidden_states,
         )
+
+
+# Alias for backward-compatibility
+GLAHFModel = GLAModel
+
+
+__all__ = [
+    "GLAConfig",
+    "GLABlock",
+    "GLAModel",
+    "GLAHFModel",
+]

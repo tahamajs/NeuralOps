@@ -140,8 +140,9 @@ class UnifiedHybridCache:
                 return updated_state
 
         self.layers[layer_idx] = state
-        if layer_idx == 0 and incoming_tokens is not None:
-            self._seen_tokens += incoming_tokens
+        if layer_idx == 0:
+            added = incoming_tokens if incoming_tokens is not None else 1
+            self._seen_tokens += added
         return state
 
     def update(

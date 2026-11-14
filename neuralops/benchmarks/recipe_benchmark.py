@@ -184,7 +184,9 @@ def run_recipe_benchmark(
 
     # 2. Plan and execute recipe
     plan = plan_recipe(recipe_obj, model)
-    exec_result = execute_plan(plan, model)
+    if isinstance(plan.validation_spec, dict):
+        plan.validation_spec["profile"] = "minimal"
+    exec_result = execute_plan(plan, model, device=str(target_device))
 
     transformed_model = exec_result.final_model.to(target_device)
 
