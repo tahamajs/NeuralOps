@@ -326,6 +326,8 @@ def test_memory_sanitizer() -> None:
 
 
 def test_sweep_controller_init() -> None:
+    from neuralops.benchmarks.discovery import discover_all_modules
+    discover_all_modules()
     model = MockModel()
     controller = SweepController(base_model_or_adapter=model)
     assert controller.base_adapter is not None
