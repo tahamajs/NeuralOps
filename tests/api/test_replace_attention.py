@@ -56,7 +56,10 @@ class DummyTransformerModel(nn.Module):
     def forward(self, x):
         for layer in self.layers:
             attn = layer["attention"]
-            x = x + attn(x)
+            attn_out = attn(x)
+            if isinstance(attn_out, tuple):
+                attn_out = attn_out[0]
+            x = x + attn_out
             x = x + layer["mlp"](x)
         return x
 
