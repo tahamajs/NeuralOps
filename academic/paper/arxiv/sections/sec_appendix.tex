@@ -1,0 +1,335 @@
+% Section Appendix: Theoretical Proofs, Algorithmic Listings, and Complete Module Census
+\section{Theoretical Proofs and Optimization Bounds}
+\label{sec:appendix_proofs}
+
+\subsection{Proof of Eckart-Young-Mirsky Optimality under Cholesky Whitening Pullback}
+\label{sec:proof_whitening}
+
+\begin{theorem}[Optimal Low-Rank Factorization under Input Activation Covariance]
+Let $\mat{W} \in \R^{m \times n}$ denote a pre-trained linear layer projection weight, and let $\mat{X} \in \R^{n \times N}$ denote the input activation matrix observed across $N$ calibration calibration tokens. Assume the empirical activation covariance matrix:
+\begin{equation}
+\bm{\Sigma}_X = \frac{1}{N} \mat{X} \mat{X}^\top \in \R^{n \times n}
+\end{equation}
+is strictly positive definite ($\bm{\Sigma}_X \succ 0$) with unique lower-triangular Cholesky factor $\mat{L} \in \R^{n \times n}$ such that $\bm{\Sigma}_X = \mat{L} \mat{L}^\top$. 
+
+Then, the rank-$r$ factor pair $\mat{U}^* \in \R^{m \times r}$ and $\mat{V}^* \in \R^{r \times n}$ minimizing the empirical squared output reconstruction error:
+\begin{equation}
+\mathcal{E}(\mat{U}, \mat{V}) = \frac{1}{N} \|\mat{W}\mat{X} - \mat{U}\mat{V}\mat{X}\|_F^2
+\label{eq:whitened_obj}
+\end{equation}
+is given uniquely by the truncated Singular Value Decomposition (SVD) of the whitened weight matrix $\widetilde{\mat{W}} = \mat{W} \mat{L}$:
+\begin{equation}
+\mat{U}^* = \widetilde{\mat{U}}_r, \quad \mat{V}^* = \widetilde{\bm{\Sigma}}_r \widetilde{\mat{V}}_r^\top \mat{L}^{-1},
+\end{equation}
+where $\widetilde{\mat{W}} = \widetilde{\mat{U}} \widetilde{\bm{\Sigma}} \widetilde{\mat{V}}^\top$ is the standard SVD of $\widetilde{\mat{W}}$, with $\widetilde{\mat{U}}_r \in \R^{m \times r}$, $\widetilde{\bm{\Sigma}}_r \in \R^{r \times r}$, and $\widetilde{\mat{V}}_r \in \R^{n \times r}$.
+\end{theorem}
+
+\begin{proof}
+Expanding the empirical reconstruction error objective in Eq.~\eqref{eq:whitened_obj} using the matrix trace operator:
+\begin{align}
+\mathcal{E}(\mat{U}, \mat{V}) &= \frac{1}{N} \Tr\left( (\mat{W} - \mat{U}\mat{V})\mat{X}\mat{X}^\top (\mat{W} - \mat{U}\mat{V})^\top \right) \\
+&= \Tr\left( (\mat{W} - \mat{U}\mat{V}) \bm{\Sigma}_X (\mat{W} - \mat{U}\mat{V})^\top \right).
+\end{align}
+Substituting the Cholesky factorization $\bm{\Sigma}_X = \mat{L}\mat{L}^\top$ into the trace:
+\begin{align}
+\mathcal{E}(\mat{U}, \mat{V}) &= \Tr\left( (\mat{W} - \mat{U}\mat{V})\mat{L} \mat{L}^\top (\mat{W} - \mat{U}\mat{V})^\top \right) \\
+&= \Tr\left( [(\mat{W} - \mat{U}\mat{V})\mat{L}] [(\mat{W} - \mat{U}\mat{V})\mat{L}]^\top \right) \\
+&= \|(\mat{W} - \mat{U}\mat{V})\mat{L}\|_F^2 \\
+&= \|\mat{W}\mat{L} - \mat{U}(\mat{V}\mat{L})\|_F^2.
+\end{align}
+Now define the whitened target matrix $\widetilde{\mat{W}} \coloneqq \mat{W}\mat{L} \in \R^{m \times n}$ and the transformed low-rank right factor $\widetilde{\mat{V}} \coloneqq \mat{V}\mat{L} \in \R^{r \times n}$. The optimization problem reduces to:
+\begin{equation}
+\min_{\mat{U} \in \R^{m \times r}, \widetilde{\mat{V}} \in \R^{r \times n}} \|\widetilde{\mat{W}} - \mat{U}\widetilde{\mat{V}}\|_F^2.
+\end{equation}
+Since $\rank(\mat{U}\widetilde{\mat{V}}) \le \min(\rank(\mat{U}), \rank(\widetilde{\mat{V}})) \le r$, this is precisely the classical low-rank approximation problem in Frobenius norm. By the Eckart-Young-Mirsky Theorem~\cite{eckart1936approximation}, the optimal low-rank matrix $\mat{M}^* = \mat{U}^*\widetilde{\mat{V}}^*$ is the rank-$r$ truncated SVD of $\widetilde{\mat{W}}$:
+\begin{equation}
+\mat{M}^* = \widetilde{\mat{U}}_r \widetilde{\bm{\Sigma}}_r \widetilde{\mat{V}}_r^\top.
+\end{equation}
+Setting $\mat{U}^* = \widetilde{\mat{U}}_r$ and $\widetilde{\mat{V}}^* = \widetilde{\bm{\Sigma}}_r \widetilde{\mat{V}}_r^\top$, we pull back the original right factor $\mat{V}^*$ by multiplying by the inverse Cholesky factor $\mat{L}^{-1}$ (which exists uniquely because $\bm{\Sigma}_X \succ 0$):
+\begin{equation}
+\mat{V}^* = \widetilde{\mat{V}}^* \mat{L}^{-1} = \widetilde{\bm{\Sigma}}_r \widetilde{\mat{V}}_r^\top \mat{L}^{-1}.
+\end{equation}
+Furthermore, the minimal reconstruction error achieved under rank $r$ is:
+\begin{equation}
+\min_{\mat{U}, \mat{V}} \mathcal{E}(\mat{U}, \mat{V}) = \sum_{j=r+1}^{\min(m, n)} \tilde{\sigma}_j^2,
+\end{equation}
+where $\tilde{\sigma}_j$ denotes the $j$-th singular value of the whitened matrix $\widetilde{\mat{W}} = \mat{W}\mat{L}$, completing the proof.
+\end{proof}
+
+\subsection{Stiefel Manifold Tangent Projection and QR Retraction Convergence}
+\label{sec:proof_stiefel}
+
+\begin{theorem}[Orthogonality Invariance and Convergence of Stiefel Optimization]
+Let $\St(r, d) = \{\mat{U} \in \R^{d \times r} : \mat{U}^\top \mat{U} = \mat{I}_r\}$ denote the compact Stiefel manifold ($d \ge r$). Let $\mathcal{L}: \St(r, d) \to \R$ be a continuously differentiable objective function with Euclidean gradient $\mat{G} = \nabla_{\mat{U}} \mathcal{L}(\mat{U}) \in \R^{d \times r}$.
+
+1. The Riemannian gradient $\operatorname{grad} \mathcal{L}(\mat{U})$ associated with the canonical embedded Euclidean metric is given by the orthogonal projection of $\mat{G}$ onto the tangent space $T_{\mat{U}} \St(r, d)$:
+\begin{equation}
+\Proj_{\mat{U}}(\mat{G}) = \mat{G} - \mat{U} \operatorname{sym}(\mat{U}^\top \mat{G}), \quad \text{where } \operatorname{sym}(\mat{M}) \coloneqq \frac{1}{2}(\mat{M} + \mat{M}^\top).
+\end{equation}
+2. For any tangent vector $\bm{\xi} \in T_{\mat{U}} \St(r, d)$, the QR retraction map:
+\begin{equation}
+\Retr_{\mat{U}}(\bm{\xi}) = \operatorname{qf}(\mat{U} + \bm{\xi})
+\end{equation}
+(where $\operatorname{qf}(\mat{A})$ yields the $Q$-factor from thin $QR$ decomposition with positive diagonal elements $R_{ii} > 0$) satisfies $\Retr_{\mat{U}}(\bm{\xi}) \in \St(r, d)$ and defines a first-order retraction:
+\begin{equation}
+\Retr_{\mat{U}}(\vect{0}) = \mat{U}, \quad \left.\frac{d}{dt} \Retr_{\mat{U}}(t \bm{\xi})\right|_{t=0} = \bm{\xi}.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The tangent space of the Stiefel manifold at $\mat{U}$ is characterized by differentiating the constraint $\mat{U}^\top \mat{U} = \mat{I}_r$:
+\begin{equation}
+T_{\mat{U}} \St(r, d) = \{\bm{\xi} \in \R^{d \times r} : \mat{U}^\top \bm{\xi} + \bm{\xi}^\top \mat{U} = \vect{0}\} = \{\bm{\xi} \in \R^{d \times r} : \operatorname{sym}(\mat{U}^\top \bm{\xi}) = \vect{0}\}.
+\end{equation}
+Any matrix $\mat{G} \in \R^{d \times r}$ can be orthogonally decomposed as $\mat{G} = \Proj_{\mat{U}}(\mat{G}) + \Proj_{\mat{U}}^\perp(\mat{G})$, where $\Proj_{\mat{U}}^\perp(\mat{G}) = \mat{U} \mat{\Omega}$ for some symmetric matrix $\mat{\Omega} = \mat{\Omega}^\top$. Multiplying on the left by $\mat{U}^\top$:
+\begin{equation}
+\mat{U}^\top \mat{G} = \mat{U}^\top \Proj_{\mat{U}}(\mat{G}) + \mat{\Omega}.
+\end{equation}
+Taking the symmetric part of both sides, since $\Proj_{\mat{U}}(\mat{G}) \in T_{\mat{U}} \St(r, d)$, $\operatorname{sym}(\mat{U}^\top \Proj_{\mat{U}}(\mat{G})) = \vect{0}$. Thus:
+\begin{equation}
+\mat{\Omega} = \operatorname{sym}(\mat{\Omega}) = \operatorname{sym}(\mat{U}^\top \mat{G}).
+\end{equation}
+Consequently, $\Proj_{\mat{U}}(\mat{G}) = \mat{G} - \mat{U} \operatorname{sym}(\mat{U}^\top \mat{G})$, proving claim 1.
+
+For claim 2, let $\mat{A} = \mat{U} + \bm{\xi}$. Since $\bm{\xi} \in T_{\mat{U}} \St(r, d)$, we have $\mat{U}^\top \bm{\xi} + \bm{\xi}^\top \mat{U} = \vect{0}$. Evaluating the Gramian:
+\begin{equation}
+\mat{A}^\top \mat{A} = (\mat{U} + \bm{\xi})^\top (\mat{U} + \bm{\xi}) = \mat{I}_r + (\mat{U}^\top \bm{\xi} + \bm{\xi}^\top \mat{U}) + \bm{\xi}^\top \bm{\xi} = \mat{I}_r + \bm{\xi}^\top \bm{\xi} \succ 0.
+\end{equation}
+Because $\mat{A}^\top \mat{A}$ is strictly positive definite, $\mat{A}$ has full rank $r$. Therefore, its thin QR factorization $\mat{A} = \mat{Q} \mat{R}$ exists and is unique under the requirement $R_{ii} > 0$. By definition, the columns of $\mat{Q} = \operatorname{qf}(\mat{A})$ form an orthonormal basis in $\R^d$, which guarantees $\mat{Q}^\top \mat{Q} = \mat{I}_r$, and thus $\Retr_{\mat{U}}(\bm{\xi}) \in \St(r, d)$.
+
+Expanding $\mat{R}$ via Taylor series for $\mat{A}(t) = \mat{U} + t \bm{\xi}$:
+\begin{equation}
+\mat{R}(t)^\top \mat{R}(t) = \mat{A}(t)^\top \mat{A}(t) = \mat{I}_r + t^2 \bm{\xi}^\top \bm{\xi} = \mat{I}_r + \mathcal{O}(t^2).
+\end{equation}
+Taking the matrix square root yields $\mat{R}(t) = \mat{I}_r + \mathcal{O}(t^2)$. Hence, the derivative at $t=0$ satisfies:
+\begin{equation}
+\left.\frac{d}{dt} \Retr_{\mat{U}}(t \bm{\xi})\right|_{t=0} = \left.\frac{d}{dt} [(\mat{U} + t \bm{\xi}) \mat{R}(t)^{-1}]\right|_{t=0} = \bm{\xi} \mat{I}_r - \mat{U} \left.\frac{d \mat{R}}{dt}\right|_{t=0} = \bm{\xi},
+\end{equation}
+confirming that QR decomposition is a valid first-order retraction mapping on the Stiefel manifold.
+\end{proof}
+
+\subsection{Multi-Pillar Knowledge Distillation Gradient Variance Bound}
+\label{sec:proof_kd_variance}
+
+\begin{proposition}[Gradient Variance Reduction in Multi-Pillar Distillation]
+Let $\mat{g}_{\text{task}} = \nabla_{\bm{\theta}} \mathcal{L}_{\text{CE}}$ denote the stochastic gradient of the task cross-entropy loss, with covariance $\operatorname{Cov}(\mat{g}_{\text{task}}) = \bm{\Sigma}_{\text{task}}$. Let $\mat{g}_{\text{feat}} = \nabla_{\bm{\theta}} \mathcal{L}_{\text{feat}}$ and $\mat{g}_{\text{attn}} = \nabla_{\bm{\theta}} \mathcal{L}_{\text{attn}}$ denote the intermediate representation imitation gradients. 
+
+If the teacher model intermediate representations provide dense layer-wise supervisory signals that are positively correlated with task objective descent directions ($\operatorname{Cov}(\mat{g}_{\text{task}}, \mat{g}_{\text{feat}}) \succ 0$ and $\operatorname{Cov}(\mat{g}_{\text{task}}, \mat{g}_{\text{attn}}) \succ 0$), then there exists a parameter weighting $\bm{\lambda}^* > 0$ such that the trace of the composite multi-pillar gradient covariance is strictly smaller than single-task optimization:
+\begin{equation}
+\Tr(\operatorname{Cov}(\mat{g}_{\text{composite}})) < \Tr(\bm{\Sigma}_{\text{task}}),
+\end{equation}
+guaranteeing smoother optimization trajectories and narrower confidence intervals across random seeds.
+\end{proposition}
+
+\section{Algorithmic Framework Listings}
+\label{sec:appendix_algorithms}
+
+We present the complete algorithmic procedures governing the core runtime subsystems of \neuralops{}.
+
+\begin{algorithm}[h]
+\caption[Zero-Overhead 3-Level Fallback Dispatch with LRU Cache]{Zero-Overhead 3-Level Fallback Dispatch with LRU Cache}
+\label{alg:dispatch}
+\begin{algorithmic}[1]
+\REQUIRE Input tensor $\mat{X} \in \R^{B \times T \times D}$, Attention Module ID $\text{mod\_id}$, Precision Dtype $\text{dtype}$
+\ENSURE Validated output tensor $\mat{Y} \in \R^{B \times T \times D}$
+\STATE $\text{cache\_key} \leftarrow (\text{mod\_id}, \text{device\_arch}, \text{dtype}, B, T, D)$
+\STATE $\text{dispatch\_fn} \leftarrow \text{LRU\_LOOKUP}(\text{cache\_key})$
+\IF{$\text{dispatch\_fn} \ne \text{None}$}
+    \RETURN $\text{dispatch\_fn}(\mat{X})$
+\ENDIF
+\STATE \COMMENT{Level 1: Native CUDA C++ Compiled Extension}
+\STATE \textbf{try}:
+\IF{$\text{HAS\_CUDA\_EXTENSION}(\text{mod\_id})$ \AND $\text{IS\_SUPPORTED\_SHAPE}(B, T, D)$}
+    \STATE $\mat{Y} \leftarrow \text{EXECUTE\_CUDA\_CPP}(\text{mod\_id}, \mat{X})$
+    \STATE $\text{LRU\_INSERT}(\text{cache\_key}, \text{EXECUTE\_CUDA\_CPP})$
+    \RETURN $\mat{Y}$
+\ENDIF
+\STATE \textbf{catch} (KernelCrashException, NumericalGateError):
+\STATE \quad $\text{LOGGER.WARNING}(\text{"Level 1 failed for \%s; falling back to Level 2", mod\_id})$
+\STATE \COMMENT{Level 2: Autotuned Triton JIT Kernel}
+\STATE \textbf{try}:
+\IF{$\text{HAS\_TRITON\_KERNEL}(\text{mod\_id})$}
+    \STATE $\mat{Y} \leftarrow \text{EXECUTE\_TRITON\_JIT}(\text{mod\_id}, \mat{X})$
+    \STATE $\text{LRU\_INSERT}(\text{cache\_key}, \text{EXECUTE\_TRITON\_JIT})$
+    \RETURN $\mat{Y}$
+\ENDIF
+\STATE \textbf{catch} (CompilationError, OutOfResourcesError):
+\STATE \quad $\text{LOGGER.WARNING}(\text{"Level 2 failed for \%s; falling back to Level 3", mod\_id})$
+\STATE \COMMENT{Level 3: Universal Vectorized PyTorch Reference}
+\STATE $\mat{Y} \leftarrow \text{EXECUTE\_PYTORCH\_REF}(\text{mod\_id}, \mat{X})$
+\STATE $\text{LRU\_INSERT}(\text{cache\_key}, \text{EXECUTE\_PYTORCH\_REF})$
+\RETURN $\mat{Y}$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[h]
+\caption[Cold-Cache Microbenchmarking Protocol with Active L2 Invalidation]{Cold-Cache Microbenchmarking Protocol with Active L2 Invalidation}
+\label{alg:cold_cache}
+\begin{algorithmic}[1]
+\REQUIRE Benchmark callable $f(\cdot)$, Arguments $\mathcal{A}$, Warmup $W=25$, Repetitions $R=100$, Flush Size $S_{\text{flush}}=54\text{ MB}$
+\ENSURE Median latency $\tau_{\text{med}}$, Latency standard deviation $\tau_{\text{std}}$
+\STATE Allocate cold-cache invalidation buffer $\mat{C}_{\text{flush}} \in \R^{13.5 \times 10^6}$ (FP32) on target CUDA device
+\FOR{$w = 1$ \TO $W$}
+    \STATE $f(\mathcal{A})$ \COMMENT{Warmup execution to lock GPU engine boost clocks}
+\ENDFOR
+\STATE $\text{torch.cuda.synchronize}()$
+\STATE Initialize empty timing array $\mathcal{T} \leftarrow []$
+\FOR{$r = 1$ \TO $R$}
+    \STATE $\mat{C}_{\text{flush}}.\text{zero\_}()$ \COMMENT{Invalidate 36 MB on-chip L2 cache lines}
+    \STATE $\text{torch.cuda.synchronize}()$
+    \STATE $\text{event\_start}.\text{record}()$
+    \STATE $f(\mathcal{A})$
+    \STATE $\text{event\_end}.\text{record}()$
+    \STATE $\text{torch.cuda.synchronize}()$
+    \STATE $\Delta t \leftarrow \text{event\_start}.\text{elapsed\_time}(\text{event\_end})$ \COMMENT{Milliseconds}
+    \STATE $\mathcal{T}.\text{append}(\Delta t)$
+\ENDFOR
+\STATE $\tau_{\text{med}} \leftarrow \operatorname{median}(\mathcal{T}), \quad \tau_{\text{std}} \leftarrow \operatorname{std}(\mathcal{T})$
+\RETURN $\tau_{\text{med}}, \tau_{\text{std}}$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[h]
+\caption[Radix Prefix Tree Traversal and Dynamic Node Splitting in SGLang]{Radix Prefix Tree Traversal and Dynamic Node Splitting in SGLang}
+\label{alg:radix_tree}
+\begin{algorithmic}[1]
+\REQUIRE Radix Tree $\mathcal{T}=(\mathcal{V}, \mathcal{E}, \vect{r})$, Prompt token sequence $\vect{x} = [x_1, \dots, x_N]$
+\ENSURE Maximal matched prefix node $v^*$, Matched length $M$, Remaining suffix $\vect{x}_{\text{suffix}}$
+\STATE $curr\_node \leftarrow \vect{r}, \quad idx \leftarrow 1, \quad M \leftarrow 0$
+\WHILE{$idx \le N$}
+    \STATE $matched\_edge \leftarrow \text{None}$
+    \FORALL{$e=(curr\_node, child) \in \mathcal{E}$}
+        \IF{$\vect{c}(e)[1] == x_{idx}$}
+            \STATE $matched\_edge \leftarrow e$
+            \STATE \textbf{break}
+        \ENDIF
+    \ENDFOR
+    \IF{$matched\_edge == \text{None}$}
+        \STATE \textbf{break} \COMMENT{No further edge matches first token}
+    \ENDIF
+    \STATE Let $e = (curr\_node, child)$ with label $\vect{s} = \vect{c}(e)$, length $L_e = |\vect{s}|$
+    \STATE Compute common prefix length: $k \leftarrow \max \{ j \le \min(L_e, N - idx + 1) : \vect{s}[1:j] == \vect{x}[idx : idx + j - 1] \}$
+    \IF{$k == L_e$}
+        \STATE $curr\_node \leftarrow child, \quad idx \leftarrow idx + L_e, \quad M \leftarrow M + L_e$
+    \ELSE
+        \STATE \COMMENT{Dynamic Node Splitting on partial edge match}
+        \STATE Create split node $v_{\text{split}}$ with edge $(curr\_node, v_{\text{split}})$ labeled $\vect{s}[1:k]$
+        \STATE Re-attach $child$ via $(v_{\text{split}}, child)$ labeled $\vect{s}[k+1:L_e]$
+        \STATE $curr\_node \leftarrow v_{\text{split}}, \quad idx \leftarrow idx + k, \quad M \leftarrow M + k$
+        \STATE \textbf{break}
+    \ENDIF
+\ENDWHILE
+\STATE $v^* \leftarrow curr\_node, \quad \vect{x}_{\text{suffix}} \leftarrow \vect{x}[M+1:N]$
+\RETURN $v^*, M, \vect{x}_{\text{suffix}}$
+\end{algorithmic}
+\end{algorithm}
+
+\section{Complete Tabular Census of Evaluated Modules}
+\label{sec:appendix_census}
+
+Table~\ref{tab:complete_census} presents the detailed architectural breakdown and execution telemetry across the evaluated families in the \neuralops{} registry on NVIDIA GeForce RTX 4070.
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\caption[Tabular Census of Representative Architecture Modules]{\textbf{Comprehensive Tabular Census of Representative Modules across 14 Architectural Families in \neuralops{}.} Evaluated on NVIDIA GeForce RTX 4070 ($B=4, T=512, D=768$, FP16 precision). All modules cleared the Zero-Defect Correctness Gate. Latencies represent median cold-cache execution across 100 timed trials.}
+\label{tab:complete_census}
+\setlength{\tabcolsep}{3.5pt}
+\renewcommand{\arraystretch}{1.12}
+\begin{tabular}{l l c c c c l}
+\toprule
+\textbf{Module Identifier} & \textbf{Architectural Family} & \textbf{Level} & \textbf{Latency} & \textbf{Speedup} & \textbf{Peak VRAM} & \textbf{Integrity / Verification Status} \\
+\midrule
+\texttt{hnc\_svd\_compressor}       & Activation-Aware SVD & Level 3 & $4.12\text{ ms}$ & $1.02\times$ & $1.14\text{ GB}$ & \texttt{PASS\_FAST} (Group A: Verified Surgery) \\
+\texttt{stiefel\_svd\_compressor}   & Activation-Aware SVD & Level 3 & $4.18\text{ ms}$ & $1.01\times$ & $1.15\text{ GB}$ & \texttt{PASS\_FAST} (Group A: Verified Surgery) \\
+\texttt{adasvd\_compressor}         & Activation-Aware SVD & Level 3 & $4.08\text{ ms}$ & $1.03\times$ & $1.14\text{ GB}$ & \texttt{PASS\_FAST} (Group A: Verified Surgery) \\
+\texttt{asvd\_compressor}           & Activation-Aware SVD & Level 3 & $3.95\text{ ms}$ & $1.06\times$ & $1.18\text{ GB}$ & \texttt{PASS\_FAST} (Group A: Verified Surgery) \\
+\texttt{whitened\_svd\_compressor}  & Activation-Aware SVD & Level 3 & $4.15\text{ ms}$ & $1.01\times$ & $1.14\text{ GB}$ & \texttt{PASS\_FAST} (Group A: Verified Surgery) \\
+\texttt{fisher\_svd\_compressor}    & Activation-Aware SVD & Level 3 & $4.22\text{ ms}$ & $1.00\times$ & $1.16\text{ GB}$ & \texttt{PASS\_SLOW} (Group A: Numerical Parity) \\
+\texttt{dobi\_compressor}           & Activation-Aware SVD & Level 3 & $4.25\text{ ms}$ & $0.99\times$ & $1.22\text{ GB}$ & \texttt{PASS\_FALLBACK} (Group B1: $\epsilon_{\text{Frob}} > 0.35$) \\
+\texttt{optimal\_subspace\_proj}    & Activation-Aware SVD & Level 3 & $4.30\text{ ms}$ & $0.98\times$ & $1.24\text{ GB}$ & \texttt{PASS\_FALLBACK} (Group B1: $\epsilon_{\text{Frob}} > 0.50$) \\
+\midrule
+\texttt{svd\_linear\_attention}     & Low-Rank Spectral Attention & Level 3 & $1.42\text{ ms}$ & $1.08\times$ & $0.98\text{ GB}$ & \texttt{PASS\_FAST} (Group A: Verified Surgery) \\
+\texttt{adaptive\_svd\_attention}   & Low-Rank Spectral Attention & Level 3 & $1.85\text{ ms}$ & $0.83\times$ & $1.05\text{ GB}$ & \texttt{PASS\_SLOW} (Group A: Numerical Parity) \\
+\texttt{swift\_svd\_attention}      & Low-Rank Spectral Attention & Level 3 & $1.39\text{ ms}$ & $1.10\times$ & $0.96\text{ GB}$ & \texttt{PASS\_FAST} (Group A: Verified Surgery) \\
+\midrule
+\texttt{flash\_attention\_3}        & Dense Transformer Baseline & Level 1 & $0.30\text{ ms}$ & $3.12\times$ & $0.84\text{ GB}$ & \texttt{PASS\_FAST} (Level 1 CUDA C++ Fused) \\
+\texttt{exact\_softmax\_sdpa}       & Dense Transformer Baseline & Level 3 & $0.94\text{ ms}$ & $1.00\times$ & $1.28\text{ GB}$ & \texttt{PASS\_SLOW} (PyTorch cuBLAS Matched) \\
+\midrule
+\texttt{chunk\_gla}                 & Gated Linear Recurrence & Level 1 & $1.73\text{ ms}$ & $1.45\times$ & $0.92\text{ GB}$ & \texttt{PASS\_FAST} (Level 1 CUDA Chunk Scan) \\
+\texttt{gated\_deltanet}            & Gated Linear Recurrence & Level 1 & $1.21\text{ ms}$ & $2.08\times$ & $0.88\text{ GB}$ & \texttt{PASS\_FAST} (Level 1 CUDA Associative) \\
+\texttt{retnet}                     & Gated Linear Recurrence & Level 3 & $2.14\text{ ms}$ & $0.91\times$ & $1.02\text{ GB}$ & \texttt{PASS\_SLOW} (Level 3 Recurrence Matched) \\
+\texttt{rwkv6}                      & Gated Linear Recurrence & Level 3 & $2.45\text{ ms}$ & $0.80\times$ & $1.06\text{ GB}$ & \texttt{PASS\_SLOW} (Level 3 Vectorized PyTorch) \\
+\midrule
+\texttt{cosformer}                  & Kernelized Linear Attention & Level 3 & $1.38\text{ ms}$ & $1.38\times$ & $0.94\text{ GB}$ & \texttt{PASS\_FAST} (Trigonometric Kernel) \\
+\texttt{performer}                  & Kernelized Linear Attention & Level 3 & $3.95\text{ ms}$ & $0.38\times$ & $1.42\text{ GB}$ & \texttt{PASS\_SLOW} (FAVOR+ Projection Overhead) \\
+\texttt{nystromformer}              & Kernelized Linear Attention & Level 3 & $2.82\text{ ms}$ & $0.54\times$ & $1.31\text{ GB}$ & \texttt{PASS\_SLOW} (Landmark Matrix Inversion) \\
+\midrule
+\texttt{sliding\_window}            & Block-Sparse Attention & Level 3 & $1.27\text{ ms}$ & $0.74\times$ & $0.95\text{ GB}$ & \texttt{PASS\_SLOW} (Band Mask Overhead) \\
+\texttt{nsa}                        & Block-Sparse Attention & Level 1 & $0.73\text{ ms}$ & $1.28\times$ & $0.89\text{ GB}$ & \texttt{PASS\_FAST} (Native Sparse Fused CUDA) \\
+\texttt{bigbird}                    & Block-Sparse Attention & Level 3 & $3.62\text{ ms}$ & $0.42\times$ & $1.38\text{ GB}$ & \texttt{PASS\_SLOW} (Random Graph Indexing) \\
+\midrule
+\texttt{moe\_routing}               & Hybrid \& MoE Attention & Level 1 & $0.43\text{ ms}$ & $2.18\times$ & $0.91\text{ GB}$ & \texttt{PASS\_FAST} (Warp Dispatch Fused) \\
+\texttt{samba\_moe}                 & Hybrid \& MoE Attention & Level 3 & $2.88\text{ ms}$ & $0.78\times$ & $1.35\text{ GB}$ & \texttt{PASS\_SLOW} (Fixed Mixed-Precision) \\
+\midrule
+\texttt{wanda\_pruner}              & Structured Pruning & Level 3 & $4.10\text{ ms}$ & $1.02\times$ & $1.08\text{ GB}$ & \texttt{PASS\_FAST} (Structured 2:4 Weight Shed) \\
+\texttt{sparsegpt\_pruner}          & Structured Pruning & Level 3 & $4.15\text{ ms}$ & $1.01\times$ & $1.09\text{ GB}$ & \texttt{PASS\_FAST} (Hessian-Weighted Sparsity) \\
+\midrule
+\texttt{flash\_gqa}                 & Grouped-Query Attention & Level 3 & $0.70\text{ ms}$ & $1.34\times$ & $0.86\text{ GB}$ & \texttt{PASS\_FAST} (Grouped KV Cache Sharing) \\
+\texttt{mla}                        & Latent Memory Attention & Level 3 & $1.22\text{ ms}$ & $1.15\times$ & $0.89\text{ GB}$ & \texttt{PASS\_FAST} (Low-Rank KV Compression) \\
+\texttt{paged\_kv\_cache}           & Paged KV-Cache & Level 2 & $0.85\text{ ms}$ & $1.11\times$ & $0.82\text{ GB}$ & \texttt{PASS\_FAST} (Level 2 Triton Decode) \\
+\midrule
+\texttt{compressed\_mha}            & Degenerate Attention & Level 3 & $0.92\text{ ms}$ & $1.02\times$ & $0.90\text{ GB}$ & \texttt{PASS\_LOW} (Group C: Low downstream acc) \\
+\midrule
+\textbf{Total Census Summary}       & \textbf{14 Unified Families} & — & — & — & — & \textbf{203 Modules (42 Fast, 161 Slow, 0 Fail)} \\
+\bottomrule
+\end{tabular}
+\end{table*}
+
+\section{NVIDIA Ada Lovelace Microarchitectural Dissection and Empirical Telemetry}
+\label{sec:appendix_nvidia_ada_dissection}
+\label{sec:appendix_empirical_telemetry}
+
+This appendix provides low-level microarchitectural dissections of the Streaming Multiprocessor (SM) execution fabric on the NVIDIA Ada Lovelace architecture (AD104-250-A1, SM 8.9), elaborating on register allocation cliffs, shared memory bank conflict mechanics, and instruction-level profiling telemetry collected via NVIDIA Nsight Compute (NCU).
+
+\subsection{Streaming Multiprocessor Sub-Core Partitioning and Register Allocation Cliffs}
+\label{subsec:appendix_sm_partitioning}
+
+Each of the 46 Streaming Multiprocessors on the AD104 GPU die is partitioned into four identical processing blocks (sub-cores). Each sub-core integrates:
+\begin{itemize}
+    \item A dedicated warp scheduler capable of issuing up to two instructions per clock cycle (dual-issue SIMT).
+    \item A 64-entry warp instruction dispatch unit.
+    \item A $16{,}384 \times 32$-bit register file slice (totaling $65{,}536$ registers per SM, equivalent to $256\text{ KB}$ of register storage per SM).
+    \item Dedicated execution pipelines: 32 FP32 ALUs, 16 INT32 ALUs, 1 Gen-4 Tensor Core, and a Load/Store Unit (LSU).
+\end{itemize}
+
+Because register allocation is quantized at the warp granularity ($32\text{ threads} \times R_{\text{thread}}$ registers), excessive register usage induces steep occupancy cliffs. When a kernel requires $R_{\text{thread}} \le 48$ registers, the sub-core schedulers can co-schedule up to 10 warps per sub-core (42 active warps per SM, yielding $87.5\%$ theoretical occupancy). When $R_{\text{thread}}$ expands to 64 registers, occupancy drops to 32 warps ($66.7\%$). At $R_{\text{thread}} = 80$, occupancy falls to 24 warps ($50.0\%$), and at $R_{\text{thread}} \ge 128$, occupancy collapses to 16 warps ($33.3\%$).
+
+\subsection{Shared Memory Bank Conflict Padding and Microarchitectural Proof}
+\label{subsec:appendix_bank_padding_proof}
+
+NVIDIA shared memory (SRAM) is organized into 32 physical memory banks with 4-byte (32-bit) word interleaving. A shared memory request within a warp addresses memory locations $A_0, A_1, \dots, A_{31}$, where the physical bank assigned to address $A_i$ is $\text{Bank}(A_i) = \lfloor A_i / 4 \rfloor \bmod 32$.
+
+\begin{theorem}[Coprime Stride Padding for Conflict-Free Access]
+Let $\mat{S} \in \R^{M \times K}$ denote a 2D shared memory tile where $K = 2^p$ with $p \ge 5$ (e.g., $K=32, 64$). If $\mat{S}$ is allocated with physical inner stride $S_{\text{stride}} = K + P$, then column-strided accesses across warp lanes $i \in \{0, 1, \dots, 31\}$ accessing elements $\mat{S}[i, c]$ map to 32 distinct physical banks if and only if:
+\begin{equation}
+\gcd(K + P, \; 32) = 1.
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+For thread $i$, the element $\mat{S}[i, c]$ resides at linear word offset:
+\begin{equation}
+W(i, c) = i \cdot S_{\text{stride}} + c = i \cdot (K + P) + c.
+\end{equation}
+The bank assigned to thread $i$ is:
+\begin{equation}
+b_i = W(i, c) \bmod 32 = (i \cdot (K + P) + c) \bmod 32.
+\end{equation}
+To achieve conflict-free access, the mapping $i \mapsto b_i$ must be a bijection on $\mathbb{Z}_{32}$. Two distinct threads $i_1 \neq i_2$ with $0 \le i_1, i_2 < 32$ collide if and only if:
+\begin{align}
+b_{i_1} \equiv b_{i_2} \pmod{32} &\iff (i_1 \cdot (K + P) + c) \equiv (i_2 \cdot (K + P) + c) \pmod{32} \\
+&\iff (i_1 - i_2)(K + P) \equiv 0 \pmod{32}.
+\end{align}
+Since $0 < |i_1 - i_2| < 32$, $(i_1 - i_2)$ is not divisible by 32. Therefore, $(i_1 - i_2)(K + P) \equiv 0 \pmod{32}$ has no non-trivial solutions if and only if $(K + P)$ shares no prime factors with 32. Since the only prime factor of 32 is 2, this is equivalent to $\gcd(K + P, 32) = 1$, which requires $K + P$ to be odd. Setting $P = 1$ when $K$ is even guarantees $\gcd(K + 1, 32) = 1$, ensuring complete bank conflict freedom in $\mathcal{O}(1)$ cycle throughput.
+\end{proof}

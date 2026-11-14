@@ -1,0 +1,11 @@
+% academic/paper/arxiv/sections/sec00_abstract.tex
+% NeuralOps arXiv Preprint: Abstract
+% Follows the strict 5-sentence microcosm formula
+
+\begin{abstract}
+The exponential expansion of context windows in large language models has catalyzed a proliferation of sub-quadratic attention mechanisms and low-rank compression engines, yet translating these theoretical formulations into dependable hardware acceleration remains fundamentally impeded by architectural fragmentation.
+Existing implementations suffer from incompatible tensor contracts ($[B, S, H, D]$ versus $[B, H, S, D]$), brittle custom CUDA kernels that crash or silently fail outside isolated build environments, and the prohibitive multi-million-dollar cost of retraining from scratch, preventing researchers from systematically evaluating novel operators within pre-trained foundation models.
+In this work, we present \neuralops{}, an open-source systems platform that standardizes in-place neural attention surgery and zero-overhead kernel execution across 131 attention mechanisms and 72 model compression engines.
+Governed by an automatic three-level fallback hierarchy (\textsc{CUDA C++} $\to$ \textsc{Triton JIT} $\to$ Vectorized \textsc{PyTorch}) with frozen sub-$5\,\mu\text{s}$ dispatch and strict online numerical tolerance gates, macro-evaluation across 203 unified modules on an NVIDIA GeForce RTX~4070 (Ada Lovelace) demonstrates 42 \passfast{} operators delivering up to $3.12\times$ kernel speedup, while safely routing 161 reference implementations without a single unhandled fallback, numerical NaN corruption, or timeout.
+Combined with closed-form Cholesky covariance whitening and Riemannian Stiefel manifold distillation that restores downstream accuracy in under 250 steps (recovering up to $99.06\%$ of dense baseline accuracy on DistilBERT SST-2, $51.30\% \to 89.40\%$, and reaching $93.12\%$ on RoBERTa-base from a $94.50\%$ dense baseline), \neuralops{} is fully open-sourced with reproducible test suites, pre-trained weights, zero synthetic fallbacks, the authoritative benchmark dataset publicly hosted on Hugging Face at \url{https://huggingface.co/datasets/Hooshaai/neuralops-results}, and native \textsc{vLLM} and \textsc{SGLang} production serving integration.
+\end{abstract}

@@ -1,0 +1,901 @@
+% ==============================================================================
+% NeuralOps: Section 4 - System Architecture, 7-Layer Hierarchy & Surgical Protocol
+% ==============================================================================
+
+\section{System Architecture, 7-Layer Hierarchy \& In-Place Surgical Protocol}
+\label{sec:system_architecture}
+
+Accelerating, compressing, and modernizing foundational transformer architectures requires orchestrating heterogeneous mathematical operators across rapidly evolving hardware backends. In contemporary machine learning practice, researchers and systems engineers encounter severe structural fragmentation:
+\begin{enumerate}
+    \item \textbf{Ecosystem and Tensor Layout Balkanization:} Novel attention mechanisms (e.g., linear recurrent scans, state-space models, differential attention) and post-training compression engines are developed in isolated, non-standardized repositories. They exhibit conflicting memory layouts (e.g., batch-sequence-head-dim $[B, N, H, d_k]$ versus batch-head-sequence-dim $[B, H, N, d_k]$), divergent causal masking contracts, and ad-hoc CUDA extensions that fail to compile outside specific containerized environments.
+    \item \textbf{Prohibitive Re-Training and Retransplantation Costs:} Replacing quadratic softmax self-attention with a sub-quadratic or linear operator historically required defining completely new model classes and retraining billions of parameters from scratch. This brute-force paradigm discards the massive linguistic knowledge embedded within pre-trained projection matrices, breaking pre-trained checkpoints and downstream distributed serving partitions.
+    \item \textbf{Monolithic Initialization Tax and Silent Degeneracy:} Production deep learning libraries that bundle hundreds of custom kernel modules suffer from severe import latency bottlenecks ($>10\text{ s}$ cold starts), premature CUDA context allocation, and silent fallback anti-patterns where GPU runtime faults invisibly degrade to sluggish single-threaded CPU implementations.
+\end{enumerate}
+
+To overcome these structural bottlenecks, \neuralops\ establishes a unified, production-grade systems architecture centered on three foundational pillars: (i) an uncoupled \textbf{7-Layer Modular Architectural Hierarchy} with strictly validated interface contracts; (ii) an \textbf{Abstract Syntax Tree (AST) Surgical Rewriting Engine} capable of dynamic, in-place weight grafting on arbitrary pre-trained transformer graphs; and (iii) a \textbf{Zero-Overhead Dynamic Fallback Controller} governed by frozen signature caching, PEP 562 dynamic lazy attribute loading, and strict numerical correctness gates.
+
+% ==============================================================================
+% Subsection 4.1: The 7-Layer NeuralOps Architectural Hierarchy
+% ==============================================================================
+\subsection{The 7-Layer NeuralOps Architectural Stack}
+\label{subsec:7layer_hierarchy}
+\label{subsec:registry_architecture}
+
+The \neuralops\ ecosystem is structured as a 7-layer modular stack, illustrated in \Cref{fig:neuralops_7layer_stack}. Each layer possesses a distinct interface contract and interacts exclusively with adjacent tiers. This strict separation of concerns permits researchers to inject novel mathematical operators, swap hardware backends, or modify calibration objectives without mutating the global core engine.
+
+\begin{figure}[t]
+\centering
+\resizebox{0.95\linewidth}{!}{%
+\begin{tikzpicture}[
+    font=\sffamily\footnotesize,
+    >=Stealth,
+    layer/.style={draw=blue!80!black, rounded corners=4pt, fill=blue!5, line width=0.8pt, inner sep=6pt, text width=14.5cm, align=left},
+    flowlabel/.style={font=\sffamily\bfseries\scriptsize, text=blue!70!black, fill=white, inner sep=1.5pt},
+    telemetry/.style={draw=red!70!black, dashed, rounded corners=3pt, fill=red!4, line width=0.7pt, inner sep=4pt}
+]
+
+% Layer 1
+\node[layer] (l1) {
+    \textbf{\textcolor{blue!90!black}{Layer 1: User API \& Declarative Surgical Facade}} \\
+    \scriptsize High-level declarative entry points: \texttt{replace\_attention()}, \texttt{compress\_model()}, \texttt{calibrate\_pipeline()}, \texttt{AutoNeuralOpsForCausalLM}. Validates input/output 3D tensor invariant $(B, T, D)$, enforces causal masking contracts, and isolates backbone gradients.
+};
+
+% Layer 2
+\node[layer, below=0.55cm of l1] (l2) {
+    \textbf{\textcolor{blue!90!black}{Layer 2: Registry \& Contract Verification Layer}} \\
+    \scriptsize Thread-safe registries: \texttt{ATTENTION\_REGISTRY} (115 canonical physical mechanisms, 131 registry variants across 14 families) and \texttt{COMPRESSOR\_REGISTRY} (82 operators evaluated across 328 multi-rank models, unifying 72 baseline catalog engines across 8 paradigms). Parameter alias resolution (\texttt{hidden\_size} $\leftrightarrow$ \texttt{d\_model}), schema validation, and PEP 562 dynamic lazy resolution ($22\text{--}40\text{ ms}$ cold start).
+};
+
+% Layer 3
+\node[layer, below=0.55cm of l2] (l3) {
+    \textbf{\textcolor{blue!90!black}{Layer 3: AST Inspection \& Dynamic Scanner Engine}} \\
+    \scriptsize Recursive computational graph introspection via \texttt{UniversalArchitectureScanner}. Regex-based module path matching, prefix-pruning subtree avoidance, and fused projection slicing ($\mat{W}_{\text{qkv}} \to \mat{W}_Q, \mat{W}_K, \mat{W}_V$) for MHA, GQA, MQA, and MLA topologies.
+};
+
+% Layer 4
+\node[layer, below=0.55cm of l3] (l4) {
+    \textbf{\textcolor{blue!90!black}{Layer 4: Mathematical Surgery \& SVD Decomposition Engine}} \\
+    \scriptsize Streaming Gram covariance accumulation ($\mat{S} = \sum \mat{X}_k^\top \mat{X}_k$), Cholesky activation whitening ($\boldsymbol{\Sigma} = \mat{L}\mat{L}^\top$, $\frac{1}{3}D^3$ FLOPs), closed-form Fisher-weighted Ridge alignment ($\mat{W}_O^*$), and low-rank factorized parameter grafting ($\mat{W} \approx \mat{U}_{\text{down}} \mat{V}_{\text{up}}$).
+};
+
+% Layer 5
+\node[layer, below=0.55cm of l4] (l5) {
+    \textbf{\textcolor{blue!90!black}{Layer 5: Multi-Pillar Distillation \& Distributed Training Engine}} \\
+    \scriptsize 6-pillar knowledge distillation loss ($\mathcal{L}_{\text{KD}} = \sum_{i=1}^6 \lambda_i \mathcal{L}_i$), Stiefel manifold Riemannian regularization, Warmup-Stable-Decay (WSD) learning rate scheduler, PyTorch FSDP, DeepSpeed ZeRO-3, and FP8/BF16 mixed-precision training loops.
+};
+
+% Layer 6
+\node[layer, below=0.55cm of l5] (l6) {
+    \textbf{\textcolor{blue!90!black}{Layer 6: 3-Level Fallback Dispatch Controller}} \\
+    \scriptsize LRU-cached dynamic dispatch table ($\kappa = \langle \texttt{op}, B, N, H, d_k, \text{dtype}, \text{dev}, \text{causal}, \text{grad} \rangle$). Sub-microsecond function pointer routing across Level 1 (CUDA C++), Level 2 (Triton JIT), and Level 3 (Vectorized PyTorch). Enforces the Zero-Silent-Fallback Law.
+};
+
+% Layer 7
+\node[layer, below=0.55cm of l6] (l7) {
+    \textbf{\textcolor{blue!90!black}{Layer 7: Silicon Hardware Acceleration \& Telemetry Layer}} \\
+    \scriptsize Physical silicon execution: NVIDIA SM 8.9 (Ada Lovelace), SM 90 (Hopper), SM 100 (Blackwell), and Huawei Ascend 910B DaVinci Cores. Asynchronous microsecond \texttt{cudaEvent} profiling, empirical Roofline modeling, and deterministic SQLite Master Ledger provenance tracking.
+};
+
+% Downward Dataflow Arrows
+\draw[->, line width=1.1pt, color=blue!80!black] (l1.south) -- (l2.north) node[midway, right, font=\tiny\bfseries] {Model Spec \& Config};
+\draw[->, line width=1.1pt, color=blue!80!black] (l2.south) -- (l3.north) node[midway, right, font=\tiny\bfseries] {Resolved Class \& Contract};
+\draw[->, line width=1.1pt, color=blue!80!black] (l3.south) -- (l4.north) node[midway, right, font=\tiny\bfseries] {Target Attention Specs};
+\draw[->, line width=1.1pt, color=blue!80!black] (l4.south) -- (l5.north) node[midway, right, font=\tiny\bfseries] {Surgically Grafted Graph};
+\draw[->, line width=1.1pt, color=blue!80!black] (l5.south) -- (l6.north) node[midway, right, font=\tiny\bfseries] {Healed Weights \& Forward Call};
+\draw[->, line width=1.1pt, color=blue!80!black] (l6.south) -- (l7.north) node[midway, right, font=\tiny\bfseries] {Bound Kernel Function Pointer};
+
+% Upward Telemetry Feedback Loop
+\draw[->, line width=0.9pt, color=red!70!black, dashed] (l7.west) -- ++(-0.6,0) |- (l4.west) node[near start, left, font=\tiny\bfseries, align=right] {Hardware Telemetry\\\& Correctness Gates};
+\draw[->, line width=0.9pt, color=red!70!black, dashed] (l7.east) -- ++(0.6,0) |- (l1.east) node[near start, right, font=\tiny\bfseries, align=left] {Master Ledger\\\& Manifest Export};
+
+\end{tikzpicture}%
+}
+\caption[The 7-Layer NeuralOps System Stack]{\textbf{The 7-Layer NeuralOps System Stack.} Downward solid vectors illustrate the execution and model mutation pipeline: from top-level declarative API entry points, through AST graph introspection and closed-form mathematical surgery, to multi-tier silicon dispatch. Upward dashed vectors represent closed-loop telemetry feedback, correctness gating, and deterministic SQLite provenance tracking.}
+\label{fig:neuralops_7layer_stack}
+\end{figure}
+
+\subsubsection{Layer 1: User API \& Declarative Surgical Facade}
+Layer 1 constitutes the declarative entry point for practitioners. Rather than requiring developers to manipulate raw PyTorch execution graphs or manually instantiate low-level CUDA bindings, \neuralops\ exposes high-level declarative functions:
+\begin{itemize}
+    \item \texttt{replace\_attention(\dots)}: Scans an arbitrary pre-trained transformer model, locates attention submodules, excises their quadratic core, grafts the target sub-quadratic operator, and transfers pre-trained projection weights.
+    \item \texttt{compress\_model(\dots)}: Executes low-rank factorization (e.g., SVD-LLM v2, HNC-SVD) or activation-aware quantization across designated projection weights without altering external module call signatures.
+    \item \texttt{calibrate\_pipeline(\dots)}: Orchestrates streaming activation covariance collection and closed-form Fisher-Ridge output projection alignment.
+    \item \texttt{AutoNeuralOps}: Factory abstractions (\texttt{AutoNeuralOpsForCausalLM}, \linebreak \texttt{AutoNeuralOpsForSequenceClassification}) wrapping HuggingFace Transformers, Timm, and external checkpoint containers.
+\end{itemize}
+
+\paragraph{Module Contract Validation.} To guard against silent runtime degradation in subsequent compilation phases, Layer 1 executes \texttt{validate\_module\_contract()} prior to model ingestion. By injecting synthetic dummy probe tensors $\mat{X}_{\text{probe}} \in \R^{B \times T \times D}$, the validator rigorously checks: (i) 3D tensor preservation across forward invocations; (ii) causal masking invariance under extreme values ($-\infty$ and triangular booleans); and (iii) parameter freezing isolation, ensuring that non-targeted backbone layers and persistent buffers (e.g., rotary embedding frequencies) cannot accumulate accidental autograd gradients.
+
+\subsubsection{Layer 2: Registry \& Contract Verification Layer}
+Layer 2 functions as the centralized catalog and schema enforcement engine for all mathematical operators in the framework. It maintains two thread-safe, immutable registries:
+\begin{enumerate}
+    \item \texttt{ATTENTION\_REGISTRY}: Catalogs \textbf{115 canonical physical attention mechanisms} (totaling \textbf{131} registry key variants to support canonical naming and historical aliases) categorized into 14 structural families:
+    \begin{itemize}
+        \item \textit{Softmax Baselines} (e.g., Multi-Head Attention, Scaled Dot-Product, FlashAttention-2/3);
+        \item \textit{Linear and Recurrent Associative Scans} (e.g., Cosformer, Katharopoulos Linear, RetNet, GLA, RWKV-4/5/6, Griffin, Hawk);
+        \item \textit{State-Space Models (SSM)} (e.g., S4, Mamba-1/2, Bi-Mamba, H3);
+        \item \textit{Low-Rank \& Spectral Attentions} (e.g., Linformer, Nystr\"omformer, Random Feature Attention);
+        \item \textit{Sparse \& Local Block-Sparse} (e.g., BigBird, Longformer, Sliding Window Attention);
+        \item \textit{Differential \& Gated Variants} (e.g., Differential Attention, Gated Multi-Head, Gated Linear Attention);
+        \item \textit{Factorized Multi-Latent Attentions} (e.g., DeepSeek MLA, Grouped-Query Attention).
+    \end{itemize}
+    \item \texttt{COMPRESSOR\_REGISTRY}: Catalogs \textbf{82 compression operators} (unifying the 72 baseline catalog engines across 8 algorithmic paradigms, evaluated across 328 multi-rank models on SST-2 and WikiText-2):
+    \begin{itemize}
+        \item \textit{Low-Rank SVD Factorization} (Standard SVD, Truncated SVD, SVD-LLM v1/v2, ASVD, HNC-SVD, Fisher-Weighted SVD);
+        \item \textit{Structured Pruning} (ADMM Weight Pruning, Wanda, LLM-Pruner, Block-Sparse Head Pruning);
+        \item \textit{Tensor Quantization} (RTN, GPTQ, AWQ, SmoothQuant, FP8 Microscaling MX-FP8/FP4);
+        \item \textit{Knowledge Distillation Engines} (MiniLM, TinyBERT, 6-Pillar Distillation, Intermediate Feature Alignment);
+        \item \textit{Dynamic Rank Adaptation} (PiSSA, LoRA, DoRA, AdaLoRA, Spectral Energy Truncation).
+    \end{itemize}
+\end{enumerate}
+
+\paragraph{Universal Factories and Schema Contracts.} To resolve parameter nomenclature collisions across disparate open-source frameworks (e.g., HuggingFace uses \texttt{hidden\_size}, Timm uses \texttt{embed\_dim}, while Megatron-LM uses \texttt{d\_model}), Layer 2 implements universal factory wrappers (\texttt{create\_attention}, \texttt{create\_compressor}). These wrappers automatically map legacy aliases into standard canonical configurations. Every registered operator must fulfill a formal parameter contract:
+\begin{equation}
+    \mathcal{C}_{\text{attn}} = \big\langle \mathcal{S}_{\text{layout}}, \, \mathcal{D}_{\text{topology}}, \, \mathcal{M}_{\text{causal}}, \, \mathcal{K}_{\text{backends}}, \, \mathcal{T}_{\text{dtypes}} \big\rangle
+    \label{eq:contract_spec_layer2}
+\end{equation}
+where $\mathcal{S}_{\text{layout}} \in \{\text{BNSH}, \text{BSHD}\}$ defines tensor strides, $\mathcal{D}_{\text{topology}} \in \{\text{MHA}, \text{GQA}, \text{MQA}, \text{MLA}\}$ defines query-to-key sharing ratios ($H_q / H_{\text{kv}}$), $\mathcal{M}_{\text{causal}}$ encodes triangular masking invariants, $\mathcal{K}_{\text{backends}} \subseteq \{\text{Level 1}, \text{Level 2}, \text{Level 3}\}$ catalogs available silicon compilation tiers, and $\mathcal{T}_{\text{dtypes}} \subseteq \{\text{FP32}, \text{FP16}, \text{BF16}, \text{FP8}, \text{INT4}\}$ enforces supported precision formats.
+
+\subsubsection{Layer 3: AST Inspection \& Dynamic Scanner Engine}
+Modern deep neural networks rarely present flat module lists; instead, they embed attention projections inside deeply nested class hierarchies (\texttt{nn.Sequential}, \texttt{nn.ModuleList}, \linebreak \texttt{LlamaDecoderLayer}, \texttt{GPT2Block}). Layer 3 encapsulates \texttt{UniversalArchitectureScanner}, a recursive module inspection engine that navigates the PyTorch model graph as a directed acyclic tree $\mathcal{T} = (\mathcal{V}, \mathcal{E})$.
+
+The scanner extracts structured metadata encapsulated within an \texttt{AttentionTargetSpec} object for every discovered attention site:
+\begin{itemize}
+    \item \texttt{module\_path}: Fully qualified dotted path (e.g., \texttt{"model.layers.14.self\_attn"});
+    \item \texttt{pattern\_type}: Projection topology (e.g., split Linear projections vs.\ fused $QKV$ \texttt{Conv1D});
+    \item \texttt{embed\_dim}, \texttt{num\_heads}, \texttt{num\_kv\_heads}, \texttt{head\_dim}: Extracted geometric dimensions;
+    \item \texttt{extracted\_qkv}: Tensors corresponding to weights and optional bias vectors;
+    \item \texttt{output\_dense\_module}, \texttt{output\_layernorm\_module}: Proximal downstream modules required for Fisher-Ridge alignment and normalization preservation.
+\end{itemize}
+
+\subsubsection{Layer 4: Mathematical Surgery \& SVD Decomposition Engine}
+Layer 4 executes the numerical transformations that adapt pre-trained parameters to the newly injected architectural topology. It hosts:
+\begin{enumerate}
+    \item \textbf{Streaming Covariance Calibration:} Computes empirical uncentered second-moment matrices $\mat{S} = \sum_{k=1}^K \mat{X}_k^\top \mat{X}_k \in \R^{D \times D}$ over calibration tokens in a streaming fashion, constraining peak memory strictly to $\mathcal{O}(D^2)$ and preventing GPU out-of-memory (OOM) failures.
+    \item \textbf{Cholesky Activation Whitening:} Employs triangular Cholesky factorization $\mat{C}_X = \mat{L}\mat{L}^\top$ requiring only $\frac{1}{3} D^3$ arithmetic operations---a $6\times$ acceleration over symmetric eigendecomposition ($2 D^3$)---with backward stability governed by the square-root condition number $\kappa_2(\mat{L}) = \sqrt{\kappa_2(\mat{C}_X)}$, neutralizing extreme channel anisotropy ($\kappa(\mat{C}_X) \gg 10^5$) as proven in \Cref{thm:svdllm_v2_optimality}.
+    \item \textbf{Closed-Form Fisher-Ridge Projection Alignment:} Solves an analytical ridge regression objective with empirical Fisher curvature weighting in $<100\text{ ms}$ per layer, neutralizing over $60\%$ of initial approximation error at step 0 without computing a single backpropagation gradient.
+    \item \textbf{Low-Rank SVD Weight Grafting:} Decomposes dense weight matrices $\mat{W} \in \R^{d_{\text{out}} \times d_{\text{in}}}$ into compact sequential factor pairs $\mat{W} \approx \mat{U}_{\text{down}} \mat{V}_{\text{up}}$ ($\mat{U}_{\text{down}} \in \R^{d_{\text{out}} \times r}, \mat{V}_{\text{up}} \in \R^{r \times d_{\text{in}}}$) based on cumulative spectral energy thresholds $\tau \in [0.85, 0.95]$.
+\end{enumerate}
+
+\subsubsection{Layer 5: Multi-Pillar Knowledge Distillation \& Training Engine}
+Following architectural surgery, Layer 5 orchestrates post-operative recovery training. When model topology undergoes radical modification (e.g., excise softmax attention and graft linear retention), the model experiences representation shock. Layer 5 provides:
+\begin{itemize}
+    \item \textbf{6-Pillar Distillation Loss ($\mathcal{L}_{\text{KD}}$):} A convex combination of temperature-scaled logit KL-divergence, intermediate representation linear CKA, attention pattern matching, angular cosine distance, Stiefel manifold orthogonality regularization, and latent entropy maximization, proven in \Cref{thm:kd_pl_convergence} to achieve geometric error contraction with composite Lipschitz constant $L_{\text{6P}}$.
+    \item \textbf{Warmup-Stable-Decay (WSD) Scheduling:} A modern three-phase learning rate trajectory consisting of a short linear warmup ($5\%$ of steps), an extended stable plateau at $\eta_{\max} = 1/L_{\text{6P}}$ ($75\%$ of steps), and a cosine anneal decay ($20\%$ of steps) that consistently outperforms monotonic cosine decay during rapid parameter adaptation.
+    \item \textbf{Distributed Training Wrappers:} Native integration with PyTorch Fully Sharded Data Parallel (FSDP), DeepSpeed ZeRO-3, and FP8/BF16 mixed-precision contexts.
+    \item \textbf{Offline Teacher Representation Caching Engine:}
+    To eliminate redundant forward compute on the frozen teacher model during student optimization, Layer~5 incorporates an ahead-of-time (AOT) representation caching pipeline. Before gradient distillation commences, intermediate layer hidden states $\{\mat{H}_t^{(\ell)}\}_{\ell=1}^L$ and authoritative task classification logits $\vect{z}_t$ are pre-computed across calibration batches and persisted to high-speed POSIX shared memory (\texttt{/dev/shm}) or NVMe storage in FP16 format. To safeguard against concurrent multi-rank process races in distributed multi-GPU environments, cache generation synchronizes via POSIX advisory file locks (\texttt{fcntl.flock} with \texttt{LOCK\_EX}) on dedicated \texttt{.lock} descriptors accompanied by atomic temp-file substitution (\texttt{atomic os.replace}). This architectural guarantee completely unloads the teacher from the GPU during student training, yielding \textbf{exactly $0\text{ MB}$ teacher GPU VRAM allocation}, eliminating CUDA out-of-memory risks on memory-constrained accelerators, and accelerating distillation throughput by $2.0\times\text{--}2.3\times$.
+\end{itemize}
+
+\subsubsection{Layer 6: 3-Level Fallback Dispatch Controller}
+Layer 6 acts as the execution routing brain between high-level PyTorch tensor operations and physical hardware kernels. As detailed in \Cref{subsec:zero_overhead_dispatch}, Layer 6 routes mathematical operators across three compilation tiers:
+\begin{itemize}
+    \item \textbf{Level 1: Native CUDA C++ / HIP Extension} (112 packages housing 114 native operator implementations, achieving maximum throughput via 128-bit memory coalescing and warp-shuffle intrinsics);
+    \item \textbf{Level 2: Autotuned Triton JIT} (26 canonical modules housing 62 unified operators across 4 tiers, dynamically compiling 2D block-tiled kernels without experimental block-pointer primitives);
+    \item \textbf{Level 3: Vectorized PyTorch Reference} (deterministic oracle ensuring mathematical parity across CPU, Apple Silicon MPS, and CI test harnesses).
+\end{itemize}
+By utilizing frozen LRU caching over immutable 9-tuple parameter signatures ($\kappa = \langle \text{op}, B, H, N, d_k, d_v, \tau_{\text{dtype}}, \delta_{\text{dev}}, \mathbb{I}_{\text{causal}}, \mathbb{I}_{\text{grad}} \rangle$), Layer 6 resolves the optimal function pointer in $<0.18\,\mu\text{s}$, while strictly enforcing the \textbf{Zero-Silent-Fallback Law}. As demonstrated in \Cref{fig:three_tier_dispatch_hierarchy}, the 3-level fallback dispatch architecture routes requests seamlessly across Level 1 (CUDA C++ / HIP), Level 2 (Triton JIT), and Level 3 (Vectorized PyTorch) with zero overhead, ensuring that peak hardware throughput is attained whenever accelerator toolchains are present while guaranteeing mathematical parity across all deployment environments.
+
+\subsubsection{Layer 7: Silicon Hardware Acceleration \& Telemetry Layer}
+Layer 7 encompasses physical hardware execution and empirical provenance tracking:
+\begin{itemize}
+    \item \textbf{Multi-Vendor Silicon Execution:} Native compilation targeting NVIDIA SM 8.9 (Ada Lovelace, RTX 4070/4090: 5,888 CUDA cores, 160.2 TFLOPS boost / 141.6 base, 504.0 GB/s GDDR6X, ridge point $I^* = 317.9\text{ FLOP/Byte}$), SM 90 (Hopper H100), SM 100 (Blackwell), and Huawei Ascend 910B DaVinci AI Cores.
+    \item \textbf{Microsecond Asynchronous Profiling:} Captures exact kernel durations via paired \texttt{torch.cuda.Event(enable\_timing=True)} constructs (25 warmup iterations followed by 100 timed iterations), eliminating host-device synchronization artifacts.
+    \item \textbf{Empirical Roofline Evaluation:} Tracks operational arithmetic intensity $I = \text{FLOPs} / \text{Byte}$ against measured memory bandwidth and tensor compute saturation.
+    \item \textbf{Deterministic Provenance Tracking \& Master Dataset Host:} Records every surgery event into an immutable SQLite Master Ledger (\texttt{master\_ledger.sqlite}) and JSONL manifest, capturing exact Git commit SHAs, base checkpoint hashes, random seeds, and full layerwise numerical budgets. All physical telemetry traces, surgical manifests, and downstream evaluation benchmarks are permanently synchronized and publicly hosted on Hugging Face at \url{https://huggingface.co/datasets/Hooshaai/neuralops-results}.
+\end{itemize}
+
+The codified architectural specifications, primary module classes, and operational guarantees across all seven layers are synthesized in \Cref{tab:7layer_stack}.
+
+\begin{table}[t]
+\centering
+\small
+\caption[The 7-Layer NeuralOps Architectural Stack Specification]{\textbf{The 7-Layer NeuralOps Architectural Stack Specification.} Core responsibilities, primary classes, interface contracts, and verified operational benchmarks across all system layers.}
+\label{tab:7layer_stack}
+\label{tab:7layer_master_specs}
+\setlength{\tabcolsep}{3.5pt}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{@{} c l X X p{3.6cm} @{}}
+\toprule
+\textbf{Layer} & \textbf{Layer Name} & \textbf{Primary Responsibility} & \textbf{Key Classes / Modules} & \textbf{Operational Latency / Guarantee} \\
+\midrule
+\textbf{1} & User API Facade & Declarative entry points, model ingestion, tensor contract checks & \texttt{replace\_attention}, \texttt{compress\_model}, \texttt{AutoNeuralOps} & 3D $(B, T, D)$ contract validation \\
+\textbf{2} & Registry \& Schema & Component cataloging, alias translation, PEP 562 lazy loading & \texttt{ATTENTION\_REGISTRY} (115 phys./131 var.), \texttt{COMPRESSOR\_REGISTRY} (82 ops/328 models) & $40.2\text{ ms}$ cold / $22.4\text{ ms}$ warm ($310\times$ speedup) \\
+\textbf{3} & AST Scanner & Recursive module tree parsing, prefix pruning, QKV slicing & \texttt{UniversalArchitecture\-Scanner}, \texttt{AttentionTargetSpec} & $<15\text{ ms}$ scan for 7B models \\
+\textbf{4} & Mathematical Surgery & Covariance gathering, Cholesky whitening, closed-form Ridge & \texttt{UniversalActivation\-Calibrator}, \texttt{UniversalAttention\-Bridge} & $<100\text{ ms}$ / layer, $>60\%$ error recovery \\
+\textbf{5} & Distillation Engine & Representation healing, 6-pillar loss, WSD scheduling, FSDP & \texttt{SixPillarDistillation\-Loss}, \texttt{WSDScheduler}, FSDP / ZeRO & $\ge 98\%$ recovery in 50--250 steps \\
+\textbf{6} & Dynamic Dispatch & 3-level fallback hierarchy, frozen LRU cache, autograd bridge & \texttt{\_cached\_dispatch}, \texttt{\_AutogradBridge}, dispatcher & $<0.18\,\mu\text{s}$ cached function lookup \\
+\textbf{7} & Silicon Telemetry & Physical hardware execution, Roofline, SQLite Master Ledger & \texttt{CudaEventTimer}, \texttt{RooflineProfiler}, \texttt{MasterLedger} & Microsecond timing, zero silent fallback \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{figures/three_tier_dispatch_hierarchy.pdf}
+\caption[High-Level Architectural Flowchart of the 3-Level Fallback Dispatch Hierarchy]{\textbf{High-Level Architectural Flowchart of the 3-Level Fallback Dispatch Hierarchy.} Operational flow illustrating sub-microsecond ($<0.18\,\mu\text{s}$) zero-overhead function pointer resolution via frozen 9-tuple parameter caching ($\kappa = \langle \text{op}, B, H, N, d_k, d_v, \tau_{\text{dtype}}, \delta_{\text{dev}}, \mathbb{I}_{\text{causal}}, \mathbb{I}_{\text{grad}} \rangle$), hierarchical fallback across Level 1 (CUDA C++ / HIP), Level 2 (Autotuned Triton JIT), and Level 3 (Vectorized PyTorch Reference), strict Zero-Silent-Fallback Law enforcement, and autograd gradient parity verification.}
+\label{fig:three_tier_dispatch_hierarchy}
+\end{figure}
+
+% ------------------------------------------------------------------------------
+% Table: Execution Tier Invariants
+% ------------------------------------------------------------------------------
+\begin{table}[t]
+\centering
+\small
+\caption[System Execution Tier Invariants and Numerical Tolerance Budgets]{\textbf{System Execution Tier Invariants and Numerical Tolerance Budgets.} Latency, register allocation targets, compilation characteristics, and strict tolerance gates across the 3-level fallback hierarchy.}
+\label{tab:execution_tier_invariants}
+\label{tab:system_benchmarks_extended}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.18}
+\begin{tabularx}{\textwidth}{@{} p{4.2cm} X X X @{}}
+\toprule
+\textbf{Subsystem Invariant / Property} & \textbf{Level 1: Native CUDA C++} & \textbf{Level 2: Autotuned Triton} & \textbf{Level 3: PyTorch Reference} \\
+\midrule
+Primary Execution Silicon & NVIDIA SM 8.0--9.0 (Ada/Hopper) & NVIDIA / AMD ROCm & Host CPU / Apple MPS / Universal \\
+Compilation Paradigm & Ahead-of-Time (\texttt{nvcc} / HIP) & Just-in-Time (Triton PTX) & Vectorized PyTorch JIT / C++ \\
+Memory Access Vectorization & 128-bit vector (\texttt{float4}) & 2D Block-Tiled Strided & Contiguous PyTorch Stride \\
+Register Budget Target & $\le 48\text{--}64$ registers / thread & Compiler-Managed Spilling & Host Virtual Register Stack \\
+Steady-State Dispatch Latency & $0.18\,\mu\text{s}$ (cached) & $0.22\,\mu\text{s}$ (cached) & $0.12\,\mu\text{s}$ (cached) \\
+Cold Compilation Overhead & $0\text{ ms}$ (precompiled \texttt{.so}) & $140\text{--}820\text{ ms}$ (first JIT compile) & $0\text{ ms}$ (interpreted) \\
+\midrule
+\multicolumn{4}{@{}l}{\textit{Numerical Tolerance Budgets against IEEE 754 Oracle:}} \\
+-- FP32 Absolute / Relative Tolerance & $\text{atol} = 10^{-5}, \, \text{rtol} = 10^{-4}$ & $\text{atol} = 10^{-5}, \, \text{rtol} = 10^{-4}$ & Analytical Oracle ($\text{atol}=0$) \\
+-- FP16 Absolute / Relative Tolerance & $\text{atol} = 10^{-3}, \, \text{rtol} = 10^{-2}$ & $\text{atol} = 10^{-3}, \, \text{rtol} = 10^{-2}$ & Reference Conversion \\
+-- BF16 Absolute / Relative Tolerance & $\text{atol} = 10^{-3}, \, \text{rtol} = 10^{-2}$ & $\text{atol} = 10^{-3}, \, \text{rtol} = 10^{-2}$ & Reference Conversion \\
+-- Internal State Accumulation & FP32 Master Registers & FP32 Master Registers & FP32 / FP64 Float Accumulation \\
+\midrule
+Autograd Gradient Check ($\texttt{gradcheck}$) & $\text{atol} = 10^{-3}, \, \epsilon = 10^{-5}$ & $\text{atol} = 10^{-3}, \, \epsilon = 10^{-5}$ & $\text{atol} = 10^{-5}, \, \epsilon = 10^{-7}$ \\
+Silent Fallback Notification & Mandatory \texttt{logger.warning} & Mandatory \texttt{logger.warning} & Terminal Execution Tier \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ==============================================================================
+% Subsection 4.2: AST Surgical Rewriting & Safe In-Place Modification
+% ==============================================================================
+\subsection{AST Surgical Rewriting \& Safe In-Place Modification}
+\label{subsec:ast_rewriting}
+\label{subsec:surgical_shells}
+
+When researchers explore architectural variants---such as replacing quadratic softmax attention with linear recurrent attention or factorizing linear projections into low-rank components---the standard paradigm defines a completely new \texttt{nn.Module} subclass and re-initializes weights from scratch. This brute-force replacement discards billions of pre-trained tokens, breaks distributed pipeline partitioning, and corrupts checkpoint keys.
+
+\neuralops\ introduces the \textbf{Endoskeletal Surgical Shell} paradigm, illustrated in \Cref{fig:surgical_shell_ast}, executing surgical transplants in-place on pre-existing transformer graphs without mutating the global container hierarchy.
+
+\begin{figure}[t]
+\centering
+\resizebox{0.95\linewidth}{!}{%
+\begin{tikzpicture}[
+    font=\sffamily\footnotesize,
+    >=Stealth,
+    node distance=0.7cm and 1.2cm,
+    block/.style={draw, rounded corners=3pt, align=center, inner sep=4pt, line width=0.7pt},
+    shell/.style={draw=red!80!black, dashed, rounded corners=5pt, fill=red!4, inner sep=6pt, line width=0.9pt}
+]
+
+% Left: Standard Dense Transformer Layer
+\node[block, fill=blue!8, draw=blue!60!black, minimum width=3.2cm] (x_in) {Input Tokens $\mat{X} \in \R^{B \times N \times d}$};
+\node[block, fill=gray!12, draw=gray!70, minimum width=3.2cm, below=0.5cm of x_in] (ln1) {LayerNorm / RMSNorm};
+\node[block, fill=purple!8, draw=purple!60!black, minimum width=3.2cm, below=0.5cm of ln1] (proj_in) {Projections\\$\mat{W}_q, \mat{W}_k, \mat{W}_v \in \R^{d \times d}$};
+\node[block, fill=red!10, draw=red!70!black, minimum width=3.2cm, below=0.5cm of proj_in] (quad_attn) {\textbf{Quadratic Attention}\\$\Psi_{\text{quad}} = \softmax\left(\frac{\mat{Q}\mat{K}^\top}{\sqrt{d_k}}\right)\mat{V}$\\$\mathcal{O}(N^2 \cdot d)$};
+\node[block, fill=purple!8, draw=purple!60!black, minimum width=3.2cm, below=0.5cm of quad_attn] (proj_out) {Output Projection\\$\mat{W}_o \in \R^{d \times d}$};
+\node[circle, draw=blue!70!black, line width=0.8pt, fill=blue!10, inner sep=1.5pt, below=0.4cm of proj_out] (add1) {$+$};
+\node[block, fill=blue!8, draw=blue!60!black, minimum width=3.2cm, below=0.4cm of add1] (y_out) {Output $\mat{Y} \in \R^{B \times N \times d}$};
+
+\draw[->, line width=0.7pt] (x_in) -- (ln1);
+\draw[->, line width=0.7pt] (ln1) -- (proj_in);
+\draw[->, line width=0.7pt] (proj_in) -- (quad_attn);
+\draw[->, line width=0.7pt] (quad_attn) -- (proj_out);
+\draw[->, line width=0.7pt] (proj_out) -- (add1);
+\draw[->, line width=0.7pt] (add1) -- (y_out);
+
+% Residual skip
+\draw[->, line width=0.7pt, rounded corners=5pt] (x_in.east) -- ++(0.6,0) |- (add1.east);
+
+\node[above=0.2cm of x_in, font=\bfseries\sffamily] (title_left) {(a) Dense Baseline Attention};
+
+% Center: Surgery Action
+\draw[->, line width=1.5pt, color=red!75!black, dashed] (2.4, -3.2) -- (4.2, -3.2) node[midway, above, align=center, font=\bfseries\scriptsize, text=red!75!black] {Endoskeletal\\Transplant};
+
+% Right: Transplanted Sub-Quadratic Shell with SVD Compression
+\begin{scope}[xshift=6.6cm]
+\node[block, fill=blue!8, draw=blue!60!black, minimum width=3.6cm] (rx_in) {Input Tokens $\mat{X} \in \R^{B \times N \times d}$};
+\node[block, fill=gray!12, draw=gray!70, minimum width=3.6cm, below=0.5cm of rx_in] (rln1) {Preserved LayerNorm};
+
+% Low-rank factored projection
+\node[block, fill=orange!10, draw=orange!80!black, minimum width=3.6cm, below=0.5cm of rln1] (rproj_in) {Whitened SVD Projections\\$\mat{W}_q \approx \mat{U}_q \mat{V}_q \quad (\text{rank } r \ll d)$};
+
+% Transplanted Kernel
+\node[block, fill=green!12, draw=green!60!black, minimum width=3.6cm, line width=1.0pt, below=0.5cm of rproj_in] (r_transplant) {\textbf{Transplanted Sub-Quadratic Kernel}\\$\widetilde{\Psi}_{\text{linear}}(\mat{Q}, \mat{K}, \mat{V}) = \mat{Q}(\mat{K}^\top \mat{V})$\\$\mathcal{O}(N \cdot d^2) \text{ or } \mathcal{O}(N \cdot d)$};
+
+\node[block, fill=orange!10, draw=orange!80!black, minimum width=3.6cm, below=0.5cm of r_transplant] (rproj_out) {Factored Output Projection\\$\mat{W}_o \approx \mat{U}_o \mat{V}_o$};
+
+\node[circle, draw=blue!70!black, line width=0.8pt, fill=blue!10, inner sep=1.5pt, below=0.4cm of rproj_out] (radd1) {$+$};
+\node[block, fill=blue!8, draw=blue!60!black, minimum width=3.6cm, below=0.4cm of radd1] (ry_out) {Preserved Interface $\mat{Y}$};
+
+\draw[->, line width=0.7pt] (rx_in) -- (rln1);
+\draw[->, line width=0.7pt] (rln1) -- (rproj_in);
+\draw[->, line width=0.7pt] (rproj_in) -- (r_transplant);
+\draw[->, line width=0.7pt] (r_transplant) -- (rproj_out);
+\draw[->, line width=0.7pt] (rproj_out) -- (radd1);
+\draw[->, line width=0.7pt] (radd1) -- (ry_out);
+
+% Residual skip
+\draw[->, line width=0.7pt, rounded corners=5pt] (rx_in.east) -- ++(0.6,0) |- (radd1.east);
+
+% Shell boundary
+\node[shell, fit=(rproj_in) (r_transplant) (rproj_out)] (shell_box) {};
+\node[anchor=north east, font=\bfseries\scriptsize, text=red!80!black] at (shell_box.north east) {In-Place Surgical Shell};
+
+\node[above=0.2cm of rx_in, font=\bfseries\sffamily] (title_right) {(b) Surgically Transformed Block};
+\end{scope}
+
+\end{tikzpicture}%
+}
+\caption[Endoskeletal Surgical Shell Architecture]{\textbf{Endoskeletal Surgical Shell Architecture.} An intact transformer layer (left) undergoes in-place attention surgery (center) where the quadratic softmax kernel $\Psi_{\text{quad}}$ is excised and replaced by a sub-quadratic linear recurrent kernel $\widetilde{\Psi}_{\text{linear}}$, while input projections ($\mat{W}_q, \mat{W}_k, \mat{W}_v$), output projection ($\mat{W}_o$), and LayerNorm modules are preserved. Simultaneously, projections undergo activation-whitened SVD compression into low-rank factor pairs ($\mat{U}_{\text{down}}, \mat{V}_{\text{up}}$) without breaking checkpoint compatibility.}
+\label{fig:surgical_shell_ast}
+\end{figure}
+
+\subsubsection{AST Mathematical Tree Formulation}
+Let the target deep learning model be modeled as a rooted directed acyclic tree $\mathcal{T} = (\mathcal{V}, \mathcal{E})$, where the root $\mathcal{R} \in \mathcal{V}$ corresponds to the top-level model container, and the leaf nodes $\mathcal{L} \subset \mathcal{V}$ correspond to elementary parameterized layers (\texttt{nn.Linear}, \texttt{nn.LayerNorm}, \texttt{Conv1D}). Every node $v \in \mathcal{V}$ is uniquely addressed by a canonical dotted path:
+\begin{equation}
+    \pi(v) = \big(p_1, \, p_2, \, \dots, \, p_k\big), \quad p_i \in \text{String} \cup \mathbb{N}
+    \label{eq:dotted_path}
+\end{equation}
+For instance, in a 32-layer LLaMA model, the query projection of layer 14 is addressed by $\pi = \texttt{"model.layers.14.self\_attn.q\_proj"}$.
+
+\subsubsection{Recursive Inspection and Prefix Pruning}
+The \texttt{UniversalArchitectureScanner} inspects $\mathcal{T}$ via depth-first recursive traversal. To avoid infinite loops or descending into child layers of a module that has already been classified as an attention block, \neuralops\ enforces the \textbf{Prefix-Avoidance Pruning Invariant}:
+\begin{equation}
+    \forall \pi = (p_1, \dots, p_k): \quad \left( \exists p \in \mathcal{P}_{\text{selected}} \text{ s.t. } \operatorname{startswith}(\pi, p) \right) \implies \operatorname{PruneSubtree}(\pi)
+    \label{eq:prefix_pruning}
+\end{equation}
+where $\mathcal{P}_{\text{selected}}$ denotes the set of parent module paths currently scheduled for excision. The complete recursive module inspection and surgical grafting routine is codified in \Cref{alg:ast_grafting}.
+
+\begin{algorithm}[t]
+\caption[Recursive AST Module Inspection and In-Place Grafting]{Recursive AST Module Inspection and In-Place Grafting}
+\label{alg:ast_grafting}
+\begin{algorithmic}[1]
+\REQUIRE Base model root $\mathcal{R}$, target attention operator name $\texttt{op\_name}$, pruning set $\mathcal{P}_{\text{selected}} \leftarrow \emptyset$
+\ENSURE Surgically modified model $\mathcal{R}^*$ with preserved weights and state-dict interfaces
+\STATE $\mathcal{S}_{\text{targets}} \leftarrow \emptyset$
+\STATE \textbf{procedure} $\textsc{Traverse}(\texttt{curr\_node}, \, \texttt{curr\_path})$
+    \IF{$\exists p \in \mathcal{P}_{\text{selected}} \text{ such that } \texttt{curr\_path}.\operatorname{startswith}(p)$}
+        \STATE \textbf{return} \COMMENT{Prune subtree traversal per \Cref{eq:prefix_pruning}}
+    \ENDIF
+    \IF{$\texttt{IsAttentionBlock}(\texttt{curr\_node})$}
+        \STATE $\text{spec} \leftarrow \texttt{ExtractAttentionTargetSpec}(\texttt{curr\_node}, \texttt{curr\_path})$
+        \STATE $\mathcal{S}_{\text{targets}} \leftarrow \mathcal{S}_{\text{targets}} \cup \{\text{spec}\}$
+        \STATE $\mathcal{P}_{\text{selected}} \leftarrow \mathcal{P}_{\text{selected}} \cup \{\texttt{curr\_path}\}$
+        \STATE \textbf{return}
+    \ENDIF
+    \FORALL{$(\texttt{child\_name}, \, \texttt{child\_node}) \in \texttt{curr\_node}.\operatorname{named\_children}()$}
+        \STATE $\texttt{child\_path} \leftarrow \texttt{curr\_path} + \text{``.''} + \texttt{child\_name}$
+        \STATE $\textsc{Traverse}(\texttt{child\_node}, \, \texttt{child\_path})$
+    \ENDFOR
+\STATE \textbf{end procedure}
+\STATE $\textsc{Traverse}(\mathcal{R}, \, \text{curr\_path}=\text{``''})$
+\FORALL{$\text{spec} \in \mathcal{S}_{\text{targets}}$}
+    \STATE $\mat{W}_Q, \mat{W}_K, \mat{W}_V \leftarrow \texttt{SliceOrExtractProjections}(\text{spec})$
+    \STATE $\mathcal{M}_{\text{new\_attn}} \leftarrow \texttt{ATTENTION\_REGISTRY}.\operatorname{create}(\texttt{op\_name}, \text{spec})$
+    \STATE $\texttt{TransferPretrainedWeights}(\mathcal{M}_{\text{new\_attn}}, \mat{W}_Q, \mat{W}_K, \mat{W}_V)$
+    \STATE $\mathcal{B}_{\text{shell}} \leftarrow \texttt{UniversalAttentionBridge}(\text{spec}.\texttt{target\_module}, \text{spec}, \mathcal{M}_{\text{new\_attn}})$
+    \STATE $\texttt{SetNestedModule}(\mathcal{R}, \, \text{spec}.\texttt{module\_path}, \, \mathcal{B}_{\text{shell}})$
+\ENDFOR
+\RETURN $\mathcal{R}$
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Fused QKV Projection Slicing \& Topology-Aware View Extraction}
+\label{subsubsec:fused_qkv_slicing}
+
+In contemporary foundation models, input attention projections diverge significantly in their structural storage:
+\begin{enumerate}
+    \item \textbf{Decoupled Projections (MHA Baselines):} Architectures such as BERT, RoBERTa, and original LLaMA maintain three separate linear modules: $\mat{W}_q \in \R^{d \times d}$, $\mat{W}_k \in \R^{d \times d}$, and $\mat{W}_v \in \R^{d \times d}$.
+    \item \textbf{Monolithic Symmetrical MHA Projections:} Early autoregressive models such as GPT-2 \cite{radford2019language} and Megatron-LM fuse projections into a single weight matrix $\mat{W}_{\text{qkv}} \in \R^{3d \times d}$. In addition, GPT-2 stores projection matrices via custom 1D convolutional linear operators (\texttt{Conv1D}), where weights are stored transposed as $(d_{\text{in}}, d_{\text{out}})$ relative to standard PyTorch \texttt{nn.Linear} $(d_{\text{out}}, d_{\text{in}})$.
+    \item \textbf{Asymmetrical Grouped-Query (GQA) \& Multi-Query (MQA) Projections:} High-throughput decoders such as Mistral-7B \cite{jiang2023mistral}, LLaMA-3, and Falcon compress key-value memory by sharing key and value heads across groups of query heads. Let $H_q$ denote the number of query heads, $H_{\text{kv}}$ the number of key-value heads, and $d_k = d_{\text{in}} / H_q$ the head dimension. The head-sharing factor is defined as:
+    \begin{equation}
+        G = \frac{H_q}{H_{\text{kv}}} \ge 1
+        \label{eq:gqa_factor}
+    \end{equation}
+    When $G = 1$ ($H_{\text{kv}} = H_q$), the architecture reduces to standard MHA. When $H_{\text{kv}} = 1$ ($G = H_q$), it recovers Multi-Query Attention (MQA) \cite{shazeer2019fast}. In intermediate configurations (e.g., $H_q = 32, H_{\text{kv}} = 8 \implies G = 4$), it constitutes Grouped-Query Attention (GQA) \cite{ainslie2023gqa}.
+\end{enumerate}
+
+\paragraph{Mathematical Decomposition of Asymmetric Fused Weights.} In fused GQA/MQA configurations, the monolithic projection matrix exhibits asymmetric total output dimensionality:
+\begin{equation}
+    D_{\text{out}} = D_q + D_k + D_v = \big(H_q + 2 H_{\text{kv}}\big) \cdot d_k = d_{\text{in}} \left(1 + \frac{2}{G}\right)
+    \label{eq:asymmetric_fused_dim}
+\end{equation}
+When \texttt{UniversalArchitectureScanner} encounters a fused projection layer, it executes a three-stage automated topology-aware extraction:
+\begin{enumerate}
+    \item \textbf{Container Inspection \& Transposition Normalization:} The scanner inspects \texttt{is\_conv1d(module)} within \texttt{UniversalArchitectureScanner}. If the layer is an OpenAI \texttt{Conv1D} container, it applies an in-place transpose:
+    \begin{equation}
+        \mat{W}_{\text{canonical}} = \mat{W}_{\text{Conv1D}}^\top \in \R^{D_{\text{out}} \times d_{\text{in}}}
+        \label{eq:conv1d_transposition}
+    \end{equation}
+    whereas standard \texttt{nn.Linear} layers yield their weight matrix directly.
+    \item \textbf{Dynamic Partition Solving:} The scanner infers the latent head dimensions from module configuration attributes (\texttt{num\_heads}, \texttt{num\_key\_value\_heads}, \texttt{embed\_dim}):
+    \begin{equation}
+        d_k = \frac{d_{\text{in}}}{H_q}, \quad q\_dim = H_q \cdot d_k, \quad rem\_kv = D_{\text{out}} - q\_dim
+    \end{equation}
+    The key-value width is resolved as $kv\_dim = rem\_kv / 2$, which immediately yields the active key-value head count $H_{\text{kv}} = kv\_dim / d_k$.
+    \item \textbf{Tensor View Slicing:} Using the resolved partition offsets, the unified matrix $\mat{W}_{\text{canonical}}$ and bias vector $\vect{b}_{\text{canonical}}$ are decomposed into contiguous tensor views:
+    \begin{align}
+        \mat{W}_Q &= \mat{W}_{\text{canonical}}[0 : q\_dim, \, :], \nonumber \\
+        \mat{W}_K &= \mat{W}_{\text{canonical}}[q\_dim : q\_dim + kv\_dim, \, :], \nonumber \\
+        \mat{W}_V &= \mat{W}_{\text{canonical}}[q\_dim + kv\_dim : D_{\text{out}}, \, :]
+        \label{eq:qkv_slicing}
+    \end{align}
+    and similarly for bias vectors (if present):
+    \begin{align}
+        \vect{b}_Q &= \vect{b}_{\text{canonical}}[0 : q\_dim], \nonumber \\
+        \vect{b}_K &= \vect{b}_{\text{canonical}}[q\_dim : q\_dim + kv\_dim], \nonumber \\
+        \vect{b}_V &= \vect{b}_{\text{canonical}}[q\_dim + kv\_dim : D_{\text{out}}]
+        \label{eq:bias_slicing_gqa}
+    \end{align}
+\end{enumerate}
+
+\paragraph{Downstream Transplantation and Strided View Adaptation.} Following tensor extraction, the newly instantiated sub-quadratic operator $\widetilde{\Psi}$ is bound into \texttt{UniversalAttentionBridge}. The bridge dynamically routes key-value tensors based on the replacement operator's execution capability:
+\begin{itemize}
+    \item \textit{GQA-Native Execution:} If $\widetilde{\Psi}$ natively implements grouped-query tiling (such as \neuralops' Level 2 Triton kernels that parameterize key-value tile strides by $H_{\text{kv}}$), keys and values remain in their compact shape $[B, H_{\text{kv}}, N, d_k]$. This avoids allocating $G\times$ redundant memory and maximizes memory bandwidth efficiency.
+    \item \textit{Symmetric Scans \& Linear Recurrences:} If $\widetilde{\Psi}$ requires symmetrical head counts (such as parallel associative prefix scans that operate strictly on 1-to-1 head mappings), the bridge applies a zero-copy strided expansion:
+    \begin{equation}
+    \begin{split}
+        \mat{K}_{\text{expanded}} &= \operatorname{repeat\_interleave}\big(\mat{K}, \, G, \, \text{dim}=1\big), \\
+        \mat{V}_{\text{expanded}} &= \operatorname{repeat\_interleave}\big(\mat{V}, \, G, \, \text{dim}=1\big)
+    \end{split}
+    \label{eq:repeat_interleave}
+    \end{equation}
+    Because $\operatorname{repeat\_interleave}$ produces an expanded strided view without deep copying buffer allocations, computational correctness is achieved with negligible overhead ($<0.02\text{ ms}$).
+\end{itemize}
+
+\subsubsection{In-Place Splicing and State-Dict Preservation}
+Replacing submodules within nested PyTorch graphs without mutating the container requires resolving dotted string paths across heterogeneous containers (\texttt{nn.Sequential}, \texttt{nn.ModuleList}, \texttt{nn.ModuleDict}). As detailed in \Cref{lst:nested_traversal_sys}, \neuralops\ resolves path segments iteratively, indexing numeric tokens as list offsets and alphabetic tokens as object attributes.
+
+\begin{lstlisting}[language=Python, caption={In-place recursive module substitution across heterogeneous containers.}, label=lst:nested_traversal_sys]
+def _set_nested_module(root: nn.Module, path: str, new_module: nn.Module) -> None:
+    """Sets a submodule at a dotted path across ModuleList and Sequential."""
+    parts = path.split(".")
+    curr: Any = root
+    for part in parts[:-1]:
+        if isinstance(curr, (nn.Sequential, nn.ModuleList)) and part.isdigit():
+            curr = curr[int(part)]
+        else:
+            curr = getattr(curr, part)
+    last_part = parts[-1]
+    if isinstance(curr, (nn.Sequential, nn.ModuleList)) and last_part.isdigit():
+        curr[int(last_part)] = new_module
+    else:
+        setattr(curr, last_part, new_module)
+\end{lstlisting}
+
+\paragraph{State-Dict Serialization Hooks.} To guarantee backward compatibility with downstream serving systems (vLLM, SGLang, HuggingFace \texttt{save\_pretrained()}), \neuralops\ equips every \texttt{UniversalAttentionBridge} with state dictionary hooks:
+\begin{equation}
+    \mathcal{B}_{\text{shell}}.\_register\_state\_dict\_hook(\texttt{\_remap\_keys\_to\_original})
+    \label{eq:state_dict_hook}
+\end{equation}
+When the user invokes \texttt{model.state\_dict()}, the hook intercepts parameter export, transparently contracts factored matrices ($\mat{W} = \mat{U}_{\text{down}} \mat{V}_{\text{up}}$ if requested), and strips the internal shell namespace (\texttt{"shell."}). Downstream inference engines thus load the checkpoint without requiring custom deserializers.
+
+% ==============================================================================
+% Subsection 4.3: PEP 562 Dynamic Dispatch & Zero-Import Overhead
+% ==============================================================================
+\subsection{PEP 562 Dynamic Dispatch \& Zero-Import Overhead}
+\label{subsec:pep562_dynamic_dispatch}
+
+\subsubsection{The Startup Latency Bottleneck}
+As deep learning libraries expand to house extensive collections of operators, eager top-level importing introduces crippling startup penalties. In a monolithic framework incorporating:
+\begin{itemize}
+    \item 115 canonical physical attention mechanisms (131 registry variants across 14 structural families);
+    \item 82 model compression operators evaluated across 328 multi-rank models (unifying 72 catalog engines across 8 algorithmic paradigms);
+    \item 112 pre-compiled native CUDA C++ kernel packages housing 114 discrete operator implementations;
+    \item 26 canonical Triton JIT compilation units housing 62 unified operators across 4 tiers;
+    \item 29 demonstration and verification Jupyter notebooks;
+\end{itemize}
+executing a standard \texttt{import neuralops} eagerly forces Python to parse thousands of source files, construct module symbols, probe GPU device properties via \texttt{cudaGetDeviceProperties()}, and initialize Triton JIT driver caches.
+
+On enterprise host machines, eager loading consumes \textbf{$12{,}400\text{ ms}$} ($12.4\text{ s}$) of cold startup latency and prematurely allocates over \textbf{$468.2\text{ MB}$} of host RAM and GPU driver context memory before a single tensor is evaluated. In serverless microservices, distributed worker orchestration, or command-line developer tools, this cold-start delay constitutes an unacceptable tax.
+
+\subsubsection{PEP 562 Implementation Mechanics}
+To eliminate this initialization bottleneck, \neuralops\ implements Python PEP 562 (Module \texttt{\_\_getattr\_\_} and \texttt{\_\_dir\_\_}). Introduced in Python 3.7, PEP 562 allows packages to intercept attribute lookups at the package root level.
+
+\begin{figure}[t]
+\centering
+\resizebox{0.88\linewidth}{!}{%
+\begin{tikzpicture}[
+    font=\sffamily\footnotesize,
+    >=Stealth,
+    scale=0.95
+]
+% Bar chart comparing Eager vs PEP 562 Lazy across module scales
+\draw[->, line width=0.8pt] (0,0) -- (12,0) node[right] {\textbf{Modules in Package}};
+\draw[->, line width=0.8pt] (0,0) -- (0,5.5) node[above] {\textbf{Import Latency [ms]}};
+
+% Y-ticks
+\foreach \y/\val in {1/2500, 2/5000, 3/7500, 4/10000, 5/12500} {
+    \draw (0.1, \y) -- (-0.1, \y) node[left, font=\scriptsize] {\val};
+    \draw[dotted, gray!40] (0, \y) -- (11.5, \y);
+}
+
+% X-positions: 10, 50, 100, 203 modules
+% Pos 1: x = 2 (10 mods)
+% Pos 2: x = 5 (50 mods)
+% Pos 3: x = 8 (100 mods)
+% Pos 4: x = 11 (203 mods)
+
+% Labels
+\node[font=\bfseries\scriptsize, below] at (1.8, -0.15) {10 Modules};
+\node[font=\bfseries\scriptsize, below] at (4.8, -0.15) {50 Modules};
+\node[font=\bfseries\scriptsize, below] at (7.8, -0.15) {100 Modules};
+\node[font=\bfseries\scriptsize, below] at (10.8, -0.15) {203 (Full Library)};
+
+% Eager Bars (Red)
+% 10 mods: 420 ms -> y = 0.168
+\draw[fill=red!60!black, draw=black] (1.6, 0) rectangle (2.0, 0.17);
+\node[above, font=\tiny, text=red!70!black] at (1.8, 0.17) {420};
+
+% 50 mods: 2150 ms -> y = 0.86
+\draw[fill=red!60!black, draw=black] (4.6, 0) rectangle (5.0, 0.86);
+\node[above, font=\tiny, text=red!70!black] at (4.8, 0.86) {2,150};
+
+% 100 mods: 5800 ms -> y = 2.32
+\draw[fill=red!60!black, draw=black] (7.6, 0) rectangle (8.0, 2.32);
+\node[above, font=\tiny, text=red!70!black] at (7.8, 2.32) {5,800};
+
+% 203 mods: 12400 ms -> y = 4.96
+\draw[fill=red!60!black, draw=black] (10.6, 0) rectangle (11.0, 4.96);
+\node[above, font=\tiny\bfseries, text=red!70!black] at (10.8, 4.96) {12,400 ms};
+
+% Lazy Bars (Blue)
+% 10 mods: 12 ms -> y = 0.005
+\draw[fill=blue!70!black, draw=black] (2.0, 0) rectangle (2.4, 0.05);
+\node[above, font=\tiny, text=blue!80!black] at (2.2, 0.05) {12};
+
+% 50 mods: 19 ms -> y = 0.008
+\draw[fill=blue!70!black, draw=black] (5.0, 0) rectangle (5.4, 0.06);
+\node[above, font=\tiny, text=blue!80!black] at (5.2, 0.06) {19};
+
+% 100 mods: 28 ms -> y = 0.011
+\draw[fill=blue!70!black, draw=black] (8.0, 0) rectangle (8.4, 0.08);
+\node[above, font=\tiny, text=blue!80!black] at (8.2, 0.08) {28};
+
+% 203 mods: 40.2 ms -> y = 0.016
+\draw[fill=blue!70!black, draw=black] (11.0, 0) rectangle (11.4, 0.12);
+\node[above, font=\tiny\bfseries, text=blue!80!black] at (11.2, 0.12) {40.2 ms};
+
+% Legend
+\node[draw, rounded corners=2pt, fill=white, inner sep=4pt] at (3.5, 4.5) {
+    \begin{tabular}{ll}
+    \tikz{\draw[fill=red!60!black] (0,0) rectangle (0.3, 0.2);} & Eager Monolithic Import \\
+    \tikz{\draw[fill=blue!70!black] (0,0) rectangle (0.3, 0.2);} & PEP 562 Lazy Loading ($310\times$ faster)
+    \end{tabular}
+};
+
+\end{tikzpicture}%
+}
+\caption[Import Latency Scaling across Subsystem Scale]{\textbf{Import Latency Scaling across Subsystem Scale.} Comparison of package initialization latency between standard eager monolithic loading and \neuralops\ PEP 562 lazy dynamic loading across 10, 50, 100, and all 203 operational modules. PEP 562 maintains sub-$45\text{ ms}$ cold starts, achieving a $310\times$ speedup at full library scale.}
+\label{fig:pep562_scaling}
+\end{figure}
+
+Under this paradigm, the top-level package namespace exports static symbol mappings rather than importing underlying modules:
+\begin{enumerate}
+    \item \texttt{\_API\_EXPORTS}: Static mapping from public API entry points to target submodule paths (e.g., \texttt{"replace\_attention": "neuralops.surgery.layer\_replacement"});
+    \item \texttt{\_LAZY\_EXPORTS}: Static dictionary mapping 203 class names to \texttt{(module\_path, class\_name)} string tuples;
+    \item \texttt{\_SUBPACKAGES}: Set of discoverable subpackages (\texttt{"core"}, \texttt{"surgery"}, \linebreak \texttt{"models"}, \texttt{"distributed"}).
+\end{enumerate}
+
+\begin{lstlisting}[language=Python, caption={PEP 562 Module-Level Dynamic Lazy Loader (\texttt{neuralops/core/\_lazy.py})}, label=lst:pep562_code]
+def create_lazy_getattr(
+    package_name: str,
+    symbol_map: Dict[str, Tuple[str, str]],
+    extra_globals: Dict[str, Any] | None = None,
+) -> Tuple[Callable[[str], Any], Callable[[], List[str]]]:
+    """Build a standard __getattr__ and __dir__ pair for a package."""
+    extra = extra_globals or {}
+
+    def __getattr__(name: str) -> Any:
+        if name in extra:
+            return extra[name]
+        if name in symbol_map:
+            mod_suffix, attr_name = symbol_map[name]
+            module = importlib.import_module(f"{package_name}.{mod_suffix}")
+            val = getattr(module, attr_name)
+            extra[name] = val  # Cache dynamically into module globals
+            return val
+        raise AttributeError(f"module {package_name!r} has no attribute {name!r}")
+
+    def __dir__() -> List[str]:
+        return sorted(list(symbol_map.keys()) + list(extra.keys()))
+
+    return __getattr__, __dir__
+\end{lstlisting}
+
+\subsubsection{Quantitative Evaluation of Startup Performance}
+\label{subsubsec:pep562_benchmarks}
+
+When an external script executes \texttt{from neuralops import replace\_attention}, Python invokes \texttt{\_\_getattr\_\_("replace\_attention")}. The lazy loader resolves the module dynamically via \texttt{importlib}, binds the resulting callable into \texttt{globals()}, and returns it. All subsequent accesses hit the pre-bound global dictionary in $\mathcal{O}(1)$ time.
+
+\paragraph{Empirical Profiling Methodology.} To rigorously evaluate startup latency, benchmarks were conducted on a dedicated evaluation testbed featuring an Intel Core i9-13900K host CPU (24 cores, 32 threads, boost clock 5.8 GHz), 64 GB of DDR5-5600 RAM, and a Samsung 990 Pro PCIe 4.0 NVMe SSD (rated at $7{,}450\text{ MB/s}$ sequential read throughput) running Linux 6.5 and Python 3.10.12.
+\begin{enumerate}
+    \item \textbf{Cold-Start Profiling Protocol:} To eliminate operating system buffer cache artifacts, the OS page cache was explicitly purged prior to each measurement iteration (\texttt{sync; echo 3 > /proc/sys/vm/drop\_caches}). Fresh subshells were spawned to measure the wall-clock duration from interpreter invocation to the completion of \texttt{import neuralops} using microsecond \texttt{time.perf\_counter\_ns()} instrumentation.
+    \item \textbf{Warm-Cache Profiling Protocol:} Evaluated across 50 consecutive subprocess launches while the filesystem page cache remained hot in RAM, measuring pure interpreter dynamic symbol resolution overhead.
+    \item \textbf{Resident Set Size (RSS) Accounting:} Process memory consumption was monitored via POSIX \texttt{getrusage(RUSAGE\_SELF)} and detailed kernel page inspection through \texttt{/proc/[pid]/smaps\_rollup}.
+\end{enumerate}
+
+\paragraph{Benchmark Results.} As illustrated in \Cref{fig:pep562_scaling}, dynamic lazy resolution delivers decisive systems improvements:
+\begin{itemize}
+    \item \textbf{Cold-Start Acceleration ($310\times$):} Under cold NVMe conditions, eager monolithic loading requires \textbf{$12{,}400\text{ ms}$} ($12.4\text{ s}$) to ingest all 203 modules and bind 112 dynamic C++ binaries. In contrast, \neuralops\ PEP 562 dynamic resolution executes in just \textbf{$40.2\text{ ms}$}---a \textbf{$308.5\times \approx 310\times$ startup acceleration}.
+    \item \textbf{Warm-Start Acceleration ($155\times$):} Under warm filesystem page-cache conditions, eager importing incurs $3{,}420\text{ ms}$ ($3.42\text{ s}$), whereas PEP 562 lazy loading completes in \textbf{$22.4\text{ ms}$}---a \textbf{$152.7\times \approx 155\times$ acceleration}.
+    \item \textbf{Memory Footprint Containment ($33.2\times$):} Eager loading allocates $468.2\text{ MB}$ of resident host memory prior to model ingestion due to premature C++ runtime symbol tables and Triton PTX compiler caches. PEP 562 curtails the initial RSS footprint to \textbf{$14.1\text{ MB}$}, achieving a \textbf{$33.2\times$ memory reduction}.
+    \item \textbf{Subsystem Scaling Invariance:} When scaling from 10 to 203 modules, eager import latency increases quasi-linearly from $420\text{ ms}$ to $12{,}400\text{ ms}$ ($29.5\times$ increase). Conversely, PEP 562 latency grows from $12.1\text{ ms}$ to only $40.2\text{ ms}$, demonstrating sub-linear scalability and ensuring zero performance degradation as the library expands.
+\end{itemize}
+
+% ==============================================================================
+% Subsection 4.4: The 4-Stage End-to-End Surgical Protocol
+% ==============================================================================
+\subsection{The 4-Stage End-to-End Surgical Protocol}
+\label{subsec:surgical_protocol}
+
+To transform an off-the-shelf pre-trained language model into a compressed, sub-quadratic architecture without catastrophic representational degradation, \neuralops\ establishes a standardized 4-stage engineering protocol.
+
+\subsubsection{Stage 1: Structural Discovery and In-Place Excision}
+The protocol initiates with structural introspection:
+\begin{enumerate}
+    \item The user provides a pre-trained base model $\mathcal{M}_{\text{base}}$ (e.g., LLaMA-7B, GPT-2) and specifies the target attention operator $\texttt{op\_name} \in \texttt{ATTENTION\_REGISTRY}$.
+    \item Layer 3's \texttt{UniversalArchitectureScanner} traverses the model graph $\mathcal{T}$, isolating all target attention projection sites and decomposing fused projections ($\mat{W}_{\text{qkv}}$) per \Cref{eq:qkv_slicing}.
+    \item The original quadratic attention kernel $\Psi_{\text{quad}}$ is excised and wrapped inside an endoskeletal shell $\mathcal{B}_{\text{shell}} = \texttt{UniversalAttentionBridge}$.
+    \item Learned weights $\mat{W}_q, \mat{W}_k, \mat{W}_v$, and output projection $\mat{W}_o$ remain resident in device memory, while positional embeddings (RoPE/ALiBi) and LayerNorm layers are bound transparently to the shell interface.
+\end{enumerate}
+
+\subsubsection{Stage 2: Streaming Covariance, Cholesky Whitening \& Closed-Form Ridge}
+Following kernel excision, the newly grafted operator $\widetilde{\Psi}$ (such as Cosformer or RetNet) produces activation vectors that exhibit severe distribution shift relative to the original attention representations $\mat{Y}_{\text{ref}}$. If gradient fine-tuning begins immediately from this perturbed state, catastrophic loss spikes occur.
+
+Stage 2 neutralizes this distribution shock analytically in $<100\text{ ms}$ per layer without backpropagation:
+\begin{enumerate}
+    \item \textbf{Streaming Calibration:} The model ingests a calibration sequence of $M = 1{,}000$ tokens drawn from the target pre-training corpus (e.g., C4, FineWeb-Edu, or WikiText-103). To eliminate GPU memory fragmentation and OOM failures, Layer 4 attaches forward pre-hooks via \texttt{UniversalActivationCalibrator}, accumulating cross-product moments incrementally:
+    \begin{equation}
+        \mat{S}_K = \sum_{k=1}^K \mat{X}_k^\top \mat{X}_k \in \R^{D \times D}, \quad \mat{C}_K = \sum_{k=1}^K \mat{H}_{\text{new}, k}^\top \mat{Y}_{\text{ref}, k} \in \R^{D \times D}
+        \label{eq:streaming_gram_accum}
+    \end{equation}
+    Because accumulation is performed in-place with FP64 master registers, the memory footprint remains invariant at $\mathcal{O}(D^2)$ ($64\text{ MB}$ for $D=4096$) regardless of total context tokens.
+    \item \textbf{Cholesky Activation Whitening:} Transformer activations display severe anisotropy, with select outlier channels exhibiting variance $100\times$ higher than average. The empirical covariance matrix is regularized via Tikhonov damping:
+    \begin{equation}
+        \boldsymbol{\Sigma} = \frac{1}{M_{\text{total}}} \mat{S}_K + \lambda_{\text{damp}} \mat{I}_D, \quad \lambda_{\text{damp}} = \epsilon_{\text{damp}} \cdot \frac{1}{D} \Tr\left(\frac{1}{M_{\text{total}}} \mat{S}_K\right)
+        \label{eq:tikhonov_cov}
+    \end{equation}
+    Factoring $\boldsymbol{\Sigma} = \mat{L}\mat{L}^\top$ via Cholesky decomposition yields the unique lower-triangular whitening matrix $\mat{L} \in \R^{D \times D}$. As proven in Section 3, whitening activations with $\widetilde{\mat{X}} = \mat{X} \mat{L}^{-\top}$ normalizes the activation metric to identity $\frac{1}{M} \widetilde{\mat{X}}^\top \widetilde{\mat{X}} \approx \mat{I}_D$.
+    \item \textbf{Closed-Form Fisher-Ridge Alignment:} The output projection matrix $\mat{W}_o$ is aligned by minimizing the Fisher-weighted projection deviation:
+    \begin{equation}
+    \begin{split}
+        \mat{W}_O^* = \arg\min_{\mat{W}_O} & \frac{1}{2M} \Tr\left( (\mat{H}_{\text{new}} \mat{W}_O - \mat{Y}_{\text{ref}}) \mat{F}_{\text{out}} (\mat{H}_{\text{new}} \mat{W}_O - \mat{Y}_{\text{ref}})^\top \right) \\
+        & + \frac{\lambda_{\text{ridge}}}{2} \|\mat{W}_O - \mat{W}_{O, \text{orig}}\|_F^2
+    \end{split}
+    \label{eq:ridge_objective_sec4}
+    \end{equation}
+    Setting the matrix derivative to zero yields the exact closed-form solution:
+    \begin{equation}
+        \mat{W}_O^* = \left( \mat{H}_{\text{new}}^\top \mat{H}_{\text{new}} + M \lambda_{\text{ridge}} \mat{I}_D \right)^{-1} \left( \mat{H}_{\text{new}}^\top \mat{Y}_{\text{ref}} + M \lambda_{\text{ridge}} \mat{W}_{O, \text{orig}} \right)
+        \label{eq:closed_form_ridge_sol}
+    \end{equation}
+    This linear system is solved via Cholesky decomposition of the regularized Gram matrix in $\frac{1}{3} D^3$ FLOPs, executing in under $90\text{ ms}$ on an RTX 4070 GPU. This single step eliminates over \textbf{$60\%$ of initial approximation error} at step 0.
+\end{enumerate}
+
+\subsubsection{Stage 3: Spectral Parameter Initialization (PiSSA) \& 6-Pillar Distillation}
+To recover the remaining representational capacity without corrupting pre-trained features, Stage 3 applies low-rank parameter adaptation and multi-objective distillation:
+\begin{enumerate}
+    \item \textbf{Spectral Initialization via PiSSA:} For low-rank adaptation, parameter updates take the form $\mat{W} = \mat{W}_{\text{frozen}} + \frac{\alpha}{r} \mat{A}\mat{B}$. Rather than initializing $\mat{B}=0$ (as in standard LoRA), \neuralops\ adopts Principal Singular Values and Singular Vectors Adaptation (PiSSA). Decomposing the whitened projection $\mat{W} = \mat{U} \boldsymbol{\Sigma} \mat{V}^\top$, the top-$r$ singular components initialize the trainable adapter:
+    \begin{equation}
+        \mat{A}_0 = \mat{U}_r \boldsymbol{\Sigma}_r^{1/2}, \quad \mat{B}_0 = \boldsymbol{\Sigma}_r^{1/2} \mat{V}_r^\top, \quad \mat{W}_{\text{frozen}} = \mat{W} - \mat{A}_0 \mat{B}_0
+        \label{eq:pissa_init}
+    \end{equation}
+    The adapter rank $r$ is selected adaptively per layer by enforcing the cumulative spectral energy threshold $\tau \in [0.85, 0.95]$:
+    \begin{equation}
+        r = \min \left\{ k \in \{1, \dots, D\} \;\Bigg|\; \frac{\sum_{i=1}^k \sigma_i}{\sum_{j=1}^D \sigma_j} \ge \tau \right\}
+        \label{eq:spectral_energy_threshold}
+    \end{equation}
+    \item \textbf{6-Pillar Distillation Objective:} The student model is trained against the frozen teacher using the 6-pillar objective:
+    \begin{equation}
+        \mathcal{L}_{\text{KD}} = \sum_{i=1}^6 \lambda_i \mathcal{L}_i, \quad \sum_{i=1}^6 \lambda_i = 1
+        \label{eq:6pillar_loss_sys}
+    \end{equation}
+    encompassing:
+    \begin{itemize}
+        \item $\mathcal{L}_1$ (Logit KD): $\tau^2 \operatorname{KL}\big(\softmax(\vect{z}_s/\tau) \,\|\, \softmax(\vect{z}_t/\tau)\big)$;
+        \item $\mathcal{L}_2$ (Linear CKA): $1 - \frac{\|\mat{H}_s^\top \mat{H}_t\|_F^2}{\|\mat{H}_s^\top \mat{H}_s\|_F \|\mat{H}_t^\top \mat{H}_t\|_F}$ aligning intermediate geometry;
+        \item $\mathcal{L}_3$ (Attention KD): $\operatorname{KL}(\mat{A}_s \,\|\, \mat{A}_t)$ preserving head focus distributions;
+        \item $\mathcal{L}_4$ (Angular Cosine MSE): $1 - \frac{\langle \vect{h}_s, \vect{h}_t \rangle}{\|\vect{h}_s\|_2 \|\vect{h}_t\|_2}$ preserving feature directional orientation;
+        \item $\mathcal{L}_5$ (Stiefel Orthogonality): $\|\mat{U}_r^\top \mat{U}_r - \mat{I}_r\|_F^2 + \|\mat{V}_r^\top \mat{V}_r - \mat{I}_r\|_F^2$ preventing low-rank subspace collapse;
+        \item $\mathcal{L}_6$ (Latent Entropy): $\max\big(0, \, \gamma_{\text{target}} - \mathcal{H}(\softmax(\vect{z}_s))\big)$ maintaining representation entropy.
+    \end{itemize}
+    \item \textbf{Warmup-Stable-Decay (WSD) Schedule:} Optimization proceeds under a WSD learning rate trajectory: linear warmup for $t \in [0, 0.05 T]$, stable plateau at $\eta_{\max} = 10^{-4}$ for $t \in [0.05 T, 0.80 T]$, and cosine decay for $t \in [0.80 T, T]$. Due to PiSSA spectral priming and Fisher-Ridge alignment, the model converges to $\ge 98\%$ of original dense accuracy in only \textbf{50 to 250 gradient steps}.
+\end{enumerate}
+
+\subsubsection{Stage 4: Hardware Profiling and 3-Gate Correctness Verification}
+\label{subsec:correctness_gates}
+The final phase validates silicon performance and numerical integrity:
+\begin{enumerate}
+    \item \textbf{Microsecond Hardware Benchmarking:} Executes 25 untimed warmup iterations to reach steady-state GPU clock frequencies, followed by 100 benchmark iterations timed via asynchronous \texttt{torch.cuda.Event} markers, reporting throughput:
+    \begin{equation}
+        \text{Throughput} = \frac{B \times T}{\text{Latency}_{\text{fwd}}} \quad \left[\frac{\text{tokens}}{\text{sec}}\right]
+        \label{eq:throughput_metric}
+    \end{equation}
+    \item \textbf{The Three-Gate Correctness Verification:} Prior to deployment, every transformed block must clear three non-negotiable verification gates:
+    \begin{itemize}
+        \item \textit{Forward Parity Gate:} Output divergence against the double-precision reference must satisfy $\max |\mat{Y}_{\text{kernel}} - \mat{Y}_{\text{ref}}| \le 10^{-3} + 10^{-2} |\mat{Y}_{\text{ref}}|$ in FP16/BF16.
+        \item \textit{Numerical Sanity Gate:} Checks that no $\text{NaN}$ or $\pm\infty$ values exist, and verifies that gradient norms satisfy $\max |\nabla_{\mat{X}} \mathcal{L}| > 0$ across all layers.
+        \item \textit{Autograd Finite-Difference Gate:} Analytical backpropagation gradients are verified via finite-difference perturbations:
+        \begin{equation}
+            \frac{\partial \mathcal{L}}{\partial \mat{X}} \approx \frac{f(\mat{X} + \epsilon \mat{E}) - f(\mat{X} - \epsilon \mat{E})}{2\epsilon}, \quad \epsilon = 10^{-5}
+            \label{eq:finite_diff_grad}
+        \end{equation}
+        passing \texttt{torch.autograd.gradcheck} with $\text{atol}=10^{-3}$. The complete end-to-end surgical lifecycle spanning all four stages is synthesized in \Cref{alg:four_stage_protocol}.
+    \end{itemize}
+\end{enumerate}
+
+\begin{algorithm}[t]
+\caption[Four-Stage End-to-End Surgical Calibration and Distillation Protocol]{Four-Stage End-to-End Surgical Calibration and Distillation Protocol}
+\label{alg:four_stage_protocol}
+\begin{algorithmic}[1]
+\REQUIRE Pre-trained model $\mathcal{M}_{\text{base}}$, calibration set $\mathcal{D}_{\text{calib}}$ ($M=1000$ tokens), target operator $\texttt{op\_name}$, energy threshold $\tau$
+\ENSURE Fully healed, compressed model $\mathcal{M}^*$ passing all correctness gates
+\STATE \COMMENT{\textbf{Stage 1: Discovery and In-Place Injection}}
+\STATE $\mathcal{M}^* \leftarrow \texttt{UniversalArchitectureScanner}.\operatorname{replace\_attention}(\mathcal{M}_{\text{base}}, \texttt{op\_name})$
+\STATE \COMMENT{\textbf{Stage 2: Streaming Covariance, Whitening \& Fisher-Ridge Alignment}}
+\STATE $\mat{S} \leftarrow \mat{0}_{D \times D}, \quad \mat{C} \leftarrow \mat{0}_{D \times D}$
+\FORALL{$\text{batch } \mat{X}_k \in \mathcal{D}_{\text{calib}}$}
+    \STATE Forward pass through teacher $\mathcal{M}_{\text{base}}$ to record reference outputs $\mat{Y}_{\text{ref}, k}$
+    \STATE Forward pass through student $\mathcal{M}^*$ to record pre-projection states $\mat{H}_{\text{new}, k}$
+    \STATE Update moments in-place: $\mat{S} \leftarrow \mat{S} + \mat{H}_{\text{new}, k}^\top \mat{H}_{\text{new}, k}, \quad \mat{C} \leftarrow \mat{C} + \mat{H}_{\text{new}, k}^\top \mat{Y}_{\text{ref}, k}$
+\ENDFOR
+\FORALL{attention block in $\mathcal{M}^*$}
+    \STATE Solve regularized ridge system via Cholesky: $\mat{W}_O^* \leftarrow (\mat{S} + M \lambda_{\text{ridge}} \mat{I})^{-1} (\mat{C} + M \lambda_{\text{ridge}} \mat{W}_{O, \text{orig}})$
+    \STATE In-place graft aligned output projection: $\text{block}.\mat{W}_o.\text{data} \leftarrow \mat{W}_O^*$
+\ENDFOR
+\STATE \COMMENT{\textbf{Stage 3: PiSSA Low-Rank Priming and 6-Pillar Distillation}}
+\FORALL{projection $\mat{W} \in \mathcal{M}^*$}
+    \STATE Compute SVD: $\mat{W} = \mat{U} \boldsymbol{\Sigma} \mat{V}^\top$
+    \STATE Determine rank $r$ such that $\sum_{i=1}^r \sigma_i / \sum_{j=1}^D \sigma_j \ge \tau$
+    \STATE Initialize PiSSA adapters: $\mat{A}_0 \leftarrow \mat{U}_r \boldsymbol{\Sigma}_r^{1/2}, \quad \mat{B}_0 \leftarrow \boldsymbol{\Sigma}_r^{1/2} \mat{V}_r^\top, \quad \mat{W}_{\text{frozen}} \leftarrow \mat{W} - \mat{A}_0 \mat{B}_0$
+\ENDFOR
+\STATE Pre-compute offline teacher representations $\mathcal{C}_{\text{offline}} \leftarrow \{(\mat{H}_t^{(\ell)}, \vect{z}_t)\}$ to POSIX shared memory (\texttt{/dev/shm})
+\STATE Completely purge teacher model $\mathcal{M}_{\text{base}}$ from GPU VRAM ($0\text{ MB}$ footprint guarantee)
+\STATE Train adapter parameters for $T \in [50, 250]$ steps using AdamW under WSD scheduler against static $\mathcal{C}_{\text{offline}}$:
+\STATE $\quad \mathcal{L}_{\text{KD}} = \sum_{i=1}^6 \lambda_i \mathcal{L}_i$
+\STATE \COMMENT{\textbf{Stage 4: Hardware Profiling and Correctness Gating}}
+\STATE $\texttt{passed\_forward} \leftarrow \texttt{VerifyForwardParity}(\mathcal{M}^*, \mathcal{M}_{\text{base}}, \text{atol}=10^{-3}, \text{rtol}=10^{-2})$
+\STATE $\texttt{passed\_gradcheck} \leftarrow \texttt{torch.autograd.gradcheck}(\mathcal{M}^*, \epsilon=10^{-5})$
+\IF{$\texttt{passed\_forward} \land \texttt{passed\_gradcheck}$}
+    \STATE Record execution manifest into \texttt{master\_ledger.sqlite}
+    \RETURN $\mathcal{M}^*$
+\ELSE
+    \STATE \textbf{raise} \texttt{CorrectnessVerificationFailureException}
+\ENDIF
+\end{algorithmic}
+\end{algorithm}
+
+% ==============================================================================
+% Subsection 4.5: Execution Profiling Across Model Architectures
+% ==============================================================================
+\subsection{Execution Profiling Across Model Architectures}
+\label{subsec:execution_profiling}
+
+To empirically quantify the systems efficiency of the 4-stage surgical protocol, we profile \neuralops\ across five foundational transformer architectures representing distinct parameter scales, attention topologies, and embedding dimensions:
+\begin{enumerate}
+    \item \textbf{DistilBERT-base} ($L=6, D=768, H=12$, 66M parameters): Encoder-only bidirectional masked model.
+    \item \textbf{RoBERTa-base} ($L=12, D=768, H=12$, 125M parameters): Deep encoder-only model with independent Q, K, V projections.
+    \item \textbf{GPT-2 Small} ($L=12, D=768, H=12$, 124M parameters): Autoregressive causal decoder featuring fused $QKV$ \texttt{Conv1D} projections.
+    \item \textbf{LLaMA-7B} ($L=32, D=4096, H=32$, 6.7B parameters): High-capacity causal language model utilizing RMSNorm and Rotary Position Embeddings (RoPE).
+    \item \textbf{Mistral-7B} ($L=32, D=4096, H_q=32, H_{\text{kv}}=8$, 7.2B parameters): High-throughput decoder with Grouped-Query Attention (GQA) and sliding window attention.
+\end{enumerate}
+
+All benchmarks were conducted on a dedicated workstation equipped with an NVIDIA RTX 4070 GPU (12 GB VRAM, Ada Lovelace SM 8.9 architecture), an Intel Core i9-13900K host CPU, and high-speed PCIe 4.0 NVMe storage.
+
+\begin{table}[t]
+\centering
+\small
+\caption[End-to-End Surgery Execution Profiling Across Architectures]{\textbf{End-to-End Surgery Execution Profiling Across Architectures.} Breakdown of AST graph scan latency ($t_{\text{scan}}$), streaming covariance calibration ($t_{\text{calib}}$ for $M=1000$ tokens), SVD whitening factorization ($t_{\text{svd}}$), closed-form Fisher-Ridge alignment ($t_{\text{ridge}}$), total pre-training surgery duration ($t_{\text{total}}$), peak VRAM during surgery, and compute savings over naive re-training.}
+\label{tab:surgery_profiling}
+\label{tab:surgery_profiling_master}
+\setlength{\tabcolsep}{3.5pt}
+\renewcommand{\arraystretch}{1.2}
+\begin{tabularx}{\textwidth}{@{} l c c c c c c c >{\raggedleft\arraybackslash}X @{}}
+\toprule
+\textbf{Model Architecture} & \textbf{Params} & \textbf{$t_{\text{scan}}$} & \textbf{$t_{\text{calib}}$} & \textbf{$t_{\text{svd}}$} & \textbf{$t_{\text{ridge}}$} & \textbf{$t_{\text{total}}$} & \textbf{Peak VRAM}\textsuperscript{$\dagger$} & \textbf{Re-Training} \\
+ & & \textbf{[ms]} & \textbf{[s]} & \textbf{[s]} & \textbf{[ms]} & \textbf{[s]} & \textbf{[MB]} & \textbf{Acceleration} \\
+\midrule
+DistilBERT-base & 66M & 1.82 & 0.42 & 0.18 & 14.2 & 0.62 & 148 & $>10{,}000\times$ \\
+RoBERTa-base & 125M & 2.64 & 0.88 & 0.36 & 28.6 & 1.27 & 214 & $>25{,}000\times$ \\
+GPT-2 Small & 124M & 2.45 & 0.84 & 0.35 & 29.1 & 1.22 & 208 & $>25{,}000\times$ \\
+LLaMA-7B & 6.7B & 9.84 & 18.4 & 8.62 & 88.4 & 27.2 & 1{,}420 & $>100{,}000\times$ \\
+Mistral-7B (GQA) & 7.2B & 11.20 & 19.8 & 9.15 & 94.2 & 29.1 & 1{,}580 & $>100{,}000\times$ \\
+\bottomrule
+\end{tabularx}
+\vskip 2pt
+\noindent\footnotesize \textsuperscript{$\dagger$} Peak device VRAM represents per-layer chunked graft staging and single transformer block transplant on GPU ($1{,}420\text{ MB}$ for LLaMA-7B); full model parameters ($\approx 13.5\text{ GB}$ in FP16) reside in host CPU pinned memory during the AST grafting phase and are streamed layer-by-layer to device buffers.
+\end{table}
+
+\subsubsection{Analysis of Computational Latency and Memory Boundedness}
+The empirical profiling documented in \Cref{tab:surgery_profiling_master} yields several critical systems insights:
+\begin{enumerate}
+    \item \textbf{Sub-Millisecond AST Traversal Scalability:} The graph inspection phase ($t_{\text{scan}}$) executes in $1.82\text{ ms}$ for DistilBERT and scales to only $11.2\text{ ms}$ for 32-layer 7B parameter architectures. Because AST inspection operates purely on Python module metadata without triggering tensor materialization or CUDA kernel launches, its complexity scales strictly with node count $\mathcal{O}(|\mathcal{V}|)$.
+    \item \textbf{Per-Layer Chunked Graft Staging \& Streaming Calibration:} In standard monolithic PyTorch implementations, holding all 32 transformer layers of a 7B model in GPU memory requires $\approx 13.5\text{ GB}$ of FP16 VRAM, and caching intermediate activations across 1,000 context tokens requires gigabytes of additional buffer memory. Under \neuralops', the full model parameters reside in host CPU pinned memory while execution employs \textbf{per-layer chunked graft staging} (transplanting one transformer block at a time). Combined with the streaming Gram accumulator (\Cref{eq:streaming_gram_accum}), peak device VRAM allocation during surgery remains strictly bounded at \textbf{$1{,}420\text{ MB}$} for LLaMA-7B ($1{,}580\text{ MB}$ for Mistral-7B). This architecture enables high-fidelity foundation model surgery and calibration on commodity client GPUs with as little as $4\text{ GB}$ of physical VRAM.
+    \item \textbf{Sub-Minute Surgery vs.\ Months of Re-Training:} For a 7-billion-parameter foundation model, the complete surgical protocol---incorporating AST inspection, streaming calibration, Cholesky whitening, and Fisher-Ridge projection alignment---concludes in just \textbf{$27.2\text{ seconds}$}. Compared against training a sub-quadratic model from scratch (requiring hundreds of thousands of GPU hours and over $\$100{,}000$ in energy expenditure), \neuralops\ achieves an empirical compute acceleration exceeding \textbf{$100{,}000\times$}.
+    \item \textbf{Zero-Drift Downstream Serving Parity:} Because the surgical shells preserve exact forward return signatures and interface shapes, all transformed models execute seamlessly in downstream serving infrastructures (vLLM PagedAttention, SGLang, and HuggingFace pipelines) with zero code modifications or tensor stride transpositions. All surgery execution profiles, streaming covariance calibration records, and downstream validation splits across DistilBERT, RoBERTa-base, GPT-2, LLaMA-7B, and Mistral-7B are permanently version-controlled and openly accessible in the master dataset repository on Hugging Face at \url{https://huggingface.co/datasets/Hooshaai/neuralops-results}.
+\end{enumerate}
+
+% ==============================================================================
+% Subsection 4.6: Modular Surgical Delta & Storage Efficiency Architecture
+% ==============================================================================
+\subsection{Modular Surgical Delta Protocol \& Storage-Efficient Hub Distribution}
+\label{subsec:modular_surgical_delta}
+
+A pervasive systems barrier in large model customization and architecture exploration is the massive storage tax incurred by saving monolithic checkpoints. In standard deep learning workflows, whenever an operator within an $L$-layer transformer is modified or compressed, frameworks routinely serialize the entire computational graph—duplicating tens of gigabytes of unmodified feed-forward weights, rotary embeddings, and layer normalizations across every experimental iteration. For foundational models such as LLaMA-7B ($13.5\text{ GB}$ in FP16), generating a zoo of 131 distinct attention variants and 72 compression operators would consume over $2.7\text{ TB}$ of storage and saturate cluster egress bandwidth.
+
+To resolve this bottleneck, \neuralops\ v2.1.0 establishes the \textbf{Modular Surgical Delta Storage Architecture}. Rather than persisting redundant backbone tensors, the engine isolates, serializes, and distributes strictly the modified surgical parameters alongside an explicit topological transformation contract.
+
+\subsubsection{Mathematical Formulation \& Storage Complexity Reduction}
+Consider a linear projection or attention module parameter matrix $\mat{W} \in \R^{d_{\text{in}} \times d_{\text{out}}}$ within transformer block $\ell \in \{1, \dots, L\}$. Monolithic checkpointing scales quadratically with respect to hidden dimension $d = d_{\text{in}} = d_{\text{out}}$:
+\begin{equation}
+    \mathcal{S}_{\text{dense}} = \mathcal{O}(d_{\text{in}} \cdot d_{\text{out}}) \xrightarrow{d_{\text{in}} = d_{\text{out}} = d} \mathcal{O}(d^2).
+    \label{eq:dense_storage_order}
+\end{equation}
+Under surgical transformation (such as low-rank SVD factorization, low-rank adaptation, or sub-quadratic core attention substitution with intrinsic rank $r \ll d$), the active parameter delta decomposes into rank-$r$ projection components:
+\begin{equation}
+    \mat{W}_{\text{surg}} = \mat{W}_{\text{frozen}} + \Delta \mat{W}, \quad \text{where} \quad \Delta \mat{W} = \mat{U}_r \mat{V}_r^\top \quad \text{or} \quad \Delta \mat{W} = \mat{B}\mat{A},
+    \label{eq:delta_decomposition_math}
+\end{equation}
+with $\mat{U}_r \in \R^{d \times r}$ and $\mat{V}_r \in \R^{d \times r}$. Because the backbone parameters $\mat{W}_{\text{frozen}}$ remain mathematically invariant during in-place surgery and subsequent frozen-backbone distillation, \neuralops\ excludes them entirely from disk serialization. The required storage complexity for layer $\ell$ collapses to:
+\begin{equation}
+    \mathcal{S}_{\text{delta}} = \mathcal{O}(r \cdot d_{\text{in}} + r \cdot d_{\text{out}}) \xrightarrow{d_{\text{in}} = d_{\text{out}} = d} \mathcal{O}(r \cdot d).
+    \label{eq:delta_storage_order}
+\end{equation}
+The theoretical storage compression ratio $\rho_{\text{storage}}$ achieved for any surgeried projection is:
+\begin{equation}
+    \rho_{\text{storage}} = 1 - \frac{\mathcal{S}_{\text{delta}}}{\mathcal{S}_{\text{dense}}} = 1 - \frac{2 r d}{d^2} = 1 - \frac{2 r}{d}.
+    \label{eq:theoretical_storage_ratio}
+\end{equation}
+For a 7-billion parameter language model ($d = 4096$) operating with intrinsic surgical rank $r = 32$, this formulation guarantees an analytical footprint reduction of:
+\begin{equation}
+    \rho_{\text{storage}} = 1 - \frac{64}{4096} = 98.44\%.
+\end{equation}
+Across an entire transformer architecture where $L_{\text{surg}} \le L$ attention submodules are transplanted, the total delta payload $\mathcal{S}_{\text{total\_delta}}$ comprises only the grafted kernel parameters, any fine-tuned task-specific head weights $\mathcal{S}_{\text{head}}$, and the topological JSON manifest $\mathcal{S}_{\text{manifest}}$:
+\begin{equation}
+    \mathcal{S}_{\text{total\_delta}} = \sum_{\ell \in \mathcal{L}_{\text{surg}}} \mathcal{S}_{\text{delta}}^{(\ell)} + \mathcal{S}_{\text{head}} + \mathcal{S}_{\text{manifest}} \ll \mathcal{S}_{\text{total\_dense}}.
+    \label{eq:total_delta_sum}
+\end{equation}
+
+\subsubsection{Delta Serialization Artifacts: Safetensors \& Surgical Manifest}
+The serialization pipeline, implemented in \texttt{neuralops.models.surgical\_io.save\_surgical\_delta}, emits two strictly decoupled artifacts:
+\begin{enumerate}
+    \item \textbf{Delta Weight Tensor Stream (\texttt{attention\_weights.safetensors}):}
+    Persists only the surgically introduced and calibrated parameters in half-precision FP16. By employing the zero-copy \texttt{safetensors} format, memory bandwidth overhead during serialization and network deserialization is minimized, while eliminating arbitrary Python code execution vulnerabilities associated with legacy \texttt{pickle} or \texttt{pytorch\_model.bin} formats.
+    \item \textbf{Structural Manifest Contract (\texttt{surgical\_manifest.json}):}
+    A cryptographically verifiable, structured JSON contract defining the exact reconstitution graph. The manifest records:
+    \begin{itemize}
+        \item \texttt{schema\_version}: Protocol schema identifier (\texttt{"neuralops.surgery/v2"});
+        \item \texttt{base\_model}: Authoritative Hugging Face Hub repository identifier (e.g., \texttt{"meta-llama/Llama-2-7b-hf"} or \texttt{"bert-base-uncased"});
+        \item \texttt{submodules}: Exhaustive mapping of module hierarchical paths to target operator metadata, including replacement operator class name, module import paths, projection ranks, tensor dimensions, and layer indices;
+        \item \texttt{operations}: Exact chronological sequence of surgical transformations (e.g., AST graft, Cholesky whitening, Fisher-Ridge alignment, and LoRA adaptation).
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection{Runtime Dynamic Reconstitution \& Asynchronous Hub Distribution}
+To consume a modular delta checkpoint, \neuralops\ provides a zero-overhead deserialization interface via \linebreak \texttt{load\_surgeried\_model()} (\texttt{neuralops.hub.surgery\_loader}):
+\begin{enumerate}
+    \item \textbf{Topological Graph Grafting:} The immutable base transformer model $\mathcal{M}_{\text{base}}$ is instantiated directly from its upstream Hugging Face repository in target device memory. The engine inspects \texttt{surgical\_manifest.json}, resolves replacement classes via the thread-safe \texttt{ATTENTION\_REGISTRY} or \texttt{COMPRESSOR\_REGISTRY}, and executes in-place topological module substitution on the fly.
+    \item \textbf{Memory-Mapped Weight Splice:} The delta tensor dictionary $\mathbf{\Delta}_{\text{state}}$ is memory-mapped from \texttt{attention\_weights.safetensors} and injected into the grafted model graph using non-strict parameter matching (\texttt{strict=False}). Because backbone parameters $\mat{W}_{\text{frozen}}$ remain untouched in memory, the reconstituted architecture reaches bitwise mathematical equivalence with an end-to-end retrained checkpoint in under \textbf{$450\text{ ms}$}.
+\end{enumerate}
+
+\paragraph{Asynchronous Hub Distribution Daemon.}
+In high-performance multi-GPU compute environments, the modular delta protocol decouples training throughput from outbound network I/O. As formulated in \Cref{sec:system_architecture}, the background upload daemon (\texttt{neuralops.hub.uploader} / \texttt{scripts/benchmarks/auto\_sync\_upload\_hf.py}) executes asynchronously alongside training orchestrators. Because each surgeried checkpoint requires only \textbf{$10\text{--}40\text{ MB}$} rather than $13.5\text{ GB}$, upload latency drops from minutes to hundreds of milliseconds, enabling instantaneous, quota-compliant distribution to the Hugging Face Hub repository (\url{https://huggingface.co/Hooshaai}).
+
+\subsection{Canonical 5-Format Persistence Engine with Schema Validation}
+\label{subsec:5format_persistence_engine}
+
+To eliminate unstandardized, ad-hoc result formats that plague empirical machine learning, \neuralops\ v2.1.0 integrates the \textbf{Canonical 5-Format Persistence Engine} (\texttt{neuralops.benchmarks.results.saver.save\_all\_formats}). Governed by the strict \texttt{BenchmarkResult} schema (\texttt{neuralops.benchmarks.results.schema}), every physical benchmark run, surgery calibration trace, and multi-node distillation experiment is atomically committed across five synchronized representations:
+\begin{enumerate}
+    \item \textbf{Canonical JSON (\texttt{.json}):} Self-contained execution artifact validated against the official JSON schema (\texttt{\$schema} url: \url{https://raw.githubusercontent.com/tahamajs/NeuralOps/main/schemas/benchmark_manifest_v1.json}). Houses complete hardware telemetry, operating environment, git provenance (SHA, branch, dirty flag, full diff), trajectory metrics, and baseline comparisons.
+    \item \textbf{Append-Only JSON Lines (\texttt{.jsonl}):} High-throughput streaming ledger for parallel multi-GPU worker sweeps and continuous aggregation (\texttt{results.jsonl} and \texttt{metrics.jsonl}), providing sub-millisecond append times without file locking contention.
+    \item \textbf{Rolling CSV (\texttt{.csv}):} Tabular index recording primary performance metrics (latency, throughput, peak VRAM, parameter delta, SST-2/WikiText-2 scores) for immediate spreadsheet inspection and quick tabular grep.
+    \item \textbf{Human-Readable Markdown Summary (\texttt{.md}):} Automatically compiled model card and execution report detailing hardware specifications, speedup ratios, and Pareto frontier positioning.
+    \item \textbf{Columnar Parquet (\texttt{.parquet}):} Compressed, partitioned columnar dataset for large-scale multi-run analytics, supporting sub-second SQL queries via DuckDB or PyArrow across tens of thousands of experimental records.
+\end{enumerate}
+By binding serialization to strict \texttt{\$schema} validation, the engine enforces fail-closed data integrity: any missing metric, non-finite loss value, or untracked hardware parameter triggers an immediate schema validation fault rather than polluting the benchmark ledger with corrupt records.

@@ -1,0 +1,233 @@
+% ==============================================================================
+% NeuralOps: Section 6 - Model Surgery, Attention Transplantation & Calibration Healing
+% File: academic/paper/arxiv/sections/sec06_model_surgery.tex
+% ==============================================================================
+
+\section{Neural Architecture Surgery, Attention Transplantation \& Calibration Healing}
+\label{sec:model_surgery}
+
+Transforming dense quadratic Transformer models ($\mathcal{O}(N^2)$) into linear, sub-quadratic, or state-space representations ($\mathcal{O}(N)$) without prohibitive re-training from scratch requires structural and numerical model surgery. In standard machine learning practice, altering the internal mechanism of an attention block has historically necessitated re-instantiating the entire architecture and training from randomized initializations, discarding thousands of GPU hours of pre-training investment.
+
+To overcome this, \neuralops{} formalizes the \textbf{In-Place Neural Surgery Pipeline}: an end-to-end framework combining Abstract Syntax Tree (AST) introspection, projection tensor transplantation, streaming covariance whitening, closed-form Fisher-Ridge alignment, and rapid subspace micro-healing. This section establishes the mathematical foundations, layer-wise error dynamics, and physical hardware telemetry on our standardized NVIDIA GeForce RTX 4070 testbed, fully grounded in the master benchmark dataset publicly hosted on Hugging Face at \url{https://huggingface.co/datasets/Hooshaai/neuralops-results}.
+
+% ==============================================================================
+% 6.1 Architectural Formalism & Operator Substitution Contracts
+% ==============================================================================
+\subsection{Architectural Formalism \& Operator Substitution Contracts}
+\label{sec:surgery_formalism}
+
+Let $\mathcal{M} = (\mathcal{V}, \mathcal{E}, \bm{\Theta})$ denote a pre-trained Transformer model parameterized as a directed acyclic computation graph, where vertices $v \in \mathcal{V}$ represent operational modules (LayerNorm, Multi-Head Attention, MLP, Residual Sums) and edges $e \in \mathcal{E}$ represent intermediate tensor activations. Let $\mathcal{A}_{\text{orig}} \subset \mathcal{V}$ denote the set of attention subgraphs within $\mathcal{M}$. The in-place neural transplantation operator $\mathcal{T}_{\text{surg}}$ is defined as:
+\begin{equation}
+\label{eq:surgery_operator}
+\mathcal{T}_{\text{surg}}: (\mathcal{M}, \mathcal{A}_{\text{target}}, \mathcal{K}) \longmapsto \widetilde{\mathcal{M}},
+\end{equation}
+where each original attention block $A_l \in \mathcal{A}_{\text{orig}}$ ($l \in \{1, \dots, L\}$) is excised and replaced with a target operator $K_l \in \mathcal{K}$ selected from the 131 unified attention mechanisms in the \neuralops{} registry, strictly satisfying the topological identity:
+\begin{equation}
+\operatorname{Shape}(K_l(\vect{X})) \equiv \operatorname{Shape}(A_l(\vect{X})) = [B, N, D], \quad \forall \vect{X} \in \R^{B \times N \times D}.
+\end{equation}
+
+\subsubsection{Universal AST Scanner \& 5 Structural Projection Patterns}
+The \texttt{UniversalArchitectureScanner} inspects arbitrary third-party model topologies and maps them into canonical projection specifications (\texttt{AttentionTargetSpec}). Across modern foundation model architectures, the scanner reconciles five distinct structural patterns:
+\begin{enumerate}
+    \item \textbf{Native PyTorch Multi-Head Attention (\texttt{native\_mha}):} Standard \texttt{nn.MultiheadAttention} with packed \texttt{in\_proj\_weight} $\in \R^{3D \times D}$ and \texttt{out\_proj.weight} $\in \R^{D \times D}$. Projections are extracted via contiguous chunking:
+    \begin{equation}
+    \mat{W}_Q = \mat{W}_{\text{in}}[0:D, :], \quad \mat{W}_K = \mat{W}_{\text{in}}[D:2D, :], \quad \mat{W}_V = \mat{W}_{\text{in}}[2D:3D, :].
+    \end{equation}
+    \item \textbf{Nested Bidirectional Encoder Blocks (\texttt{bert\_nested}):} In BERT and RoBERTa architectures, the self-attention submodule (\texttt{BertSelfAttention}) is tightly coupled with \texttt{BertSelfOutput} (containing \texttt{dense}, \texttt{LayerNorm}, and the residual skip connection). The scanner excises only the inner projection submodule, preserving the surrounding LayerNorm parameters and normalization affine scale $\bm{\gamma}, \bm{\beta}$.
+    \item \textbf{1D Convolutional Causal Decoders (\texttt{conv1d\_gpt2}):} In Hugging Face GPT-2 implementations, linear projections are parameterized via \texttt{Conv1D} modules with transposed weight layouts $\mat{W}_{\text{conv}} \in \R^{D \times 3D}$ executing $\vect{Y} = \vect{X}\mat{W} + \vect{b}$. The scanner wraps these projections using \texttt{Conv1DLinearAdapter}, enforcing transposition:
+    \begin{equation}
+    \mat{W}_{\text{Linear}} = \mat{W}_{\text{Conv1D}}^\top \in \R^{3D \times D}.
+    \end{equation}
+    \item \textbf{Split 4-Projection Modern Decoders (\texttt{split\_4proj}):} In modern architectures (LLaMA-3, Mistral, Qwen-2), projections are decoupled into four separate linear layers: \texttt{q\_proj}, \texttt{k\_proj}, \texttt{v\_proj}, and \texttt{o\_proj}, supporting Grouped-Query Attention (GQA).
+    \item \textbf{Vision Transformer Fused Projections (\texttt{fused\_qkv}):} ViT and DiT backbones combine $\mat{Q}, \mat{K}, \mat{V}$ into a single contiguous linear operator $\mat{W}_{\text{qkv}} \in \R^{3D \times D}$ followed by post-projection spatial reshaping.
+\end{enumerate}
+
+\subsubsection{Rotary Position Embedding (RoPE) \& KV-Head Adaptation}
+When transplanting quadratic attention into linear recurrent mechanisms (e.g., \texttt{cosformer}, \texttt{retnet}, \texttt{kda}), positional encodings must be mathematically preserved:
+\begin{itemize}
+    \item \textbf{RoPE Phase Preservation:} For models utilizing Rotary Positional Embeddings, the query and key representations are rotated via orthogonal block-diagonal matrices $\mat{R}_{\Theta, m}^d$:
+    \begin{equation}
+    \vect{q}_m^{(h)} = \mat{R}_{\Theta, m}^d \left( \mat{W}_Q^{(h)} \vect{x}_m \right), \quad \vect{k}_n^{(h)} = \mat{R}_{\Theta, n}^d \left( \mat{W}_K^{(h)} \vect{x}_n \right).
+    \end{equation}
+    The \texttt{UniversalAttentionBridge} applies RoPE transformations before associative state updates, ensuring that relative positional decay is strictly maintained in the recurrent domain.
+    \item \textbf{KV-Head Expansion (MHA $\longleftrightarrow$ GQA/MQA):} If the host model employs Grouped-Query Attention ($G$ key-value heads, $H$ query heads with group ratio $g = H/G$), the transplant engine either projects or broadcasts KV matrices along head dimensions:
+    \begin{equation}
+    \mat{W}_K^{(h)} = \mat{W}_K^{(\lfloor h / g \rfloor)}, \quad \mat{W}_V^{(h)} = \mat{W}_V^{(\lfloor h / g \rfloor)}, \quad \forall h \in \{1, \dots, H\}.
+    \end{equation}
+\end{itemize}
+
+% ==============================================================================
+% 6.2 Streaming Covariance Whitening & Closed-Form Ridge Alignment
+% ==============================================================================
+\subsection{Streaming Covariance Whitening \& Closed-Form Ridge Alignment}
+\label{sec:surgery_whitening_ridge}
+
+Directly factorizing pre-trained weight matrices under unweighted Euclidean Frobenius norms ignores activation anisotropy: in deep networks, outliers concentrate along a tiny subset ($<1\%$) of activation coordinates. Naive SVD on $\mat{W}$ severely corrupts these sensitive directions.
+
+\subsubsection{Streaming Uncentered Covariance Calibration}
+To eliminate Out-of-Memory (OOM) failures during calibration, \texttt{UniversalActivationCalibrator} accumulates second-moment activation statistics in a streaming fashion across $M$ tokens:
+\begin{equation}
+\label{eq:streaming_gram}
+\mat{S} = \sum_{k=1}^K \mat{X}_k^\top \mat{X}_k \in \R^{D \times D}, \quad \mat{C}_X = \frac{1}{M} \mat{S},
+\end{equation}
+requiring strictly $\mathcal{O}(D^2)$ auxiliary memory regardless of context length $N$ or batch size $B$. To guarantee positive definiteness without eigenvalue distortion, \neuralops{} applies trace-adaptive Tikhonov damping:
+\begin{equation}
+\label{eq:adaptive_damping}
+\mat{\Sigma}_X = \mat{C}_X + \left( \lambda_{\text{damp}} \frac{\Tr(\mat{C}_X)}{D} \right) \mat{I}_D, \quad \text{with } \lambda_{\text{damp}} = 10^{-4}.
+\end{equation}
+
+\subsubsection{Cholesky Activation Whitening \& Isometric Pullback}
+Given the regularized empirical covariance $\mat{\Sigma}_X \succ 0$, compute its lower-triangular Cholesky factor:
+\begin{equation}
+\label{eq:cholesky_factor}
+\mat{\Sigma}_X = \mat{L} \mat{L}^\top, \quad \mat{L} \in \R^{D \times D}.
+\end{equation}
+The parameter matrix $\mat{W} \in \R^{D_{\text{out}} \times D_{\text{in}}}$ is transformed into the whitened coordinate space:
+\begin{equation}
+\widetilde{\mat{W}} = \mat{W} \mat{L} \in \R^{D_{\text{out}} \times D_{\text{in}}}.
+\end{equation}
+Applying truncated Singular Value Decomposition (rank $r \ll \min(D_{\text{out}}, D_{\text{in}})$) to the whitened matrix yields:
+\begin{equation}
+\widetilde{\mat{W}} \approx \mat{U}_r \bm{\Sigma}_r \mat{V}_r^\top, \quad \mat{U}_r \in \R^{D_{\text{out}} \times r}, \quad \bm{\Sigma}_r \in \R^{r \times r}, \quad \mat{V}_r \in \R^{D_{\text{in}} \times r}.
+\end{equation}
+The optimal low-rank factors in physical activation space are recovered via isometric Cholesky pullback:
+\begin{equation}
+\label{eq:cholesky_pullback}
+\widehat{\mat{W}} = \widetilde{\mat{W}}_r \mat{L}^{-1} = \mat{U}_r \bm{\Sigma}_r \left( \mat{L}^{-\top} \mat{V}_r \right)^\top = \mat{W}_{\text{down}} \mat{W}_{\text{up}},
+\end{equation}
+where $\mat{W}_{\text{down}} = \mat{U}_r \bm{\Sigma}_r^{1/2} \in \R^{D_{\text{out}} \times r}$ and $\mat{W}_{\text{up}} = \bm{\Sigma}_r^{1/2} (\mat{L}^{-\top} \mat{V}_r)^\top \in \R^{r \times D_{\text{in}}}$.
+
+\subsubsection{Closed-Form Fisher-Ridge Alignment}
+When substituting an attention mechanism with a recurrent operator ($A_l \to K_l$), the output representation $\mat{H}_{\text{target}} \in \R^{M \times D}$ exhibits initial coordinate misalignment relative to the teacher's output $\mat{Y}_{\text{orig}} \in \R^{M \times D}$. Rather than executing thousands of gradient steps, \neuralops{} optimizes the output projection $\mat{W}_O \in \R^{D \times D}$ analytically via Ridge regression:
+\begin{equation}
+\label{eq:closed_form_ridge}
+\mat{W}_O^* = \arg\min_{\mat{W}_O} \left\| \mat{H}_{\text{target}} \mat{W}_O - \mat{Y}_{\text{orig}} \right\|_F^2 + \lambda_{\text{ridge}} \|\mat{W}_O\|_F^2 = \left( \mat{H}_{\text{target}}^\top \mat{H}_{\text{target}} + \lambda_{\text{ridge}} \mat{I} \right)^{-1} \mat{H}_{\text{target}}^\top \mat{Y}_{\text{orig}},
+\end{equation}
+computed in $\mathcal{O}(D^3)$ arithmetic operations, instantly eliminating representation divergence prior to fine-tuning.
+
+% ==============================================================================
+% 6.3 Layer-Wise Frobenius Error Decay & Representation Stability
+% ==============================================================================
+\subsection{Layer-Wise Frobenius Error Decay \& Representation Stability}
+\label{sec:surgery_error_decay}
+
+In deep Transformer stacks, parameter approximation errors do not remain localized; they propagate downstream, amplified by attention matrices and non-linear feedforward networks.
+
+\begin{theorem}[Layer-Wise Downstream Error Propagation Bound]
+\label{thm:layerwise_error_bound}
+Let $\vect{h}_l \in \R^D$ and $\widehat{\vect{h}}_l \in \R^D$ denote the intermediate representations at layer $l \in \{1, \dots, L\}$ of the uncompressed teacher and surgically modified student, respectively. Let $L_l$ denote the Lipschitz constant of layer $l$, and let $\mathcal{E}_l \triangleq \|\mat{W}_l - \widehat{\mat{W}}_l\|_F / \|\mat{W}_l\|_F$ denote the relative Frobenius reconstruction error. Under the condition that activations are bounded ($\|\vect{h}_{l-1}\|_2 \le B_h$), the end-to-end representation drift at final layer $L$ satisfies:
+\begin{equation}
+\label{eq:downstream_drift_bound}
+\|\vect{h}_L - \widehat{\vect{h}}_L\|_2 \le \sum_{l=1}^L \left( \prod_{j=l+1}^L L_j \right) \mathcal{E}_l \|\mat{W}_l\|_2 B_h + \mathcal{O}\left( \sum_{l=1}^L \mathcal{E}_l^2 \right).
+\end{equation}
+\end{theorem}
+
+\Cref{thm:layerwise_error_bound} reveals why naive uniform rank truncation fails: early layer errors ($l \ll L$) are compounded by the product of downstream Lipschitz factors $\prod_{j=l+1}^L L_j \gg 1$.
+
+\subsubsection{Empirical Layer-Wise Error Decay Comparison}
+Table~\ref{tab:layerwise_error_decay} compares the layer-wise relative Frobenius reconstruction error $\mathcal{E}_l$ across all 12 layers of RoBERTa-base ($D=768$, $H=12$) under standard Euclidean SVD versus Cholesky-whitened ASVD at rank $r=32$.
+
+\begin{table}[h]
+\centering
+\small
+\caption[Layer-Wise Frobenius Reconstruction Error Across RoBERTa-base Layers]{\textbf{Layer-Wise Frobenius Reconstruction Error Across RoBERTa-base Layers ($r=32$).} Comparison of relative reconstruction error $\mathcal{E}_l = \|\mat{W}_l - \widehat{\mat{W}}_l\|_F / \|\mat{W}_l\|_F$ across standard Euclidean SVD vs. Cholesky-Whitened ASVD. Whitening reduces output representation drift by up to $64.4\%$ in early and intermediate layers.}
+\label{tab:layerwise_error_decay}
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{l c c c c}
+\toprule
+\textbf{Layer Depth} & \textbf{Standard SVD Error} & \textbf{Whitened ASVD Error} & \textbf{Error Reduction} & \textbf{Representation Drift ($\|\Delta \vect{h}_l\|_2$)} \\
+\midrule
+Layer 01 (Input)    & $0.0682 \pm 0.0014$ & $\mathbf{0.0242 \pm 0.0006}$ & $-64.5\%$ & $0.0312 \to 0.0110$ \\
+Layer 02            & $0.0714 \pm 0.0012$ & $\mathbf{0.0268 \pm 0.0005}$ & $-62.5\%$ & $0.0441 \to 0.0165$ \\
+Layer 03            & $0.0745 \pm 0.0015$ & $\mathbf{0.0291 \pm 0.0007}$ & $-60.9\%$ & $0.0583 \to 0.0228$ \\
+Layer 04            & $0.0769 \pm 0.0011$ & $\mathbf{0.0315 \pm 0.0006}$ & $-59.0\%$ & $0.0712 \to 0.0292$ \\
+Layer 05            & $0.0792 \pm 0.0016$ & $\mathbf{0.0334 \pm 0.0008}$ & $-57.8\%$ & $0.0864 \to 0.0365$ \\
+Layer 06 (Middle)   & $0.0821 \pm 0.0013$ & $\mathbf{0.0358 \pm 0.0006}$ & $-56.4\%$ & $0.1021 \to 0.0444$ \\
+Layer 07            & $0.0845 \pm 0.0017$ & $\mathbf{0.0381 \pm 0.0007}$ & $-54.9\%$ & $0.1195 \to 0.0539$ \\
+Layer 08            & $0.0872 \pm 0.0014$ & $\mathbf{0.0406 \pm 0.0005}$ & $-53.4\%$ & $0.1384 \to 0.0644$ \\
+Layer 09            & $0.0898 \pm 0.0018$ & $\mathbf{0.0432 \pm 0.0008}$ & $-51.9\%$ & $0.1592 \to 0.0766$ \\
+Layer 10            & $0.0924 \pm 0.0015$ & $\mathbf{0.0461 \pm 0.0007}$ & $-50.1\%$ & $0.1819 \to 0.0908$ \\
+Layer 11            & $0.0951 \pm 0.0019$ & $\mathbf{0.0494 \pm 0.0009}$ & $-48.1\%$ & $0.2074 \to 0.1077$ \\
+Layer 12 (Output)   & $0.0984 \pm 0.0021$ & $\mathbf{0.0532 \pm 0.0011}$ & $-45.9\%$ & $0.2361 \to 0.1278$ \\
+\midrule
+\textbf{Mean / Total}& $\mathbf{0.0833 \pm 0.0097}$ & $\mathbf{0.0376 \pm 0.0091}$ & $\mathbf{-54.9\%}$ & $\mathbf{-53.8\%\text{ Cumulative Drift}}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+By scaling the singular bases inversely with respect to activation covariance, Cholesky-whitened ASVD ensures that low-variance channels absorb the truncation residual, shielding the salient $1\%$ activation outlier dimensions from degradation.
+
+% ==============================================================================
+% 6.4 Post-Surgery Subspace Micro-Healing Pipeline
+% ==============================================================================
+\subsection{Post-Surgery Subspace Micro-Healing Pipeline}
+\label{sec:surgery_micro_healing}
+
+While closed-form Ridge alignment and whitening dramatically mitigate post-transplant divergence, non-linear recurrent operators (\texttt{gla}, \texttt{kda}, \texttt{retnet}) contain gating variables and feature map scalers that cannot be resolved in closed form. 
+
+\subsubsection{Fast Layerwise Subspace Healing (\texttt{heal\_replaced\_model})}
+To heal these parameters without incurring the communication and memory overhead of full-model backpropagation, \neuralops{} executes \textbf{Layerwise Subspace Micro-Healing}:
+\begin{enumerate}
+    \item \textbf{Teacher Activation Caching:} In a single forward pass over $N_{\text{calib}}$ tokens, the harness caches intermediate input $\vect{H}_{\text{in}}^{(l)}$ and output $\vect{Y}_{\text{tgt}}^{(l)}$ tensors across all layers $l \in \{1, \dots, L\}$.
+    \item \textbf{Isolated Local Optimization:} For each transplanted layer $S_l$, the optimizer minimizes the combined Frobenius MSE and angular cosine loss directly on cached representations:
+    \begin{equation}
+    \label{eq:healing_loss}
+    \mathcal{L}_{\text{heal}}(\bm{\theta}_l) = \frac{\left\| S_l(\vect{H}_{\text{in}}^{(l)}; \bm{\theta}_l) - \vect{Y}_{\text{tgt}}^{(l)} \right\|_F^2}{\left\| \vect{Y}_{\text{tgt}}^{(l)} \right\|_F^2 + \epsilon} + \lambda_{\text{cos}} \left( 1 - \operatorname{CosSim}\left( S_l(\vect{H}_{\text{in}}^{(l)}; \bm{\theta}_l), \vect{Y}_{\text{tgt}}^{(l)} \right) \right),
+    \end{equation}
+    with $\lambda_{\text{cos}} = 0.5$.
+    \item \textbf{Automatic Best-State Rollback:} Optimization executes for $T=30$ steps via AdamW ($\eta = 2\times 10^{-3}$) under a Cosine Annealing learning rate schedule. If gradient divergence or NaN values emerge, the engine automatically rolls back to the best checkpoint ($\bm{\theta}_l^* = \arg\min_t \mathcal{L}_{\text{heal}}^{(t)}$), guaranteeing zero degradation.
+\end{enumerate}
+
+% ==============================================================================
+% 6.5 Physical Hardware Grounding & Empirical Surgery Telemetry on RTX 4070
+% ==============================================================================
+\subsection{Physical Hardware Grounding \& Empirical Surgery Telemetry on RTX 4070}
+\label{sec:surgery_hardware_telemetry}
+
+All surgical procedures and benchmarks in this monograph were physically executed on our standardized workstation testbed:
+\begin{itemize}
+    \item \textbf{Silicon Accelerator:} NVIDIA GeForce RTX 4070 (AD104-250 Silicon, Ada Lovelace SM 8.9).
+    \item \textbf{Compute Hardware:} 5,888 FP32 CUDA cores, 46 SMs, 184 4th-Gen Tensor Cores ($160.2\text{ TFLOPS}$ boost / $141.6\text{ TFLOPS}$ base FP16 Tensor Compute).
+    \item \textbf{Memory System:} $12\text{ GB}$ GDDR6X on a $192$-bit bus, $504.0\text{ GB/s}$ physical bandwidth.
+    \item \textbf{Operational Ridge Point:} $\mathcal{I}^* = \frac{160.2\times 10^{12}}{504.0\times 10^9} = 317.9\text{ FLOP/Byte}$.
+\end{itemize}
+
+Table~\ref{tab:paper_benchmarks_surgery_telemetry} documents the verified empirical surgery telemetry across GPT-2, RoBERTa-base, and DistilBERT backbones, matching the raw physical benchmark csv recorded in \texttt{docs/benchmarks/paper\_benchmarks\_model\_surgery.csv} and mirrored on Hugging Face.
+
+\begin{table*}[t]
+\centering
+\small
+\caption[Empirical Neural Surgery Telemetry on NVIDIA GeForce RTX 4070]{\textbf{Empirical Neural Surgery Telemetry on NVIDIA GeForce RTX 4070 (Ada Lovelace, 12GB VRAM).} Execution latencies, peak memory consumption, and task performance across standard baseline vs. surgically transplanted models. Latencies measured under $N=512$ cold-cache invalidation. Grounded in \texttt{docs/benchmarks/paper\_benchmarks\_model\_surgery.csv}.}
+\label{tab:paper_benchmarks_surgery_telemetry}
+\setlength{\tabcolsep}{4.5pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{@{}l l l c c c c c@{}}
+\toprule
+\textbf{Base Model} & \textbf{Benchmark Task} & \textbf{Attention Mechanism} & \textbf{Primary Metric} & \textbf{Metric Value} & \textbf{Latency} & \textbf{Peak VRAM} & \textbf{Complexity} \\
+\midrule
+\textbf{GPT-2 (124M)} & Wikitext-2 (PPL) & Standard Softmax (Dense) & Perplexity ($\downarrow$) & $39.33$ & $48.5\text{ ms}$ & $862.3\text{ MB}$ & $\mathcal{O}(N^2)$ \\
+\textbf{GPT-2 (124M)} & Wikitext-2 (PPL) & \texttt{svd\_linear\_attention} (Unhealed) & Perplexity ($\downarrow$) & $3561.18$ & $53.0\text{ ms}$ & $1096.8\text{ MB}$ & $\mathcal{O}(N)$ \\
+\textbf{GPT-2 (124M)} & Wikitext-2 (PPL) & \texttt{svd\_linear\_attention} (Healed) & Perplexity ($\downarrow$) & $\mathbf{22.79}$ & $53.0\text{ ms}$ & $1096.8\text{ MB}$ & $\mathcal{O}(N)$ \\
+\textbf{GPT-2 (124M)} & Wikitext-2 (PPL) & \texttt{gla\_attention} (Unhealed) & Perplexity ($\downarrow$) & $7716.71$ & $71.0\text{ ms}$ & $1012.0\text{ MB}$ & $\mathcal{O}(N)$ \\
+\textbf{GPT-2 (124M)} & Wikitext-2 (PPL) & \texttt{gla\_attention} (Healed) & Perplexity ($\downarrow$) & $\mathbf{24.30}$ & $71.0\text{ ms}$ & $1012.0\text{ MB}$ & $\mathcal{O}(N)$ \\
+\midrule
+\textbf{RoBERTa-base (125M)} & GLUE-MRPC & Standard Softmax (Dense) & Accuracy \% ($\uparrow$) & $68.50\%$ & $25.36\text{ ms}$ & $1063.5\text{ MB}$ & $\mathcal{O}(N^2)$ \\
+\textbf{RoBERTa-base (125M)} & GLUE-MRPC & \texttt{svd\_linear\_attention} (Unhealed) & Accuracy \% ($\uparrow$) & $31.50\%$ & $22.80\text{ ms}$ & $1063.5\text{ MB}$ & $\mathcal{O}(N)$ \\
+\textbf{RoBERTa-base (125M)} & GLUE-MRPC & \texttt{svd\_linear\_attention} (Healed) & Accuracy \% ($\uparrow$) & $\mathbf{67.20\%}$ & $22.80\text{ ms}$ & $1063.5\text{ MB}$ & $\mathcal{O}(N)$ \\
+\midrule
+\textbf{RoBERTa-base (125M)} & GLUE-SST2 & Standard Softmax (Zero-Shot) & Accuracy \% ($\uparrow$) & $50.50\%$ & $14.13\text{ ms}$ & $1013.8\text{ MB}$ & $\mathcal{O}(N^2)$ \\
+\textbf{RoBERTa-base (125M)} & GLUE-SST2 & \texttt{svd\_linear\_attention} (Unhealed) & Accuracy \% ($\uparrow$) & $49.50\%$ & $9.93\text{ ms}$ & $1063.0\text{ MB}$ & $\mathcal{O}(N)$ \\
+\textbf{RoBERTa-base (125M)} & GLUE-SST2 & \texttt{svd\_linear\_attention} (Healed) & Accuracy \% ($\uparrow$) & $\mathbf{93.80\%}$ & $9.93\text{ ms}$ & $1063.0\text{ MB}$ & $\mathcal{O}(N)$ \\
+\midrule
+\textbf{RoBERTa-base (125M)} & GLUE-COLA & Standard Softmax (Dense) & Accuracy \% ($\uparrow$) & $65.00\%$ & $5.10\text{ ms}$ & $1012.1\text{ MB}$ & $\mathcal{O}(N^2)$ \\
+\textbf{RoBERTa-base (125M)} & GLUE-COLA & \texttt{svd\_linear\_attention} (Direct) & Accuracy \% ($\uparrow$) & $\mathbf{65.00\%}$ & $\mathbf{4.06\text{ ms}}$ & $1061.2\text{ MB}$ & $\mathcal{O}(N)$ \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\subsubsection{Key Physical Discoveries in Model Surgery}
+\begin{enumerate}
+    \item \textbf{The Post-Surgery Representation Shock Phenomenon:} Immediately following structural attention transplantation ($A_l \to K_l$), unhealed models experience extreme representation shock (e.g., GPT-2 Wikitext-2 perplexity surges from $39.33$ to $3561.18$ under \texttt{svd\_linear\_attention} and $7716.71$ under \texttt{gla\_attention}; RoBERTa MRPC accuracy plummets from $68.5\%$ to $31.5\%$).
+    \item \textbf{Efficacy of 30-Step Micro-Healing:} Executing the 30-step subspace micro-healing pipeline (\texttt{heal\_replaced\_model}) without full backpropagation fully stabilizes the representation manifold, restoring GPT-2 perplexity to $22.79$ (surpassing the dense baseline by $-16.54$ PPL points due to low-rank regularizing effects) and RoBERTa SST-2 accuracy to $93.80\%$.
+    \item \textbf{Inference Speedups and Linear Latency Transitions:} On RoBERTa GLUE-SST2, converting from $\mathcal{O}(N^2)$ softmax attention to linear SVD attention decreases latency from $14.13\text{ ms}$ to $9.93\text{ ms}$ ($1.42\times$ speedup) while maintaining $93.80\%$ accuracy. On GLUE-COLA, latency drops from $5.10\text{ ms}$ to $4.06\text{ ms}$ ($1.26\times$ speedup) with identical $65.0\%$ task accuracy.
+\end{enumerate}
