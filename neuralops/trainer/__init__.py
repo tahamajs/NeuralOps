@@ -11,6 +11,7 @@ NeuralOps Trainer Subpackage.
 
 from .base_trainer import BaseTrainer, Trainer
 from .callbacks import GradientNormCallback, MemoryCallback, PreemptionCallback, SVDAttentionCallback, TimeCallback
+from .hf_callback import NeuralOpsSurgeryCallback
 from .custom_loop_trainer import CustomLoopTrainer
 
 try:
@@ -54,6 +55,7 @@ __all__ = [
     "GradientNormCallback",
     "SVDAttentionCallback",
     "PreemptionCallback",
+    "NeuralOpsSurgeryCallback",
     "HyperparameterOptimizer",
     "PrunedHyperparameterOptimizer",
     "quick_optimize",
@@ -96,7 +98,21 @@ from .optimizers import (  # noqa: E402
     create_riemannian_stiefel,
     create_sgd,
 )
-from .schedulers import create_cosine, create_linear, create_onecycle, create_poly, create_rop  # noqa: E402
+from .schedulers import (  # noqa: E402
+    SCHEDULER_REGISTRY,
+    WSDScheduler,
+    create_cosine,
+    create_cosine_warmup,
+    create_linear,
+    create_onecycle,
+    create_poly,
+    create_rop,
+    create_wsd,
+    get_cosine_schedule_with_warmup,
+    get_linear_schedule_with_warmup,
+    get_lr_scheduler,
+    get_scheduler,
+)
 
 __all__ += [
     "create_muon",
@@ -114,6 +130,14 @@ __all__ += [
     "create_rop",
     "create_onecycle",
     "create_poly",
+    "create_wsd",
+    "create_cosine_warmup",
+    "WSDScheduler",
+    "get_lr_scheduler",
+    "get_scheduler",
+    "get_cosine_schedule_with_warmup",
+    "get_linear_schedule_with_warmup",
+    "SCHEDULER_REGISTRY",
 ]
 
 from .losses import ContrastiveLoss, CrossEntropyLoss, DiceLoss, FocalLoss, LabelSmoothingLoss, PolyLoss  # noqa: E402
