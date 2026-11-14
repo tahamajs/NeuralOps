@@ -346,10 +346,14 @@ class ToMoELinear(nn.Module):
         x_flat = x.reshape(-1, in_feat)
         N = x_flat.shape[0]
 
-        router_logits = self.router(x_flat.float())
+        router_logits = self.router(x_flat.to(dtype=self.router.weight.dtype))
         if self.lora_r > 0 and hasattr(self, "lora_A_router") and hasattr(self, "lora_B_router"):
-            router_lora = (x_flat.float() @ self.lora_A_router.t()) @ self.lora_B_router.t() * self.lora_scale
-            router_logits = router_logits + router_lora
+            router_lora = (
+                (x_flat.to(self.lora_A_router.dtype) @ self.lora_A_router.t())
+                @ self.lora_B_router.t()
+                * self.lora_scale
+            )
+            router_logits = router_logits + router_lora.to(router_logits.dtype)
 
         if torch.isnan(router_logits).any() or torch.isinf(router_logits).any():
             router_logits = torch.nan_to_num(router_logits, nan=0.0, posinf=1.0, neginf=-1.0)
@@ -501,9 +505,7 @@ class ToMoECompressor(BaseCompressor):
             is_linear = isinstance(base_mod, nn.Linear)
             is_conv1d = "conv1d" in cls_name or (hasattr(base_mod, "nx") and hasattr(base_mod, "nf"))
             has_w_2d = (
-                hasattr(base_mod, "weight")
-                and base_mod.weight is not None
-                and getattr(base_mod.weight, "ndim", 0) == 2
+                hasattr(base_mod, "weight") and base_mod.weight is not None and getattr(base_mod.weight, "ndim", 0) == 2
             )
             if not (is_linear or is_conv1d or has_w_2d):
                 return False
