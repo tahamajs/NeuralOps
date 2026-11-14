@@ -59,12 +59,14 @@ class LoHaCompressor(BaseCompressor):
 
         comp_params = self._count_params(self.model)
         stats = self.get_compression_stats()
-        stats.update({
-            "compressed_layers": self.compressed_layers,
-            "num_compressed": len(self.compressed_layers),
-            "loha_rank": self.rank,
-            "loha_alpha": self.alpha,
-        })
+        stats.update(
+            {
+                "compressed_layers": self.compressed_layers,
+                "num_compressed": len(self.compressed_layers),
+                "loha_rank": self.rank,
+                "loha_alpha": self.alpha,
+            }
+        )
         self.stats = stats
         return self.model, stats
 

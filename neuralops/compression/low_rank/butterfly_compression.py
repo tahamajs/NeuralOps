@@ -138,12 +138,14 @@ class ButterflyCompressor(BaseCompressor):
                 self.compressed_layers.append(name)
 
         stats = self.get_compression_stats()
-        stats.update({
-            "compressed_layers": self.compressed_layers,
-            "fallback_layers": self.fallback_layers,
-            "num_compressed": len(self.compressed_layers),
-            "butterfly_rank": self.rank,
-        })
+        stats.update(
+            {
+                "compressed_layers": self.compressed_layers,
+                "fallback_layers": self.fallback_layers,
+                "num_compressed": len(self.compressed_layers),
+                "butterfly_rank": self.rank,
+            }
+        )
         self.stats = stats
         return self.model, stats
 

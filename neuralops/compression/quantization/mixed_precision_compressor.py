@@ -117,7 +117,11 @@ class MixedPrecisionCompressor(BaseCompressor):
 
     def compress(self) -> tuple[nn.Module, dict[str, Any]]:
         orig_params = self._count_params(self.model)
-        modules = [(n, m) for n, m in self.model.named_modules() if isinstance(m, nn.Linear) and not isinstance(m, MixedPrecisionLinear)]
+        modules = [
+            (n, m)
+            for n, m in self.model.named_modules()
+            if isinstance(m, nn.Linear) and not isinstance(m, MixedPrecisionLinear)
+        ]
         total_layers = len(modules)
 
         for idx, (name, module) in enumerate(modules):
@@ -135,11 +139,13 @@ class MixedPrecisionCompressor(BaseCompressor):
             self.layer_precisions[name] = bits
 
         stats = self.get_compression_stats()
-        stats.update({
-            "compressed_layers": self.compressed_layers,
-            "layer_precisions": self.layer_precisions,
-            "num_compressed": len(self.compressed_layers),
-        })
+        stats.update(
+            {
+                "compressed_layers": self.compressed_layers,
+                "layer_precisions": self.layer_precisions,
+                "num_compressed": len(self.compressed_layers),
+            }
+        )
         self.stats = stats
         return self.model, stats
 

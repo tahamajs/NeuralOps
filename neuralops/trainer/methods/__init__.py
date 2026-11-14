@@ -9,7 +9,6 @@
 NeuralOps Trainer Methods Subpackage.
 """
 
-from .dora import DoRALinear, apply_dora, merge_dora_into_linear
 from .fisher import apply_fisher_lora, compute_fisher_importance
 from .gelora import (
     apply_fisher_gelora,
@@ -18,9 +17,8 @@ from .gelora import (
     estimate_intrinsic_dimension_pytorch,
 )
 from .llrd import apply_llrd, get_llrd_param_groups
-from .lora import DisLoRALinear, LoRALinear, apply_dislora, apply_lora
+from .lora import DisLoRALinear, DoRALinear, LoRALinear, apply_dislora, apply_dora, apply_lora
 from .mixout import MixoutLinear, apply_mixout
-from .qlora import QLoRALinear, QuantizedLinear, apply_qlora
 from .rdrop_r3f import MethodTrainer, apply_r3f, apply_rdrop, r3f_forward, rdrop_loss
 from .registry import METHOD_REGISTRY, available_methods, get_method, register_method
 
@@ -31,14 +29,10 @@ __all__ = [
     "available_methods",
     "apply_lora",
     "apply_dora",
-    "apply_qlora",
     "apply_dislora",
     "LoRALinear",
     "DoRALinear",
-    "QLoRALinear",
-    "QuantizedLinear",
     "DisLoRALinear",
-    "merge_dora_into_linear",
     "compute_fisher_importance",
     "apply_fisher_lora",
     "estimate_intrinsic_dimension_pytorch",
@@ -56,4 +50,4 @@ __all__ = [
     "apply_r3f",
 ]
 
-from neuralops.trainer.methods import dora, fisher, gelora, llrd, lora, mixout, qlora, rdrop_r3f, registry
+from neuralops.trainer.methods import fisher, gelora, llrd, lora, mixout, rdrop_r3f, registry

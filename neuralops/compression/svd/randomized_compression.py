@@ -133,13 +133,15 @@ class RandomizedSVDCompressor(BaseCompressor):
                 self.compressed_layers.append(name)
 
         stats = self.get_compression_stats()
-        stats.update({
-            "compressed_layers": self.compressed_layers,
-            "fallback_layers": self.fallback_layers,
-            "num_compressed": len(self.compressed_layers),
-            "rsvd_rank": self.rank,
-            "n_iter": self.n_iter,
-        })
+        stats.update(
+            {
+                "compressed_layers": self.compressed_layers,
+                "fallback_layers": self.fallback_layers,
+                "num_compressed": len(self.compressed_layers),
+                "rsvd_rank": self.rank,
+                "n_iter": self.n_iter,
+            }
+        )
         self.stats = stats
         return self.model, stats
 
