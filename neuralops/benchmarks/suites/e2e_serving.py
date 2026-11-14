@@ -38,6 +38,29 @@ class ServingBenchmark(AbstractBaseBenchmark):
         if limit is not None and isinstance(limit, int) and limit > 0:
             self.batch_sizes = self.batch_sizes[:limit]
 
+        self.model = custom.get("model")
+        model_name = getattr(self.config, "model", None)
+        if not model_name and getattr(self.config, "models", None):
+            model_name = self.config.models[0]
+        if self.model is None and model_name:
+            try:
+                from neuralops.benchmarks.core.model_loader import load_model_and_tokenizer
+
+                self.model, _, _ = load_model_and_tokenizer(
+                    model_name=model_name,
+                    device=self.device,
+                    is_causal=True,
+                )
+            except Exception as e:
+                logger.warning("Could not load model %s for ServingBenchmark: %s", model_name, e)
+                self.model = None
+
+        if self.model is None:
+            raise NotImplementedError(
+                "ServingBenchmark requires an actual model instance to evaluate TTFT and ITL. "
+                "Fake randn simulation has been removed."
+            )
+
         self.start_time = time.time()
         self.results_table: List[Dict[str, Any]] = []
 
@@ -51,21 +74,34 @@ class ServingBenchmark(AbstractBaseBenchmark):
     ) -> Dict[str, float]:
         self.flush_l2_cache()
 
-        dim = 64
+        if self.model is None:
+            raise NotImplementedError(
+                "ServingBenchmark requires an actual model instance to evaluate TTFT and ITL. "
+                "Fake randn simulation has been removed."
+            )
 
-        # Prefill simulation
+        vocab_size = getattr(getattr(self.model, "config", None), "vocab_size", 1000)
+        prompt_tokens = torch.randint(0, vocab_size, (batch_size, prompt_len), device=self.device)
+        decode_token = torch.randint(0, vocab_size, (batch_size, 1), device=self.device)
+
+        # Prefill pass: compute first-token KV cache
         def prefill() -> Any:
-            x = torch.randn(batch_size, prompt_len, dim, device=self.device)
-            return torch.matmul(x, x.transpose(-1, -2))
-
-        # Decode simulation
-        def decode_step() -> Any:
-            t = torch.randn(batch_size, 1, dim, device=self.device)
-            return t * 2.0
+            with torch.no_grad():
+                return self.model(input_ids=prompt_tokens, use_cache=True)
 
         try:
+            prefill_out = prefill()
+            past_key_values = getattr(prefill_out, "past_key_values", None)
+
+            # Decode pass: generate one token using cached KV states if available
+            def decode_step() -> Any:
+                with torch.no_grad():
+                    if past_key_values is not None:
+                        return self.model(input_ids=decode_token, past_key_values=past_key_values, use_cache=True)
+                    return self.model(input_ids=decode_token)
+
             ttft_ms, _ = self.measure_latency(prefill, warmup=1, repeat=2)
-            itl_ms, _ = self.measure_latency(decode_step, warmup=1, repeat=gen_len)
+            itl_ms, _ = self.measure_latency(decode_step, warmup=1, repeat=min(gen_len, 5))
 
             total_tokens = batch_size * gen_len
             total_time_s = (ttft_ms + itl_ms * gen_len) / 1000.0
@@ -76,7 +112,7 @@ class ServingBenchmark(AbstractBaseBenchmark):
 
             result_entry = {
                 "step": step,
-                "mechanism_or_kernel": "serving_simulation",
+                "mechanism_or_kernel": "serving_evaluation",
                 "batch_size": batch_size,
                 "seq_len": prompt_len + gen_len,
                 "dtype": "fp32",

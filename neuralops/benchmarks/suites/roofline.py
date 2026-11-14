@@ -54,11 +54,16 @@ class RooflineBenchmark(AbstractBaseBenchmark):
     ) -> Dict[str, float]:
         self.flush_l2_cache()
 
-        # Dummy execution function simulating attention
+        dtype = torch.float32
+        d_k = max(1, self.head_dim // 2) if attention_type.lower() == "mla" else self.head_dim
+        q = torch.randn(batch_size, self.num_heads, seq_len, d_k, device=self.device, dtype=dtype)
+        k = torch.randn(batch_size, self.num_heads, seq_len, d_k, device=self.device, dtype=dtype)
+        v = torch.randn(batch_size, self.num_heads, seq_len, d_k, device=self.device, dtype=dtype)
+        is_causal = attention_type.lower() == "causal"
+
+        # Empirical attention execution for roofline measurement
         def forward_fn() -> None:
-            q = torch.randn(batch_size, self.num_heads, seq_len, self.head_dim, device=self.device)
-            k = torch.randn(batch_size, self.num_heads, seq_len, self.head_dim, device=self.device)
-            _ = torch.matmul(q, k.transpose(-2, -1))
+            _ = torch.nn.functional.scaled_dot_product_attention(q, k, v, is_causal=is_causal)
 
         try:
             latency_ms, _ = self.measure_latency(forward_fn, warmup=1, repeat=3)
@@ -70,6 +75,7 @@ class RooflineBenchmark(AbstractBaseBenchmark):
                 S=seq_len,
                 D=self.head_dim,
                 latency_ms=latency_ms,
+                dtype="float32",
             )
 
             achieved_tflops = _sanitize_float(metrics.get("achieved_tflops", 0.0))

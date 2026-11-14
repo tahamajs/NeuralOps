@@ -90,8 +90,10 @@ class TritonOpsBenchmark(AbstractBaseBenchmark):
             return (h, x), state_update_pytorch_fallback
 
         else:
-            x = torch.randn(2, 16, 32, device=self.device, dtype=dtype)
-            return (x,), lambda t: t * 2.0
+            raise ValueError(
+                f"Unsupported Triton kernel '{kernel_name}'. "
+                "Available kernels: ['linear_attn', 'low_rank', 'sparse_attn', 'gqa', 'state_update']"
+            )
 
     def run_iteration(
         self,

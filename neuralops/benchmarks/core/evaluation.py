@@ -64,22 +64,33 @@ def evaluate_classification(
 
     with torch.no_grad():
         for b_idx, batch in enumerate(pbar):
-            input_ids = batch[0].to(device)
-            attention_mask = batch[1].to(device)
-            labels = batch[2].to(device)
+            if isinstance(batch, dict):
+                input_ids = batch["input_ids"].to(device)
+                attention_mask = batch.get("attention_mask")
+                attention_mask = attention_mask.to(device) if attention_mask is not None else torch.ones_like(input_ids)
+                lbl = batch.get("labels") if "labels" in batch else batch.get("label")
+                labels = lbl.to(device) if lbl is not None else None
+            elif isinstance(batch, (tuple, list)):
+                input_ids = batch[0].to(device)
+                attention_mask = batch[1].to(device) if len(batch) > 1 else torch.ones_like(input_ids)
+                labels = batch[2].to(device) if len(batch) > 2 else None
+            else:
+                input_ids = batch.to(device)
+                attention_mask = torch.ones_like(input_ids)
+                labels = None
 
             outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
             loss = outputs.loss
             logits = outputs.logits
 
             preds = torch.argmax(logits, dim=-1)
-            correct += int((preds == labels).sum().item())
-            total += int(labels.numel())
+            if labels is not None:
+                correct += int((preds == labels).sum().item())
+                total += int(labels.numel())
+                all_preds.extend(preds.cpu().tolist())
+                all_labels.extend(labels.cpu().tolist())
             total_loss += float(loss.item()) if loss is not None else 0.0
             num_batches += 1
-
-            all_preds.extend(preds.cpu().tolist())
-            all_labels.extend(labels.cpu().tolist())
 
             if max_eval_batches is not None and b_idx + 1 >= max_eval_batches:
                 break
@@ -118,8 +129,16 @@ def evaluate_perplexity(
 
     with torch.no_grad():
         for b_idx, batch in enumerate(eval_loader):
-            input_ids = batch[0].to(device)
-            attention_mask = batch[1].to(device)
+            if isinstance(batch, dict):
+                input_ids = batch["input_ids"].to(device)
+                attention_mask = batch.get("attention_mask")
+                attention_mask = attention_mask.to(device) if attention_mask is not None else torch.ones_like(input_ids)
+            elif isinstance(batch, (tuple, list)):
+                input_ids = batch[0].to(device)
+                attention_mask = batch[1].to(device) if len(batch) > 1 else torch.ones_like(input_ids)
+            else:
+                input_ids = batch.to(device)
+                attention_mask = torch.ones_like(input_ids)
 
             labels = input_ids.clone()
             outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
@@ -147,7 +166,7 @@ def evaluate_perplexity(
 
 def measure_resources(
     model: nn.Module,
-    sample_batch: tuple[torch.Tensor, ...],
+    sample_batch: Any,
     device: str | torch.device = "cpu",
     warmup_iters: int = 3,
     measure_iters: int = 10,
@@ -156,8 +175,18 @@ def measure_resources(
     Profile peak VRAM consumption, latency per token, and token throughput.
     """
     model.eval()
-    input_ids = sample_batch[0].to(device)
-    attention_mask = sample_batch[1].to(device)
+    if isinstance(sample_batch, dict):
+        input_ids = sample_batch["input_ids"].to(device)
+        attention_mask = sample_batch.get("attention_mask")
+        attention_mask = attention_mask.to(device) if attention_mask is not None else torch.ones_like(input_ids)
+    elif isinstance(sample_batch, (tuple, list)):
+        input_ids = sample_batch[0].to(device)
+        attention_mask = sample_batch[1].to(device) if len(sample_batch) > 1 else torch.ones_like(input_ids)
+    elif isinstance(sample_batch, torch.Tensor):
+        input_ids = sample_batch.to(device)
+        attention_mask = torch.ones_like(input_ids)
+    else:
+        raise TypeError(f"Unsupported sample_batch type: {type(sample_batch)}")
     batch_size, seq_len = input_ids.shape
     total_tokens_per_pass = batch_size * seq_len
 

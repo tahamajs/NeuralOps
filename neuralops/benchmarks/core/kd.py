@@ -59,9 +59,6 @@ class KDLoss(nn.Module):
         teacher_bias: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """Compute distillation loss with optional fused linear kernel execution."""
-        from neuralops.core.triton_kernels.fused_ce import fused_linear_cross_entropy
-        from neuralops.core.triton_kernels.fused_kd import fused_linear_kl_divergence
-
         if (
             self.use_fused_linear
             and student_hidden is not None
@@ -69,27 +66,39 @@ class KDLoss(nn.Module):
             and teacher_hidden is not None
             and teacher_weight is not None
         ):
-            distill_loss = fused_linear_kl_divergence(
-                student_hidden=student_hidden,
-                student_weight=student_weight,
-                teacher_hidden=teacher_hidden,
-                teacher_weight=teacher_weight,
-                student_bias=student_bias,
-                teacher_bias=teacher_bias,
-                temperature=self.temperature,
-                reduction="batchmean",
-                chunk_size=self.chunk_size,
-            )
-            if labels is not None:
-                task_loss = fused_linear_cross_entropy(
-                    hidden_states=student_hidden,
-                    weight=student_weight,
-                    bias=student_bias,
-                    targets=labels,
+            try:
+                from neuralops.core.triton_kernels.fused_ce import fused_linear_cross_entropy
+                from neuralops.core.triton_kernels.fused_kd import fused_linear_kl_divergence
+
+                distill_loss = fused_linear_kl_divergence(
+                    student_hidden=student_hidden,
+                    student_weight=student_weight,
+                    teacher_hidden=teacher_hidden,
+                    teacher_weight=teacher_weight,
+                    student_bias=student_bias,
+                    teacher_bias=teacher_bias,
+                    temperature=self.temperature,
+                    reduction="batchmean",
                     chunk_size=self.chunk_size,
                 )
-                return self.alpha * task_loss + (1.0 - self.alpha) * distill_loss
-            return distill_loss
+                if labels is not None:
+                    task_loss = fused_linear_cross_entropy(
+                        hidden_states=student_hidden,
+                        weight=student_weight,
+                        bias=student_bias,
+                        targets=labels,
+                        chunk_size=self.chunk_size,
+                    )
+                    return self.alpha * task_loss + (1.0 - self.alpha) * distill_loss
+                return distill_loss
+            except Exception as e:
+                LOG.warning("Fused linear KD path failed (%s), falling back to unfused linear path.", e)
+
+        # Unfused path: project hidden states if logits are not directly passed
+        if student_logits is None and student_hidden is not None and student_weight is not None:
+            student_logits = F.linear(student_hidden, student_weight, student_bias)
+        if teacher_logits is None and teacher_hidden is not None and teacher_weight is not None:
+            teacher_logits = F.linear(teacher_hidden, teacher_weight, teacher_bias)
 
         if student_logits is None or teacher_logits is None:
             raise ValueError(
@@ -106,7 +115,12 @@ class KDLoss(nn.Module):
 
         if labels is not None:
             if labels.dtype in (torch.long, torch.int64):
-                task_loss = F.cross_entropy(student_logits_stable, labels)
+                if student_logits_stable.dim() > 2:
+                    task_loss = F.cross_entropy(
+                        student_logits_stable.view(-1, student_logits_stable.size(-1)), labels.view(-1)
+                    )
+                else:
+                    task_loss = F.cross_entropy(student_logits_stable, labels.view(-1))
             else:
                 task_loss = F.mse_loss(student_logits_stable.squeeze(-1), labels.float())
             total_loss = self.alpha * task_loss + (1.0 - self.alpha) * distill_loss
@@ -147,9 +161,20 @@ def kd_train_step(
     if teacher is not None:
         teacher.eval()
 
-    input_ids = batch[0].to(device)
-    attention_mask = batch[1].to(device)
-    labels = batch[2].to(device) if len(batch) > 2 else None
+    if isinstance(batch, dict):
+        input_ids = batch["input_ids"].to(device)
+        attention_mask = batch.get("attention_mask")
+        attention_mask = attention_mask.to(device) if attention_mask is not None else torch.ones_like(input_ids)
+        lbl = batch.get("labels") if "labels" in batch else batch.get("label")
+        labels = lbl.to(device) if lbl is not None else None
+    elif isinstance(batch, (tuple, list)):
+        input_ids = batch[0].to(device)
+        attention_mask = batch[1].to(device) if len(batch) > 1 else torch.ones_like(input_ids)
+        labels = batch[2].to(device) if len(batch) > 2 else None
+    else:
+        input_ids = batch.to(device)
+        attention_mask = torch.ones_like(input_ids)
+        labels = None
 
     use_cuda = str(device).startswith("cuda") and torch.cuda.is_available()
     mp_type = (mixed_precision or "no").lower()

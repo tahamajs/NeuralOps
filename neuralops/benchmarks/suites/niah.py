@@ -53,6 +53,32 @@ class NeedleInAHaystackBenchmark(AbstractBaseBenchmark):
 
         self.needle_prompt = custom.get("needle_prompt", "The secret password is ALPHA_CENTAURI_42")
 
+        self.model = custom.get("model")
+        self.tokenizer = custom.get("tokenizer")
+
+        model_name = getattr(self.config, "model", None)
+        if not model_name and getattr(self.config, "models", None):
+            model_name = self.config.models[0]
+        if self.model is None and model_name:
+            try:
+                from neuralops.benchmarks.core.model_loader import load_model_and_tokenizer
+
+                self.model, self.tokenizer, _ = load_model_and_tokenizer(
+                    model_name=model_name,
+                    device=self.device,
+                    is_causal=True,
+                )
+            except Exception as e:
+                logger.warning("Could not load model %s for NIAH: %s", model_name, e)
+                self.model = None
+                self.tokenizer = None
+
+        if self.model is None or self.tokenizer is None:
+            raise NotImplementedError(
+                "NeedleInAHaystackBenchmark requires an actual causal language model and tokenizer. "
+                "Fake randn evaluation has been removed."
+            )
+
         # Build execution grid
         self.grid: List[Tuple[int, float]] = []
         for ctx in self.context_lengths:
@@ -75,24 +101,40 @@ class NeedleInAHaystackBenchmark(AbstractBaseBenchmark):
     ) -> Dict[str, float]:
         self.flush_l2_cache()
 
-        state_dim = 64
+        if self.model is None or self.tokenizer is None:
+            raise NotImplementedError(
+                "NeedleInAHaystackBenchmark requires an actual causal language model and tokenizer. "
+                "Fake randn evaluation has been removed."
+            )
+
         needle_pos = max(0, min(int(ctx_len * depth), ctx_len - 1))
-        dtype = torch.float32
 
         try:
-            key = torch.randn(1, 1, state_dim, device=self.device, dtype=dtype)
-            haystack = torch.randn(1, ctx_len, state_dim, device=self.device, dtype=dtype)
-            needle = key + 0.001 * torch.randn_like(key)
-            haystack[:, needle_pos : needle_pos + 1, :] = needle
+            passkey = "42424"
+            needle_text = f" Special notice: The secret passkey is {passkey}. Remember this exact number. "
+            needle_tokens = self.tokenizer.encode(needle_text, add_special_tokens=False)
+            q_text = " What is the secret passkey mentioned in the text? The secret passkey is"
+            q_tokens = self.tokenizer.encode(q_text, add_special_tokens=False)
 
-            def eval_retrieval() -> int:
-                scores = torch.matmul(haystack, key.transpose(-1, -2)).squeeze(-1)
-                return int(torch.argmax(scores, dim=-1).item())
+            target_haystack_len = max(ctx_len - len(needle_tokens) - len(q_tokens), 32)
+            base_tokens = self.tokenizer.encode("NeuralOps benchmark long context evaluation text. ", add_special_tokens=False)
+            repeats = (target_haystack_len // max(1, len(base_tokens))) + 1
+            haystack_tokens = (base_tokens * repeats)[:target_haystack_len]
 
-            latency_ms, _ = self.measure_latency(eval_retrieval, warmup=1, repeat=3)
-            predicted_pos = eval_retrieval()
-            success = abs(predicted_pos - needle_pos) <= 2
-            accuracy = 1.0 if success else 0.0
+            insert_idx = max(0, min(int(len(haystack_tokens) * depth), len(haystack_tokens)))
+            full_tokens = haystack_tokens[:insert_idx] + needle_tokens + haystack_tokens[insert_idx:] + q_tokens
+            input_ids = torch.tensor([full_tokens], device=self.device)
+
+            def eval_retrieval() -> Any:
+                with torch.no_grad():
+                    return self.model(input_ids=input_ids)
+
+            latency_ms, _ = self.measure_latency(eval_retrieval, warmup=1, repeat=2)
+            outputs = eval_retrieval()
+            next_token_logits = outputs.logits[:, -1, :]
+            pred_token_id = int(torch.argmax(next_token_logits, dim=-1).item())
+            expected_token_id = self.tokenizer.encode(passkey, add_special_tokens=False)[0]
+            accuracy = 1.0 if pred_token_id == expected_token_id else 0.0
 
             self.tracker.log_metric("niah_retrieval_accuracy", accuracy, step=step)
             self.tracker.log_metric("niah_latency_ms", latency_ms, step=step)
@@ -109,8 +151,8 @@ class NeedleInAHaystackBenchmark(AbstractBaseBenchmark):
                 "latency_p90_ms": latency_ms,
                 "latency_p99_ms": latency_ms,
                 "retrieval_accuracy": accuracy,
-                "predicted_pos": predicted_pos,
-                "actual_pos": needle_pos,
+                "predicted_pos": pred_token_id,
+                "actual_pos": expected_token_id,
                 "tflops": 0.0,
                 "peak_vram_mb": 0.0,
                 "status": "PASS",
