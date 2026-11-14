@@ -112,7 +112,7 @@ class SmartGPUTrainer:
         if use_compile and hasattr(torch, "compile"):
             try:
                 self.student = torch.compile(self.student)
-            except Exception:
+            except Exception:  # allowed-swallow: torch.compile may not be supported on this backend
                 pass
 
         self.logit_loss_fn = LogitDistillationLoss(mode="forward_kl", temperature=2.0)

@@ -111,9 +111,9 @@ class AbstractBaseBenchmark(ABC):
                 dummy = torch.empty(num_elements, dtype=torch.float32, device=self.device)
                 dummy.zero_()
                 torch.cuda.synchronize(self.device)
-                del dummy
-            except Exception:
-                pass
+            del dummy
+        except Exception:  # allowed-swallow: L2 cache flush buffer allocation failure
+            pass
 
     def measure_latency(
         self,

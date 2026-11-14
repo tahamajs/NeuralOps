@@ -133,7 +133,7 @@ def verify_all_nine(ci_mode: bool = False) -> list[dict[str, Any]]:
             out_p = Path(tmpdir) / "model.onnx"
             try:
                 export_model(model, out_p, format="onnx")
-            except RuntimeError:
+            except RuntimeError:  # allowed-swallow: expected fail-closed behavior on unsupported model
                 pass
 
     mean_l, p50_l, p95_l, mem_mb = _measure_latency_and_mem(_onnx_test, iters=3)
