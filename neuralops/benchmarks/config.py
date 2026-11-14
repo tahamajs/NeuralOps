@@ -122,7 +122,6 @@ class BenchmarkConfig:
 
         if not isinstance(self.device, str) or not re.match(r"^(cuda(:\d+)?|cpu|mps)$", self.device.strip().lower()):
             raise ValueError(f"Invalid device '{self.device}'. Must match '^(cuda(:\\d+)?|cpu|mps)$'")
-        self.validate_device()
 
     def resolve_torch_dtype(self) -> Any:
         """Resolve canonical precision string to torch.dtype."""
