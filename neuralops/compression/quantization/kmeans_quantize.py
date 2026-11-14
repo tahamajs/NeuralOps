@@ -848,6 +848,7 @@ def kmeans_factory(
     return compressed_model
 
 
+# Backwards compatibility alias
 KMeansQuantizer = KMeansCompressor
 
 __all__ = [

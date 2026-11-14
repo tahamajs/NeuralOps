@@ -301,14 +301,18 @@ def save_all_formats(
         "csv": csv_path,
     }
 
+    parquet_saved = False
     parquet_path = out_dir / "results.parquet"
     try:
         save_parquet_index(result, parquet_path)
-        saved["parquet"] = parquet_path
+        parquet_saved = parquet_path.exists()
     except Exception as exc:
         if require_parquet:
             raise RuntimeError(f"Parquet export failed: {exc}") from exc
-        warnings.warn(f"Optional Parquet export skipped: {exc}", stacklevel=2)
+        LOG.warning("Optional Parquet index export failed (%s); omitting from saved artifacts.", exc)
+
+    if parquet_saved:
+        saved["parquet"] = parquet_path
 
     # Record saved paths into result artifact metadata
     if hasattr(result, "artifacts") and result.artifacts is not None:
