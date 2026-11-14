@@ -130,11 +130,11 @@ def audit_engine(name: str):
         bit_reduction = 1.0
         for obj in [comp_obj, c_mlp]:
             if hasattr(obj, "effective_bits"):
-                bit_reduction = max(bit_reduction, 32.0 / getattr(obj, "effective_bits"))
+                bit_reduction = max(bit_reduction, 32.0 / obj.effective_bits)
             if hasattr(obj, "bits"):
-                bit_reduction = max(bit_reduction, 32.0 / getattr(obj, "bits"))
+                bit_reduction = max(bit_reduction, 32.0 / obj.bits)
             if hasattr(obj, "bit_reduction"):
-                bit_reduction = max(bit_reduction, float(getattr(obj, "bit_reduction")))
+                bit_reduction = max(bit_reduction, float(obj.bit_reduction))
 
         param_ratio = orig_params / max(c_params, 1)
         eff_ratio = max(param_ratio, sparsity_ratio, bit_reduction)
@@ -182,11 +182,11 @@ def audit_engine(name: str):
         bit_reduction_seq = 1.0
         for obj in [comp_obj_seq, c_seq]:
             if hasattr(obj, "effective_bits"):
-                bit_reduction_seq = max(bit_reduction_seq, 32.0 / getattr(obj, "effective_bits"))
+                bit_reduction_seq = max(bit_reduction_seq, 32.0 / obj.effective_bits)
             if hasattr(obj, "bits"):
-                bit_reduction_seq = max(bit_reduction_seq, 32.0 / getattr(obj, "bits"))
+                bit_reduction_seq = max(bit_reduction_seq, 32.0 / obj.bits)
             if hasattr(obj, "bit_reduction"):
-                bit_reduction_seq = max(bit_reduction_seq, float(getattr(obj, "bit_reduction")))
+                bit_reduction_seq = max(bit_reduction_seq, float(obj.bit_reduction))
 
         param_ratio_seq = orig_params_seq / max(c_params_seq, 1)
         eff_ratio_seq = max(param_ratio_seq, sparsity_ratio_seq, bit_reduction_seq)
@@ -228,11 +228,11 @@ def audit_engine(name: str):
         bit_reduction_bert = 1.0
         for obj in [comp_obj_bert, c_bert]:
             if hasattr(obj, "effective_bits"):
-                bit_reduction_bert = max(bit_reduction_bert, 32.0 / getattr(obj, "effective_bits"))
+                bit_reduction_bert = max(bit_reduction_bert, 32.0 / obj.effective_bits)
             if hasattr(obj, "bits"):
-                bit_reduction_bert = max(bit_reduction_bert, 32.0 / getattr(obj, "bits"))
+                bit_reduction_bert = max(bit_reduction_bert, 32.0 / obj.bits)
             if hasattr(obj, "bit_reduction"):
-                bit_reduction_bert = max(bit_reduction_bert, float(getattr(obj, "bit_reduction")))
+                bit_reduction_bert = max(bit_reduction_bert, float(obj.bit_reduction))
 
         param_ratio_bert = orig_params_bert / max(c_params_bert, 1)
         eff_ratio_bert = max(param_ratio_bert, sparsity_ratio_bert, bit_reduction_bert)
