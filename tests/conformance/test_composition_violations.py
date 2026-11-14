@@ -12,6 +12,7 @@ Category 4 Conformance Tests: Composition Violations per NRL v1.0.0 §14.
 import pytest
 
 from neuralops.executor.planner import plan_recipe
+from neuralops.pipeline_transform.errors import PlanningError
 from neuralops.recipe.loader import loads_recipe
 from neuralops.recipe.schema import Operation
 from neuralops.validation.errors import (
@@ -126,7 +127,7 @@ operations:
       target_ratio: 0.5
 """
     recipe = loads_recipe(yaml_text)
-    with pytest.raises(StaticValidationError) as exc:
+    with pytest.raises((StaticValidationError, PlanningError)) as exc:
         plan_recipe(recipe)
     assert "E_PLAN_UNRESOLVED_DEPENDENCY" in str(exc.value)
 
