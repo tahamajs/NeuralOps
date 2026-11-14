@@ -123,15 +123,18 @@ class QLoRALinear(nn.Module):
         dropout: float = 0.0,
         bits: int = 4,
         bias: bool = False,
+        r: int | None = None,
+        block_size: int = 64,
     ) -> None:
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
-        self.rank = int(rank)
+        self.rank = int(r if r is not None else rank)
+        self.r = self.rank
         self.alpha = float(alpha)
         self.scaling = (self.alpha / self.rank) if self.rank > 0 else 1.0
 
-        self.base = QuantizedLinear(in_features, out_features, bias=bias, bits=bits)
+        self.base = QuantizedLinear(in_features, out_features, bias=bias, bits=bits, block_size=block_size)
         if self.rank > 0:
             self.lora_A = nn.Linear(in_features, self.rank, bias=False)
             self.lora_B = nn.Linear(self.rank, out_features, bias=False)
@@ -151,18 +154,22 @@ class QLoRALinear(nn.Module):
         alpha: float = 16.0,
         dropout: float = 0.0,
         bits: int = 4,
+        r: int | None = None,
+        block_size: int = 64,
     ) -> QLoRALinear:
         """Construct QLoRALinear from an existing linear layer."""
+        effective_r = r if r is not None else rank
         qlora = cls(
             in_features=linear.in_features,
             out_features=linear.out_features,
-            rank=rank,
+            rank=effective_r,
             alpha=alpha,
             dropout=dropout,
             bits=bits,
             bias=linear.bias is not None,
+            block_size=block_size,
         )
-        qlora.base = QuantizedLinear.from_linear(linear, bits=bits)
+        qlora.base = QuantizedLinear.from_linear(linear, bits=bits, block_size=block_size)
         return qlora
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
