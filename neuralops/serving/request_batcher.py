@@ -280,29 +280,6 @@ class TGIRequestBatch:
         batch_dict = self.assemble_batch(pad_token_id=pad_token_id, padding_side="left")
         return batch_dict["input_ids"]
 
-    def step(self, model: nn.Module) -> Dict[str, int]:
-        """Deprecated compatibility shim: delegates to TGIServingAdapter.decode_step.
-
-        Deprecated: Use TGIServingAdapter.decode_step() directly for autoregressive generation.
-        """
-        import warnings
-
-        warnings.warn(
-            "TGIRequestBatch.step is deprecated and will be removed in v2.2. "
-            "Use TGIServingAdapter.decode_step() instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        dev = next(model.parameters()).device if list(model.parameters()) else "cpu"
-        adapter = TGIServingAdapter(
-            model=model,
-            max_batch_size=self.max_batch_size,
-            max_seq_len=self.max_seq_len,
-            device=dev,
-        )
-        adapter.batch_manager = self
-        return adapter.decode_step(self.active_request_ids())
-
 
 class TGIStreamingIterator:
     """Iterator yielding (request_id, token, text, is_final) tuples per request."""

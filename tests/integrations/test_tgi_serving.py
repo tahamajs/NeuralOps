@@ -137,8 +137,15 @@ def test_tgi_dynamic_slot_allocation_progression_and_eos_eviction(small_lm):
     assert req3.slot_id == slot1
     assert len(batch.queued_slots) == 0
 
-    # Test batch.step(model)
-    step_results = batch.step(small_lm)
+    # Test decode step via TGIServingAdapter
+    adapter = TGIServingAdapter(
+        model=small_lm,
+        max_batch_size=max_batch_size,
+        max_seq_len=64,
+        device="cpu",
+    )
+    adapter.batch_manager = batch
+    step_results = adapter.decode_step(batch.active_request_ids())
     assert "req_2" in step_results
     assert "req_3" in step_results
     assert len(req2.generated_ids) == 1
