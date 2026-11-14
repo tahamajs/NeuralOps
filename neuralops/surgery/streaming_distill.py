@@ -842,14 +842,18 @@ class ProgressiveActivationManager:
 
     def record_teacher_activation(self, layer_idx: int, activation: torch.Tensor) -> None:
         """
-        Records teacher activation for layer_idx and immediately discards layer_idx - 1.
+        Records teacher activation for layer_idx.
+        If matching student activation was already processed and evicted for previous layer,
+        evicts previous layer activations.
 
         Symmetrical dual-stream detachment (Phase 026): teacher activation is strictly detached.
         """
         t_rep = activation.detach()
 
-        # Phase 028: Progressive layer-by-layer activation discarding
-        self.discard_layer(layer_idx - 1)
+        # If student activation for layer_idx - 1 was already matched and cleared,
+        # we can safely discard layer_idx - 1 activations
+        if (layer_idx - 1) not in self._student_activations:
+            self.discard_layer(layer_idx - 1)
 
         self._teacher_activations[layer_idx] = t_rep
         current_active = len(self._teacher_activations) + len(self._student_activations)
@@ -864,13 +868,13 @@ class ProgressiveActivationManager:
 
     def record_student_activation(self, layer_idx: int, activation: torch.Tensor) -> None:
         """
-        Records student activation for layer_idx and immediately discards layer_idx - 1.
+        Records student activation for layer_idx.
         Preserves student autograd gradient tape.
         """
         s_rep = activation  # grad tape preserved
 
-        # Phase 028: Immediately delete layer l-1's activation
-        self.discard_layer(layer_idx - 1)
+        if (layer_idx - 1) not in self._teacher_activations:
+            self.discard_layer(layer_idx - 1)
 
         self._student_activations[layer_idx] = s_rep
         current_active = len(self._teacher_activations) + len(self._student_activations)
