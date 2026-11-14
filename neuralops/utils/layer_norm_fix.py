@@ -183,11 +183,15 @@ def replace_layernorm_with_safe_norm(model: nn.Module) -> nn.Module:
     for name, child in model.named_children():
         if isinstance(child, nn.LayerNorm) and not isinstance(child, LayerNorm):
             has_bias = child.bias is not None
+            dev = child.weight.device if child.weight is not None else None
+            dt = child.weight.dtype if child.weight is not None else None
             safe_ln = LayerNorm(
                 normalized_shape=child.normalized_shape,
                 eps=child.eps,
                 elementwise_affine=child.elementwise_affine,
                 bias=has_bias,
+                device=dev,
+                dtype=dt,
             )
             if child.elementwise_affine:
                 with torch.no_grad():
@@ -199,3 +203,15 @@ def replace_layernorm_with_safe_norm(model: nn.Module) -> nn.Module:
         else:
             replace_layernorm_with_safe_norm(child)
     return model
+
+
+__all__ = [
+    "RMSNorm",
+    "LayerNorm",
+    "SafeRMSNorm",
+    "SafeLayerNorm",
+    "FP32AccumulatorRMSNorm",
+    "FP32AccumulatorLayerNorm",
+    "fix_layernorm_naming",
+    "replace_layernorm_with_safe_norm",
+]

@@ -291,17 +291,37 @@ def upload_to_huggingface(
         acc = float(perf_metrics.get("accuracy_pct", 0.0))
         f1 = perf_metrics.get("f1_score", "N/A")
         commit_msg = f"feat: upload {module_name} on {model_name} (Acc: {acc:.2f}%, F1: {f1})"
-        try:
-            api.upload_folder(
-                folder_path=str(export_dir),
-                repo_id=repo_id,
-                repo_type="model",
-                commit_message=commit_msg,
-            )
-        except Exception as e_folder:
+        max_retries = 3
+        upload_success = False
+        last_folder_err: Exception | None = None
+
+        for attempt in range(max_retries):
+            try:
+                api.upload_folder(
+                    folder_path=str(export_dir),
+                    repo_id=repo_id,
+                    repo_type="model",
+                    commit_message=commit_msg,
+                )
+                upload_success = True
+                break
+            except Exception as e_folder:
+                last_folder_err = e_folder
+                LOG.warning(
+                    "upload_folder attempt %d/%d encountered issue: %s",
+                    attempt + 1,
+                    max_retries,
+                    e_folder,
+                )
+                import time
+
+                time.sleep(0.5 * (attempt + 1))
+
+        if not upload_success:
             LOG.warning(
-                "upload_folder encountered issue (%s); falling back to per-file direct upload...",
-                e_folder,
+                "upload_folder failed after %d attempts (%s); falling back to per-file direct upload...",
+                max_retries,
+                last_folder_err,
             )
             for file_path in sorted(export_dir.rglob("*")):
                 if file_path.is_file():
@@ -543,3 +563,15 @@ def handle_benchmark_run_export(
         "hf_url": hf_url,
         "commit_hash": commit_hash,
     }
+
+
+__all__ = [
+    "sanitize_slug",
+    "find_documentation_file",
+    "generate_model_card",
+    "find_git_root",
+    "update_documentation_table",
+    "upload_to_huggingface",
+    "commit_and_push_git",
+    "handle_benchmark_run_export",
+]
