@@ -538,8 +538,8 @@ class Registry:
         obj = self._dict.get(k_lower)
         if obj is None:
             obj = self._aliases.get(k_lower)
-        if obj is None and self.name == "attentions" and k_lower in _ATTENTION_FILE_MAP:
-            can = _ATTENTION_FILE_MAP[k_lower]
+        if obj is None and self.name == "attentions" and (k_lower in _ATTENTION_FILE_MAP or key.lower() in _ATTENTION_FILE_MAP):
+            can = _ATTENTION_FILE_MAP.get(k_lower) or _ATTENTION_FILE_MAP[key.lower()]
             self._try_lazy_load(can)
             bare = can.split(".")[-1].lower()
             obj = (
@@ -585,8 +585,8 @@ class Registry:
         obj = self._dict.get(k_lower)
         if obj is None:
             obj = self._aliases.get(k_lower)
-        if obj is None and self.name == "attentions" and k_lower in _ATTENTION_FILE_MAP:
-            can = _ATTENTION_FILE_MAP[k_lower]
+        if obj is None and self.name == "attentions" and (k_lower in _ATTENTION_FILE_MAP or key.lower() in _ATTENTION_FILE_MAP):
+            can = _ATTENTION_FILE_MAP.get(k_lower) or _ATTENTION_FILE_MAP[key.lower()]
             self._try_lazy_load(can)
             bare = can.split(".")[-1].lower()
             obj = (
