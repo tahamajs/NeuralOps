@@ -46,6 +46,8 @@ def run_orchestrator(module_key: str, default_args: list = None, extra_cli_args:
         extra_args.extend(sys.argv[1:])
 
     RESULTS_BASE = PROJECT_ROOT / "results" / "01_unified_runs" / f"unified_{module_key}"
+    if not TRAINER_SCRIPT.exists():
+        raise FileNotFoundError(f"Trainer script does not exist: {TRAINER_SCRIPT}")
     print("=" * 90, flush=True)
     print(f"UNIFIED 4-MODEL BENCHMARK  —  {module_key.upper()}", flush=True)
     print(f"Output : {RESULTS_BASE}", flush=True)
@@ -92,10 +94,12 @@ def run_orchestrator(module_key: str, default_args: list = None, extra_cli_args:
             except Exception as exc:
                 logger.warning("Could not parse %s: %s", csv_path, exc)
 
-        if row_data.get("status") == "SKIP_NO_WEIGHTS":
+        if proc.returncode != 0:
+            status = "FAIL"
+        elif row_data.get("status") == "SKIP_NO_WEIGHTS":
             status = "SKIP_NO_WEIGHTS"
         else:
-            status = row_data.get("status", "FAIL" if proc.returncode != 0 else "UNKNOWN")
+            status = row_data.get("status", "UNKNOWN")
         try:
             acc = float(row_data.get("accuracy_pct") or 0.0)
         except (ValueError, TypeError):

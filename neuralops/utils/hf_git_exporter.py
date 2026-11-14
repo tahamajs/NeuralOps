@@ -38,7 +38,10 @@ def sanitize_slug(text: str) -> str:
 def find_documentation_file(module_name: str, docs_dir: Path | None = None) -> Path | None:
     """Locate the corresponding Markdown documentation file in Docs/content/."""
     if docs_dir is None:
-        docs_dir = Path(__file__).resolve().parents[3] / "Docs" / "content"
+        root = find_git_root()
+        docs_dir = root / "Docs" / "content"
+        if not docs_dir.exists():
+            docs_dir = root / "docs" / "content"
 
     if not docs_dir.exists():
         return None
@@ -152,9 +155,9 @@ def find_git_root(start: Path | None = None) -> Path:
     """Find the root Git repository directory."""
     p = (start or Path(__file__)).resolve()
     for parent in [p] + list(p.parents):
-        if (parent / ".git").exists():
+        if (parent / ".git").exists() or (parent / "pyproject.toml").exists():
             return parent
-    return Path(__file__).resolve().parents[3]
+    return Path(__file__).resolve().parents[2]
 
 
 def update_documentation_table(

@@ -37,7 +37,17 @@ from neuralops.runners.monitor import (
 
 PORT = 8080
 PROJECT_DIR = os.environ.get("PROJECT_DIR", str(Path(__file__).resolve().parent.parent.parent))
-IS_LOCAL_GPU = os.path.exists(r"D:\SVD_Project")
+
+_local_gpu_env = os.environ.get("IS_LOCAL_GPU") or os.environ.get("NEURALOPS_LOCAL_GPU")
+if _local_gpu_env is not None:
+    IS_LOCAL_GPU = _local_gpu_env.lower() in ("1", "true", "yes")
+else:
+    _svd_proj = os.environ.get("SVD_PROJECT_DIR")
+    IS_LOCAL_GPU = (
+        (bool(_svd_proj) and Path(_svd_proj).exists())
+        or Path(PROJECT_DIR).exists()
+    )
+
 WEB_DIR = os.path.join(PROJECT_DIR, "docs")
 HARVESTED_JSON = os.path.join(PROJECT_DIR, "results", "harvested_benchmark_data.json")
 DOCS_DIR = os.path.join(PROJECT_DIR, "docs")

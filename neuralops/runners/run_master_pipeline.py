@@ -30,10 +30,15 @@ def run_task(task: dict) -> dict:
     backbone = task["backbone"]
 
     if t == "zeroshot":
+        script = (WORKSPACE / "scripts" / "run_zeroshot_parallel.py").resolve()
+        if not script.exists():
+            raise FileNotFoundError(
+                f"Target script for task '{t}' does not exist: {script}"
+            )
         cmd = [
             sys.executable,
             "-u",
-            "scripts/run_zeroshot_parallel.py",
+            str(script),
             "--module",
             module,
             "--model",
@@ -48,11 +53,16 @@ def run_task(task: dict) -> dict:
             f"results/03_zeroshot_evals/zeroshot_parallel/{module}",
         ]
     elif t == "rank_sweep":
+        script = (WORKSPACE / "neuralops" / "benchmarks" / "run_rank_sweeper.py").resolve()
+        if not script.exists():
+            raise FileNotFoundError(
+                f"Target script for task '{t}' does not exist: {script}"
+            )
         model = f"models/base_checkpoints/{backbone}_{dataset}"
         cmd = [
             sys.executable,
             "-u",
-            "neuralops/benchmarks/run_rank_sweeper.py",
+            str(script),
             "--modules",
             module,
             "--ranks",
@@ -71,10 +81,15 @@ def run_task(task: dict) -> dict:
             "16",
         ]
     elif t == "c4_ppl":
+        script = (WORKSPACE / "neuralops" / "benchmarks" / "run_quality_sweep.py").resolve()
+        if not script.exists():
+            raise FileNotFoundError(
+                f"Target script for task '{t}' does not exist: {script}"
+            )
         cmd = [
             sys.executable,
             "-u",
-            "neuralops/benchmarks/run_quality_sweep.py",
+            str(script),
             "--modules",
             module,
             "--model",
@@ -94,7 +109,7 @@ def run_task(task: dict) -> dict:
         return {"task": t, "module": module, "status": "UNKNOWN_TASK"}
 
     t0 = time.time()
-    log_dir = Path(f"logs/pipeline/{t}")
+    log_dir = WORKSPACE / "logs" / "pipeline" / t
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file = log_dir / f"{module}_{dataset}.log"
 

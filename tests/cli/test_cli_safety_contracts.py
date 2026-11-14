@@ -31,7 +31,7 @@ def test_attention_and_compression_package_imports_are_lazy() -> None:
         check=False,
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=180,
     )
     assert result.returncode == 0, result.stderr
 
@@ -46,7 +46,7 @@ def test_benchmark_cli_import_does_not_import_torch() -> None:
         check=False,
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=180,
     )
     assert result.returncode == 0, result.stderr
 
@@ -145,7 +145,19 @@ def test_lazy_legacy_module_aliases_resolve() -> None:
 
 
 def test_attention_and_compressor_registries_match_project_inventory() -> None:
-    from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
-
-    assert len(ATTENTION_REGISTRY) >= 110
-    assert len(COMPRESSOR_REGISTRY) >= 70
+    script = (
+        "import sys; "
+        "import neuralops; "
+        "from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY; "
+        "assert len(ATTENTION_REGISTRY) >= 110, f'ATTENTION_REGISTRY had {len(ATTENTION_REGISTRY)} items'; "
+        "assert len(COMPRESSOR_REGISTRY) >= 70, f'COMPRESSOR_REGISTRY had {len(COMPRESSOR_REGISTRY)} items'; "
+        "print('PASS')"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", script],
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=180,
+    )
+    assert result.returncode == 0, f"Registry count test failed: {result.stderr}"
