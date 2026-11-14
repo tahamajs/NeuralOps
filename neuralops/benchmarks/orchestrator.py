@@ -381,7 +381,7 @@ class BenchmarkOrchestrator:
             prev_sigint = signal.signal(signal.SIGINT, _handle_interrupt)
             if hasattr(signal, "SIGTERM"):
                 prev_sigterm = signal.signal(signal.SIGTERM, _handle_interrupt)
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError):  # allowed-swallow: signal handling from non-main thread
             pass
 
         completed_set = set(tuple(x) for x in self._state.get("completed", []))
@@ -497,7 +497,7 @@ class BenchmarkOrchestrator:
                     signal.signal(signal.SIGINT, prev_sigint)
                 if prev_sigterm is not None and hasattr(signal, "SIGTERM"):
                     signal.signal(signal.SIGTERM, prev_sigterm)
-            except (ValueError, AttributeError):
+            except (ValueError, AttributeError):  # allowed-swallow: signal handler restoration from non-main thread
                 pass
 
     def run(self) -> list[BenchmarkResult]:
