@@ -85,7 +85,7 @@ def save_surgerized_safetensors(
         import torch
 
         has_torch = True
-    except ImportError:
+    except ImportError:  # allowed-swallow: safetensors backend fallback
         pass
 
     # Inspect whether inputs are torch tensors or numpy arrays
@@ -107,7 +107,7 @@ def save_surgerized_safetensors(
                     np_state[k] = v
             np_save_file(np_state, str(target), metadata=st_metadata if st_metadata else None)
             return target
-        except ImportError:
+        except ImportError:  # allowed-swallow: safetensors backend fallback
             pass
         except Exception as exc:
             raise RuntimeError(f"Failed to serialize numpy state to SafeTensors at {target}: {exc}") from exc
@@ -117,7 +117,7 @@ def save_surgerized_safetensors(
 
         st_save_file(clean_state, str(target), metadata=st_metadata if st_metadata else None)
         return target
-    except ImportError:
+    except ImportError:  # allowed-swallow: safetensors backend fallback
         pass
     except Exception as exc:
         raise RuntimeError(f"Failed to serialize surgerized model weights to SafeTensors at {target}: {exc}") from exc
@@ -137,7 +137,7 @@ def save_surgerized_safetensors(
                 np_state[k] = v
         np_save_file(np_state, str(target), metadata=st_metadata if st_metadata else None)
         return target
-    except ImportError:
+    except ImportError:  # allowed-swallow: safetensors backend fallback
         pass
     except Exception as exc:
         raise RuntimeError(f"Failed to serialize numpy state to SafeTensors at {target}: {exc}") from exc
@@ -208,10 +208,10 @@ def load_surgerized_safetensors(
                         for k in f.keys():
                             tensors[k] = f.get_tensor(k)
                     return tensors, metadata
-                except Exception:
+                except Exception:  # allowed-swallow: safetensors backend fallback
                     pass
             raise primary_exc
-    except ImportError:
+    except ImportError:  # allowed-swallow: safetensors backend fallback
         pass
     except Exception as exc:
         raise RuntimeError(f"Failed to load SafeTensors file at {target}: {exc}") from exc
@@ -223,7 +223,7 @@ def load_surgerized_safetensors(
 
             tensors = load_file(str(target), device=device)
             return tensors, metadata
-        except Exception:
+        except Exception:  # allowed-swallow: safetensors backend fallback
             pass
 
     try:

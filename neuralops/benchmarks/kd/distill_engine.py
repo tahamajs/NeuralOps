@@ -80,7 +80,7 @@ def _make_grad_scaler(device: torch.device, enabled: bool = True, init_scale: fl
         try:
             dev_str = device.type if hasattr(device, "type") else str(device)
             return torch.amp.GradScaler(dev_str if dev_str.startswith("cuda") else "cuda", enabled=enabled, init_scale=init_scale)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError):  # allowed-swallow: grad scaler version compatibility fallback
             pass
     try:
         from torch.amp import GradScaler

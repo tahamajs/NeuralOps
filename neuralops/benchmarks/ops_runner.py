@@ -500,7 +500,7 @@ def run_registered_ops(
                 check=True,
             )
             vram = float(query.stdout.strip().splitlines()[0]) * 1024**2
-        except (OSError, subprocess.SubprocessError, ValueError, IndexError):
+        except (OSError, subprocess.SubprocessError, ValueError, IndexError):  # allowed-swallow: nvidia-smi unavailable on host or non-NVIDIA environment
             pass
         return int(ram), vram
 

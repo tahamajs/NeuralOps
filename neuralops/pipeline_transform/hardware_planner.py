@@ -101,11 +101,15 @@ class ResourceEstimate:
     warnings: List[str] = field(default_factory=list)
     hardware_profile: Optional[Dict[str, Any]] = None
     activation_vram_mb: float = 0.0
+    weights_only_vram_mb: float = 0.0
+    estimated_peak_vram_mb: float = 0.0
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "peak_vram_mb": self.peak_vram_mb,
             "activation_vram_mb": self.activation_vram_mb,
+            "weights_only_vram_mb": self.weights_only_vram_mb,
+            "estimated_peak_vram_mb": self.estimated_peak_vram_mb,
             "total_time_seconds": self.total_time_seconds,
             "parameters_before": self.parameters_before,
             "parameters_after": self.parameters_after,

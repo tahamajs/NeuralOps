@@ -191,7 +191,7 @@ def register_benchmark(
             target._benchmark_name = name
             target._benchmark_mode = mode
             target._benchmark_hardware = hardware
-        except (AttributeError, TypeError):
+        except (AttributeError, TypeError):  # allowed-swallow: target does not support attribute mutation
             pass
         return target
 

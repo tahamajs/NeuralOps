@@ -424,7 +424,7 @@ class MultiFormatSaver:
             f_wal.flush()
             try:
                 os.fsync(f_wal.fileno())
-            except OSError:
+            except OSError:  # allowed-swallow: fsync unsupported on filesystem
                 pass
         return self.journal_path
 

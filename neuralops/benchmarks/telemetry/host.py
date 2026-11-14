@@ -44,7 +44,7 @@ def _get_cpu_info() -> dict[str, Any]:
         freq = psutil.cpu_freq()
         if freq and freq.current:
             cpu_data["base_frequency_mhz"] = round(float(freq.current), 2)
-    except Exception:
+    except Exception:  # allowed-swallow: host telemetry metadata inspection fallback
         pass
 
     return cpu_data
@@ -65,7 +65,7 @@ def _get_memory_info() -> dict[str, Any]:
         mem_data["available_ram_mb"] = round(float(vm.available) / (1024.0 * 1024.0), 2)
         sm = psutil.swap_memory()
         mem_data["total_swap_mb"] = round(float(sm.total) / (1024.0 * 1024.0), 2)
-    except Exception:
+    except Exception:  # allowed-swallow: host telemetry metadata inspection fallback
         pass
 
     return mem_data
@@ -93,7 +93,7 @@ def _get_gpu_devices() -> list[dict[str, Any]]:
                 devices.append(dev_entry)
             if devices:
                 return devices
-    except Exception:
+    except Exception:  # allowed-swallow: host telemetry metadata inspection fallback
         pass
 
     # 2. Try nvidia-smi
@@ -118,7 +118,7 @@ def _get_gpu_devices() -> list[dict[str, Any]]:
                 )
         if devices:
             return devices
-    except Exception:
+    except Exception:  # allowed-swallow: host telemetry metadata inspection fallback
         pass
 
     return devices
@@ -153,7 +153,7 @@ def get_host_environment() -> dict[str, Any]:
             cuda_runtime_version = str(torch.version.cuda)
         if hasattr(torch.backends, "cudnn") and torch.backends.cudnn.is_available():
             cudnn_version = str(torch.backends.cudnn.version())
-    except Exception:
+    except Exception:  # allowed-swallow: host telemetry metadata inspection fallback
         pass
 
     # NVIDIA Driver version
@@ -163,7 +163,7 @@ def get_host_environment() -> dict[str, Any]:
         out = subprocess.check_output(cmd, shell=False, text=True, timeout=2).strip()
         if out:
             nvidia_driver_version = out.splitlines()[0].strip()
-    except Exception:
+    except Exception:  # allowed-swallow: host telemetry metadata inspection fallback
         pass
 
     env: dict[str, Any] = {

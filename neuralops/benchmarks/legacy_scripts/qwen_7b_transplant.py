@@ -44,7 +44,7 @@ def print_gpu_memory(label: str = "") -> None:
                 check=False,
             )
             print(f"[{label}] nvidia-smi: {res.stdout.strip()}")
-        except Exception:
+        except Exception:  # allowed-swallow: nvidia-smi inspection fallback
             pass
 
 

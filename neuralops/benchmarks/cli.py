@@ -1257,7 +1257,7 @@ def handle_info(args: argparse.Namespace) -> int:
                 else:
                     print(render_architecture_card(spec))
                 return 0
-        except Exception:
+        except Exception:  # allowed-swallow: architecture card generation fallback
             pass
 
         print(f"Error: Target '{name}' not found in registry.")

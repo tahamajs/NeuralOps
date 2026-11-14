@@ -154,7 +154,7 @@ class ColdCacheFlusher:
             elif self.device.type == "mps" and hasattr(torch, "mps") and hasattr(torch.mps, "synchronize"):
                 try:
                     torch.mps.synchronize()
-                except Exception:
+                except Exception:  # allowed-swallow: MPS device cache synchronization fallback
                     pass
 
 

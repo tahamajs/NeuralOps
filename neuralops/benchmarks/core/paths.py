@@ -112,7 +112,7 @@ class StoragePathManager:
             if temp_link.is_symlink() or temp_link.exists():
                 try:
                     temp_link.unlink()
-                except OSError:
+                except OSError:  # allowed-swallow: symlink manipulation fallback
                     pass
 
     @staticmethod
@@ -150,7 +150,7 @@ class StoragePathManager:
                 if latest_link.is_symlink():
                     try:
                         target = (s_dir / os.readlink(latest_link)).resolve()
-                    except OSError:
+                    except OSError:  # allowed-swallow: symlink manipulation fallback
                         pass
                 elif (s_dir / "latest.txt").exists():
                     rel_path = (s_dir / "latest.txt").read_text(encoding="utf-8").strip()

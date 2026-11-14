@@ -789,7 +789,7 @@ def normalize_legacy_result_dict(legacy_dict: Dict[str, Any]) -> BenchmarkResult
     if "steps" in d and "pre_train_steps" not in d:
         try:
             d["pre_train_steps"] = int(d["steps"])
-        except (ValueError, TypeError):
+        except (ValueError, TypeError):  # allowed-swallow: non-integer steps field fallback
             pass
 
     # 7. Preserve extra unknown fields into metadata

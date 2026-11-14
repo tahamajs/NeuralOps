@@ -199,7 +199,7 @@ def dedup_results_ledger(ledger_db_path: Path | str) -> int:
                         for k in ("accuracy", "score", "throughput", "throughput_req_sec", "retention"):
                             if k in m_data and isinstance(m_data[k], (int, float)):
                                 metric_score = max(metric_score, float(m_data[k]))
-                except Exception:
+                except Exception:  # allowed-swallow: corrupted json parsing fallback
                     pass
                 return (status_score, metric_score, ts)
 

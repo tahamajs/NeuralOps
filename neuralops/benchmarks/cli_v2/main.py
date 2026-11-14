@@ -36,7 +36,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             idx = raw_args.index("--device")
             if idx + 1 < len(raw_args) and raw_args[idx + 1] == "cpu":
                 os.environ["CUDA_VISIBLE_DEVICES"] = ""
-        except ValueError:
+        except ValueError:  # allowed-swallow: env var parsing fallback
             pass
     for arg in raw_args:
         if arg.startswith("--device=") and arg.split("=", 1)[1] == "cpu":

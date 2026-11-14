@@ -32,7 +32,7 @@ if "pkg_resources" not in sys.modules:
             _pr = types.ModuleType("pkg_resources")
             _pr.packaging = packaging
             sys.modules["pkg_resources"] = _pr
-        except Exception:
+        except Exception:  # allowed-swallow: pkg_resources shim creation fallback
             pass
 
 import argparse

@@ -113,7 +113,7 @@ class CompressorModuleAdapter(BaseBenchmarkAdapter):
         if hasattr(COMPRESSOR_REGISTRY, "_load_all"):
             try:
                 COMPRESSOR_REGISTRY._load_all()
-            except Exception:
+            except Exception:  # allowed-swallow: compressor weight extraction or registry fallback
                 pass
 
         backend = "cuda" if "cuda" in self.device else "pytorch"
@@ -451,7 +451,7 @@ class CompressorModuleAdapter(BaseBenchmarkAdapter):
                     w = module.get_weight()
                     if isinstance(w, torch.Tensor) and w.ndim >= 2:
                         weights[name] = w.detach().float()
-                except Exception:
+                except Exception:  # allowed-swallow: compressor weight extraction or registry fallback
                     pass
         return weights
 

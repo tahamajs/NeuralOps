@@ -222,7 +222,7 @@ def _isolated_worker_fn(pipe: Any, adapter_kwargs: dict[str, Any]) -> None:
                     output_dir=adapter_kwargs.get("output_dir", "results"),
                     config=adapter_kwargs,
                 )
-            except Exception:
+            except Exception:  # allowed-swallow: tracker initialization fallback in worker subprocess
                 pass
 
         adapter = _select_adapter(tracker_instance=tracker_instance, **adapter_kwargs)
