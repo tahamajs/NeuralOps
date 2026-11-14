@@ -205,8 +205,6 @@ def export_model(
             "logits": {0: "batch_size"},
         }
 
-        import warnings
-
         effective_opset = opset_version
         is_pt_legacy = torch.__version__ < "2.0"
         if is_pt_legacy and effective_opset > 14:
@@ -300,13 +298,17 @@ def export_model(
         if sample_input.device != torch.device("cpu"):
             sample_input = sample_input.to("cpu")
 
-        try:
-            traced = torch.jit.trace(cpu_model, sample_input, strict=False)
-            traced.save(str(ts_file))
-        except Exception as exc:
-            logger.warning("torch.jit.trace failed (%s); attempting torch.jit.script fallback", exc)
-            scripted = torch.jit.script(cpu_model)
-            scripted.save(str(ts_file))
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning)
+            warnings.filterwarnings("ignore", category=UserWarning)
+            warnings.filterwarnings("ignore", category=FutureWarning)
+            try:
+                traced = torch.jit.trace(cpu_model, sample_input, strict=False)
+                traced.save(str(ts_file))
+            except Exception as exc:
+                logger.warning("torch.jit.trace failed (%s); attempting torch.jit.script fallback", exc)
+                scripted = torch.jit.script(cpu_model)
+                scripted.save(str(ts_file))
 
         with open(out_path / "neuralops_config.json", "w", encoding="utf-8") as f:
             json.dump(meta, f, indent=2)
