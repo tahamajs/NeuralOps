@@ -142,7 +142,7 @@ class ColdCacheFlusher:
                     if hasattr(torch, "mps") and hasattr(torch.mps, "synchronize"):
                         try:
                             torch.mps.synchronize()
-                        except Exception:
+                        except Exception:  # allowed-swallow: MPS synchronize unsupported or failed
                             pass
                 except Exception as e:
                     logger.debug("ColdCacheFlusher MPS buffer allocation skipped: %s", e)
@@ -158,7 +158,7 @@ class ColdCacheFlusher:
                 if hasattr(torch, "mps") and hasattr(torch.mps, "synchronize"):
                     try:
                         torch.mps.synchronize()
-                    except Exception:
+                    except Exception:  # allowed-swallow: MPS synchronize unsupported or failed
                         pass
 
 
