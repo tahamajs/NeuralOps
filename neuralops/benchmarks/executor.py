@@ -560,7 +560,7 @@ def execute_single(
                     if msg_type == "error":
                         err_msg, tb_str = payload
                 except (EOFError, ConnectionResetError, BrokenPipeError, Exception):
-                    err_msg = "Worker process terminated abruptly (likely OOM or segfault)."
+                    err_msg = f"Worker process terminated abruptly with exit code {exitcode} (likely OOM or segfault)."
                     tb_str = ""
 
             run_logger.error("Run %s failed with %s: %s", run_id, status_val, err_msg)
