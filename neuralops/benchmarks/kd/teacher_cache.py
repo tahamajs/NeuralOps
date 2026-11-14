@@ -56,10 +56,11 @@ VLM_MAX_CACHE_BYTES = int(1.75 * 1024 * 1024 * 1024)
 
 
 def _safe_torch_load(path: Path) -> Any:
-    """Load a torch checkpoint across PyTorch 1.12 and 2.6+ without weights_only mismatch."""
+    """Load a torch checkpoint across PyTorch versions safely with weights_only=True."""
     try:
-        return torch.load(path, map_location="cpu", weights_only=False)
+        return torch.load(path, map_location="cpu", weights_only=True)
     except TypeError:
+        logger.warning("PyTorch <2.0: weights_only not available, trusting local cache")
         return torch.load(path, map_location="cpu")
 
 
@@ -83,12 +84,22 @@ def _cache_file_lock(cache_path: Path) -> Iterator[None]:
     """Advisory exclusive file lock around cache inspection and creation."""
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     lock_path = cache_path.with_name(f"{cache_path.name}.lock")
-    with open(lock_path, "a+", encoding="utf-8") as lock_fh:
-        fcntl.flock(lock_fh.fileno(), fcntl.LOCK_EX)
-        try:
+    try:
+        import filelock
+        with filelock.FileLock(str(lock_path)):
             yield
-        finally:
-            fcntl.flock(lock_fh.fileno(), fcntl.LOCK_UN)
+    except ImportError:
+        try:
+            import fcntl
+
+            with open(lock_path, "a+", encoding="utf-8") as lock_fh:
+                fcntl.flock(lock_fh.fileno(), fcntl.LOCK_EX)
+                try:
+                    yield
+                finally:
+                    fcntl.flock(lock_fh.fileno(), fcntl.LOCK_UN)
+        except (ImportError, AttributeError, OSError):
+            yield
 
 
 def resolve_teacher_cache_path(
