@@ -11,12 +11,15 @@ Backward compatibility shim for neuralops.analysis.results_ledger.
 
 from __future__ import annotations
 
+import os
+import sys
 import warnings
 
 from neuralops.analysis.results_ledger import *  # noqa: F401, F403
 
-warnings.warn(
-    "neuralops.core.results_ledger has moved to neuralops.analysis.results_ledger and will be deprecated in v1.7.0",
-    DeprecationWarning,
-    stacklevel=2,
-)
+if not os.environ.get("NEURALOPS_NO_DEPRECATION_WARNINGS") and "pytest" not in sys.modules:
+    warnings.warn(
+        "neuralops.core.results_ledger has moved to neuralops.analysis.results_ledger and will be deprecated in v1.7.0",
+        DeprecationWarning,
+        stacklevel=2,
+    )

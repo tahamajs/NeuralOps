@@ -11,12 +11,15 @@ Backward compatibility shim for neuralops.analysis.roofline.
 
 from __future__ import annotations
 
+import os
+import sys
 import warnings
 
 from neuralops.analysis.roofline import *  # noqa: F401, F403
 
-warnings.warn(
-    "neuralops.core.roofline has moved to neuralops.analysis.roofline and will be deprecated in v1.7.0",
-    DeprecationWarning,
-    stacklevel=2,
-)
+if not os.environ.get("NEURALOPS_NO_DEPRECATION_WARNINGS") and "pytest" not in sys.modules:
+    warnings.warn(
+        "neuralops.core.roofline has moved to neuralops.analysis.roofline and will be deprecated in v1.7.0",
+        DeprecationWarning,
+        stacklevel=2,
+    )
