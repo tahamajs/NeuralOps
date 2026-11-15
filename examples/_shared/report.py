@@ -47,7 +47,12 @@ def table(rows: Sequence[Sequence[Any]], headers: Sequence[str] | None = None) -
 
 
 def pass_fail(label: str, passed: bool, details: str | None = None) -> None:
-    """Print a standardized PASS/FAIL status line."""
+    """Print a standardized PASS/FAIL status line.
+    
+    Enforces strict boolean type for 'passed' to prevent accidental truthy pass signals.
+    """
+    if not isinstance(passed, bool):
+        raise TypeError(f"pass_fail requires a strict bool for 'passed', got {type(passed).__name__}: {passed!r}")
     tag = "[PASS]" if passed else "[FAIL]"
     msg = f"  {tag} {label}"
     if details:

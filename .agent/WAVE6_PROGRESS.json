@@ -2,15 +2,16 @@
   "wave": 6,
   "started_at": "2026-11-15T00:00:00Z",
   "last_updated": "2026-11-15T02:25:00Z",
-  "phase": 1,
+  "phase": 2,
   "agents": {
     "W6-1": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave6/W6-1",
-      "worktree": null
+      "worktree": null,
+      "tests_passed": 8
     },
     "W6-2": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave6/W6-2",
       "worktree": null
     },
