@@ -54,16 +54,22 @@ class ConfigError(NeuralOpsError, ValueError):
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 class ConfigValidationError(ConfigError):
     """Raised when benchmark config validation fails."""
 =======
+=======
+>>>>>>> wave5/W5-12
 class ConfigurationError(ConfigError):
     """Raised when a configuration is invalid, incomplete, or rejected."""
 
 
 class ConfigValidationError(ConfigError):
     """Raised when benchmark or subsystem configuration validation fails."""
+<<<<<<< HEAD
 >>>>>>> wave5/W5-9
+=======
+>>>>>>> wave5/W5-12
 
 
 class BackendError(NeuralOpsError):
@@ -156,12 +162,15 @@ class InferenceError(NeuralOpsError):
 
 class LedgerError(NeuralOpsError):
 <<<<<<< HEAD
+<<<<<<< HEAD
     """Base exception for benchmark results ledger operations."""
 
 
 class ChecksumMismatchError(LedgerError):
     """Raised when record checksum fails validation."""
 =======
+=======
+>>>>>>> wave5/W5-12
     """Raised when benchmark ledger read/write operations fail."""
 
 
@@ -191,7 +200,10 @@ class ChecksumVerificationError(NeuralOpsError, ValueError):
 
 class RecipeSyntaxError(NeuralOpsError, ValueError):
     """Raised when recipe parsing or syntax validation fails."""
+<<<<<<< HEAD
 >>>>>>> wave5/W5-9
+=======
+>>>>>>> wave5/W5-12
 
 
 def torch_install_error(feature: str, cause: ImportError | None = None) -> ImportError:
@@ -224,9 +236,13 @@ __all__ = [
     "CompressorNotRegisteredError",
     "ConfigError",
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     "ConfigurationError",
 >>>>>>> wave5/W5-9
+=======
+    "ConfigurationError",
+>>>>>>> wave5/W5-12
     "ConfigValidationError",
     "BackendError",
     "BackendUnavailableError",
@@ -253,14 +269,20 @@ __all__ = [
     "LedgerError",
     "ChecksumMismatchError",
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> wave5/W5-12
     "BenchmarkError",
     "BenchmarkExecutionError",
     "WorkerCrashError",
     "HubUploadError",
     "ChecksumVerificationError",
     "RecipeSyntaxError",
+<<<<<<< HEAD
 >>>>>>> wave5/W5-9
+=======
+>>>>>>> wave5/W5-12
     "torch_install_error",
     "_torch_install_error",
 ]

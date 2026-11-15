@@ -59,6 +59,7 @@ def replace_attention(
         copy_weights: Whether to transplant weights from the original model (default: True).
         layers: Optional list of layer indices to replace (default: None replaces all layers).
         attention_type: Alias for attention.
+        validation_level: Optional validation level ('strict', 'lenient', or None) for checking surgery integrity.
         **kwargs: Additional parameters forwarded to the attention module constructor.
 
     Returns:
@@ -246,6 +247,7 @@ def compress(
         method: Compression engine name from `neuralops.list_compressors()`.
         rank: Target rank for low-rank decomposition (default: 32).
         layers: Optional list of layer indices to compress (default: None compresses all).
+        validation_level: Optional validation level ('strict', 'lenient', or None) for checking compression bounds.
         **kwargs: Extra parameters passed to the compressor.
 
     Returns:
@@ -1726,6 +1728,31 @@ def validate(
     return bool(validator.validate())
 
 
+def certify(
+    model: nn.Module,
+    strict: bool = True,
+) -> Dict[str, Any]:
+    """Certify that a model satisfies Universal Surgery invariants.
+
+    Executes all 10 invariant certification laws (QK-norm preservation, logit
+    soft-capping temperature folding, padding mask sanitization, RoPE alignment, etc.)
+    via UniversalSurgeryDirector.
+
+    Args:
+        model: PyTorch model or surgeried transformer model to certify.
+        strict: Whether to raise InvariantViolationError if any mandatory invariant fails.
+
+    Returns:
+        Dict[str, Any]: Audit report containing structured per-law verdicts.
+    """
+    if model is None:
+        raise ValueError("Must provide a model instance to certify.")
+    from neuralops.surgery.director import UniversalSurgeryDirector
+
+    director = UniversalSurgeryDirector(model)
+    return director.certify_model(strict=strict)
+
+
 def info() -> Dict[str, Any]:
     """Return diagnostic overview of NeuralOps installation and system capabilities."""
     _ensure_registries_loaded()
@@ -1859,6 +1886,7 @@ __all__ = [
     "available_backends",
     "has_triton",
     "validate",
+    "certify",
     "get_version",
     "NeuralOpsStateCache",
     "benchmark_autoregressive_decoding",
