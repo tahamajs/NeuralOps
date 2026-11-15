@@ -74,6 +74,8 @@ class PagedKVCache:
         head_dim: int,
         dtype: torch.dtype = torch.float32,
         device: str | torch.device = "cpu",
+        num_layers: int | None = None,
+        **kwargs: Any,
     ) -> None:
         for name, value in (
             ("num_blocks", num_blocks),
@@ -87,6 +89,7 @@ class PagedKVCache:
         self.block_size = block_size
         self.num_heads = num_heads
         self.head_dim = head_dim
+        self.num_layers = num_layers
         self.dtype = dtype
         self.device = torch.device(device)
 
@@ -102,8 +105,8 @@ class PagedKVCache:
         )
 
         self.free_blocks: list[int] = list(range(num_blocks))
-        self.block_tables: dict[int, list[int]] = {}
-        self.seq_lengths: dict[int, int] = {}
+        self.block_tables: dict[Any, list[int]] = {}
+        self.seq_lengths: dict[Any, int] = {}
         self.block_ref_counts: dict[int, int] = collections.defaultdict(int)
 
         # Telemetry metrics tracking
@@ -112,24 +115,56 @@ class PagedKVCache:
         self._total_reads: int = 0
         self._total_read_time_sec: float = 0.0
 
-    def allocate_sequence(self, seq_id: int) -> None:
+    @property
+    def num_free_blocks(self) -> int:
+        """Returns the number of unallocated physical memory blocks."""
+        return len(self.free_blocks)
+
+    def allocate(self, seq_id: Any, num_tokens: int) -> list[int]:
+        """Allocates dynamic memory blocks for a sequence.
+
+        Args:
+            seq_id: Sequence identifier (int or str).
+            num_tokens: Number of prompt/context tokens.
+
+        Returns:
+            List of assigned physical block IDs.
+        """
+        if seq_id not in self.block_tables:
+            self.allocate_sequence(seq_id)
+        blocks_needed = (num_tokens + self.block_size - 1) // self.block_size
+        table = self.block_tables[seq_id]
+        while len(table) < blocks_needed:
+            if not self.free_blocks:
+                raise RuntimeError("PagedKVCache: Out of free physical blocks.")
+            b = self.free_blocks.pop(0)
+            self.block_ref_counts[b] = 1
+            table.append(b)
+        self.seq_lengths[seq_id] = num_tokens
+        return list(table)
+
+    def free(self, seq_id: Any) -> None:
+        """Frees all physical blocks mapped to sequence and returns them to pool."""
+        self.free_sequence(seq_id)
+
+    def allocate_sequence(self, seq_id: Any) -> None:
         """Register a new sequence with an empty block list."""
         if seq_id in self.block_tables:
             raise ValueError(f"Sequence {seq_id} already exists.")
         self.block_tables[seq_id] = []
         self.seq_lengths[seq_id] = 0
 
-    def get_block_table(self, seq_id: int) -> list[int]:
+    def get_block_table(self, seq_id: Any) -> list[int]:
         """Return the physical page IDs assigned to a sequence."""
         if seq_id not in self.block_tables:
             raise KeyError(f"Sequence {seq_id} not registered.")
         return list(self.block_tables[seq_id])
 
-    def block_table(self, seq_id: int) -> list[int]:
+    def block_table(self, seq_id: Any) -> list[int]:
         """Return the physical page IDs assigned to a sequence (alias for get_block_table)."""
         return self.get_block_table(seq_id)
 
-    def fork_sequence(self, parent_seq_id: int, child_seq_id: int) -> list[int]:
+    def fork_sequence(self, parent_seq_id: Any, child_seq_id: Any) -> list[int]:
         """
         Zero-copy sequence forking via virtual block table reference counting.
         Child shares parent's physical blocks until a token append triggers Copy-on-Write.
@@ -147,7 +182,7 @@ class PagedKVCache:
         self.seq_lengths[child_seq_id] = self.seq_lengths[parent_seq_id]
         return list(parent_blocks)
 
-    def copy_on_write(self, seq_id: int, block_idx: int) -> int:
+    def copy_on_write(self, seq_id: Any, block_idx: int) -> int:
         """
         Executes Copy-on-Write for a shared physical block.
         Allocates a free block, copies block data, updates ref counts, and updates block table.
@@ -180,7 +215,7 @@ class PagedKVCache:
 
         return new_block_idx
 
-    def free_sequence(self, seq_id: int) -> None:
+    def free_sequence(self, seq_id: Any) -> None:
         """Free physical blocks associated with a sequence according to ref counts."""
         if seq_id in self.block_tables:
             blocks = self.block_tables[seq_id]

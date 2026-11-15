@@ -22,6 +22,8 @@ from neuralops.serving.request_batcher import (
     TGIRequestBatch,
     TGIServingAdapter,
     TGIStreamingIterator,
+    generate_sequential,
+    streaming_generate,
 )
 
 __all__ = [
@@ -36,4 +38,6 @@ __all__ = [
     "TGIRequestBatch",
     "TGIServingAdapter",
     "TGIStreamingIterator",
+    "generate_sequential",
+    "streaming_generate",
 ]

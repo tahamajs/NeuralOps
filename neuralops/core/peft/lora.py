@@ -204,26 +204,28 @@ class LoRALinear(nn.Module):
         lora_alpha: float = 32.0,
         lora_dropout: float = 0.0,
         freeze_base: bool = True,
+        r: int | None = None,
+        **kwargs: Any,
     ) -> LoRALinear:
         """Wrap an existing nn.Linear layer with a LoRA adapter."""
         if not isinstance(layer, nn.Linear):
             raise TypeError(f"from_linear expects nn.Linear, got {type(layer).__name__}")
 
+        effective_r = kwargs.pop("rank", r if r is not None else lora_rank)
+        effective_alpha = kwargs.pop("alpha", lora_alpha)
+        effective_dropout = kwargs.pop("dropout", lora_dropout)
+
         mod = cls(
-            base_or_in_features=layer.in_features,
-            out_features=layer.out_features,
-            bias=(layer.bias is not None),
-            lora_rank=lora_rank,
-            lora_alpha=lora_alpha,
-            lora_dropout=lora_dropout,
+            base_or_in_features=layer,
+            r=effective_r,
+            lora_rank=effective_r,
+            lora_alpha=effective_alpha,
+            lora_dropout=effective_dropout,
             freeze_base=freeze_base,
             dtype=layer.weight.dtype,
             device=layer.weight.device,
+            **kwargs,
         )
-        with torch.no_grad():
-            mod.weight.data.copy_(layer.weight.data)
-            if layer.bias is not None and mod.bias is not None:
-                mod.bias.data.copy_(layer.bias.data)
         return mod
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
