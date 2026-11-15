@@ -23,7 +23,9 @@ import torch.nn.functional as F
 
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import _detect_return_format, _infer_d_model
+from neuralops.core.exceptions import IncompatibleArchitectureError
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.surgery.director import CrossAttentionLinearBridge
 
 try:
     from neuralops.core.selective_scan import HAS_MAMBA_CUDA, selective_scan
@@ -163,6 +165,7 @@ class MambaBlock(BaseAttention):
         source_attn = kwargs.get("source_attn") or kwargs.get("old_attn")
         self.is_nested_encoder = False
         self._return_format = _detect_return_format(source_attn, False)
+        self.cross_attn_bridge: CrossAttentionLinearBridge | None = None
 
         if freeze_base:
             self.freeze_base_weights()
@@ -555,10 +558,78 @@ class MambaBlock(BaseAttention):
         past_state: Any | None = None,
         past_key_value: Any | None = None,
         output_attentions: bool = False,
+        encoder_hidden_states: torch.Tensor | None = None,
+        encoder_attention_mask: torch.Tensor | None = None,
         **kwargs: Any,
     ):
-        if kwargs.get("encoder_hidden_states") is not None:
-            raise NotImplementedError("MambaBlock does not support cross-attention")
+        """Forward pass for MambaBlock supporting autoregressive recurrence and cross-attention bridge.
+
+        Args:
+            hidden_states: Input tensor of shape (batch_size, seq_len, d_model).
+            attention_mask: Optional attention mask tensor.
+            *args: Positional arguments for interface compatibility.
+            past_state: Past recurrent and convolutional state tuple.
+            past_key_value: Alias for past_state.
+            output_attentions: Whether to output attention weights.
+            encoder_hidden_states: Optional cross-sequence conditioning tensor.
+            encoder_attention_mask: Optional mask for cross-attention encoder sequence.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Tuple according to model return format: (output, present_state, attn_weights) or subset.
+
+        Raises:
+            IncompatibleArchitectureError: If cross-attention conditioning invariants are violated.
+        """
+        enc_states = encoder_hidden_states if encoder_hidden_states is not None else kwargs.get("encoder_hidden_states")
+        if enc_states is not None:
+            if not isinstance(enc_states, torch.Tensor):
+                raise IncompatibleArchitectureError(
+                    f"encoder_hidden_states must be a torch.Tensor, got {type(enc_states).__name__}"
+                )
+            if enc_states.dim() != 3:
+                raise IncompatibleArchitectureError(
+                    f"encoder_hidden_states must have 3 dimensions (B, L_enc, D), got shape {enc_states.shape}"
+                )
+            if self.cross_attn_bridge is None:
+                self.cross_attn_bridge = CrossAttentionLinearBridge(
+                    head_dim=self.d_model,
+                    persistent_cache=True,
+                ).to(device=hidden_states.device, dtype=hidden_states.dtype)
+
+            enc_mask = (
+                encoder_attention_mask
+                if encoder_attention_mask is not None
+                else kwargs.get("encoder_attention_mask")
+            )
+            cross_out = self.cross_attn_bridge(
+                hidden_states,
+                k=enc_states,
+                v=enc_states,
+                encoder_hidden_states=enc_states,
+                attention_mask=enc_mask,
+            )
+            if cross_out.shape[-1] != self.d_model:
+                cross_out = (
+                    F.pad(cross_out, (0, self.d_model - cross_out.shape[-1]))
+                    if cross_out.shape[-1] < self.d_model
+                    else cross_out[..., : self.d_model]
+                )
+
+            fmt = self._return_format
+            attn_weights = None
+            present_state = None
+            if fmt == "bert":
+                return (cross_out, attn_weights)
+            if fmt == "gpt2":
+                if output_attentions:
+                    return (cross_out, present_state, attn_weights)
+                return (cross_out, present_state)
+            if self.is_decoder:
+                if output_attentions:
+                    return (cross_out, attn_weights, present_state)
+                return (cross_out, present_state)
+            return (cross_out, attn_weights)
 
         if past_state is None and past_key_value is not None:
             past_state = past_key_value
