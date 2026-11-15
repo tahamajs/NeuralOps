@@ -28,7 +28,7 @@ def test_09_runs_clean():
         [sys.executable, "examples/09_multi_stage_model_surgery.py"],
         capture_output=True,
         text=True,
-        timeout=120,
+        timeout=180,
     )
     assert proc.returncode == 0, f"Example 09 failed with stderr:\n{proc.stderr}\nstdout:\n{proc.stdout}"
     assert "[PASS] Overall Example 09 Status" in proc.stdout

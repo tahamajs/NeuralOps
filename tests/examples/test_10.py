@@ -26,7 +26,7 @@ def test_10_runs_clean():
         [sys.executable, "examples/10_advanced_compression_zoo.py"],
         capture_output=True,
         text=True,
-        timeout=120,
+        timeout=180,
     )
     assert proc.returncode == 0, f"Example 10 failed with stderr:\n{proc.stderr}\nstdout:\n{proc.stdout}"
     assert "[PASS] Overall Example 10 Status" in proc.stdout

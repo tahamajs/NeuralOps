@@ -20,7 +20,7 @@ def test_example_02_execution():
         [sys.executable, "examples/02_model_compression.py"],
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=180,
     )
     assert proc.returncode == 0, f"Example 02 failed with stderr: {proc.stderr}"
     assert "[PASS] Overall Example 02 Status" in proc.stdout

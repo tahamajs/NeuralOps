@@ -9,13 +9,6 @@
 NeuralOps Operations Subpackage and Contract Registry.
 """
 
-# Eagerly import subpackages to register all 15 normative operations
-import neuralops.operations.adaptation  # noqa: F401
-import neuralops.operations.architecture  # noqa: F401
-import neuralops.operations.attention  # noqa: F401
-import neuralops.operations.export  # noqa: F401
-import neuralops.operations.verify  # noqa: F401
-import neuralops.operations.weights  # noqa: F401
 from neuralops.operations.base import Operation, OperationContract
 from neuralops.operations.errors import OperationError
 from neuralops.operations.registry import get_operation, get_operation_contracts, list_operations, register_operation

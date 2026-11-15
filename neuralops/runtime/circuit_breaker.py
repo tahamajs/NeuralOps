@@ -93,16 +93,10 @@ class CircuitBreakerFSM:
             return self.state
 
         if self.state == CircuitState.TRIPPED:
-            if levels_to_recover >= 2:
-                self.state = CircuitState.NORMAL
-                self.failure_count = 0
-                self.last_state_change = now
-                logger.info("Circuit Breaker auto-recovering: TRIPPED -> NORMAL (after %.1fms)", elapsed * 1000)
-            elif levels_to_recover == 1:
-                self.state = CircuitState.DEGRADED
-                self.failure_count = 0
-                self.last_state_change = now
-                logger.info("Circuit Breaker auto-recovering: TRIPPED -> DEGRADED (after %.1fms)", elapsed * 1000)
+            self.state = CircuitState.DEGRADED
+            self.failure_count = 0
+            self.last_state_change = now
+            logger.info("Circuit Breaker auto-recovering: TRIPPED -> DEGRADED (after %.1fms)", elapsed * 1000)
         elif self.state == CircuitState.DEGRADED:
             self.state = CircuitState.NORMAL
             self.failure_count = 0

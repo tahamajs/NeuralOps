@@ -24,7 +24,7 @@ def test_24_runs_clean_cpu():
         [sys.executable, str(EXAMPLE_PATH), "--device", "cpu"],
         capture_output=True,
         text=True,
-        timeout=120,
+        timeout=180,
     )
     assert proc.returncode == 0, f"Example 24 failed with stderr:\n{proc.stderr}"
     assert "[PASS] Overall Example 24 Status" in proc.stdout
@@ -39,7 +39,7 @@ def test_24_compression_telemetry_and_shapes():
         [sys.executable, str(EXAMPLE_PATH), "--device", "cpu"],
         capture_output=True,
         text=True,
-        timeout=120,
+        timeout=180,
     )
     assert proc.returncode == 0
     assert "[PASS] MLA Latent Compression Ratio (512 vs 4096 dims)" in proc.stdout

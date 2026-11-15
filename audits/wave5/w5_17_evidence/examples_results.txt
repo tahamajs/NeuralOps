@@ -1,1 +1,437 @@
-FF..F..FF.F.F..F..F.F.........F...F....F.....F....F.F..FF.F.F...F..
+..................FF...................F.F.............................. [ 79%]
+...................                                                      [100%]
+=================================== FAILURES ===================================
+______________________________ test_09_runs_clean ______________________________
+
+    def test_09_runs_clean():
+        """Verify example 09 executes cleanly via subprocess and exits 0."""
+        proc = subprocess.run(
+            [sys.executable, "examples/09_multi_stage_model_surgery.py"],
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+>       assert proc.returncode == 0, f"Example 09 failed with stderr:\n{proc.stderr}\nstdout:\n{proc.stdout}"
+E       AssertionError: Example 09 failed with stderr:
+E         /Users/tahamajs/dev/Project/.venv/lib/python3.14/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+E           import pynvml  # type: ignore[import]
+E         
+E         stdout:
+E         
+E         ======================================================================
+E           NeuralOps Example 09: Multi-Stage Model Surgery Pipeline
+E         ======================================================================
+E         
+E           Hardware Accelerator        : Apple Silicon MPS
+E           Target Device               : mps
+E           PyTorch Version             : 2.11.0
+E           Initial Model Architecture  : TinyClassifier (DistilBERT-like)
+E           Baseline Parameters (p0)    : 24,418
+E           Expected Logits Shape       : (2, 2)
+E         
+E         ======================================================================
+E           Stage 1: In-Place Attention Replacement
+E         ======================================================================
+E         
+E           [FAIL] Stage 1: Attention Replace (linear(): input and weight.T shapes cannot be multiplied (16x32 and 64x64))
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/Users/tahamajs/dev/Project/.venv/bin/python', 'examples/09_multi_stage_model_surgery.py'], re...port this to the maintainers of the package that installed pynvml for you.\n  import pynvml  # type: ignore[import]\n').returncode
+
+tests/examples/test_09.py:33: AssertionError
+_______________________ test_09_stages_reduce_parameters _______________________
+
+    def test_09_stages_reduce_parameters():
+        """Verify multi-stage surgery preserves output shape and reduces parameter counts monotonically."""
+        model = TinyClassifier().to("cpu")
+        surgery = ModelSurgery(model)
+        inputs = tiny_inputs()
+        inputs = {k: v.to("cpu") for k, v in inputs.items()}
+    
+        with torch.no_grad():
+            out0 = surgery.model(**inputs)
+            expected_shape = tuple((out0.logits if hasattr(out0, "logits") else out0).shape)
+    
+        # Stage 1: Attention replacement
+        surgery.apply("attention.replace", target="cosformer")
+        p1 = sum(p.numel() for p in surgery.model.parameters())
+        with torch.no_grad():
+>           out1 = surgery.model(**inputs)
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/examples/test_09.py:53: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.14/site-packages/torch/nn/modules/module.py:1779: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/torch/nn/modules/module.py:1790: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+examples/_shared/mock_models.py:64: in forward
+    return self.transformer(
+.venv/lib/python3.14/site-packages/torch/nn/modules/module.py:1779: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/torch/nn/modules/module.py:1790: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/transformers/utils/generic.py:900: in wrapper
+    output = func(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/transformers/models/distilbert/modeling_distilbert.py:588: in forward
+    distilbert_output = self.distilbert(
+.venv/lib/python3.14/site-packages/torch/nn/modules/module.py:1779: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/torch/nn/modules/module.py:1790: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/transformers/utils/generic.py:976: in wrapper
+    output = func(self, *args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/transformers/utils/output_capturing.py:248: in wrapper
+    outputs = func(self, *args, **kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/transformers/models/distilbert/modeling_distilbert.py:421: in forward
+    return self.transformer(
+.venv/lib/python3.14/site-packages/torch/nn/modules/module.py:1779: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/torch/nn/modules/module.py:1790: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/transformers/models/distilbert/modeling_distilbert.py:280: in forward
+    hidden_states = layer_module(
+.venv/lib/python3.14/site-packages/transformers/modeling_layers.py:93: in __call__
+    return super().__call__(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/torch/nn/modules/module.py:1779: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/torch/nn/modules/module.py:1790: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/transformers/models/distilbert/modeling_distilbert.py:252: in forward
+    attention_output, _ = self.attention(
+.venv/lib/python3.14/site-packages/torch/nn/modules/module.py:1779: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/torch/nn/modules/module.py:1790: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+neuralops/operations/attention/replace.py:82: in forward
+    q = self.q_proj(hidden_states).view(b, s, self.num_heads, self.head_dim).transpose(1, 2)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/torch/nn/modules/module.py:1779: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.14/site-packages/torch/nn/modules/module.py:1790: in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = Linear(in_features=64, out_features=64, bias=False)
+input = tensor([[[ 2.7096e+00, -1.7259e+00, -1.4326e-01,  ..., -6.5679e-01,
+          -1.7025e+00,  1.1498e+00],
+         [-7....3.9667e-01],
+         [ 5.3381e-01,  2.9163e-01, -1.6534e+00,  ...,  1.9245e+00,
+          -1.4984e+00,  1.4515e+00]]])
+
+    def forward(self, input: Tensor) -> Tensor:
+        """
+        Runs the forward pass.
+        """
+>       return F.linear(input, self.weight, self.bias)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       RuntimeError: mat1 and mat2 shapes cannot be multiplied (32x32 and 64x64)
+
+.venv/lib/python3.14/site-packages/torch/nn/modules/linear.py:134: RuntimeError
+______________________________ test_17_runs_clean ______________________________
+
+    def test_17_runs_clean():
+        """Verify example 17 executes cleanly and returns exit code 0."""
+        proc = subprocess.run(
+            [sys.executable, "examples/17_recipe_dsl_and_snapshot_rollback.py"],
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+>       assert proc.returncode == 0, f"Example 17 failed with stderr: {proc.stderr}\nstdout: {proc.stdout}"
+E       AssertionError: Example 17 failed with stderr: /Users/tahamajs/dev/Project/.venv/lib/python3.14/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+E           import pynvml  # type: ignore[import]
+E         Traceback (most recent call last):
+E           File "/Users/tahamajs/dev/Project/neuralops/pipeline_transform/planner.py", line 62, in plan_recipe
+E             validate_recipe_static(recipe_obj)
+E             ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+E           File "/Users/tahamajs/dev/Project/neuralops/validation/static.py", line 119, in validate_recipe_static
+E             raise StaticValidationError(
+E             ...<3 lines>...
+E             )
+E         neuralops.validation.errors.StaticValidationError: [E_W7_INVALID_OPERATION_PARAMS] (stage: stage_mlp) Operation 'stage_mlp' received unrecognized parameter 'ratio'
+E         
+E         The above exception was the direct cause of the following exception:
+E         
+E         Traceback (most recent call last):
+E           File "/Users/tahamajs/dev/Project/examples/17_recipe_dsl_and_snapshot_rollback.py", line 293, in <module>
+E             sys.exit(main())
+E                      ~~~~^^
+E           File "/Users/tahamajs/dev/Project/examples/17_recipe_dsl_and_snapshot_rollback.py", line 145, in main
+E             plan = plan_recipe(recipe, model_or_config=model)
+E           File "/Users/tahamajs/dev/Project/neuralops/pipeline_transform/planner.py", line 64, in plan_recipe
+E             raise PlanningError(str(e), error_code=e.error_code, stage=e.stage) from e
+E         neuralops.pipeline_transform.errors.PlanningError: [E_W7_INVALID_OPERATION_PARAMS] (stage 'stage_mlp') [E_W7_INVALID_OPERATION_PARAMS] (stage: stage_mlp) Operation 'stage_mlp' received unrecognized parameter 'ratio'
+E         
+E         stdout: 
+E         ======================================================================
+E           NeuralOps Example 17: Recipe DSL & Snapshot Rollback
+E         ======================================================================
+E         
+E           Hardware Accelerator        : Apple Silicon MPS
+E           Target Device               : mps
+E           PyTorch Version             : 2.11.0
+E         
+E         ======================================================================
+E           Part 1: Programmatic Recipe DSL Construction
+E         ======================================================================
+E         
+E           Recipe API Version          : neuralops/v1
+E           Recipe Kind                 : SurgeryRecipe
+E           Recipe Name                 : distilbert-hybrid-compression
+E           Declared Operations         : 2
+E           [PASS] Recipe Schema Object Construction (Valid canonical recipe with 2 operations)
+E         
+E         ======================================================================
+E           Part 2: Static Execution Planning
+E         ======================================================================
+E         
+E           Baseline Parameters         : 83,650
+E           Baseline SHA256 Hash        : 1b5652c364d25ae0...
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/Users/tahamajs/dev/Project/.venv/bin/python', 'examples/17_recipe_dsl_and_snapshot_rollback.p...E_W7_INVALID_OPERATION_PARAMS] (stage: stage_mlp) Operation \'stage_mlp\' received unrecognized parameter \'ratio\'\n').returncode
+
+tests/examples/test_17.py:33: AssertionError
+_______________________ test_17_recipe_dsl_and_planning ________________________
+
+recipe = Recipe(apiVersion='neuralops/v1', kind='SurgeryRecipe', metadata=Metadata(name='test-recipe', version='1.0.0', descrip...hresholds={}), execution=ExecutionSpec(device='auto', seed=None, rollback=True, memory_budget_gb=None), artifacts=None)
+model_or_config = TinyClassifier(
+  (transformer): DistilBertForSequenceClassification(
+    (distilbert): DistilBertModel(
+      (embedd...
+    (classifier): Linear(in_features=64, out_features=2, bias=True)
+    (dropout): Dropout(p=0.2, inplace=False)
+  )
+)
+
+    def plan_recipe(
+        recipe: Union[Recipe, str, Path, Dict[str, Any]],
+        model_or_config: Optional[Union[nn.Module, Any]] = None,
+    ) -> ExecutionPlan:
+        """Check and compile a recipe into an ExecutionPlan without GPU execution.
+    
+        Parameters:
+            recipe: Recipe object, YAML/JSON string or path, or raw dict.
+            model_or_config: Optional nn.Module or model config object for precondition checks.
+    
+        Returns:
+            Validated ExecutionPlan ready for transactional execution.
+    
+        Raises:
+            PlanningError: If adapter is missing or operation preconditions fail.
+        """
+        cuda_before = torch.cuda.is_initialized()
+    
+        # 1. Parse and statically validate recipe
+        if isinstance(recipe, (str, Path)):
+            recipe_obj = load_recipe(recipe)
+        elif isinstance(recipe, dict):
+            recipe_obj = Recipe.from_dict(recipe)
+        else:
+            recipe_obj = recipe
+    
+        try:
+>           validate_recipe_static(recipe_obj)
+
+neuralops/pipeline_transform/planner.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+recipe = Recipe(apiVersion='neuralops/v1', kind='SurgeryRecipe', metadata=Metadata(name='test-recipe', version='1.0.0', descrip...hresholds={}), execution=ExecutionSpec(device='auto', seed=None, rollback=True, memory_budget_gb=None), artifacts=None)
+
+    def validate_recipe_static(recipe: Recipe) -> List[str]:
+        """Validate recipe against NRL v1.0.0 rules W1 through W15.
+    
+        Returns:
+            List of warning messages (if any non-fatal warnings exist).
+    
+        Raises:
+            StaticValidationError on any rule violation.
+        """
+        warnings: List[str] = []
+    
+        # W1 / W2: Required top-level fields
+        if not recipe.apiVersion:
+            raise StaticValidationError("Recipe is missing apiVersion header", E_W4_INCOMPATIBLE_VERSION)
+        if not recipe.metadata or not recipe.metadata.name:
+            raise StaticValidationError("Recipe is missing metadata.name", E_W2_MISSING_REQUIRED_FIELD)
+        if not recipe.model:
+            raise StaticValidationError("Recipe is missing model specification", E_W5_MISSING_TARGET_MODEL)
+    
+        # W4: Version compatibility
+        if recipe.apiVersion != "neuralops/v1":
+            raise StaticValidationError(
+                f"Unsupported recipe language version: '{recipe.apiVersion}'. Must be 'neuralops/v1'.",
+                E_W4_INCOMPATIBLE_VERSION,
+            )
+    
+        # W5: Target model
+        if not recipe.model.family and not recipe.model.source:
+            raise StaticValidationError(
+                "Recipe model specification must define family or source",
+                E_W5_MISSING_TARGET_MODEL,
+            )
+    
+        # W3: Operations list non-empty
+        if not recipe.operations:
+            raise StaticValidationError(
+                "Recipe operations list must contain at least one operation",
+                E_W3_EMPTY_OPERATIONS,
+            )
+    
+        # W15: Unique operation IDs
+        seen_ids: Set[str] = set()
+        for op in recipe.operations:
+            if op.id in seen_ids:
+                raise StaticValidationError(
+                    f"Duplicate operation ID '{op.id}' detected in recipe",
+                    E_W15_DUPLICATE_OPERATION_ID,
+                )
+            seen_ids.add(op.id)
+    
+        # Type chain tracking (W10) and composability tracking (W12)
+        current_state: str = "loaded"
+        seen_op_names: Dict[str, int] = {}
+    
+        for op in recipe.operations:
+            # Resolve operation contract
+            op_impl = get_operation(op.type, op.version)
+            contract = op_impl.contract
+    
+            # W6: Check target pattern
+            target_param = op.config.get("target")
+            if target_param is not None and not str(target_param).strip():
+                raise StaticValidationError(
+                    f"Operation '{op.id}' has empty target pattern",
+                    E_W6_INVALID_TARGET_PATTERN,
+                    stage=op.id,
+                )
+    
+            # W7: Check required parameters from schema
+            schema = contract.params_schema or {}
+            required_fields = schema.get("required", [])
+            for req in required_fields:
+                if req not in op.config:
+                    raise StaticValidationError(
+                        f"Operation '{op.id}' ({op.type}@{op.version}) missing required parameter '{req}'",
+                        E_W7_INVALID_OPERATION_PARAMS,
+                        stage=op.id,
+                    )
+    
+            # Check additionalProperties
+            if schema.get("additionalProperties") is False:
+                allowed = set(schema.get("properties", {}).keys())
+                for param_key in op.config:
+                    if param_key not in allowed:
+>                       raise StaticValidationError(
+                            f"Operation '{op.id}' received unrecognized parameter '{param_key}'",
+                            E_W7_INVALID_OPERATION_PARAMS,
+                            stage=op.id,
+                        )
+E                       neuralops.validation.errors.StaticValidationError: [E_W7_INVALID_OPERATION_PARAMS] (stage: stage_mlp) Operation 'stage_mlp' received unrecognized parameter 'ratio'
+
+neuralops/validation/static.py:119: StaticValidationError
+
+The above exception was the direct cause of the following exception:
+
+    def test_17_recipe_dsl_and_planning():
+        """Verify Recipe construction and static planning generate stages accurately."""
+        recipe = Recipe(
+            apiVersion="neuralops/v1",
+            kind="SurgeryRecipe",
+            metadata=Metadata(
+                name="test-recipe",
+                version="1.0.0",
+                description="Test recipe description",
+            ),
+            model=ModelSpec(source="distilbert", dtype="fp32"),
+            operations=[
+                Operation(
+                    id="stage_attention",
+                    type="attention.replace",
+                    version="1.0.0",
+                    config={"target": "cosformer"},
+                ),
+                Operation(
+                    id="stage_mlp",
+                    type="architecture.reduce_mlp",
+                    version="1.0.0",
+                    config={"ratio": 0.8},
+                    depends_on=["stage_attention"],
+                ),
+            ],
+        )
+        model = TinyClassifier(dim=64, hidden_dim=128)
+>       plan = plan_recipe(recipe, model_or_config=model)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/examples/test_17.py:74: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+recipe = Recipe(apiVersion='neuralops/v1', kind='SurgeryRecipe', metadata=Metadata(name='test-recipe', version='1.0.0', descrip...hresholds={}), execution=ExecutionSpec(device='auto', seed=None, rollback=True, memory_budget_gb=None), artifacts=None)
+model_or_config = TinyClassifier(
+  (transformer): DistilBertForSequenceClassification(
+    (distilbert): DistilBertModel(
+      (embedd...
+    (classifier): Linear(in_features=64, out_features=2, bias=True)
+    (dropout): Dropout(p=0.2, inplace=False)
+  )
+)
+
+    def plan_recipe(
+        recipe: Union[Recipe, str, Path, Dict[str, Any]],
+        model_or_config: Optional[Union[nn.Module, Any]] = None,
+    ) -> ExecutionPlan:
+        """Check and compile a recipe into an ExecutionPlan without GPU execution.
+    
+        Parameters:
+            recipe: Recipe object, YAML/JSON string or path, or raw dict.
+            model_or_config: Optional nn.Module or model config object for precondition checks.
+    
+        Returns:
+            Validated ExecutionPlan ready for transactional execution.
+    
+        Raises:
+            PlanningError: If adapter is missing or operation preconditions fail.
+        """
+        cuda_before = torch.cuda.is_initialized()
+    
+        # 1. Parse and statically validate recipe
+        if isinstance(recipe, (str, Path)):
+            recipe_obj = load_recipe(recipe)
+        elif isinstance(recipe, dict):
+            recipe_obj = Recipe.from_dict(recipe)
+        else:
+            recipe_obj = recipe
+    
+        try:
+            validate_recipe_static(recipe_obj)
+        except StaticValidationError as e:
+>           raise PlanningError(str(e), error_code=e.error_code, stage=e.stage) from e
+E           neuralops.pipeline_transform.errors.PlanningError: [E_W7_INVALID_OPERATION_PARAMS] (stage 'stage_mlp') [E_W7_INVALID_OPERATION_PARAMS] (stage: stage_mlp) Operation 'stage_mlp' received unrecognized parameter 'ratio'
+
+neuralops/pipeline_transform/planner.py:64: PlanningError
+=========================== short test summary info ============================
+FAILED tests/examples/test_09.py::test_09_runs_clean - AssertionError: Exampl...
+FAILED tests/examples/test_09.py::test_09_stages_reduce_parameters - RuntimeE...
+FAILED tests/examples/test_17.py::test_17_runs_clean - AssertionError: Exampl...
+FAILED tests/examples/test_17.py::test_17_recipe_dsl_and_planning - neuralops...
+4 failed, 87 passed in 315.63s (0:05:15)

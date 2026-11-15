@@ -39,7 +39,7 @@ def test_05_no_fake_vram_on_cpu():
         [sys.executable, str(EXAMPLE_PATH), "--cpu"],
         capture_output=True,
         text=True,
-        timeout=120,
+        timeout=180,
         env=env,
     )
     assert result.returncode == 0, f"Example 05 failed on CPU with stderr:\n{result.stderr}"

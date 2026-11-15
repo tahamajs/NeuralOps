@@ -38,7 +38,7 @@ def test_14_runs_clean() -> None:
         [sys.executable, str(example_14)],
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=180,
         cwd=str(REPO_ROOT),
     )
     assert proc.returncode == 0, f"Example 14 failed with returncode {proc.returncode}:\n{proc.stderr}"

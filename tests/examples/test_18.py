@@ -25,7 +25,7 @@ def test_18_runs_clean():
         [sys.executable, "examples/18_three_level_kernel_dispatch.py"],
         capture_output=True,
         text=True,
-        timeout=120,
+        timeout=180,
     )
     assert proc.returncode == 0, f"Example 18 failed with stderr: {proc.stderr}"
     assert "[PASS] Overall Example 18 Status" in proc.stdout

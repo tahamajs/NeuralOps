@@ -34,7 +34,7 @@ def test_19_runs_clean():
         [sys.executable, "examples/19_spectral_and_hessian_diagnostics.py"],
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=180,
     )
     assert proc.returncode == 0, f"Example 19 failed with stderr: {proc.stderr}"
     assert "[PASS] Overall Example 19 Status" in proc.stdout

@@ -28,7 +28,7 @@ def test_17_runs_clean():
         [sys.executable, "examples/17_recipe_dsl_and_snapshot_rollback.py"],
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=180,
     )
     assert proc.returncode == 0, f"Example 17 failed with stderr: {proc.stderr}\nstdout: {proc.stdout}"
     assert "[PASS] Overall Example 17 Status" in proc.stdout

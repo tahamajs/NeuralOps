@@ -19,6 +19,23 @@ from typing import Any, Optional
 class NeuralOpsError(Exception):
     """Base exception for all NeuralOps errors."""
 
+    def __init__(
+        self,
+        message: str = "",
+        *args: Any,
+        error_code: Optional[str] = None,
+        **kwargs: Any,
+    ) -> None:
+        if args:
+            super().__init__(message, *args)
+        elif message:
+            super().__init__(message)
+        else:
+            super().__init__()
+        self.message = message
+        self.error_code = error_code
+        self.details = kwargs
+
 
 class RegistryError(NeuralOpsError):
     """Raised when a registry lookup or registration fails."""
@@ -36,12 +53,20 @@ class ConfigError(NeuralOpsError, ValueError):
     """Raised when a configuration is invalid or incomplete."""
 
 
+class ConfigurationError(ConfigError):
+    """Raised when configuration validation or parsing fails."""
+
+
 class ConfigValidationError(ConfigError):
     """Raised when benchmark config validation fails."""
 
 
 class BackendError(NeuralOpsError):
     """Raised when no backend can execute the requested operation."""
+
+
+class BackendUnavailableError(BackendError):
+    """Raised when an accelerator backend is unavailable or not configured."""
 
 
 class KernelNotAvailableError(BackendError, RuntimeError):
@@ -128,6 +153,30 @@ class ChecksumMismatchError(LedgerError):
     """Raised when record checksum fails validation."""
 
 
+class BenchmarkError(NeuralOpsError):
+    """Base exception for benchmark subsystem failures."""
+
+
+class BenchmarkExecutionError(BenchmarkError):
+    """Raised when benchmark execution fails."""
+
+
+class WorkerCrashError(BenchmarkExecutionError, RuntimeError):
+    """Raised when an isolated benchmark worker crashes unexpectedly."""
+
+
+class HubUploadError(NeuralOpsError):
+    """Raised when uploading artifacts or models to the Hub fails."""
+
+
+class ChecksumVerificationError(NeuralOpsError, ValueError):
+    """Raised when artifact checksum verification fails."""
+
+
+class RecipeSyntaxError(NeuralOpsError, ValueError):
+    """Raised when recipe parsing or syntax validation fails."""
+
+
 def torch_install_error(feature: str, cause: ImportError | None = None) -> ImportError:
     """Build an actionable error for features that require PyTorch."""
     message = (
@@ -158,8 +207,10 @@ __all__ = [
     "AttentionNotRegisteredError",
     "CompressorNotRegisteredError",
     "ConfigError",
+    "ConfigurationError",
     "ConfigValidationError",
     "BackendError",
+    "BackendUnavailableError",
     "KernelNotAvailableError",
     "KernelDispatchError",
     "MissingDependencyError",
@@ -181,6 +232,12 @@ __all__ = [
     "InferenceError",
     "LedgerError",
     "ChecksumMismatchError",
+    "BenchmarkError",
+    "BenchmarkExecutionError",
+    "WorkerCrashError",
+    "HubUploadError",
+    "ChecksumVerificationError",
+    "RecipeSyntaxError",
     "torch_install_error",
     "_torch_install_error",
 ]

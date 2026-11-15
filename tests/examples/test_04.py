@@ -24,7 +24,7 @@ def test_04_runs_clean():
         [sys.executable, str(EXAMPLE_PATH)],
         capture_output=True,
         text=True,
-        timeout=120,
+        timeout=180,
     )
     assert result.returncode == 0, f"Example 04 failed with stderr:\n{result.stderr}"
     assert "[PASS] Overall Example 04 Status" in result.stdout

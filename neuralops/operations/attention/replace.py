@@ -22,14 +22,16 @@ logger = logging.getLogger("NeuralOps.Operations.Attention.Replace")
 CONTRACT = OperationContract(
     name="attention.replace",
     version="1.0.0",
-    input_state="*",
-    output_state="*",
+    input_state="loaded",
+    output_state="attention_replaced",
     params_schema={
         "type": "object",
         "properties": {
             "target_attention": {
                 "type": "string",
-                "enum": ["linear", "flash", "flash2", "hybrid", "sdpa", "local_sliding"],
+            },
+            "target": {
+                "type": "string",
             },
             "layer_indices": {
                 "type": "array",
@@ -38,12 +40,12 @@ CONTRACT = OperationContract(
             "chunk_size": {"type": "integer", "minimum": 16},
             "preserve_weights": {"type": "boolean"},
         },
-        "required": ["target_attention"],
+        "required": [],
         "additionalProperties": False,
     },
     preconditions=("model.has_attention",),
     postconditions=("model.output_shape_preserved",),
-    composable_with_self=True,
+    composable_with_self=False,
 )
 
 
@@ -101,6 +103,8 @@ class ReplacementAttentionBlock(nn.Module):
             out = out.transpose(1, 2).contiguous().view(b, s, d)
 
         out = self.out_proj(out)
+        if getattr(self, "return_tuple", False) or len(args) >= 2 or "output_attentions" in kwargs:
+            return (out, None)
         return out
 
 
@@ -117,7 +121,7 @@ def _find_target_modules(model: nn.Module) -> List[Tuple[str, nn.Module]]:
                 any(kw in sub_name.lower() for kw in attn_keywords)
                 for sub_name, _ in module.named_children()
             )
-            if not has_sub_attn or hasattr(module, "q_proj"):
+            if not has_sub_attn or hasattr(module, "q_proj") or hasattr(module, "q_lin"):
                 attn_modules.append((name, module))
     return attn_modules
 
@@ -130,7 +134,7 @@ class AttentionReplaceOperation(Operation):
         super().__init__(contract=CONTRACT)
 
     def apply(self, model: nn.Module, config: Dict[str, Any]) -> Tuple[nn.Module, Dict[str, Any]]:
-        target_mode: str = config.get("target_attention", "sdpa")
+        target_mode: str = config.get("target_attention", config.get("target", "sdpa"))
         layer_indices: Optional[List[int]] = config.get("layer_indices")
         chunk_size: int = config.get("chunk_size", 64)
         preserve_weights: bool = config.get("preserve_weights", True)
@@ -150,6 +154,12 @@ class AttentionReplaceOperation(Operation):
             embed_dim = None
             if hasattr(mod, "q_proj") and hasattr(mod.q_proj, "in_features"):
                 embed_dim = mod.q_proj.in_features
+            elif hasattr(mod, "q_lin") and hasattr(mod.q_lin, "in_features"):
+                embed_dim = mod.q_lin.in_features
+            elif hasattr(mod, "query") and hasattr(mod.query, "in_features"):
+                embed_dim = mod.query.in_features
+            elif hasattr(mod, "dim"):
+                embed_dim = mod.dim
             elif hasattr(mod, "embed_dim"):
                 embed_dim = mod.embed_dim
             elif hasattr(mod, "hidden_size"):
@@ -159,13 +169,15 @@ class AttentionReplaceOperation(Operation):
             else:
                 embed_dim = 64
 
-            num_heads = getattr(mod, "num_heads", 8)
+            num_heads = getattr(mod, "num_heads", getattr(mod, "n_heads", getattr(mod, "num_attention_heads", 8)))
             new_block = ReplacementAttentionBlock(
                 embed_dim=embed_dim,
                 num_heads=num_heads,
                 mode=target_mode,
                 chunk_size=chunk_size,
             )
+            if hasattr(mod, "q_lin") or hasattr(mod, "n_heads") or "distilbert" in type(mod).__name__.lower():
+                new_block.return_tuple = True
 
             # Move new block to device and dtype of existing module
             try:

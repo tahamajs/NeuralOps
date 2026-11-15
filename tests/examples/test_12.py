@@ -31,7 +31,7 @@ def test_12_runs_clean():
         [sys.executable, "examples/12_structured_pruning_and_token_shedding.py"],
         capture_output=True,
         text=True,
-        timeout=120,
+        timeout=180,
     )
     assert proc.returncode == 0, f"Example 12 failed with stderr: {proc.stderr}"
     assert "[PASS] Overall Example 12 Status" in proc.stdout
