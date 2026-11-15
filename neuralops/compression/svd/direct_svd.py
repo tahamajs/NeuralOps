@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# noqa: file-size (Kernel dispatch table, constant bindings, and specialized device branches)
 # Copyright (c) 2024-2026, Taha Majlesi
 #
 # This source code is licensed under the MIT license found in the
