@@ -7,26 +7,12 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """
 Example 02: Model Compression Comparison across 4 SVD Factorization Algorithms.
-
-Subsystem Demonstrated:
-    `neuralops.compress`
-
-Execution Environment:
-    - CPU: Fully supported, deterministic, offline execution.
-    - GPU: Optional acceleration.
-
-What You Will Learn:
-    1. Comparing 4 distinct SVD matrix factorization strategies on identical linear projections:
-       - Direct Truncated SVD (`direct_svd`)
-       - Activation-Aware SVD (`adasvd_compressor`)
-       - Fisher-Weighted SVD (`fwsvd_compressor`)
-       - SVD-LLM Low-Rank Factorization (`svd_llm_compressor`)
-    2. Ingesting synthetic offline calibration data without network dependencies.
-    3. Measuring parameter footprint reduction, spectral energy retention, and reconstruction error.
-    4. Verifying forward pass stability and output tensor finiteness post-compression.
 """
 
 from __future__ import annotations
+
+import os
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
 import sys
 from pathlib import Path
@@ -162,14 +148,14 @@ def main() -> int:
     kv("PyTorch Version", torch.__version__)
     print()
 
-    success = run_compression_suite(backend)
+    success = bool(run_compression_suite(backend))
     print()
-    if success:
-        pass_fail("Overall Example 02 Status", True, "All 4 compression algorithms verified")
-        return 0
-    else:
-        pass_fail("Overall Example 02 Status", False, "One or more compression algorithms failed")
-        return 1
+    pass_fail(
+        "Overall Example 02 Status",
+        success,
+        "All 4 compression algorithms verified" if success else "One or more compression algorithms failed",
+    )
+    return 0 if success else 1
 
 
 if __name__ == "__main__":

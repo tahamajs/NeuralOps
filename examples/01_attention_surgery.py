@@ -149,14 +149,14 @@ def main() -> int:
     p2 = demonstrate_hybrid_layers(backend)
     p3 = demonstrate_weight_transplantation(backend)
 
-    success = p1 and p2 and p3
+    success = bool(p1 and p2 and p3)
     print()
-    if success:
-        pass_fail("Overall Example 01 Status", True, "All surgery and hybrid checks passed")
-        return 0
-    else:
-        pass_fail("Overall Example 01 Status", False, "One or more checks failed")
-        return 1
+    pass_fail(
+        "Overall Example 01 Status",
+        success,
+        "All surgery and hybrid checks passed" if success else "One or more checks failed",
+    )
+    return 0 if success else 1
 
 
 if __name__ == "__main__":
