@@ -128,10 +128,18 @@ class BenchmarkLedger:
                 }
                 new_table = pa.Table.from_pylist([parquet_row])
                 if self.parquet_path.exists():
+<<<<<<< HEAD
                     existing_table = pq.read_table(str(self.parquet_path))
                     combined_table = pa.concat_tables([existing_table, new_table])
                     pq.write_table(combined_table, str(self.parquet_path))
                 else:
                     pq.write_table(new_table, str(self.parquet_path))
+=======
+                    existing_table = pq.read_table(str(self.parquet_path))  # type: ignore[no-untyped-call]  # pyarrow stubs
+                    combined_table = pa.concat_tables([existing_table, new_table])
+                    pq.write_table(combined_table, str(self.parquet_path))  # type: ignore[no-untyped-call]  # pyarrow stubs
+                else:
+                    pq.write_table(new_table, str(self.parquet_path))  # type: ignore[no-untyped-call]  # pyarrow stubs
+>>>>>>> wave5/W5-9
             except Exception:
                 pass

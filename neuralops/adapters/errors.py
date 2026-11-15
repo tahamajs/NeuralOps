@@ -12,12 +12,13 @@ Architecture Adapter Errors.
 from __future__ import annotations
 
 from typing import Optional
+from neuralops.core.exceptions import NeuralOpsError
 
 E_ADAPTER_UNKNOWN = "E_ADAPTER_UNKNOWN"
 E_ADAPTER_CAPABILITY_MISMATCH = "E_ADAPTER_CAPABILITY_MISMATCH"
 
 
-class AdapterError(Exception):
+class AdapterError(NeuralOpsError):
     """Base exception for architecture adapter resolution and capability checks."""
 
     def __init__(self, message: str, error_code: str, family: Optional[str] = None):

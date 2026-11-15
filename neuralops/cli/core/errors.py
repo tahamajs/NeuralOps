@@ -17,6 +17,7 @@ import json
 import sys
 from enum import IntEnum
 from typing import Any
+from neuralops.core.exceptions import NeuralOpsError
 
 try:
     from rich.console import Console
@@ -53,7 +54,7 @@ class ExitCode(IntEnum):
     INTERNAL_ERROR = 70
 
 
-class CliError(Exception):
+class CliError(NeuralOpsError):
     """Base exception for expected user-facing errors with structured diagnostic metadata."""
 
     def __init__(

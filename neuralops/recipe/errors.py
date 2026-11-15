@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from typing import Optional
 
+from neuralops.core.exceptions import NeuralOpsError
+
 # Error Codes per NRL v1.0.0 Specification Section 12
 E_PARSE_JSON_SYNTAX = "E_PARSE_JSON_SYNTAX"
 E_PARSE_YAML_SYNTAX = "E_PARSE_YAML_SYNTAX"
@@ -30,11 +32,11 @@ E_LANG_VERSION_TOO_NEW = "E_LANG_VERSION_TOO_NEW"
 E_LANG_VERSION_TOO_OLD = "E_LANG_VERSION_TOO_OLD"
 
 
-class RecipeError(Exception):
+class RecipeError(NeuralOpsError):
     """Base exception for all recipe parsing, schema, and validation errors."""
 
     def __init__(self, message: str, error_code: str, path: Optional[str] = None):
-        super().__init__(f"[{error_code}] {message}" + (f" (at '{path}')" if path else ""))
+        super().__init__(f"[{error_code}] {message}" + (f" (at '{path}')" if path else ""), error_code=error_code)
         self.message = message
         self.error_code = error_code
         self.path = path
@@ -44,5 +46,29 @@ class RecipeParseError(RecipeError):
     """Raised when JSON or YAML deserialization fails."""
 
 
+class RecipeSyntaxError(RecipeParseError):
+    """Raised when recipe content violates syntax rules."""
+
+
 class RecipeSchemaError(RecipeError):
     """Raised when recipe content violates the normative EBNF grammar or schema rules."""
+
+
+__all__ = [
+    "E_PARSE_JSON_SYNTAX",
+    "E_PARSE_YAML_SYNTAX",
+    "E_PARSE_DUP_KEY",
+    "E_PARSE_EMPTY",
+    "E_SCHEMA_MISSING_FIELD",
+    "E_SCHEMA_UNKNOWN_FIELD",
+    "E_SCHEMA_WRONG_TYPE",
+    "E_SCHEMA_INVALID_SEMVER",
+    "E_SCHEMA_INVALID_IDENTIFIER",
+    "E_VALIDATION_LEVEL_INVALID",
+    "E_LANG_VERSION_TOO_NEW",
+    "E_LANG_VERSION_TOO_OLD",
+    "RecipeError",
+    "RecipeParseError",
+    "RecipeSyntaxError",
+    "RecipeSchemaError",
+]
