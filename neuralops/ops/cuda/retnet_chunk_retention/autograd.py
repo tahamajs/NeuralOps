@@ -102,15 +102,38 @@ class _RetnetChunkRetentionFunction(torch.autograd.Function):
     def forward(ctx: Any, q, k, v, gamma=0.9, scale=None):
         args = [q, k, v, gamma, scale]
         out = _retnet_chunk_retention_dispatch(*args)
-        ctx.save_for_backward(*[t for t in args if isinstance(t, torch.Tensor)])
+        ctx.save_for_backward(*[t for t in (q, k, v) if isinstance(t, torch.Tensor)])
+        ctx.tensors_mask = [isinstance(t, torch.Tensor) for t in args]
+        ctx.non_tensors = [t if not isinstance(t, torch.Tensor) else None for t in args]
         return out
 
     @staticmethod
-    def backward(ctx: Any, grad_out):
-        raise NotImplementedError("RetNet Chunk Retention backward requires remote CUDA execution.")
+    def backward(ctx: Any, *douts):
+        saved = list(ctx.saved_tensors)
+        inputs = []
+        for is_t, nt in zip(ctx.tensors_mask, ctx.non_tensors):
+            if is_t:
+                t = saved.pop(0)
+                inputs.append(t.detach().requires_grad_(t.requires_grad))
+            else:
+                inputs.append(nt)
+        with torch.enable_grad():
+            out_p = retnet_chunk_retention_pytorch_ref(*inputs)
+        diff_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if (is_t and inp.requires_grad)]
+        dout_val = douts[0] if len(douts) == 1 else douts
+        if not diff_inputs:
+            return tuple([None] * len(ctx.tensors_mask))
+        grads = torch.autograd.grad(out_p, diff_inputs, dout_val, allow_unused=True)
+        grad_map = dict(zip(diff_inputs, grads))
+        return tuple(
+            grad_map.get(inp, None) if (is_t and inp.requires_grad) else None
+            for inp, is_t in zip(inputs, ctx.tensors_mask)
+        )
 
 
 def retnet_chunk_retention(q, k, v, gamma=0.9, scale=None) -> torch.Tensor:
     """Dispatches RetNet Chunk Retention with autograd support."""
     args = [q, k, v, gamma, scale]
-    return _RetnetChunkRetentionFunction.apply(*args)
+    if any(isinstance(t, torch.Tensor) and t.requires_grad for t in args):
+        return _RetnetChunkRetentionFunction.apply(*args)
+    return _retnet_chunk_retention_dispatch(*args)

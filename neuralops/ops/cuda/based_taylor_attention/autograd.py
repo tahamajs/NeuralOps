@@ -100,15 +100,38 @@ class _BasedTaylorAttentionFunction(torch.autograd.Function):
     def forward(ctx: Any, q, k, v, scale=None):
         args = [q, k, v, scale]
         out = _based_taylor_attention_dispatch(*args)
-        ctx.save_for_backward(*[t for t in args if isinstance(t, torch.Tensor)])
+        ctx.save_for_backward(*[t for t in (q, k, v) if isinstance(t, torch.Tensor)])
+        ctx.tensors_mask = [isinstance(t, torch.Tensor) for t in args]
+        ctx.non_tensors = [t if not isinstance(t, torch.Tensor) else None for t in args]
         return out
 
     @staticmethod
-    def backward(ctx: Any, grad_out):
-        raise NotImplementedError("Based Taylor Attention backward requires remote CUDA execution.")
+    def backward(ctx: Any, *douts):
+        saved = list(ctx.saved_tensors)
+        inputs = []
+        for is_t, nt in zip(ctx.tensors_mask, ctx.non_tensors):
+            if is_t:
+                t = saved.pop(0)
+                inputs.append(t.detach().requires_grad_(t.requires_grad))
+            else:
+                inputs.append(nt)
+        with torch.enable_grad():
+            out_p = based_taylor_attention_pytorch_ref(*inputs)
+        diff_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if (is_t and inp.requires_grad)]
+        dout_val = douts[0] if len(douts) == 1 else douts
+        if not diff_inputs:
+            return tuple([None] * len(ctx.tensors_mask))
+        grads = torch.autograd.grad(out_p, diff_inputs, dout_val, allow_unused=True)
+        grad_map = dict(zip(diff_inputs, grads))
+        return tuple(
+            grad_map.get(inp, None) if (is_t and inp.requires_grad) else None
+            for inp, is_t in zip(inputs, ctx.tensors_mask)
+        )
 
 
 def based_taylor_attention(q, k, v, scale=None) -> torch.Tensor:
     """Dispatches Based Taylor Attention with autograd support."""
     args = [q, k, v, scale]
-    return _BasedTaylorAttentionFunction.apply(*args)
+    if any(isinstance(t, torch.Tensor) and t.requires_grad for t in args):
+        return _BasedTaylorAttentionFunction.apply(*args)
+    return _based_taylor_attention_dispatch(*args)
