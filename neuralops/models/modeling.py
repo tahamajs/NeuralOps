@@ -13,6 +13,7 @@ Core HuggingFace PreTrainedModel implementation supporting plug-and-play attenti
 
 from __future__ import annotations
 
+import inspect
 from typing import Any
 
 import torch

@@ -68,6 +68,9 @@ if _flat_vllm is not None:
     NeuralOpsForCausalLMvLLM = getattr(_flat_vllm, "NeuralOpsForCausalLMvLLM", None)
     register_neuralops_vllm_plugin = getattr(_flat_vllm, "register_neuralops_vllm_plugin", None)
     vllm_is_available = getattr(_flat_vllm, "vllm_is_available", None)
+    is_vllm_available = getattr(_flat_vllm, "is_vllm_available", None)
+    HeadlessVLLMWorker = getattr(_flat_vllm, "HeadlessVLLMWorker", None)
+    get_vllm_runner = getattr(_flat_vllm, "get_vllm_runner", None)
 
 
 class _VLLMModule(types.ModuleType):
@@ -81,6 +84,9 @@ sys.modules[__name__].__class__ = _VLLMModule
 
 
 __all__ = [
+    "HeadlessVLLMWorker",
+    "get_vllm_runner",
+    "is_vllm_available",
     "NeuralOpsAttentionBackend",
     "NeuralOpsAttentionImpl",
     "NeuralOpsForCausalLMvLLM",

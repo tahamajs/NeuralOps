@@ -1,0 +1,18 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.3, pytest-8.0.0, pluggy-1.6.0 -- /Users/tahamajs/.local/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/tahamajs/dev/Project
+configfile: pyproject.toml
+plugins: anyio-4.12.1, Faker-40.31.0, timeout-2.4.0, cov-4.1.0, django-4.8.0, xdist-3.5.0, sugar-0.9.7
+collecting ... collected 8 items
+
+tests/integrations/test_serving_mocks.py::test_headless_vllm_worker_direct PASSED [ 12%]
+tests/integrations/test_serving_mocks.py::test_headless_vllm_worker_with_torch_model PASSED [ 25%]
+tests/integrations/test_serving_mocks.py::test_get_vllm_runner_offline_dispatch PASSED [ 37%]
+tests/integrations/test_serving_mocks.py::test_vllm_plugin_registration_and_linear_method PASSED [ 50%]
+tests/integrations/test_serving_mocks.py::test_headless_sglang_runner_direct PASSED [ 62%]
+tests/integrations/test_serving_mocks.py::test_headless_sglang_runner_with_torch_model PASSED [ 75%]
+tests/integrations/test_serving_mocks.py::test_get_sglang_runner_offline_dispatch PASSED [ 87%]
+tests/integrations/test_serving_mocks.py::test_sglang_plugin_registration_mock PASSED [100%]
+
+============================== 8 passed in 2.35s ===============================
