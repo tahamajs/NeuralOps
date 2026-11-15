@@ -24,12 +24,27 @@ class SQLiteMasterLedger:
         if not str(self.db_path) == ":memory:":
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = sqlite3.connect(str(self.db_path))
+        self.conn.execute("PRAGMA foreign_keys = ON")
+        if not str(self.db_path) == ":memory:":
+            self.conn.execute("PRAGMA journal_mode = WAL")
         self._init_schema()
 
     def __enter__(self) -> SQLiteMasterLedger:
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        if exc_type is not None:
+            try:
+                self.conn.rollback()
+            except Exception:
+                # allowed-swallow: best-effort-rollback
+                pass
+        else:
+            try:
+                self.conn.commit()
+            except Exception:
+                # allowed-swallow: best-effort-commit
+                pass
         self.close()
 
     def _init_schema(self) -> None:
@@ -317,9 +332,20 @@ class SQLiteMasterLedger:
 
     def close(self) -> None:
         """Close connection to SQLite database."""
-        self.conn.close()
+        if hasattr(self, "conn") and self.conn is not None:
+            try:
+                self.conn.close()
+            except Exception:
+                # allowed-swallow: best-effort-close
+                pass
 
 
 def init_master_ledger(db_path: str = "results/master_ledger.sqlite") -> SQLiteMasterLedger:
     """Convenience initializer ensuring canonical schema exists on database."""
     return SQLiteMasterLedger(db_path=db_path)
+
+
+__all__ = [
+    "SQLiteMasterLedger",
+    "init_master_ledger",
+]

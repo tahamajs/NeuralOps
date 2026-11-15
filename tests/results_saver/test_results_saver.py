@@ -51,7 +51,7 @@ class TestResultsSaver(unittest.TestCase):
     def test_save_model_weights(self):
         p = self.saver.save_model_weights(self.dummy_model, filename="weights.pt")
         self.assertTrue(os.path.exists(p))
-        state = torch.load(p, map_location="cpu")
+        state = torch.load(p, map_location="cpu", weights_only=True)
         self.assertIn("weight", state)
 
 

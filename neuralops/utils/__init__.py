@@ -14,6 +14,7 @@ from . import (
     checkpoint,
     config,
     device,
+    general,
     helpers,
     layer_norm_fix,
     logger,
@@ -23,6 +24,7 @@ from . import (
     profiler,
     replace_attention,
     results_saver,
+    rope,
     seed,
     varlen_padding,
 )
@@ -34,7 +36,9 @@ __all__ = [
     "architecture",
     "checkpoint",
     "config",
+    "configure_logging",
     "device",
+    "general",
     "helpers",
     "layer_norm_fix",
     "logger",
@@ -44,12 +48,14 @@ __all__ = [
     "replace_attention",
     "results_saver",
     "ResultsSaver",
+    "rope",
     "seed",
     "varlen_padding",
     "pad_input",
     "unpad_input",
     "construct_cu_seqlens_from_lengths",
     "CuTeTiledVarlenPadding",
+    "warn_once",
 ]
 
 from .architecture import get_compression_targets, get_hidden_size, get_layer_count, get_model_info  # noqa: E402

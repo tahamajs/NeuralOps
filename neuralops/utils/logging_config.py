@@ -87,14 +87,11 @@ def configure_logging(level: str = "INFO", dedup: bool = True) -> None:
     dedup : bool, default=True
         Whether to attach DedupFilter suppressing repeated records.
     """
-    global _CONFIGURED
-    if _CONFIGURED:
-        return
-
     root = logging.getLogger()
     numeric_level = getattr(logging, level.upper(), logging.INFO)
     root.setLevel(numeric_level)
 
+    global _CONFIGURED
     if not root.handlers:
         handler = logging.StreamHandler()
         handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
@@ -102,9 +99,14 @@ def configure_logging(level: str = "INFO", dedup: bool = True) -> None:
             handler.addFilter(DedupFilter())
         root.addHandler(handler)
     else:
-        if dedup:
-            for handler in root.handlers:
+        for handler in root.handlers:
+            has_filter = any(isinstance(f, DedupFilter) for f in handler.filters)
+            if dedup and not has_filter:
                 handler.addFilter(DedupFilter())
+            elif not dedup and has_filter:
+                for f in list(handler.filters):
+                    if isinstance(f, DedupFilter):
+                        handler.removeFilter(f)
 
     _CONFIGURED = True
 

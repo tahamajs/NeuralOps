@@ -75,3 +75,8 @@ class CheckpointManager:
         """Return the latest checkpoint."""
         checkpoints = self.list_checkpoints()
         return max(checkpoints, key=lambda p: p.stat().st_mtime) if checkpoints else None
+
+
+__all__ = [
+    "CheckpointManager",
+]
