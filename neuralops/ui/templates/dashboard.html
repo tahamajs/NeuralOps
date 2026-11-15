@@ -38,6 +38,81 @@
   </div>
 </div>
 
+<div class="card" id="live-telemetry-card">
+  <div class="card-title">
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+      <span>Live Hardware Telemetry Stream</span>
+      <span id="ws-status-badge" class="badge badge-muted">Connecting WS...</span>
+    </div>
+    <div style="font-size: 0.75rem; color: var(--text-secondary); font-family: var(--font-mono);">
+      Endpoint: /ws/telemetry
+    </div>
+  </div>
+  <div class="stats-grid" style="margin-top: 1rem;">
+    <div class="stat-box">
+      <div class="stat-label">GPU Utilization</div>
+      <div class="stat-value" id="ws-gpu-util">&mdash;</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">GPU VRAM Used</div>
+      <div class="stat-value" id="ws-vram-used">&mdash;</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">GPU Temperature</div>
+      <div class="stat-value" id="ws-gpu-temp">&mdash;</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">GPU Power Draw</div>
+      <div class="stat-value" id="ws-gpu-power">&mdash;</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function initTelemetryWebSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = protocol + '//' + window.location.host + '/ws/telemetry';
+    const badge = document.getElementById('ws-status-badge');
+    const utilEl = document.getElementById('ws-gpu-util');
+    const vramEl = document.getElementById('ws-vram-used');
+    const tempEl = document.getElementById('ws-gpu-temp');
+    const powerEl = document.getElementById('ws-gpu-power');
+
+    function connect() {
+      const ws = new WebSocket(wsUrl);
+      ws.onopen = function() {
+        if (badge) {
+          badge.textContent = 'WS: Connected';
+          badge.className = 'badge badge-active';
+        }
+      };
+      ws.onmessage = function(event) {
+        try {
+          const payload = JSON.parse(event.data);
+          const hw = payload.hardware || {};
+          if (utilEl) utilEl.textContent = (hw.gpu_util !== undefined ? hw.gpu_util : (hw.cpu_util_pct || 0)) + '%';
+          if (vramEl) vramEl.textContent = (hw.gpu_vram_used_mb || hw.mem_used_mb || 0) + ' MB';
+          if (tempEl) tempEl.textContent = (hw.gpu_temp_c || hw.temp_c || 0) + ' °C';
+          if (powerEl) powerEl.textContent = (hw.gpu_power_w || hw.power_w || 0) + ' W';
+        } catch (err) {}
+      };
+      ws.onclose = function() {
+        if (badge) {
+          badge.textContent = 'WS: Reconnecting...';
+          badge.className = 'badge badge-fail';
+        }
+        setTimeout(connect, 3000);
+      };
+      ws.onerror = function() {
+        ws.close();
+      };
+    }
+    if (badge) {
+      connect();
+    }
+  })();
+</script>
+
 <div class="card">
   <div class="card-title">
     <span>Recent Benchmark Executions</span>

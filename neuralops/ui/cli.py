@@ -14,11 +14,14 @@ Implements argparse parser configuration and command handler for the NeuralOps W
 from __future__ import annotations
 
 import argparse
+import logging
 import socket
 import sys
 import threading
 import webbrowser
 from typing import Optional
+
+logger = logging.getLogger("NeuralOpsWebUI.CLI")
 
 
 def is_port_in_use(host: str, port: int) -> bool:
@@ -146,7 +149,7 @@ def cmd_ui(args: argparse.Namespace) -> int:
         if not pwd:
             raise ValueError("Web UI authentication password cannot be empty.")
         auth_creds = (user, pwd)
-        print(f"[SECURITY] Basic authentication enabled for user: {auth_creds[0]}")
+        logger.info("[SECURITY] Basic authentication enabled for user: %s", auth_creds[0])
 
     tunnel = None
     if share:
@@ -155,38 +158,40 @@ def cmd_ui(args: argparse.Namespace) -> int:
         tunnel = CloudflareTunnel(port=port, host=host)
         try:
             tunnel_url = tunnel.start()
-            print(f"[SHARE] Public Cloudflare tunnel active at: {tunnel_url}")
+            logger.info("[SHARE] Public Cloudflare tunnel active at: %s", tunnel_url)
         except Exception as exc:
-            print(f"[ERROR] Failed to establish Cloudflare tunnel: {exc}", file=sys.stderr)
+            logger.error("[ERROR] Failed to establish Cloudflare tunnel: %s", exc)
             return 1
 
     if static_path:
         from neuralops.ui.static_builder import build_static_site
 
-        print(f"Building static HTML distribution bundle into {static_path} ...")
+        logger.info("Building static HTML distribution bundle into %s ...", static_path)
         try:
             summary = build_static_site(static_path)
-            print(
-                f"[SUCCESS] Static site generated successfully: "
-                f"{summary['total_pages']} pages created at {summary['output_directory']}"
+            logger.info(
+                "[SUCCESS] Static site generated successfully: %s pages created at %s",
+                summary["total_pages"],
+                summary["output_directory"],
             )
             return 0
         except Exception as exc:
-            print(f"[ERROR] Failed to build static site: {exc}", file=sys.stderr)
+            logger.error("[ERROR] Failed to build static site: %s", exc)
             return 1
 
     url = f"http://{host}:{port}"
     if is_port_in_use(host, port):
         free_port = find_available_port(host, port + 1)
-        print(
-            f"[WARNING] Port {port} is already in use on {host}. "
-            f"Automatically switching to available port: {free_port}",
-            file=sys.stderr,
+        logger.warning(
+            "[WARNING] Port %s is already in use on %s. Automatically switching to available port: %s",
+            port,
+            host,
+            free_port,
         )
         port = free_port
         url = f"http://{host}:{port}"
 
-    print(f"Starting NeuralOps Web UI server on {url} ...")
+    logger.info("Starting NeuralOps Web UI server on %s ...", url)
 
     if not no_browser and not share:
 
@@ -205,9 +210,8 @@ def cmd_ui(args: argparse.Namespace) -> int:
     try:
         import uvicorn
     except ImportError:
-        print(
-            "Error: 'uvicorn' is required to launch the Web UI. Install with: pip install 'neuralops[ui]'",
-            file=sys.stderr,
+        logger.error(
+            "Error: 'uvicorn' is required to launch the Web UI. Install with: pip install 'neuralops[ui]'"
         )
         return 1
 
@@ -221,18 +225,20 @@ def cmd_ui(args: argparse.Namespace) -> int:
             log_level="info",
         )
     except KeyboardInterrupt:
-        print("\nNeuralOps Web UI stopped cleanly.")
+        logger.info("NeuralOps Web UI stopped cleanly.")
     except OSError as exc:
         if exc.errno in (48, 98):
-            print(
-                f"[ERROR] Port {port} on {host} is in use: {exc}. Please select an alternate port with --port.",
-                file=sys.stderr,
+            logger.error(
+                "[ERROR] Port %s on %s is in use: %s. Please select an alternate port with --port.",
+                port,
+                host,
+                exc,
             )
             return 1
-        print(f"Error starting NeuralOps Web UI listener: {exc}", file=sys.stderr)
+        logger.error("Error starting NeuralOps Web UI listener: %s", exc)
         return 1
     except Exception as exc:
-        print(f"Error starting NeuralOps Web UI: {exc}", file=sys.stderr)
+        logger.error("Error starting NeuralOps Web UI: %s", exc)
         return 1
     finally:
         if tunnel:
