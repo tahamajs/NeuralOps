@@ -1,0 +1,5 @@
+{
+  "stray_prints_in_library": 564,
+  "missing_logger_definitions": 5,
+  "eager_fstring_logging_calls": 301
+}
