@@ -64,7 +64,8 @@ def __getattr__(name: str) -> Any:
         raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
     if name in _SUBPACKAGES:
-        mod = importlib.import_module(f".{name}", __name__)
+        pkg = __name__ if not __name__.endswith(".__init__") else __name__.rsplit(".", 1)[0]
+        mod = importlib.import_module(f".{name}", pkg)
         globals()[name] = mod
         return mod
 

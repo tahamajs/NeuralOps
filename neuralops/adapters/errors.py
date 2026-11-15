@@ -14,6 +14,8 @@ from __future__ import annotations
 from typing import Optional
 from neuralops.core.exceptions import NeuralOpsError
 
+from neuralops.core.exceptions import NeuralOpsError
+
 E_ADAPTER_UNKNOWN = "E_ADAPTER_UNKNOWN"
 E_ADAPTER_CAPABILITY_MISMATCH = "E_ADAPTER_CAPABILITY_MISMATCH"
 

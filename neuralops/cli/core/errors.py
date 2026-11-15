@@ -29,6 +29,8 @@ except ImportError:
     HAS_RICH = False
     err_console = None
 
+from neuralops.core.exceptions import NeuralOpsError
+
 
 class ExitCode(IntEnum):
     """Standardized POSIX process exit codes for NeuralOps CLI."""

@@ -1,0 +1,81 @@
+4289d75f2b fix(benchmarks/SA-B17): legacy entry points graceful degradation
+4b75bb539a fix(benchmarks/SA-B16): preset override, MPS flush, percentiles
+461f140a10 fix(benchmarks/SA-B18): uploader shim, FIXES.md, verification
+d95d9152a3 fix(benchmarks/SA-B15): CLI decomposition, plan, results, doctor, ui, CPU CUDA_VISIBLE_DEVICES
+0a727db9a4 fix(benchmarks/SA-B14): uploader signature, adapter smoke, canonical lists
+91f27b5f03 fix(benchmarks/SA-B13): CVE weights_only, budget fallback, file locking
+d59a8540d3 fix(benchmarks/SA-B12): KD runner freeze, config hash, reporter atomic
+779a42eaaa fix(benchmarks/SA-B11): remove fake NIAH/serving/KD, compression accuracy
+55fc99a675 fix(benchmarks/SA-B10): kernel dispatch, no-fake fallback, timing
+32d77ada78 fix(benchmarks/SA-B9): attention failure modes, roofline honesty
+e4180f78a4 fix(benchmarks/SA-B8): KD fused, AMP migration, training robustness
+980b862c0f fix(benchmarks/SA-B7): loader branches, preprocess trust, kwarg filtering
+d7281ba298 fix(benchmarks/SA-B6): dynamic L2, memory fragmentation, arg conflicts
+fbd363645e fix(benchmarks/SA-B1): lazy registry, meta modes, discovery robustness
+202d677184 fix(benchmarks/SA-B5): SIGKILL handling, OOM backoff, timeout robustness
+06b20277ef fix(benchmarks/SA-B4): unify savers, expand secrets, dedup lock
+43c4769b52 fix(benchmarks/SA-B1): add verify_ops_registry function to validate keys and categories
+248f56061a fix(benchmarks/SA-B1): add _LazyBenchmarkRegistry proxy and get_registry accessor
+e3c7ee547b fix(benchmarks/SA-B3): parquet idempotency, record validation, lease cleanup
+d6f5e2c0cc fix(benchmarks/SA-B2): device index validation, status warning, robust result
+2b5219b343 fix(benchmarks/SA-B1): registry lazy init, meta modes, discovery robustness
+4415afae70 merge: SA-B18 remediation
+4b57c629dd merge: SA-B17 remediation
+72942e7f17 merge: SA-B16 remediation
+710b2e1e87 merge: SA-B15 remediation
+4289d75f2b fix(benchmarks/SA-B17): legacy entry points graceful degradation
+4b75bb539a fix(benchmarks/SA-B16): preset override, MPS flush, percentiles
+461f140a10 fix(benchmarks/SA-B18): uploader shim, FIXES.md, verification
+d95d9152a3 fix(benchmarks/SA-B15): CLI decomposition, plan, results, doctor, ui, CPU CUDA_VISIBLE_DEVICES
+528a5a7c81 chore(benchmarks): mark SA-B14 completed, start SA-B15
+0a727db9a4 fix(benchmarks/SA-B14): uploader signature, adapter smoke, canonical lists
+91f27b5f03 fix(benchmarks/SA-B13): CVE weights_only, budget fallback, file locking
+fac29bf86e chore(benchmarks): mark SA-B12 completed, start SA-B13
+d59a8540d3 fix(benchmarks/SA-B12): KD runner freeze, config hash, reporter atomic
+de04c74122 chore(benchmarks): mark SA-B11 completed, start SA-B12
+779a42eaaa fix(benchmarks/SA-B11): remove fake NIAH/serving/KD, compression accuracy
+e9951c2f62 chore(benchmarks): mark SA-B10 completed, start SA-B11
+55fc99a675 fix(benchmarks/SA-B10): kernel dispatch, no-fake fallback, timing
+1ffb20abb0 chore(benchmarks): mark SA-B9 completed, start SA-B10
+32d77ada78 fix(benchmarks/SA-B9): attention failure modes, roofline honesty
+4172616138 chore(benchmarks): mark SA-B8 completed, start SA-B9
+e4180f78a4 fix(benchmarks/SA-B8): KD fused, AMP migration, training robustness
+770ed9b84c chore(benchmarks): mark SA-B7 completed, start SA-B8
+980b862c0f fix(benchmarks/SA-B7): loader branches, preprocess trust, kwarg filtering
+4bee9221f1 chore(benchmarks): mark SA-B6 completed, start SA-B7
+d7281ba298 fix(benchmarks/SA-B6): dynamic L2, memory fragmentation, arg conflicts
+fbd363645e fix(benchmarks/SA-B1): lazy registry, meta modes, discovery robustness
+4c55a2d7e8 chore(benchmarks): mark SA-B5 completed, start SA-B6
+202d677184 fix(benchmarks/SA-B5): SIGKILL handling, OOM backoff, timeout robustness
+ec5bfc4fd4 test(benchmarks/SA-B1): add registry meta modes and robust discovery tests
+df8f8fa3a5 chore(benchmarks): mark SA-B4 completed, start SA-B5
+06b20277ef fix(benchmarks/SA-B4): unify savers, expand secrets, dedup lock
+43c4769b52 fix(benchmarks/SA-B1): add verify_ops_registry function to validate keys and categories
+248f56061a fix(benchmarks/SA-B1): add _LazyBenchmarkRegistry proxy and get_registry accessor
+915ed4fd03 chore(benchmarks): mark SA-B3 completed, start SA-B4
+e3c7ee547b fix(benchmarks/SA-B3): parquet idempotency, record validation, lease cleanup
+5738b9f1d5 chore(benchmarks): mark SA-B2 completed, start SA-B3
+d6f5e2c0cc fix(benchmarks/SA-B2): device index validation, status warning, robust result
+69836481cf docs(benchmarks): add MASTER_PROMPT specification with all 18 SA-B subtasks
+bef6bb53b0 chore(benchmarks): mark SA-B1 completed, start SA-B2
+2b5219b343 fix(benchmarks/SA-B1): registry lazy init, meta modes, discovery robustness
+
+--- Per-Agent Commit Counts ---
+SA-B1: 24 commits mentioning agent ID
+SA-B2: 3 commits mentioning agent ID
+SA-B3: 3 commits mentioning agent ID
+SA-B4: 3 commits mentioning agent ID
+SA-B5: 3 commits mentioning agent ID
+SA-B6: 3 commits mentioning agent ID
+SA-B7: 3 commits mentioning agent ID
+SA-B8: 3 commits mentioning agent ID
+SA-B9: 3 commits mentioning agent ID
+SA-B10: 3 commits mentioning agent ID
+SA-B11: 3 commits mentioning agent ID
+SA-B12: 3 commits mentioning agent ID
+SA-B13: 2 commits mentioning agent ID
+SA-B14: 2 commits mentioning agent ID
+SA-B15: 3 commits mentioning agent ID
+SA-B16: 2 commits mentioning agent ID
+SA-B17: 2 commits mentioning agent ID
+SA-B18: 3 commits mentioning agent ID

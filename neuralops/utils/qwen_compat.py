@@ -18,7 +18,6 @@ from typing import Any
 
 import torch
 import torch.nn as nn
-from neuralops.core.exceptions import NeuralOpsError
 
 
 @dataclass
@@ -33,6 +32,9 @@ class QwenConfigProxy:
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self.source, name)
+
+
+from neuralops.core.exceptions import NeuralOpsError
 
 
 class QwenIncompatibleError(NeuralOpsError, RuntimeError):

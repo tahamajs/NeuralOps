@@ -13,7 +13,6 @@ import argparse
 import json
 from pathlib import Path
 from typing import Any
-from neuralops.core.exceptions import NeuralOpsError
 
 
 def _load(path: Path) -> dict[str, Any]:
@@ -23,6 +22,9 @@ def _load(path: Path) -> dict[str, Any]:
     if not isinstance(data, dict) or not isinstance(data.get("metrics"), dict):
         raise ValueError(f"Invalid benchmark result schema: {path}")
     return data
+
+
+from neuralops.core.exceptions import NeuralOpsError
 
 
 class MetricNotFoundError(NeuralOpsError, KeyError, ValueError):

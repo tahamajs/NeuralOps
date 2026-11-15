@@ -1,0 +1,10 @@
+73232ed60c docs(audits): complete 20-agent wave2 non-benchmark audit master report and hardware tests
+3175928457 fix(benchmarks): migrate gpu_stress_heavy_trainer to torch.amp and add wave2 b2 audit
+0bb873f730 tests: add surgery and surgical_io wave2 regression tests and audit report
+b812a67a01 fix(lint): resolve ruff errors, import typing.Any, and add wave2 audit reports
+a56ce30752 docs(audits): add wave2 trainer/api/config audit report
+f9ff2de81e Merge branch 'agent/f-wave2-surgery' into refactor/v1.6.0-cpu-stability
+4065e2aba6 Merge branch 'agent/e-wave2-integrations' into refactor/v1.6.0-cpu-stability
+8b39b82c6f Merge branch 'agent/d-wave2-version-deps' into refactor/v1.6.0-cpu-stability
+c5970cb160 Merge branch 'agent/c-wave2-silent-failures' into refactor/v1.6.0-cpu-stability
+a3a10b8e0c Merge branch 'agent/b-wave2-test-infra' into refactor/v1.6.0-cpu-stability
