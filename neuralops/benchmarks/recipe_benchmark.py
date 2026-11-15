@@ -185,8 +185,7 @@ def run_recipe_benchmark(
     # 2. Plan and execute recipe
     plan = plan_recipe(recipe_obj, model)
     if isinstance(plan.validation_spec, dict):
-        if plan.validation_spec.get("profile") == "structural":
-            plan.validation_spec["profile"] = "minimal"
+        plan.validation_spec["profile"] = "structural"
     exec_result = execute_plan(plan, model)
 
     transformed_model = exec_result.final_model.to(target_device)
