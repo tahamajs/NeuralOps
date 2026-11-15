@@ -1,0 +1,15 @@
+0.weight: grad_norm=0.551231
+0.bias: grad_norm=0.108561
+2.weight: grad_norm=0.630039
+2.bias: grad_norm=0.009059
+
+--- KD Test ---
+KL loss: 0.017649, MSE loss: 0.155360
+Total KD loss: 0.173009
+
+--- LoRA Freeze Test ---
+Base weight unchanged: True
+
+--- AnyPrecisionAdamW Test ---
+All params finite after BF16 step: True
+All params updated (non-zero step): True

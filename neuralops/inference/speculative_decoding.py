@@ -63,7 +63,7 @@ class SelfSpeculativeDecoder:
 
     def __init__(
         self,
-        target_model: nn.Module,
+        target_model: Optional[nn.Module] = None,
         draft_model: Optional[nn.Module] = None,
         max_draft_k: int = 5,
         min_draft_k: int = 1,
@@ -82,19 +82,20 @@ class SelfSpeculativeDecoder:
             raise ValueError("min_draft_k must be a positive integer")
         if min_draft_k > max_draft_k:
             raise ValueError("min_draft_k cannot exceed max_draft_k")
-        if target_model is None or not isinstance(target_model, nn.Module):
-            raise TypeError(f"target_model must be an instance of nn.Module, got {type(target_model)}")
-        if draft_model is not None:
-            if not isinstance(draft_model, nn.Module):
-                raise TypeError(f"draft_model must be an instance of nn.Module, got {type(draft_model)}")
-            t_cfg = getattr(target_model, "config", None)
-            d_cfg = getattr(draft_model, "config", None)
-            t_vocab = getattr(t_cfg, "vocab_size", None) if t_cfg else None
-            d_vocab = getattr(d_cfg, "vocab_size", None) if d_cfg else None
-            if t_vocab is not None and d_vocab is not None and t_vocab != d_vocab:
-                raise ValueError(
-                    f"Draft model vocab size ({d_vocab}) does not match target model vocab size ({t_vocab})."
-                )
+        if target_model is not None:
+            if not isinstance(target_model, nn.Module):
+                raise TypeError(f"target_model must be an instance of nn.Module, got {type(target_model)}")
+            if draft_model is not None:
+                if not isinstance(draft_model, nn.Module):
+                    raise TypeError(f"draft_model must be an instance of nn.Module, got {type(draft_model)}")
+                t_cfg = getattr(target_model, "config", None)
+                d_cfg = getattr(draft_model, "config", None)
+                t_vocab = getattr(t_cfg, "vocab_size", None) if t_cfg else None
+                d_vocab = getattr(d_cfg, "vocab_size", None) if d_cfg else None
+                if t_vocab is not None and d_vocab is not None and t_vocab != d_vocab:
+                    raise ValueError(
+                        f"Draft model vocab size ({d_vocab}) does not match target model vocab size ({t_vocab})."
+                    )
         self.target_model = target_model
         self.draft_model = draft_model
         self.max_draft_k = max_draft_k
@@ -102,6 +103,28 @@ class SelfSpeculativeDecoder:
         self.adaptive_k = adaptive_k
         self.current_k = max_draft_k
         self.temperature = temperature
+
+    @staticmethod
+    def accept_draft(
+        draft_tokens: list[int] | torch.Tensor,
+        target_tokens: list[int] | torch.Tensor,
+    ) -> list[int]:
+        """
+        Validates candidate draft tokens against ground-truth target tokens:
+        - Matching draft tokens are accepted.
+        - First diverging token is replaced with the target token.
+        - Subsequent candidate draft tokens after divergence are discarded.
+        """
+        d_list = draft_tokens.tolist() if isinstance(draft_tokens, torch.Tensor) else list(draft_tokens)
+        t_list = target_tokens.tolist() if isinstance(target_tokens, torch.Tensor) else list(target_tokens)
+        accepted: list[int] = []
+        for d, t in zip(d_list, t_list):
+            if d == t:
+                accepted.append(d)
+            else:
+                accepted.append(t)
+                break
+        return accepted
 
     @property
     def max_draft_tokens(self) -> int:
@@ -143,6 +166,8 @@ class SelfSpeculativeDecoder:
         Matches exact greedy or stochastic distribution of target_model.
         """
         start_time = time.perf_counter()
+        if self.target_model is None:
+            raise ValueError("target_model must be provided to SelfSpeculativeDecoder.generate()")
         if temperature == 0.0 and self.temperature is not None:
             temperature = self.temperature
         if input_ids.ndim != 2 or input_ids.shape[0] != 1 or input_ids.shape[1] == 0:
