@@ -77,12 +77,39 @@ def get_sglang_radix_adapter(
     return SGLangRadixAdapter(tree=t, **kwargs)
 
 
+def get_sglang_runner(
+    model: Optional[Any] = None,
+    headless_mock: bool = False,
+    device: Any = "cpu",
+    **kwargs: Any,
+) -> Any:
+    """
+    Retrieve or construct an SGLang serving runner.
+
+    Args:
+        model: Optional model instance to be served.
+        headless_mock: Whether to explicitly return an offline HeadlessSGLangRunner.
+        device: Device to place the runner on.
+        **kwargs: Extra arguments forwarded to runner initialization.
+
+    Returns:
+        HeadlessSGLangRunner when mock is active or SGLang is unavailable in mock mode.
+
+    Raises:
+        IntegrationNotImplementedError: When SGLang is unavailable and mock is not requested.
+    """
+    from neuralops.integrations.sglang_plugin import get_sglang_runner as _get_runner
+
+    return _get_runner(model=model, headless_mock=headless_mock, device=device, **kwargs)
+
+
 __all__ = [
     "RadixPrefixNode",
     "RadixRecurrentNode",
     "RadixRecurrentTree",
     "SGLangRadixAdapter",
     "get_sglang_radix_adapter",
+    "get_sglang_runner",
     "register_neuralops_sglang_plugin",
     "sglang_is_available",
 ]

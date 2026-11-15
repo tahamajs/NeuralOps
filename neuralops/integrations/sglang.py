@@ -15,7 +15,11 @@ from __future__ import annotations
 
 import importlib.util
 import logging
-from typing import Any, Optional
+import os
+from typing import Any, Dict, List, Optional, Union
+
+import torch
+import torch.nn as nn
 
 from neuralops.core.exceptions import IntegrationNotImplementedError
 from neuralops.integrations.radix_prefix_cache import RadixPrefixNode, SGLangRadixAdapter
@@ -79,10 +83,37 @@ def get_sglang_radix_adapter(
     return SGLangRadixAdapter(tree=t, **kwargs)
 
 
+def get_sglang_runner(
+    model: Optional[nn.Module] = None,
+    headless_mock: bool = False,
+    device: Union[str, torch.device] = "cpu",
+    **kwargs: Any,
+) -> Any:
+    """
+    Retrieve or construct an SGLang serving runner.
+
+    Args:
+        model: Optional model instance to be served.
+        headless_mock: Whether to explicitly return an offline HeadlessSGLangRunner.
+        device: Device to place the runner on.
+        **kwargs: Extra arguments forwarded to runner initialization.
+
+    Returns:
+        HeadlessSGLangRunner when mock is active or SGLang is unavailable in mock mode.
+
+    Raises:
+        IntegrationNotImplementedError: When SGLang is unavailable and mock is not requested.
+    """
+    from neuralops.integrations.sglang_plugin import get_sglang_runner as _get_runner
+
+    return _get_runner(model=model, headless_mock=headless_mock, device=device, **kwargs)
+
+
 __all__ = [
     "register_neuralops_sglang_plugin",
     "sglang_is_available",
     "get_sglang_radix_adapter",
+    "get_sglang_runner",
     "RadixPrefixNode",
     "RadixRecurrentNode",
     "RadixRecurrentTree",
