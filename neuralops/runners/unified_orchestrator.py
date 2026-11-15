@@ -48,10 +48,10 @@ def run_orchestrator(module_key: str, default_args: list = None, extra_cli_args:
     RESULTS_BASE = PROJECT_ROOT / "results" / "01_unified_runs" / f"unified_{module_key}"
     if not TRAINER_SCRIPT.exists():
         raise FileNotFoundError(f"Trainer script does not exist: {TRAINER_SCRIPT}")
-    print("=" * 90, flush=True)
-    print(f"UNIFIED 4-MODEL BENCHMARK  —  {module_key.upper()}", flush=True)
-    print(f"Output : {RESULTS_BASE}", flush=True)
-    print("=" * 90, flush=True)
+    logger.info("=" * 90)
+    logger.info("UNIFIED 4-MODEL BENCHMARK  —  %s", module_key.upper())
+    logger.info("Output : %s", RESULTS_BASE)
+    logger.info("=" * 90)
 
     def run_model(m: dict) -> dict:
         out_dir = RESULTS_BASE / m["slug"]
@@ -138,23 +138,33 @@ def run_orchestrator(module_key: str, default_args: list = None, extra_cli_args:
             )
 
     W = 90
-    print("\n" + "=" * W, flush=True)
-    print(f"4-MODEL BENCHMARK — {module_key.upper()}", flush=True)
-    print("=" * W, flush=True)
-    print(
-        f"{'Model':<14} | {'Status':<10} | {'Accuracy':>8} | {'Elapsed':>7} | {'Comp Rate':<10} | {'Layers':<6}",
-        flush=True,
+    logger.info("=" * W)
+    logger.info("4-MODEL BENCHMARK — %s", module_key.upper())
+    logger.info("=" * W)
+    logger.info(
+        "%-14s | %-10s | %8s | %7s | %-10s | %-6s",
+        "Model",
+        "Status",
+        "Accuracy",
+        "Elapsed",
+        "Comp Rate",
+        "Layers",
     )
-    print("-" * W, flush=True)
+    logger.info("-" * W)
     for r in results:
         row = r["row_data"]
         comp = row.get("compression_rate", "N/A")
         svdl = row.get("num_compressed_layers", "N/A")
-        print(
-            f"{r['name']:<14} | {r['status']:<10} | {r['accuracy_pct']:>6.2f}%   | {r['elapsed_s']:>5.1f}s  | {str(comp):<10} | {str(svdl):<6}",
-            flush=True,
+        logger.info(
+            "%-14s | %-10s | %6.2f%%   | %5.1fs  | %-10s | %-6s",
+            r["name"],
+            r["status"],
+            r["accuracy_pct"],
+            r["elapsed_s"],
+            str(comp),
+            str(svdl),
         )
-    print("=" * W, flush=True)
+    logger.info("=" * W)
 
     RESULTS_BASE.mkdir(parents=True, exist_ok=True)
     rows = []
@@ -254,7 +264,7 @@ def run_orchestrator(module_key: str, default_args: list = None, extra_cli_args:
                 )
     except ImportError:
         pass
-    print("\nAll tasks completed.", flush=True)
+    logger.info("All tasks completed.")
 
 
 class UnifiedOrchestrator:
@@ -270,7 +280,7 @@ class UnifiedOrchestrator:
 
 def main():
     if len(sys.argv) < 2:
-        print("Error: Missing module_key. Provide it as the first argument.")
+        logger.error("Error: Missing module_key. Provide it as the first argument.")
         sys.exit(1)
     run_orchestrator(sys.argv[1], sys.argv[2:])
 

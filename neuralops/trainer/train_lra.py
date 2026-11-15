@@ -13,8 +13,11 @@ Trains and evaluates neural network architectures on Long Range Arena (LRA) benc
 
 import argparse
 import json
+import logging
 import sys
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 import torch
 from torch.utils.data import DataLoader
@@ -110,10 +113,7 @@ def _setup_datasets(task: str, current_seq_len: int, cfg: dict):
             train_ds = IMDbByteDataset(split="train", seq_len=current_seq_len)
             test_ds = IMDbByteDataset(split="test", seq_len=current_seq_len)
     except Exception as e:
-        print(
-            f"Error loading {task} dataset: {e}. Generating synthetic fallback.",
-            flush=True,
-        )
+        logger.warning("Error loading %s dataset: %s. Generating synthetic fallback.", task, e)
 
         class SyntheticDataset(torch.utils.data.Dataset):
             def __init__(self, size, seq_len, vocab_size, num_labels, seed=42):
@@ -297,9 +297,17 @@ def train_task(
 
     best_acc = 0.0
     global_step = 0
-    print(
-        f"Starting {task.upper()} training on {module_name}: {num_epochs} epochs, batch_size={current_batch_size}, lr={current_lr}, precision={precision} (amp={use_amp}), warmup_steps={actual_warmup_steps}, total_steps={total_steps}",
-        flush=True,
+    logger.info(
+        "Starting %s training on %s: %d epochs, batch_size=%d, lr=%s, precision=%s (amp=%s), warmup_steps=%d, total_steps=%d",
+        task.upper(),
+        module_name,
+        num_epochs,
+        current_batch_size,
+        current_lr,
+        precision,
+        use_amp,
+        actual_warmup_steps,
+        total_steps,
     )
 
     for epoch in range(num_epochs):
@@ -317,16 +325,28 @@ def train_task(
 
         if (epoch + 1) % 5 == 0 or (epoch + 1) == num_epochs or (max_steps is not None and global_step >= max_steps):
             acc = evaluate(model, test_ds, current_batch_size)
-            print(
-                f"[{task}/{module_name}] Epoch {epoch + 1:03d}/{num_epochs} (step {global_step}) | Loss: {avg_loss:.4f} | Acc: {acc:.2f}% (Best: {max(best_acc, acc):.2f}%)",
-                flush=True,
+            logger.info(
+                "[%s/%s] Epoch %03d/%d (step %d) | Loss: %.4f | Acc: %.2f%% (Best: %.2f%%)",
+                task,
+                module_name,
+                epoch + 1,
+                num_epochs,
+                global_step,
+                avg_loss,
+                acc,
+                max(best_acc, acc),
             )
             if acc > best_acc:
                 best_acc = acc
         else:
-            print(
-                f"[{task}/{module_name}] Epoch {epoch + 1:03d}/{num_epochs} (step {global_step}) | Loss: {avg_loss:.4f}",
-                flush=True,
+            logger.info(
+                "[%s/%s] Epoch %03d/%d (step %d) | Loss: %.4f",
+                task,
+                module_name,
+                epoch + 1,
+                num_epochs,
+                global_step,
+                avg_loss,
             )
 
         if max_steps is not None and global_step >= max_steps:
@@ -407,4 +427,4 @@ if __name__ == "__main__":
         warmup_steps=args.warmup_steps,
         precision=args.precision,
     )
-    print(f"Final: {args.task}/{args.module} = {acc:.2f}%")
+    logger.info("Final: %s/%s = %.2f%%", args.task, args.module, acc)

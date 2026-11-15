@@ -13,12 +13,15 @@ Runs multi-worker benchmark suites, sweeps, and evaluations with idempotent task
 
 import argparse
 import csv
+import logging
 import os
 import subprocess
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 WORKSPACE = Path(os.environ.get("NEURALOPS_WORKSPACE", Path.cwd()))
 
@@ -32,9 +35,7 @@ def run_task(task: dict) -> dict:
     if t == "zeroshot":
         script = (WORKSPACE / "scripts" / "run_zeroshot_parallel.py").resolve()
         if not script.exists():
-            raise FileNotFoundError(
-                f"Target script for task '{t}' does not exist: {script}"
-            )
+            raise FileNotFoundError(f"Target script for task '{t}' does not exist: {script}")
         cmd = [
             sys.executable,
             "-u",
@@ -55,9 +56,7 @@ def run_task(task: dict) -> dict:
     elif t == "rank_sweep":
         script = (WORKSPACE / "neuralops" / "benchmarks" / "run_rank_sweeper.py").resolve()
         if not script.exists():
-            raise FileNotFoundError(
-                f"Target script for task '{t}' does not exist: {script}"
-            )
+            raise FileNotFoundError(f"Target script for task '{t}' does not exist: {script}")
         model = f"models/base_checkpoints/{backbone}_{dataset}"
         cmd = [
             sys.executable,
@@ -83,9 +82,7 @@ def run_task(task: dict) -> dict:
     elif t == "c4_ppl":
         script = (WORKSPACE / "neuralops" / "benchmarks" / "run_quality_sweep.py").resolve()
         if not script.exists():
-            raise FileNotFoundError(
-                f"Target script for task '{t}' does not exist: {script}"
-            )
+            raise FileNotFoundError(f"Target script for task '{t}' does not exist: {script}")
         cmd = [
             sys.executable,
             "-u",
@@ -144,7 +141,7 @@ def main():
     if args.max_tasks:
         tasks = tasks[: args.max_tasks]
 
-    print(f"[INIT] {len(tasks)} tasks, parallel={args.parallel}")
+    logger.info("[INIT] %d tasks, parallel=%s", len(tasks), args.parallel)
 
     completed = 0
     failed = 0
@@ -160,22 +157,28 @@ def main():
                 status = "OK" if r["returncode"] == 0 else "FAIL"
                 if status == "FAIL":
                     failed += 1
-                print(
-                    f"[{completed}/{len(tasks)}] {r['task']}/{r['module']}/{r['dataset']} "
-                    f"| {status} | {r.get('elapsed_s', 0):.1f}s"
+                logger.info(
+                    "[%d/%d] %s/%s/%s | %s | %.1fs",
+                    completed,
+                    len(tasks),
+                    r["task"],
+                    r["module"],
+                    r["dataset"],
+                    status,
+                    r.get("elapsed_s", 0),
                 )
             except Exception as e:
                 failed += 1
-                print(f"[ERROR] {task} | {e}")
+                logger.error("[ERROR] %s | %s", task, e)
 
             if completed % 10 == 0:
                 elapsed = time.time() - t_start
                 rate = completed / elapsed * 60
                 eta = (len(tasks) - completed) / max(rate, 0.01)
-                print(f"[PROGRESS] {completed}/{len(tasks)} | {rate:.1f} tasks/min | ETA {eta:.0f} min")
+                logger.info("[PROGRESS] %d/%d | %.1f tasks/min | ETA %.0f min", completed, len(tasks), rate, eta)
 
     total = time.time() - t_start
-    print(f"[DONE] {completed}/{len(tasks)} finished ({failed} failed) in {total / 60:.1f} min")
+    logger.info("[DONE] %d/%d finished (%d failed) in %.1f min", completed, len(tasks), failed, total / 60)
 
 
 if __name__ == "__main__":

@@ -38,9 +38,14 @@ def _get_cpu_memory_mb() -> float:
         return 0.0
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 def print_log(msg: str) -> None:
     """Execute print log routine."""
-    print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
+    logger.info(msg)
 
 
 def build_model_for_context(

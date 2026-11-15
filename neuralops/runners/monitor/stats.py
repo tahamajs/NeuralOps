@@ -16,6 +16,7 @@ from __future__ import annotations
 import datetime
 import glob
 import json
+import logging
 import os
 import time
 from typing import Any
@@ -23,6 +24,8 @@ from typing import Any
 import pandas as pd
 
 from neuralops.runners.monitor.telemetry import get_live_gpu_telemetry
+
+logger = logging.getLogger(__name__)
 
 _CACHE_DATA: dict[str, Any] | None = None
 _CACHE_TIME: float = 0.0
@@ -66,7 +69,7 @@ def load_harvested_benchmark_records(project_dir: str, harvested_json_path: str)
             with open(harvested_json_path, "r", encoding="utf-8") as f:
                 records.extend(json.load(f))
         except Exception as e:
-            print(f"Error loading {harvested_json_path}: {e}")
+            logger.error("Error loading %s: %s", harvested_json_path, e)
 
     return records
 

@@ -7,6 +7,10 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Eval continuous 500token stress module."""
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def main() -> None:
     """Run this standalone evaluation experiment."""
@@ -26,7 +30,7 @@ def main() -> None:
 
     def print_log(msg):
         """Execute print log routine."""
-        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
+        logger.info(msg)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print_log(f"Full-Prefix 500-Token Long-Context Stress on: {torch.cuda.get_device_name(0)}")

@@ -12,6 +12,7 @@ Implements hyperparameter search, grid exploration, and trial evaluation for mod
 """
 
 import json
+import logging
 from collections.abc import Callable
 from typing import Any
 
@@ -25,7 +26,10 @@ try:
 
     _HAS_OPTUNA = True
 except ImportError:
+    optuna = None
     _HAS_OPTUNA = False
+
+logger = logging.getLogger(__name__)
 
 
 class HyperparameterOptimizer:
@@ -94,8 +98,8 @@ class HyperparameterOptimizer:
             json.dump(self.best_params, f, indent=2)
         df = self.study.trials_dataframe()
         df.to_csv("optuna_trials.csv", index=False)
-        print(f"\n✅ Optimization complete! Best value: {self.study.best_value:.4f}")
-        print(f"Best params: {self.best_params}")
+        logger.info("Optimization complete! Best value: %.4f", self.study.best_value)
+        logger.info("Best params: %s", self.best_params)
         return self.best_params
 
     def get_trial_dataframe(self) -> Any:
