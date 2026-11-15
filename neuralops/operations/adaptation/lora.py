@@ -94,7 +94,6 @@ class AdaptationLoraOperation(Operation):
                 if not isinstance(module, nn.Linear) or isinstance(module, LoRALinear):
                     continue
 
-                # Filter by targets if provided
                 if targets is not None:
                     matched = any(fnmatch.fnmatch(name, pat) or pat in name for pat in targets)
                     if not matched:

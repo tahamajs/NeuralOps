@@ -81,7 +81,6 @@ class AdaptationDistillOperation(Operation):
             teacher = config.get("teacher", config.get("teacher_model", None))
             teacher_source = config.get("teacher_source", "")
 
-            # If teacher module is not directly passed, attempt loading teacher if available
             if teacher is None:
                 if isinstance(teacher_source, nn.Module):
                     teacher = teacher_source
@@ -98,17 +97,14 @@ class AdaptationDistillOperation(Operation):
             pillars: Optional[List[str]] = config.get("pillars", None)
             device = config.get("device", None)
 
-            # Resolve device safely
             if device is not None:
                 dev = torch.device(device)
             else:
                 student_params = list(model.parameters())
                 dev = student_params[0].device if student_params else torch.device("cpu")
 
-            # Configure KD weights based on requested pillars
             kd_kwargs: Dict[str, Any] = {}
             if pillars:
-                # Map pillar names to trainer weight parameters
                 kd_kwargs["lambda_kd"] = 1.0 if "kd" in pillars or "logits" in pillars or "pillar1" in pillars else 0.0
                 kd_kwargs["lambda_mse"] = (
                     0.5 if "mse" in pillars or "hidden" in pillars or "pillar2" in pillars else 0.0
@@ -141,7 +137,6 @@ class AdaptationDistillOperation(Operation):
                     if key in config:
                         kd_kwargs[key] = float(config[key])
 
-            # If no train_loader is provided, generate dummy batches matching teacher input if possible
             if train_loader is None:
                 logger.warning("No train_loader specified for adaptation.distill; constructing single batch fallback.")
                 sample_dim = 16
@@ -151,7 +146,6 @@ class AdaptationDistillOperation(Operation):
                         break
                 train_loader = [torch.randn(4, sample_dim, device=dev) for _ in range(steps)]
 
-            # Run distillation training loop via canonical distill() engine
             results = distill(
                 student=model,
                 teacher=teacher,

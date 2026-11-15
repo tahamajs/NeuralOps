@@ -85,7 +85,6 @@ class AdaptationHealOperation(Operation):
             lr = float(config.get("lr", 1e-4))
             dataloader = config.get("dataloader", config.get("calibration_data", None))
 
-            # Instantiate DoRA healer
             healer = DoRAHealingHealer(
                 model=model,
                 rank=rank,
@@ -94,7 +93,6 @@ class AdaptationHealOperation(Operation):
             )
             injected_count = healer.inject_dora_adapters()
 
-            # Mode adjustments: configure trainable parameters based on healing mode
             if mode == "norm_only":
                 for p in model.parameters():
                     p.requires_grad = False
@@ -106,7 +104,6 @@ class AdaptationHealOperation(Operation):
                 for name, p in model.named_parameters():
                     p.requires_grad = "bias" in name.lower()
             else:
-                # full_quick: DoRA adapters (A, B, magnitude) + norms/biases are trainable
                 for p in model.parameters():
                     p.requires_grad = False
                 for wrapper in healer.injected_wrappers.values():
@@ -118,7 +115,6 @@ class AdaptationHealOperation(Operation):
 
             trainable_params = [p for p in model.parameters() if p.requires_grad]
 
-            # Run micro-calibration / healing steps if dataloader or calibration tensors provided
             losses: List[float] = []
             if dataloader is not None and trainable_params:
                 optimizer = torch.optim.AdamW(trainable_params, lr=lr)
@@ -134,7 +130,6 @@ class AdaptationHealOperation(Operation):
                     else:
                         outputs = model(batch)
 
-                    # Compute surrogate healing loss (e.g. logit norm / entropy / MSE if targets given)
                     if hasattr(outputs, "logits"):
                         loss = outputs.logits.square().mean()
                     elif isinstance(outputs, torch.Tensor):

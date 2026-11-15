@@ -1,0 +1,17 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.3, pytest-8.0.0, pluggy-1.6.0 -- /Users/tahamajs/.local/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/tahamajs/dev/Project
+configfile: pyproject.toml
+plugins: anyio-4.12.1, Faker-40.31.0, timeout-2.4.0, cov-4.1.0, django-4.8.0, xdist-3.5.0, sugar-0.9.7
+collecting ... collected 7 items
+
+tests/surgery/test_modular_surgery.py::TestDirectorModularization::test_director_facade_symbols PASSED [ 14%]
+tests/surgery/test_modular_surgery.py::TestDirectorModularization::test_director_submodule_direct_usage PASSED [ 28%]
+tests/surgery/test_modular_surgery.py::TestFXModularization::test_fx_facade_symbols PASSED [ 42%]
+tests/surgery/test_modular_surgery.py::TestFXModularization::test_fx_submodule_direct_usage PASSED [ 57%]
+tests/surgery/test_modular_surgery.py::TestGovernanceAndInvariants::test_zero_hardcoded_device_in_surgery PASSED [ 71%]
+tests/surgery/test_modular_surgery.py::TestGovernanceAndInvariants::test_zero_naked_prints_in_surgery PASSED [ 85%]
+tests/surgery/test_modular_surgery.py::TestGovernanceAndInvariants::test_file_size_limits_compliance PASSED [100%]
+
+============================== 7 passed in 4.09s ===============================
