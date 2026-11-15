@@ -64,6 +64,9 @@ def replace_attention(
     Returns:
         The model with attention layers replaced in-place.
     """
+    if model is None:
+        raise ValueError("model cannot be None.")
+
     target_mod = kwargs.pop("target_module", None) or kwargs.pop("new_attention_cls", None)
     if isinstance(target_mod, str) and not attention:
         attention = target_mod
@@ -300,11 +303,29 @@ def transplant_attention(
     attention_type: Optional[str] = None,
     target_attention: Optional[str] = None,
     validation_level: Optional[str] = None,
+    calibrate: bool = False,
+    calibration_inputs: Optional[Any] = None,
     **kwargs: Any,
 ) -> nn.Module:
-    """Canonical alias for replace_attention."""
+    """Drop-in transplant attention layers with optional closed-form subspace calibration.
+
+    Composes replace_attention with calibrate_attention_subspace when calibrate=True
+    or calibration_inputs is provided.
+    """
+    import copy
+
     attn = attention or attention_type or target_attention
-    return replace_attention(
+    should_calibrate = calibrate or (calibration_inputs is not None)
+    teacher = None
+    if should_calibrate:
+        teacher = kwargs.pop("teacher_model", None)
+        if teacher is None and model is not None:
+            try:
+                teacher = copy.deepcopy(model)
+            except Exception as e:
+                logger.warning("Could not deepcopy model for calibration: %s", e)
+
+    mutated = replace_attention(
         model=model,
         attention=attn,
         rank=rank,
@@ -313,6 +334,29 @@ def transplant_attention(
         validation_level=validation_level,
         **kwargs,
     )
+
+    if should_calibrate and teacher is not None:
+        sample = (
+            calibration_inputs
+            if calibration_inputs is not None
+            else kwargs.pop("sample_inputs", kwargs.pop("sample_input", None))
+        )
+        if sample is not None:
+            from neuralops.models.surgery import calibrate_attention_subspace
+
+            ridge_lambda = kwargs.pop("ridge_lambda", 1e-3)
+            blend_alpha = kwargs.pop("blend_alpha", 0.25)
+            attach_convex_anchor = kwargs.pop("attach_convex_anchor", False)
+            mutated = calibrate_attention_subspace(
+                teacher_model=teacher,
+                student_model=mutated,
+                calibration_inputs=sample,
+                ridge_lambda=ridge_lambda,
+                blend_alpha=blend_alpha,
+                attach_convex_anchor=attach_convex_anchor,
+            )
+
+    return mutated
 
 
 # v1.7.0 High-Level Public Ergonomics Aliases
@@ -1030,7 +1074,7 @@ def compare_attentions_ablation(
     from neuralops.core.paper_export import compute_pareto_frontier, export_benchmark_table
     from neuralops.core.roofline import profile_roofline
 
-    target_dev = device or ("cuda:0" if torch.cuda.is_available() else "cpu")
+    target_dev = device or ("cuda" if torch.cuda.is_available() else "cpu")
     records = []
 
     for name in attention_names:
@@ -1738,18 +1782,27 @@ def quick_benchmark(
             except TypeError:
                 _ = model(input_ids=sample)
         if dev.type == "cuda":
+            start_event = torch.cuda.Event(enable_timing=True)
+            end_event = torch.cuda.Event(enable_timing=True)
             torch.cuda.synchronize()
-        t0 = time.perf_counter()
-        for _ in range(max(1, iterations)):
-            try:
-                out = model(sample)
-            except TypeError:
-                out = model(input_ids=sample)
-        if dev.type == "cuda":
+            start_event.record()
+            for _ in range(max(1, iterations)):
+                try:
+                    out = model(sample)
+                except TypeError:
+                    out = model(input_ids=sample)
+            end_event.record()
             torch.cuda.synchronize()
-        t1 = time.perf_counter()
-
-    latency_ms = ((t1 - t0) / max(1, iterations)) * 1000.0
+            latency_ms = start_event.elapsed_time(end_event) / max(1, iterations)
+        else:
+            t0 = time.perf_counter()
+            for _ in range(max(1, iterations)):
+                try:
+                    out = model(sample)
+                except TypeError:
+                    out = model(input_ids=sample)
+            t1 = time.perf_counter()
+            latency_ms = ((t1 - t0) / max(1, iterations)) * 1000.0
     is_finite = True
     if hasattr(out, "logits"):
         is_finite = bool(torch.isfinite(out.logits).all())
