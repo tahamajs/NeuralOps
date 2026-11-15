@@ -16,6 +16,7 @@ Manages:
   - Unified Hugging Face model card generation
   - Metrics recording and optional background upload dispatch
 """
+
 from __future__ import annotations
 
 import datetime
@@ -94,7 +95,7 @@ def load_tokenized_qwen_corpus(
     if cache_path.exists():
         try:
             logger.info("Loading pre-tokenized corpus from RAM cache: %s", cache_path)
-            data = torch.load(cache_path, map_location="cpu")
+            data = torch.load(cache_path, map_location="cpu", weights_only=True)
             return data["train_chunks"], data["val_chunks"]
         except Exception as e:
             logger.warning("RAM cache load failed (%s); re-tokenizing...", e)
@@ -274,7 +275,17 @@ def summarize_attention_doc(attn_key: str) -> str:
     raw_doc = inspect.getdoc(cls) if cls is not None else ""
     if not raw_doc:
         return f"Specialized attention mechanism `{attn_key}` from the NeuralOps ATTENTION_REGISTRY."
-    for marker in ("Attributes:", "Args:", "Parameters:", "Returns:", "Raises:", "Example:", "Examples:", "Note:", "Notes:"):
+    for marker in (
+        "Attributes:",
+        "Args:",
+        "Parameters:",
+        "Returns:",
+        "Raises:",
+        "Example:",
+        "Examples:",
+        "Note:",
+        "Notes:",
+    ):
         idx = raw_doc.find(marker)
         if idx != -1:
             raw_doc = raw_doc[:idx]
@@ -563,11 +574,17 @@ class ZooOrchestrator:
                 if self.uploader is not None:
                     repo_id = res.get("repo_id") or f"{self.hf_org}/{key}"
                     try:
+                        metrics_payload = res.get("metrics")
+                        if metrics_payload is None or not isinstance(metrics_payload, dict):
+                            metrics_payload = {
+                                k: v for k, v in res.items() if k not in ("status", "timestamp", "error", "repo_id")
+                            }
                         self.uploader.submit_upload(
                             attn_key=key,
                             staging_dir=ckpt_dir,
-                            metrics=res.get("metrics", {}),
+                            metrics=metrics_payload,
                             repo_id=repo_id,
+                            zoo_type=self.zoo_type,
                         )
                     except TypeError:
                         # Fallback for legacy signature

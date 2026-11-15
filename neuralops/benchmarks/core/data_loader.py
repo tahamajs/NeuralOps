@@ -165,6 +165,8 @@ def load_dataset_by_name(
                 second = "sentence2" if "sentence2" in raw_local.column_names else None
                 return _TokenizedIterableDataset(raw_local, tokenizer, (first, second), max_length)
             rows = raw_local
+            if max_samples is not None and max_samples < len(rows):
+                rows = rows.select(range(max_samples))
             text_columns = [c for c in ("sentence", "text", "sentence1") if c in rows.column_names]
             first = (
                 text_columns[0] if text_columns else next(c for c in rows.column_names if c not in {"label", "labels"})
@@ -183,7 +185,9 @@ def load_dataset_by_name(
             labels = torch.tensor(
                 rows["label"]
                 if "label" in rows.column_names
-                else rows["labels"] if "labels" in rows.column_names else [0] * len(rows)
+                else rows["labels"]
+                if "labels" in rows.column_names
+                else [0] * len(rows)
             )
             return TensorDataset(enc["input_ids"], enc["attention_mask"], labels)
         except Exception as exc:
@@ -361,9 +365,7 @@ def load_preprocess_script(path: str | Path, trust: bool | None = None) -> Calla
 
     preprocess_fn = getattr(module, "preprocess", None)
     if not callable(preprocess_fn):
-        raise AttributeError(
-            f"Preprocessing script '{path_obj}' does not expose a callable named 'preprocess(batch)'."
-        )
+        raise AttributeError(f"Preprocessing script '{path_obj}' does not expose a callable named 'preprocess(batch)'.")
 
     preprocess_fn.__preprocess_script_path__ = str(path_obj)
     preprocess_fn.__preprocess_script_sha256__ = script_hash

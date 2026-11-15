@@ -91,6 +91,13 @@ class KDLoss(nn.Module):
                 return self.alpha * task_loss + (1.0 - self.alpha) * distill_loss
             return distill_loss
 
+        if student_logits is None:
+            if student_hidden is not None and student_weight is not None:
+                student_logits = F.linear(student_hidden, student_weight, student_bias)
+        if teacher_logits is None:
+            if teacher_hidden is not None and teacher_weight is not None:
+                teacher_logits = F.linear(teacher_hidden, teacher_weight, teacher_bias)
+
         if student_logits is None or teacher_logits is None:
             raise ValueError(
                 "Either (student_logits, teacher_logits) or (student_hidden, student_weight, teacher_hidden, teacher_weight) must be provided."
@@ -106,7 +113,13 @@ class KDLoss(nn.Module):
 
         if labels is not None:
             if labels.dtype in (torch.long, torch.int64):
-                task_loss = F.cross_entropy(student_logits_stable, labels)
+                if student_logits_stable.dim() == 3:
+                    task_loss = F.cross_entropy(
+                        student_logits_stable.view(-1, student_logits_stable.size(-1)),
+                        labels.view(-1),
+                    )
+                else:
+                    task_loss = F.cross_entropy(student_logits_stable, labels)
             else:
                 task_loss = F.mse_loss(student_logits_stable.squeeze(-1), labels.float())
             total_loss = self.alpha * task_loss + (1.0 - self.alpha) * distill_loss
@@ -147,9 +160,24 @@ def kd_train_step(
     if teacher is not None:
         teacher.eval()
 
-    input_ids = batch[0].to(device)
-    attention_mask = batch[1].to(device)
-    labels = batch[2].to(device) if len(batch) > 2 else None
+    if isinstance(batch, dict):
+        input_ids = batch["input_ids"].to(device)
+        attention_mask = batch.get("attention_mask")
+        if attention_mask is not None:
+            attention_mask = attention_mask.to(device)
+        labels = batch.get("labels", batch.get("label"))
+        if labels is not None:
+            labels = labels.to(device)
+    elif isinstance(batch, (tuple, list)):
+        input_ids = batch[0].to(device)
+        attention_mask = batch[1].to(device) if len(batch) > 1 else None
+        labels = batch[2].to(device) if len(batch) > 2 else None
+    elif isinstance(batch, torch.Tensor):
+        input_ids = batch.to(device)
+        attention_mask = None
+        labels = None
+    else:
+        raise TypeError(f"Unsupported batch type: {type(batch)}")
 
     use_cuda = str(device).startswith("cuda") and torch.cuda.is_available()
     mp_type = (mixed_precision or "no").lower()
@@ -158,23 +186,29 @@ def kd_train_step(
 
     optimizer.zero_grad()
 
+    call_kwargs: dict[str, Any] = {"input_ids": input_ids}
+    if attention_mask is not None:
+        call_kwargs["attention_mask"] = attention_mask
+
     def _call_model(mod: nn.Module) -> Any:
         try:
             if kd_loss_fn.use_fused_linear:
-                return mod(input_ids=input_ids, attention_mask=attention_mask, output_hidden_states=True)
-            return mod(input_ids=input_ids, attention_mask=attention_mask)
+                return mod(**call_kwargs, output_hidden_states=True)
+            return mod(**call_kwargs)
         except TypeError:
-            return mod(input_ids=input_ids, attention_mask=attention_mask)
+            return mod(**call_kwargs)
 
     if amp_enabled:
         with torch.amp.autocast(device_type="cuda", dtype=amp_dtype):
             if teacher_logits is not None:
                 t_logits = teacher_logits.to(device)
                 teacher_outputs = None
-            else:
+            elif teacher is not None:
                 with torch.no_grad():
                     teacher_outputs = _call_model(teacher)
-                t_logits = teacher_outputs.logits
+                t_logits = getattr(teacher_outputs, "logits", teacher_outputs)
+            else:
+                raise ValueError("Either teacher or teacher_logits must be provided.")
             student_outputs = _call_model(student)
 
             s_head = getattr(student, "lm_head", None)
@@ -207,10 +241,12 @@ def kd_train_step(
         if teacher_logits is not None:
             t_logits = teacher_logits.to(device)
             teacher_outputs = None
-        else:
+        elif teacher is not None:
             with torch.no_grad():
                 teacher_outputs = _call_model(teacher)
-            t_logits = teacher_outputs.logits
+            t_logits = getattr(teacher_outputs, "logits", teacher_outputs)
+        else:
+            raise ValueError("Either teacher or teacher_logits must be provided.")
         student_outputs = _call_model(student)
         s_head = getattr(student, "lm_head", None)
         t_head = getattr(teacher, "lm_head", None)
@@ -273,11 +309,39 @@ def build_teacher_cache(
     cached_logits = []
     with torch.no_grad():
         for batch in dataloader:
-            input_ids = batch[0].to(device)
-            attention_mask = batch[1].to(device)
-            out = teacher(input_ids=input_ids, attention_mask=attention_mask)
-            cached_logits.append(out.logits.cpu())
+            if isinstance(batch, dict):
+                input_ids = batch["input_ids"].to(device)
+                attention_mask = batch.get("attention_mask")
+                if attention_mask is not None:
+                    attention_mask = attention_mask.to(device)
+            elif isinstance(batch, (tuple, list)):
+                input_ids = batch[0].to(device)
+                attention_mask = batch[1].to(device) if len(batch) > 1 else None
+            elif isinstance(batch, torch.Tensor):
+                input_ids = batch.to(device)
+                attention_mask = None
+            else:
+                raise TypeError(f"Unsupported batch type: {type(batch)}")
 
+            call_kwargs: dict[str, Any] = {"input_ids": input_ids}
+            if attention_mask is not None:
+                call_kwargs["attention_mask"] = attention_mask
+
+            out = teacher(**call_kwargs)
+            logits = getattr(out, "logits", out if isinstance(out, torch.Tensor) else None)
+            if logits is None and isinstance(out, (tuple, list)):
+                logits = out[0]
+            if logits is not None:
+                cached_logits.append(logits.cpu())
+
+    import warnings
+
+    warnings.warn(
+        "Cached logits are serialized using torch.save; ensure file originates from a trusted local cache.",
+        UserWarning,
+        stacklevel=2,
+    )
+    LOG.warning("Serializing teacher cache with torch.save to %s. Ensure weights are from trusted sources.", p)
     torch.save(cached_logits, p)
     LOG.info("Saved teacher activation cache to %s (%d batches).", p, len(cached_logits))
     return p
