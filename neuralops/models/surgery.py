@@ -1104,6 +1104,10 @@ def _heal_replaced_model_impl(
 
         target_in_dtype = _detect_surg_input_dtype(s_mod)
 
+        # Record original parameter and buffer dtypes to restore them after healing
+        orig_param_dtypes = {name: p.dtype for name, p in s_mod.named_parameters()}
+        orig_buf_dtypes = {name: b.dtype for name, b in s_mod.named_buffers()}
+
         # Harmonize mixed-dtype parameters inside s_mod if inconsistent
         s_float_dts = {p.dtype for p in s_mod.parameters() if p.is_floating_point()}
         if len(s_float_dts) > 1:
@@ -1222,6 +1226,13 @@ def _heal_replaced_model_impl(
         else:
             s_mod.load_state_dict(initial_state)
         s_mod.eval()
+
+        for p_name, p in s_mod.named_parameters():
+            if p_name in orig_param_dtypes and p.dtype != orig_param_dtypes[p_name]:
+                p.data = p.data.to(orig_param_dtypes[p_name])
+        for b_name, b in s_mod.named_buffers():
+            if b_name in orig_buf_dtypes and b.dtype != orig_buf_dtypes[b_name]:
+                b.data = b.data.to(orig_buf_dtypes[b_name])
 
         with torch.no_grad():
             pred_final_val = _call_surg_module(s_mod, H_in, target_in_dtype)

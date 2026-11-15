@@ -16,6 +16,8 @@ from neuralops.core.exceptions import NeuralOpsError
 
 from neuralops.core.exceptions import NeuralOpsError
 
+from neuralops.core.exceptions import NeuralOpsError
+
 E_REGISTRY_UNKNOWN_OP = "E_REGISTRY_UNKNOWN_OP"
 E_REGISTRY_UNKNOWN_VERSION = "E_REGISTRY_UNKNOWN_VERSION"
 E_REGISTRY_DUPLICATE = "E_REGISTRY_DUPLICATE"

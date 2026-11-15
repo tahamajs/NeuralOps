@@ -10,9 +10,6 @@ Modularized Low-Rank Submodule
 """
 
 from __future__ import annotations
-from neuralops.ops.triton._low_rank.fused_ops import fused_int4_lut_dequant_matmul_pytorch
-from neuralops.ops.triton._low_rank.core import fwd
-from neuralops.ops.triton._low_rank.kernels_tt_kron import triton_fused_kronecker_matmul
 
 import logging
 import math
@@ -21,7 +18,6 @@ from typing import Any, Optional, Tuple
 
 import torch
 import torch.nn.functional as F
-
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +29,9 @@ from neuralops.ops.triton._types import (
     tl,
     triton,
 )
+from neuralops.ops.triton._low_rank.fused_ops import fused_int4_lut_dequant_matmul_pytorch
+from neuralops.ops.triton._low_rank.core import fwd
+from neuralops.ops.triton._low_rank.kernels_tt_kron import triton_fused_kronecker_matmul
 
 if HAS_TRITON and tl is not None:
 

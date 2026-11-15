@@ -524,3 +524,4 @@ def triton_spectral_entropy_svd_gate(
 
     return y.view(*orig_shape[:-1], N)
 
+

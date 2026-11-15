@@ -437,7 +437,6 @@ if HAS_TRITON and tl is not None:
         )
 
 
-
 else:
     _triton_gemm_bias_kernel = None
     _fused_low_rank_gemm_fwd_kernel = None

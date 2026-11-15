@@ -1,1 +1,1 @@
-# Low rank internal package
+"""Low-rank modularized package."""
