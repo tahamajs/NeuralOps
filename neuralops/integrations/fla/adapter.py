@@ -108,8 +108,8 @@ class FLALayerAdapter(nn.Module):
             raise IntegrationNotImplementedError("fla_layer_cls cannot be None when instantiating FLALayerAdapter.")
 
         # Deferred initialization of inner FLA layer
-        hidden_size = getattr(config, "hidden_size", 768)
-        num_heads = getattr(config, "num_attention_heads", 12)
+        hidden_size = kwargs.pop("hidden_size", getattr(config, "hidden_size", 768))
+        num_heads = kwargs.pop("num_heads", getattr(config, "num_attention_heads", 12))
         self.inner = fla_layer_cls(
             hidden_size=hidden_size,
             num_heads=num_heads,
