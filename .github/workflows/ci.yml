@@ -1,18 +1,19 @@
+# .github/workflows/ci.yml
 name: CI
 
 on:
   push:
-    branches: [ main, "wave*/**" ]
+    branches: [main, "wave*/**"]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  lint-and-typecheck:
-    name: Lint & Typecheck
+  lint:
+    name: Lint & Static Typing
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,20 +23,17 @@ jobs:
           python-version: "3.11"
       - name: Install Linting Tools
         run: |
-          pip install --upgrade pip
-          pip install ruff mypy pydantic>=2.0
+          python -m pip install --upgrade pip
+          pip install ruff mypy pydantic>=2.0 torch
       - name: Ruff Check
-        run: |
-          ruff check neuralops/ tests/
+        run: ruff check neuralops/ tests/
       - name: Ruff Format Check
-        run: |
-          ruff format --check neuralops/ tests/ || true
+        run: ruff format --check neuralops/ tests/ || true
       - name: Mypy Strict on v2 Modules
-        run: |
-          mypy --strict neuralops/benchmarks/config_v2/ neuralops/benchmarks/suites_v2/ neuralops/benchmarks/cli_v2/ neuralops/benchmarks/results_v2/ 2>&1 || true
+        run: mypy --strict neuralops/benchmarks/config_v2/ neuralops/benchmarks/results_v2/ neuralops/benchmarks/cli_v2/ neuralops/benchmarks/suites_v2/ || true
 
   test:
-    name: Unit & Contract Tests (Python ${{ matrix.python-version }})
+    name: Multi-Matrix Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -47,10 +45,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install Dependencies
+      - name: Install Package & Test Dependencies
         run: |
-          pip install --upgrade pip
-          pip install -e ".[core,dev]" || pip install torch transformers pytest pytest-cov pyyaml rich psutil
+          python -m pip install --upgrade pip
+          pip install -e ".[test]" || pip install -e ".[core,dev]" || pip install torch transformers pytest pytest-cov pyyaml rich psutil pydantic
       - name: Run Unit & Contract Tests
-        run: |
-          pytest tests/unit tests/contract -x -q
+        run: pytest tests/unit tests/contract -v
+      - name: Run Integration Tests (CPU-only)
+        run: pytest tests/integration -v -m "not hub and not gpu" || true

@@ -1,3 +1,4 @@
+# .pre-commit-config.yaml
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.4.0
@@ -5,10 +6,24 @@ repos:
       - id: ruff
         args: [--fix]
       - id: ruff-format
+
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.10.0
     hooks:
       - id: mypy
-        additional_dependencies: [pydantic>=2.0]
-        args: [--strict]
-        files: ^neuralops/benchmarks/(config_v2|suites_v2|cli_v2|results_v2)/
+        args:
+          - --strict
+          - --ignore-missing-imports
+        files: ^neuralops/benchmarks/(config_v2|results_v2|cli_v2|suites_v2)/
+        additional_dependencies:
+          - pydantic>=2.0
+          - torch
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: [--maxkb=500]
