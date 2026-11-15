@@ -126,7 +126,7 @@ def test_apply_rotary_pos_emb_gradient_flow() -> None:
     sin = torch.randn(2, 8, 16)
 
     q_out, k_out = apply_rotary_pos_emb(q, k, cos, sin)
-    loss = (q_out.sum() + k_out.sum())
+    loss = q_out.sum() + k_out.sum()
     loss.backward()
 
     assert q.grad is not None and not torch.isnan(q.grad).any()

@@ -69,6 +69,7 @@ def test_validate_module_contract_custom_registered() -> None:
 
 def test_validate_module_contract_unregistered_module_instance() -> None:
     """Verify 6-point contract validator on unregistered nn.Module instance with default spec."""
+
     class CustomUnregistered(nn.Module):
         def __init__(self, embed_dim: int = 64, num_heads: int = 4):
             super().__init__()

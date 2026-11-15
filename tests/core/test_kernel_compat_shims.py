@@ -24,7 +24,10 @@ KERNEL_SHIM_PAIRS = [
     ("neuralops.core.triton_kernels.fused_kd", "neuralops.ops.triton.fused_kd"),
     ("neuralops.core.triton_kernels.fused_ce", "neuralops.ops.triton.fused_ce"),
     ("neuralops.core.triton_kernels.block_sparse", "neuralops.ops.triton.block_sparse"),
-    ("neuralops.core.triton_kernels.standalone.hgrn2_fused_bwd_scan", "neuralops.ops.triton.standalone.hgrn2_fused_bwd_scan"),
+    (
+        "neuralops.core.triton_kernels.standalone.hgrn2_fused_bwd_scan",
+        "neuralops.ops.triton.standalone.hgrn2_fused_bwd_scan",
+    ),
 ]
 
 

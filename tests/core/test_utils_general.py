@@ -87,7 +87,7 @@ def test_get_model_device() -> None:
 def test_count_parameters() -> None:
     model = nn.Sequential(
         nn.Linear(10, 5, bias=False),  # 50 params
-        nn.Linear(5, 2, bias=True),    # 10 + 2 = 12 params
+        nn.Linear(5, 2, bias=True),  # 10 + 2 = 12 params
     )
     # Total = 62
     assert count_parameters(model, trainable_only=False) == 62
