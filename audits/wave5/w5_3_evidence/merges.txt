@@ -1,0 +1,24 @@
+4415afae70 merge: SA-B18 remediation
+4b57c629dd merge: SA-B17 remediation
+72942e7f17 merge: SA-B16 remediation
+710b2e1e87 merge: SA-B15 remediation
+12d732bb7d feat(wave6): incorporate completed example remediations from parallel subagents
+148da36630 fix(wave4/W4-B3): adapters and persistence remediation
+b21c41f4cb merge: incorporate final fixes from benchmarks remediation into main
+b7b57b02a3 merge: benchmarks remediation final audits and compat into main
+4415afae70 merge: SA-B18 remediation
+4b57c629dd merge: SA-B17 remediation
+72942e7f17 merge: SA-B16 remediation
+710b2e1e87 merge: SA-B15 remediation
+7125acf46f docs(plan): 10-agent parallel remediation blueprint with phase boundaries and conflict prevention matrix
+3f15817d72 docs(audit): integrate architectural code walkthroughs and defect remediation blocks into all 10 audit sections
+2603cc4d74 docs(audit): comprehensive 10-section forensic audit and remediation roadmap for branch finalization
+476535ada5 fix(zoos): comprehensive multi-agent remediation across stability, numerics, and export pipelines
+1bacc45df0 feat(cli): add comprehensive audit and user-experience remediation plan for NeuralOps CLI
+d4856a1035 fix(types): comprehensive type remediation and hardware dispatch hardening
+49ef15a1a5 fix(remediation): optimize ssm scans, dynamic CLI parser, and lola calibration
+5d5eb193d8 feat(framework): complete conference-grade remediation across all 5 tracks
+3b90c29919 docs: exhaustive 753-line remediation plan from 5-agent deep audit — covers every file, module, and doc
+70256072c9 docs: add comprehensive remediation plan from 5-agent deep audit
+7f12a7c99d docs(audit): Comprehensive mathematical failure-mode and remediation report across all 296 modules
+6035f6b155 You now have a complete Governance frontend with:

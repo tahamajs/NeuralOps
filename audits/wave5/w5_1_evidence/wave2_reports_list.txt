@@ -1,0 +1,16 @@
+total 400
+drwxr-xr-x@ 14 tahamajs  staff    448 Nov 15 01:49 .
+drwxr-xr-x@ 11 tahamajs  staff    352 Nov 15 19:58 ..
+-rw-r--r--@  1 tahamajs  staff  12533 Nov 15 01:49 a1_models_core.md
+-rw-r--r--@  1 tahamajs  staff  15432 Nov 15 01:49 a2_models_surgery.md
+-rw-r--r--@  1 tahamajs  staff   7661 Nov 15 01:49 b1_surgery_core.md
+-rw-r--r--@  1 tahamajs  staff   7336 Nov 15 01:49 b2_surgery_advanced.md
+-rw-r--r--@  1 tahamajs  staff  13162 Nov 15 01:49 c1_pipeline.md
+-rw-r--r--@  1 tahamajs  staff  11665 Nov 15 01:49 f1_layers_linear.md
+-rw-r--r--@  1 tahamajs  staff  20120 Nov 15 01:49 f4_layers_specialized.md
+-rw-r--r--@  1 tahamajs  staff  14080 Nov 15 01:49 g1_compression_svd.md
+-rw-r--r--@  1 tahamajs  staff  25552 Nov 15 01:49 g3_compression_factorization.md
+-rw-r--r--@  1 tahamajs  staff  16508 Nov 15 01:49 h1_ops_triton.md
+-rw-r--r--@  1 tahamajs  staff  21173 Nov 15 01:49 i1_core.md
+-rw-r--r--@  1 tahamajs  staff  15918 Nov 15 01:49 j1_trainer_api_config.md
+      88 audits/wave2_master.md

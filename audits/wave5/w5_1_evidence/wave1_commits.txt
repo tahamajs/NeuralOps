@@ -1,0 +1,32 @@
+f94b0c2536 fix(wave1/layers): audit 20 sampled attentions and fix P0 crashes
+598b16039a fix(wave1/kd-storage): security weights_only and P0 fixes
+592c476fbf fix(wave1/runners-cli): P0 cross-platform path and subprocess fixes
+3c01e864fb fix(wave1/hub-validation-recipe): P0-7,12,13,18 + 4 P1s
+94822b256e fix(wave1/surgery): P0-6,8,9,11,14,15,19 + 4 P1s
+b56b9e67df fix(wave1/suites-core): P0 fixes in benchmark suites and core
+b752dd1162 fix(wave1/compression-ops): sample audit 15 compressors, 20 kernels and P0 fixes
+317f618cc1 fix(wave1/benchmarks): registry lazy, seed preset, cold cache MPS
+66a419117c fix(wave1/models): P0-1,2,5,10,17 + 5 P1s
+e3ce4f1b12 fix(wave1/serving-tracking): P0-16,21,22 + 9 P1s + hygiene
+365cb5f53f merge(wave1): B5 compression, ops, core fixes
+09374e6f7b merge(wave1): B4 sampled layers fixes
+ffcaa3c594 merge(wave1): B3 runners, cli, utils fixes
+c10e49a487 merge(wave1): B2 KD, storage, adapters fixes
+c719255a80 merge(wave1): B1 suites and core fixes
+7261fdba42 merge(wave1): A3 surgery and pipeline transform fixes
+64cd2d5704 merge(wave1): A4 hub, validation, recipe fixes
+77f1e5bf5f merge(wave1): A5 serving and tracking fixes
+839cf26726 merge(wave1): A1 models fixes
+2b4d1ded81 merge(wave1): A2 benchmarks selective fixes
+f94b0c2536 fix(wave1/layers): audit 20 sampled attentions and fix P0 crashes
+9ce873b21c docs(wave1/kd-storage): update audit report with commit reference
+667d51d22e style(wave1/kd-storage): apply ruff formatting across kd and adapters
+598b16039a fix(wave1/kd-storage): security weights_only and P0 fixes
+592c476fbf fix(wave1/runners-cli): P0 cross-platform path and subprocess fixes
+3c01e864fb fix(wave1/hub-validation-recipe): P0-7,12,13,18 + 4 P1s
+94822b256e fix(wave1/surgery): P0-6,8,9,11,14,15,19 + 4 P1s
+b56b9e67df fix(wave1/suites-core): P0 fixes in benchmark suites and core
+b752dd1162 fix(wave1/compression-ops): sample audit 15 compressors, 20 kernels and P0 fixes
+317f618cc1 fix(wave1/benchmarks): registry lazy, seed preset, cold cache MPS
+66a419117c fix(wave1/models): P0-1,2,5,10,17 + 5 P1s
+e3ce4f1b12 fix(wave1/serving-tracking): P0-16,21,22 + 9 P1s + hygiene

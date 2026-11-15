@@ -1,0 +1,32 @@
+=== NEURALOPS BENCHMARKS ANTI-PATTERN FORENSIC SCAN ===
+
+--- 1. Zero Fake Random Evaluations (Rule 9.4 & Zero-Fake Rule) ---
+Command: grep -rn "torch.randn.*needle\|torch.randn.*teacher_logits\|torch.rand.*score" neuralops/benchmarks/suites/
+Match Count: 0
+
+--- 2. AMP Deprecation Scan (Rule 2.1) ---
+Command: grep -rn "torch.cuda.amp" neuralops/benchmarks/
+Match Count: 0
+
+--- 3. Hardcoded CUDA Device Scan (Rule 2.5) ---
+Command: grep -rn "cuda:0" neuralops/benchmarks/ | grep -v "default="cuda:0"" | grep -v "test_"
+Match Count: 0
+
+--- 4. Silent Exception Swallowing Scan (Rule 10) ---
+Command: grep -rn --exclude-dir=__pycache__ "except.*:.*pass" neuralops/benchmarks/ | grep -v "allowed-swallow"
+Match Count: 0
+
+--- 5. Main Functions in Library Files (Rule 1.4 & 1.5) ---
+Command: grep -rn --exclude-dir=__pycache__ "if __name__ == .__main__.:" neuralops/benchmarks/ | grep -v "cli_v2/main.py"
+Match Count: 94
+neuralops/benchmarks/benchmark_dynamic_range_stress.py:290:if __name__ == "__main__":
+neuralops/benchmarks/kd/__main__.py:155:if __name__ == "__main__":
+neuralops/benchmarks/precision_parity.py:80:if __name__ == "__main__":
+neuralops/benchmarks/serving_matrix.py:62:if __name__ == "__main__":
+neuralops/benchmarks/multi_seed_stress_test_131_72.py:439:if __name__ == "__main__":
+neuralops/benchmarks/run_long_context_sweep.py:479:if __name__ == "__main__":
+neuralops/benchmarks/stress_test_seeds_404_777_999.py:327:if __name__ == "__main__":
+neuralops/benchmarks/reproducibility.py:72:if __name__ == "__main__":
+neuralops/benchmarks/generation_speed.py:84:if __name__ == "__main__":
+neuralops/benchmarks/perplexity_eval.py:101:if __name__ == "__main__":
+... and 84 more matches (see stray_mains.txt)
