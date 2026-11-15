@@ -1,0 +1,4 @@
+neuralops: NeuralOps 2.4.0 (SUCCESS)
+nops: NeuralOps 2.4.0 (SUCCESS)
+neuralops-cli: NeuralOps 2.4.0 (SUCCESS)
+nops-cli: NeuralOps 2.4.0 (SUCCESS)

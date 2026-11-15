@@ -149,9 +149,9 @@ result = pipe("Deep learning hardware acceleration requires", max_new_tokens=50,
 print(result)
 ```
 
-### 🧬 NeuralOps 2.1.0 Transformation Platform & Recipe Language
+### 🧬 NeuralOps 2.4.0 Transformation Platform & Recipe Language
 
-NeuralOps 2.1.0 introduces a declarative, typed, versioned, validated, and reproducible transformation platform:
+NeuralOps 2.4.0 introduces a declarative, typed, versioned, validated, and reproducible transformation platform:
 
 1. **Declarative Recipe Language (`neuralops.recipe`)**: Define end-to-end model transformations as versioned YAML specifications with canonical SHA-256 content hashing.
 2. **Operation Contracts (`neuralops.ops`)**: 15 versioned operations with typed inputs, preconditions, postconditions, and declared mutations.
