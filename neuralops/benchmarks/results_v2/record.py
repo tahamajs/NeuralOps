@@ -10,7 +10,19 @@ from dataclasses import asdict, dataclass
 from enum import Enum
 from typing import Any
 
+<<<<<<< HEAD
 from neuralops.core.exceptions import ChecksumMismatchError, LedgerError
+=======
+from neuralops.core.exceptions import NeuralOpsError
+
+
+class LedgerError(NeuralOpsError):
+    """Raised when an operation on the benchmark ledger fails."""
+
+
+class ChecksumMismatchError(LedgerError, ValueError):
+    """Raised when record checksum verification fails."""
+>>>>>>> wave5/W5-11
 
 
 class BenchmarkStatus(str, Enum):

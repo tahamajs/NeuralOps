@@ -11,17 +11,30 @@ import yaml
 from pydantic import ValidationError
 
 from neuralops.benchmarks.config_v2.schema import BenchmarkConfig
+<<<<<<< HEAD
 from neuralops.core.exceptions import ConfigValidationError
 
 <<<<<<< HEAD
 =======
+=======
+from neuralops.core.exceptions import ConfigError
+
+
+class ConfigValidationError(ConfigError):
+    """Raised when benchmark configuration loading or schema validation fails."""
+
+
+>>>>>>> wave5/W5-11
 __all__ = [
     "ConfigValidationError",
     "load_benchmark_config",
     "parse_yaml_string",
 ]
 
+<<<<<<< HEAD
 >>>>>>> wave5/W5-9
+=======
+>>>>>>> wave5/W5-11
 
 def parse_yaml_string(content: str) -> BenchmarkConfig:
     """Parse a YAML string into a strictly-validated BenchmarkConfig."""
