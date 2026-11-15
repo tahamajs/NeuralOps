@@ -119,6 +119,16 @@ class PagedKVCache:
         self.block_tables[seq_id] = []
         self.seq_lengths[seq_id] = 0
 
+    def get_block_table(self, seq_id: int) -> list[int]:
+        """Return the physical page IDs assigned to a sequence."""
+        if seq_id not in self.block_tables:
+            raise KeyError(f"Sequence {seq_id} not registered.")
+        return list(self.block_tables[seq_id])
+
+    def block_table(self, seq_id: int) -> list[int]:
+        """Return the physical page IDs assigned to a sequence (alias for get_block_table)."""
+        return self.get_block_table(seq_id)
+
     def fork_sequence(self, parent_seq_id: int, child_seq_id: int) -> list[int]:
         """
         Zero-copy sequence forking via virtual block table reference counting.
@@ -195,8 +205,7 @@ class PagedKVCache:
         expected_shape = (self.num_heads, self.head_dim)
         if tuple(key.shape) != expected_shape or tuple(value.shape) != expected_shape:
             raise ValueError(
-                f"key and value must both have shape {expected_shape}; "
-                f"got {tuple(key.shape)} and {tuple(value.shape)}."
+                f"key and value must both have shape {expected_shape}; got {tuple(key.shape)} and {tuple(value.shape)}."
             )
         t0 = time.perf_counter()
         if seq_id not in self.block_tables and not self.free_blocks:

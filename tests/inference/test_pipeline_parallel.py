@@ -20,7 +20,21 @@ from transformers import AutoModelForCausalLM
 from neuralops.distributed.context import DistributedContext
 from neuralops.inference.pipeline_parallel import PipelineParallelInference
 
-MODEL_ID = "hf-internal-testing/tiny-random-llama"
+
+def _make_synthetic_llama() -> nn.Module:
+    """Create a tiny synthetic Llama model for offline testing without network access."""
+    from transformers import LlamaConfig, LlamaForCausalLM
+
+    config = LlamaConfig(
+        vocab_size=100,
+        hidden_size=32,
+        intermediate_size=64,
+        num_hidden_layers=2,
+        num_attention_heads=4,
+        num_key_value_heads=2,
+        max_position_embeddings=128,
+    )
+    return LlamaForCausalLM(config).eval()
 
 
 def test_fails_closed_for_model_without_layer_list():
@@ -40,7 +54,8 @@ def test_single_gpu_fallback_matches_transformers():
     pipe.is_single_gpu = True
     pipe.world_size = 1
 
-    model = pipe.load_model(MODEL_ID)
+    synthetic_model = _make_synthetic_llama()
+    model = pipe.load_model(synthetic_model)
     device = ctx.get_device()
     input_ids = torch.randint(0, 100, (2, 8), device=device)
 
@@ -56,14 +71,14 @@ def test_single_gpu_fallback_matches_transformers():
 def test_pipeline_forward_matches_single_gpu_logits():
     """Verify 2-GPU pipelined forward matches single-GPU reference logits within 1e-4."""
     ctx = DistributedContext()
-    ref_model = AutoModelForCausalLM.from_pretrained(MODEL_ID, torch_dtype=torch.float32).eval().cuda(0)
+    ref_model = _make_synthetic_llama().to(dtype=torch.float32, device="cuda:0")
     input_ids = torch.randint(0, 100, (8, 16), device="cuda:0")
 
     with torch.no_grad():
         ref_logits = ref_model(input_ids).logits
 
     pipe = PipelineParallelInference(ctx, num_micro_batches=4)
-    pipe.load_model(MODEL_ID, dtype=torch.float32)
+    pipe.load_model(_make_synthetic_llama(), dtype=torch.float32)
     pipe_logits = pipe.forward(input_ids)
 
     max_diff = (ref_logits.cuda(1) - pipe_logits).abs().max().item()
@@ -74,14 +89,14 @@ def test_pipeline_forward_matches_single_gpu_logits():
 def test_pipeline_generate_matches_single_gpu_tokens():
     """Verify pipelined greedy generation produces token-by-token identical output to HF generate."""
     ctx = DistributedContext()
-    ref_model = AutoModelForCausalLM.from_pretrained(MODEL_ID).eval().cuda(0)
+    ref_model = _make_synthetic_llama().cuda(0)
     prompt_ids = torch.randint(0, 100, (1, 6), device="cuda:0")
 
     with torch.no_grad():
         ref_tokens = ref_model.generate(prompt_ids, max_new_tokens=10, do_sample=False)
 
     pipe = PipelineParallelInference(ctx, num_micro_batches=2)
-    pipe.load_model(MODEL_ID)
+    pipe.load_model(_make_synthetic_llama())
     pipe_tokens = pipe.generate(prompt_ids, max_new_tokens=10)
 
     assert torch.equal(ref_tokens.cpu(), pipe_tokens.cpu()), "Generated tokens do not match single-GPU generate"
@@ -92,7 +107,7 @@ def test_pipeline_throughput_batch_16_larger_than_single_gpu():
     """Verify micro-batch pipelining executes batch 16 and measures positive throughput."""
     ctx = DistributedContext()
     pipe = PipelineParallelInference(ctx, num_micro_batches=4)
-    pipe.load_model(MODEL_ID)
+    pipe.load_model(_make_synthetic_llama())
 
     batch_size = 16
     seq_len = 32

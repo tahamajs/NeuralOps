@@ -82,6 +82,19 @@ class SelfSpeculativeDecoder:
             raise ValueError("min_draft_k must be a positive integer")
         if min_draft_k > max_draft_k:
             raise ValueError("min_draft_k cannot exceed max_draft_k")
+        if target_model is None or not isinstance(target_model, nn.Module):
+            raise TypeError(f"target_model must be an instance of nn.Module, got {type(target_model)}")
+        if draft_model is not None:
+            if not isinstance(draft_model, nn.Module):
+                raise TypeError(f"draft_model must be an instance of nn.Module, got {type(draft_model)}")
+            t_cfg = getattr(target_model, "config", None)
+            d_cfg = getattr(draft_model, "config", None)
+            t_vocab = getattr(t_cfg, "vocab_size", None) if t_cfg else None
+            d_vocab = getattr(d_cfg, "vocab_size", None) if d_cfg else None
+            if t_vocab is not None and d_vocab is not None and t_vocab != d_vocab:
+                raise ValueError(
+                    f"Draft model vocab size ({d_vocab}) does not match target model vocab size ({t_vocab})."
+                )
         self.target_model = target_model
         self.draft_model = draft_model
         self.max_draft_k = max_draft_k
@@ -123,6 +136,7 @@ class SelfSpeculativeDecoder:
         top_k: int = 0,
         top_p: float = 1.0,
         eos_token_id: Optional[int] = None,
+        baseline_tokens_per_sec: Optional[float] = None,
     ) -> Tuple[torch.Tensor, SpeculativeDecodeStats]:
         """
         Executes lossless speculative generation.
@@ -245,7 +259,10 @@ class SelfSpeculativeDecoder:
         gen_tokens = curr_ids.shape[-1] - prompt_len
         tokens_sec = gen_tokens / elapsed
         acc_rate = total_accepted_tokens / max(total_draft_tokens, 1)
-        speedup = gen_tokens / max(total_target_passes, 1)
+        if baseline_tokens_per_sec is not None and baseline_tokens_per_sec > 0:
+            speedup = tokens_sec / baseline_tokens_per_sec
+        else:
+            speedup = gen_tokens / max(total_target_passes, 1)
 
         stats = SpeculativeDecodeStats(
             total_tokens_generated=gen_tokens,
@@ -257,6 +274,25 @@ class SelfSpeculativeDecoder:
             speedup_over_standard=round(speedup, 2),
         )
         return curr_ids, stats
+
+    @staticmethod
+    def compute_acceptance_rate(accepted_drafts: int, total_drafts: int) -> float:
+        """Compute draft acceptance rate: accepted_drafts / total_drafts."""
+        if total_drafts < 0 or accepted_drafts < 0:
+            raise ValueError("Draft counts must be non-negative")
+        if total_drafts == 0:
+            return 0.0
+        return accepted_drafts / total_drafts
+
+    @staticmethod
+    def compute_speedup(
+        speculative_tokens_per_sec: float,
+        baseline_tokens_per_sec: float,
+    ) -> float:
+        """Compute speedup ratio: speculative_tokens_per_sec / baseline_tokens_per_sec."""
+        if baseline_tokens_per_sec <= 0:
+            raise ValueError("baseline_tokens_per_sec must be positive")
+        return speculative_tokens_per_sec / baseline_tokens_per_sec
 
     def run_gamma_sweep(
         self,
