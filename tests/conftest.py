@@ -410,13 +410,13 @@ def pytest_collection_modifyitems(config, items):
                 "test_flush_l2_dynamic",
                 "test_memory_fragmentation",
                 "test_cuda_ops_no_fake",
-                "test_bitonic_topk",
+                "test_block_diag_gemm",
+                "test_admm",
                 "test_v2_migration",
                 "test_triton_ops_all_kernels",
                 "test_triton_sample",
                 "test_timing_correct",
                 "test_cli_cuda_visible_devices",
-                "test_channel_shuffle",
                 "test_shared_fixtures",
             )
         ) or ("test_notebook_structure_and_syntax" in item_name or "test_notebook_smoke" in item_name)
