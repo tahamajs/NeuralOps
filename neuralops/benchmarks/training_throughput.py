@@ -16,7 +16,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import time
+
+logger = logging.getLogger(__name__)
 from types import SimpleNamespace
 from typing import Any, Dict, Union
 

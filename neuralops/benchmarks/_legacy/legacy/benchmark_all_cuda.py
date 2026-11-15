@@ -19,10 +19,12 @@ warnings.warn(
 )
 import sys
 
+import logging
+logger = logging.getLogger(__name__)
+
 if __name__ == "__main__":
-    logger.error(
+    logger.info(
         "[NOTICE] This script was removed in October 2026. "
-        "The unified benchmark runner is: python3 -m neuralops.benchmarks.cli run --category cuda",
-        ,
+        "The unified benchmark runner is: python3 -m neuralops.benchmarks.cli run --category cuda"
     )
     sys.exit(0)

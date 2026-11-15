@@ -20,9 +20,8 @@ warnings.warn(
 import sys
 
 if __name__ == "__main__":
-    logger.error(
+    pass  # print(
         "[NOTICE] This script was removed in October 2026. "
-        "The unified benchmark runner is: python3 -m neuralops.benchmarks.cli run --category attention",
-        ,
+        "The unified benchmark runner is: python3 -m neuralops.benchmarks.cli run --category attention"
     )
     sys.exit(0)
