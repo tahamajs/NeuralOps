@@ -298,3 +298,131 @@ class AttentionBenchmark(AbstractBaseBenchmark):
     def teardown(self) -> None:
         if self.device.type == "cuda" and torch.cuda.is_available():
             torch.cuda.empty_cache()
+
+
+class AttentionBenchmarkSuite:
+    """End-to-end benchmark suite for attention mechanisms emitting CanonicalRecord instances."""
+
+    def __init__(self, config: Any) -> None:
+        self.config = config
+
+    def run(self) -> list[Any]:
+        import datetime
+        import hashlib
+        import subprocess
+        from neuralops.benchmarks.results_v2.record import BenchmarkStatus, CanonicalRecord
+
+        records: list[CanonicalRecord] = []
+        run_id = getattr(self.config, "run_id", "default_run")
+        device_str = getattr(self.config, "device", "cpu")
+        device = torch.device(device_str)
+
+        git_commit = "unknown"
+        git_dirty = False
+        try:
+            res = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if res.returncode == 0:
+                git_commit = res.stdout.strip()[:10]
+            status_res = subprocess.run(
+                ["git", "status", "--porcelain"],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            git_dirty = len(status_res.stdout.strip()) > 0
+        except Exception:
+            pass
+
+        suites = getattr(self.config, "suites", ())
+        if not suites:
+            suites = [self.config]
+
+        for s in suites:
+            suite_name = getattr(s, "name", "attention_sweep")
+            attentions = getattr(s, "attentions", ("cosformer",)) or ("cosformer",)
+            batch_sizes = getattr(s, "batch_sizes", (1,)) or (1,)
+            seq_lens = getattr(s, "seq_lens", (64,)) or (64,)
+            warmup_iters = getattr(s, "warmup_iters", 2)
+            num_iters = getattr(s, "num_iters", 3)
+
+            for mech in attentions:
+                for b in batch_sizes:
+                    for seq in seq_lens:
+                        dim = 64
+                        num_heads = 2
+                        try:
+                            if mech == "cosformer":
+                                from neuralops.layers.linear.cosformer import CosformerAttention
+
+                                mod = CosformerAttention(dim=dim, num_heads=num_heads).to(device=device)
+                            else:
+                                from neuralops.core.registry import create_attention
+
+                                mod = create_attention(mech, dim=dim, num_heads=num_heads).to(device=device)
+                            mod.eval()
+
+                            x = torch.randn(b, seq, dim, device=device)
+
+                            # Warmup
+                            with torch.no_grad():
+                                for _ in range(warmup_iters):
+                                    _ = mod(x)
+
+                            # Timing measurement
+                            if device.type == "cuda" and torch.cuda.is_available():
+                                start_event = torch.cuda.Event(enable_timing=True)
+                                end_event = torch.cuda.Event(enable_timing=True)
+                                torch.cuda.synchronize()
+                                start_event.record()
+                                with torch.no_grad():
+                                    for _ in range(num_iters):
+                                        _ = mod(x)
+                                end_event.record()
+                                torch.cuda.synchronize()
+                                total_ms = start_event.elapsed_time(end_event)
+                                latency_ms = total_ms / max(num_iters, 1)
+                            else:
+                                t_start = time.perf_counter()
+                                with torch.no_grad():
+                                    for _ in range(num_iters):
+                                        _ = mod(x)
+                                total_s = time.perf_counter() - t_start
+                                latency_ms = (total_s / max(num_iters, 1)) * 1000.0
+
+                            status = BenchmarkStatus.SUCCESS.value
+                            metrics = {
+                                "latency_ms": max(latency_ms, 0.001),
+                                "throughput": float(b * seq) / max(latency_ms / 1000.0, 1e-6),
+                            }
+                        except Exception as e:
+                            logger.error("Attention benchmark failed for %s: %s", mech, e)
+                            status = BenchmarkStatus.FAILED.value
+                            metrics = {"latency_ms": 0.0}
+
+                        checksum_data = f"{run_id}:{git_commit}:{suite_name}:{mech}:{b}:{seq}"
+                        checksum = hashlib.sha256(checksum_data.encode()).hexdigest()
+
+                        record = CanonicalRecord(
+                            run_id=run_id,
+                            timestamp=datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                            git_commit=git_commit,
+                            git_dirty=git_dirty,
+                            suite=suite_name,
+                            module=mech,
+                            model="synthetic",
+                            dataset="synthetic",
+                            device=device_str,
+                            status=status,
+                            metrics=metrics,
+                            config={"batch_size": b, "seq_len": seq, "dim": dim, "num_heads": num_heads},
+                            telemetry={},
+                            checksum=checksum,
+                        )
+                        records.append(record)
+        return records
+
