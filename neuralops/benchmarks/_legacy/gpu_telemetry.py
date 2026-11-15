@@ -16,6 +16,10 @@ to saturate 85-92% of available accelerator memory without OOM.
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 import warnings
 
 warnings.warn(
@@ -233,21 +237,21 @@ def main() -> int:
             json.dump(result, f, indent=2)
 
     if args.json:
-        print(json.dumps(result, indent=2))
+        logger.info(json.dumps(result, indent=2))
     else:
-        print("=" * 65)
-        print("  NeuralOps Phase 1 & 2: Hardware Pre-Flight & Memory Auto-Tuner")
-        print("=" * 65)
+        logger.info("=" * 65)
+        logger.info("  NeuralOps Phase 1 & 2: Hardware Pre-Flight & Memory Auto-Tuner")
+        logger.info("=" * 65)
         for k, v in hw_info.items():
-            print(f"  • {k:<25}: {v}")
-        print("-" * 65)
-        print(f"  Optimized Runtime Flags : {flags}")
+            logger.info(f"  • {k:<25}: {v}")
+        logger.info("-" * 65)
+        logger.info(f"  Optimized Runtime Flags : {flags}")
         if "vram_probe" in result:
-            print("-" * 65)
+            logger.info("-" * 65)
             vp = result["vram_probe"]
-            print(f"  Optimal Batch Size      : {vp['optimal_batch_size']} (seq_len={vp['seq_len']})")
-        print("=" * 65)
-        print("✓ Phase 1 & 2 Hardware Pre-Flight complete.")
+            logger.info(f"  Optimal Batch Size      : {vp['optimal_batch_size']} (seq_len={vp['seq_len']})")
+        logger.info("=" * 65)
+        logger.info("✓ Phase 1 & 2 Hardware Pre-Flight complete.")
     return 0
 
 

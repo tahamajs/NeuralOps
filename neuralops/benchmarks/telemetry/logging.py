@@ -14,6 +14,10 @@ in real time while preserving live terminal streaming.
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 import io
 import os
 import sys
@@ -55,7 +59,7 @@ class ConsoleLogCapture:
 
     Usage:
         with ConsoleLogCapture(run_dir):
-            print("This appears in terminal and in stdout_stderr.log")
+            logger.info("This appears in terminal and in stdout_stderr.log")
     """
 
     def __init__(self, log_dir: str | Path, filename: str = "stdout_stderr.log") -> None:

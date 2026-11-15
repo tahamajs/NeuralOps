@@ -1,3 +1,6 @@
+
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
@@ -182,12 +185,12 @@ def run_bandwidth_benchmark(
     mod_agn = get_agn()
 
     dev_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "CPU"
-    print("=" * 140)
-    print(f"Realistic LLM Training Batch Configurations Benchmark ({dev_name})")
-    print(
+    logger.info("=" * 140)
+    logger.info(f"Realistic LLM Training Batch Configurations Benchmark ({dev_name})")
+    logger.info(
         f"Hardware Peak Memory Bandwidth: {peak_bw_gbps:.1f} GB/s | L2 Cache Size: {l2_cache_mb:.0f} MB | Precision: {dtype_str}"
     )
-    print("=" * 140)
+    logger.info("=" * 140)
 
     results = []
 
@@ -318,7 +321,7 @@ def run_bandwidth_benchmark(
             }
         )
 
-        print(f"Config B={B}, S={S}, H={H} completed.")
+        logger.info(f"Config B={B}, S={S}, H={H} completed.")
 
     h_k = "Kernel"
     h_cfg = "Config"
@@ -329,9 +332,9 @@ def run_bandwidth_benchmark(
     h_sat = "Saturation %"
     h_reg = "Regime"
 
-    print("\n" + "=" * 140)
-    print(f"| {h_k:20} | {h_cfg:18} | {h_c:10} | {h_p:12} | {h_s:14} | {h_bw:18} | {h_sat:18} | {h_reg:12} |")
-    print(
+    logger.info("\n" + "=" * 140)
+    logger.info(f"| {h_k:20} | {h_cfg:18} | {h_c:10} | {h_p:12} | {h_s:14} | {h_bw:18} | {h_sat:18} | {h_reg:12} |")
+    logger.info(
         "|"
         + "-" * 22
         + "|"
@@ -361,10 +364,10 @@ def run_bandwidth_benchmark(
         sat = r["sat_pct"]
         reg = r["regime"]
         sat_str = "N/A (L2-resident)" if math.isnan(sat) else f"{sat:10.1f}%"
-        print(
+        logger.info(
             f"| {k:20} | {cfg:18} | {c_ms:8.4f}ms | {p_ms:10.4f}ms | {spd_str:>14} | {bw:15.2f} GB/s | {sat_str:>18} | {reg:12} |"
         )
-    print("=" * 140)
+    logger.info("=" * 140)
 
     if output_csv:
         os.makedirs(os.path.dirname(os.path.abspath(output_csv)), exist_ok=True)
@@ -396,7 +399,7 @@ def run_bandwidth_benchmark(
                         r["regime"],
                     ]
                 )
-        print(f"\nSaved benchmark CSV results to {output_csv}")
+        logger.info(f"\nSaved benchmark CSV results to {output_csv}")
 
     if output_json:
         os.makedirs(os.path.dirname(os.path.abspath(output_json)), exist_ok=True)
@@ -408,7 +411,7 @@ def run_bandwidth_benchmark(
             json_data.append(item)
         with open(output_json, "w", encoding="utf-8") as f:
             json.dump(json_data, f, indent=2)
-        print(f"Saved benchmark JSON results to {output_json}")
+        logger.info(f"Saved benchmark JSON results to {output_json}")
 
     return results
 

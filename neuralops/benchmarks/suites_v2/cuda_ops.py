@@ -108,7 +108,7 @@ class CudaOpsBenchmark(AbstractBaseBenchmark):
             target_fn = adapter._cuda_fn or adapter._triton_fn or adapter._pytorch_ref_fn
             if target_fn is None:
                 raise RuntimeError(
-                    f"No backend available: No CUDA, Triton, or PyTorch reference implementation available for kernel '{kernel_name}'"
+                    f"No CUDA, Triton, or PyTorch reference implementation available for kernel '{kernel_name}'"
                 )
 
             def call_kernel() -> Any:

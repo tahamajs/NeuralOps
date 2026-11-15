@@ -16,6 +16,10 @@ Executes comprehensive empirical sweeps across:
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 import warnings
 
 warnings.warn(
@@ -359,21 +363,21 @@ def main() -> int:
     effective_limit = 2 if args.dry_run and args.limit is None else args.limit
     workers = args.parallel_workers or (1 if device in ("cuda", "mps") else min(4, os.cpu_count() or 1))
 
-    print("=" * 70)
-    print("  NeuralOps Master Benchmark Suite (High Precision & Parallel Sweep)")
-    print(f"  Target Accelerator : {device.upper()}")
-    print(f"  Parallel Workers   : {workers}")
+    logger.info("=" * 70)
+    logger.info("  NeuralOps Master Benchmark Suite (High Precision & Parallel Sweep)")
+    logger.info(f"  Target Accelerator : {device.upper()}")
+    logger.info(f"  Parallel Workers   : {workers}")
     if args.dry_run:
-        print("  Execution Mode     : DRY-RUN (fast smoke test)")
+        logger.info("  Execution Mode     : DRY-RUN (fast smoke test)")
     if args.backward:
-        print("  Autograd Mode      : FORWARD + BACKWARD GRADIENT VERIFICATION")
-    print("=" * 70)
+        logger.info("  Autograd Mode      : FORWARD + BACKWARD GRADIENT VERIFICATION")
+    logger.info("=" * 70)
 
     results: list[dict[str, Any]] = []
 
     # 1. Attention Zoo Benchmark
     if args.category in ("attention", "all"):
-        print(f"\n[1/3] Benchmarking {len(ATTENTION_REGISTRY)} Attention Mechanisms...")
+        logger.info(f"\n[1/3] Benchmarking {len(ATTENTION_REGISTRY)} Attention Mechanisms...")
         items = [(k, ATTENTION_REGISTRY.get(k)) for k in ATTENTION_REGISTRY.keys()]
         if effective_limit:
             items = items[:effective_limit]
@@ -389,20 +393,20 @@ def main() -> int:
                 for idx, fut in enumerate(as_completed(futures), 1):
                     rec = fut.result()
                     results.append(rec)
-                    print(
+                    logger.info(
                         f"  [{idx:3d}/{len(items):3d}] {rec['module']:<32}: {rec['status']:<8} (lat={rec.get('latency_ms', 'N/A')} ms, p95={rec.get('p95_ms', 'N/A')} ms)"
                     )
         else:
             for idx, (name, cls) in enumerate(items, 1):
                 rec = benchmark_single_attention(name, cls, device=device, check_backward=args.backward)
                 results.append(rec)
-                print(
+                logger.info(
                     f"  [{idx:3d}/{len(items):3d}] {name:<32}: {rec['status']:<8} (lat={rec.get('latency_ms', 'N/A')} ms, p95={rec.get('p95_ms', 'N/A')} ms)"
                 )
 
     # 2. Compressor Zoo Benchmark
     if args.category in ("compressor", "all"):
-        print(f"\n[2/3] Benchmarking {len(COMPRESSOR_REGISTRY)} Compression Engines...")
+        logger.info(f"\n[2/3] Benchmarking {len(COMPRESSOR_REGISTRY)} Compression Engines...")
         items = [(k, COMPRESSOR_REGISTRY.get(k)) for k in COMPRESSOR_REGISTRY.keys()]
         if effective_limit:
             items = items[:effective_limit]
@@ -412,11 +416,11 @@ def main() -> int:
             status = rec["status"]
             sqnr = rec.get("sqnr_db", "N/A")
             ratio = rec.get("compression_ratio", "N/A")
-            print(f"  [{idx:3d}/{len(items):3d}] {name:<32}: {status:<8} (SQNR={sqnr} dB, Ratio={ratio}x)")
+            logger.info(f"  [{idx:3d}/{len(items):3d}] {name:<32}: {status:<8} (SQNR={sqnr} dB, Ratio={ratio}x)")
 
     # 3. 3-Level Fallback Parity Check
     if args.category in ("kernel", "all"):
-        print("\n[3/3] Probing 3-Level Kernel Fallback Hierarchy...")
+        logger.info("\n[3/3] Probing 3-Level Kernel Fallback Hierarchy...")
         b, h, seq, d = 2, 4, 16, 32
         q = torch.randn(b, h, seq, d)
         k = torch.randn(b, h, seq, d)
@@ -424,14 +428,14 @@ def main() -> int:
         with force_kernel_backend("pytorch"):
             out = cosformer_linear_attention(q, k, v)
         stats = get_dispatch_stats()
-        print(f"  [OK] Reference execution verified: finite={torch.isfinite(out).all().item()}")
-        print(f"  [OK] Dispatch statistics: {stats}")
+        logger.info(f"  [OK] Reference execution verified: finite={torch.isfinite(out).all().item()}")
+        logger.info(f"  [OK] Dispatch statistics: {stats}")
 
-    print("\n" + "=" * 70)
+    logger.info("\n" + "=" * 70)
     passed = sum(1 for r in results if r.get("status") == "PASS")
     total = len(results)
-    print(f"[OK] Master Benchmark Completed: {passed}/{total} modules passed.")
-    print("=" * 70)
+    logger.info(f"[OK] Master Benchmark Completed: {passed}/{total} modules passed.")
+    logger.info("=" * 70)
 
     if args.export and results:
         try:
@@ -440,9 +444,9 @@ def main() -> int:
             from results_exporter import export_benchmark_results
         output_dir = Path(__file__).resolve().parent.parent.parent / "results"
         paths = export_benchmark_results(results, device=device, output_dir=output_dir)
-        print("  [OK] Exported results to:")
+        logger.info("  [OK] Exported results to:")
         for k, p in paths.items():
-            print(f"    * {k:<10}: {p}")
+            logger.info(f"    * {k:<10}: {p}")
 
     return 0
 

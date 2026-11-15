@@ -1,3 +1,6 @@
+
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
@@ -105,7 +108,7 @@ def benchmark_torch_compile(
         seq_lens = SEQ_LENS
 
     gpu_name = torch.cuda.get_device_name(0) if torch.cuda.is_available() and device.startswith("cuda") else "CPU"
-    print(
+    logger.info(
         f"Executing Inductor torch.compile(mode='reduce-overhead', dynamic=True) on {device} ({gpu_name})", flush=True
     )
 
@@ -116,8 +119,8 @@ def benchmark_torch_compile(
     if limit is not None:
         attn_keys = attn_keys[:limit]
 
-    print(f"Auditing {len(attn_keys)} Canonical Attention Mechanisms", flush=True)
-    print(
+    logger.info(f"Auditing {len(attn_keys)} Canonical Attention Mechanisms", flush=True)
+    logger.info(
         f"Sequence lengths: {seq_lens} | Batch: {BATCH_SIZE} | Dim: {DIM} | Heads: {NUM_HEADS} | Repeat: {repeat}",
         flush=True,
     )
@@ -142,12 +145,12 @@ def benchmark_torch_compile(
     total_recompilations = 0
     records_for_csv: list[dict[str, Any]] = []
 
-    print("\n" + "=" * 135, flush=True)
-    print(
+    logger.info("\n" + "=" * 135, flush=True)
+    logger.info(
         f"| {'Module':<32} | {'Status':<16} | {'Reliability':<14} | {'CUDA (ms)':<10} | {'PyTorch (ms)':<12} | {'Speedup':<9} | {'Recompiles':<10} | {'Zero-NaN':<8} |",
         flush=True,
     )
-    print(
+    logger.info(
         "|"
         + "-" * 34
         + "|"
@@ -370,7 +373,7 @@ def benchmark_torch_compile(
         recomp = str(mod_rec["recompilations"])
         nan_flag = "PASS" if mod_rec["zero_nan"] else "FAIL"
 
-        print(
+        logger.info(
             f"| {attn_name:<32} | {stat:<16} | {rel:<14} | {c_ms:>10} | {p_ms:>12} | {spd:>9} | {recomp:>10} | {nan_flag:>8} |",
             flush=True,
         )
@@ -389,7 +392,7 @@ def benchmark_torch_compile(
             }
         )
 
-    print("=" * 135)
+    logger.info("=" * 135)
 
     summary_dict.update(
         {
@@ -427,14 +430,14 @@ def benchmark_torch_compile(
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
 
-    print("\n" + "=" * 80)
-    print("INDUCTOR TORCH.COMPILE VALIDATION COMPLETE")
-    print(f"CSV Written to: {output_path}")
-    print(f"JSON Written to: {json_path}")
-    print(f"Canonical Modules Evaluated: {len(attn_keys)}")
-    print(f"Total Recompilations: {total_recompilations}")
-    print(f"Average Speedup: {summary_dict.get('average_speedup', 1.0)}x")
-    print("=" * 80)
+    logger.info("\n" + "=" * 80)
+    logger.info("INDUCTOR TORCH.COMPILE VALIDATION COMPLETE")
+    logger.info(f"CSV Written to: {output_path}")
+    logger.info(f"JSON Written to: {json_path}")
+    logger.info(f"Canonical Modules Evaluated: {len(attn_keys)}")
+    logger.info(f"Total Recompilations: {total_recompilations}")
+    logger.info(f"Average Speedup: {summary_dict.get('average_speedup', 1.0)}x")
+    logger.info("=" * 80)
 
 
 def main():

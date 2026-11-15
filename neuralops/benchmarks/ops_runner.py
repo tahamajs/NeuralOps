@@ -341,12 +341,12 @@ def main() -> None:
     args = parser.parse_args()
 
     results: List[Dict[str, Any]] = []
-    print(
+    logger.info(
         f"\nRunning benchmark suite across {len(args.ops)} operators (mode={args.mode}, B={args.batch_size}, T={args.seq_len})..."
     )
 
     for op in args.ops:
-        print(f" -> Benchmarking: {op}...")
+        logger.info(f" -> Benchmarking: {op}...")
         res = run_op_in_subprocess(
             op_name=op,
             B=args.batch_size,
@@ -360,14 +360,14 @@ def main() -> None:
         results.append(res)
 
     md_table = format_table(results)
-    print("\n" + md_table + "\n")
+    logger.info("\n" + md_table + "\n")
 
     if args.output:
         out_p = Path(args.output)
         out_p.parent.mkdir(parents=True, exist_ok=True)
         with open(out_p, "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2)
-        print(f"Results saved to {args.output}")
+        logger.info(f"Results saved to {args.output}")
 
 
 def run_op_as_eval_result(
@@ -474,7 +474,7 @@ def run_registered_ops(
     queue = [name for name in selected if name not in completed]
     for name in selected:
         if name in completed and verbose:
-            print(f"[RESUME] {name}", flush=True)
+            logger.info(f"[RESUME] {name}", flush=True)
 
     worker_code = (
         "import sys; "
@@ -539,7 +539,7 @@ def run_registered_ops(
         completed.add(name)
         target.write_text(json.dumps(results, indent=2), encoding="utf-8")
         if verbose:
-            print(f"[{row['status']}] {name} | active={len(active)}", flush=True)
+            logger.info(f"[{row['status']}] {name} | active={len(active)}", flush=True)
 
     while queue or active:
         for item in list(active):
@@ -555,7 +555,7 @@ def run_registered_ops(
         while queue and len(active) < max_workers:
             if dynamic and (free_ram < 2 * 1024**3 or free_vram < 1500 * 1024**2):
                 if verbose:
-                    print(
+                    logger.info(
                         f"PAUSING 0.1s: RAM={free_ram / 1024**3:.2f}GB "
                         f"VRAM={free_vram / 1024**2:.0f}MB Active={len(active)}",
                         flush=True,
@@ -584,7 +584,7 @@ def run_registered_ops(
             )
             active.append({"name": name, "proc": proc, "path": worker_path, "started": time.monotonic()})
             if verbose:
-                print(f"STARTED {name} | active={len(active)}/{max_workers}", flush=True)
+                logger.info(f"STARTED {name} | active={len(active)}/{max_workers}", flush=True)
             # Refresh admission data before attempting to start another child.
             free_ram, free_vram = resource_state()
         if active or queue:

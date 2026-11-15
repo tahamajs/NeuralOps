@@ -1,3 +1,6 @@
+
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
@@ -177,18 +180,18 @@ def run_7b_serving_task(batch_size, seq_len, device, stream, shared_7b_layer):
 
 
 def main():
-    print("=" * 88)
-    print("  NeuralOps VRAM-Saturating Multi-Benchmark Parallel Orchestrator")
-    print("=" * 88)
+    logger.info("=" * 88)
+    logger.info("  NeuralOps VRAM-Saturating Multi-Benchmark Parallel Orchestrator")
+    logger.info("=" * 88)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     total_gb, _, _, free_gb = get_vram_info(device)
-    print(f"Target Hardware : {torch.cuda.get_device_name(device)}")
-    print(f"Total VRAM       : {total_gb:.2f} GB | Free Headroom: {free_gb:.2f} GB")
+    logger.info(f"Target Hardware : {torch.cuda.get_device_name(device)}")
+    logger.info(f"Total VRAM       : {total_gb:.2f} GB | Free Headroom: {free_gb:.2f} GB")
 
     # Target safety saturation: ~88% of 24GB (~21.0 GB limit)
     VRAM_TARGET_CAP_GB = 0.88 * total_gb
-    print(f"Target Saturation Capacity: {VRAM_TARGET_CAP_GB:.2f} GB (Auto-Throttling Threshold)\n")
+    logger.info(f"Target Saturation Capacity: {VRAM_TARGET_CAP_GB:.2f} GB (Auto-Throttling Threshold)\n")
 
     # 1. Initialize Registries and Shared Models
     from transformers.models.llama.modeling_llama import LlamaConfig, LlamaDecoderLayer
@@ -196,7 +199,7 @@ def main():
     import neuralops.attentions
     from neuralops.core.registry import ATTENTION_REGISTRY
 
-    print("Instantiating shared Qwen2.5-7B Transformer Layer in FP16 on VRAM...")
+    logger.info("Instantiating shared Qwen2.5-7B Transformer Layer in FP16 on VRAM...")
     llama_cfg = LlamaConfig(
         vocab_size=152064,
         hidden_size=3584,
@@ -227,7 +230,7 @@ def main():
         for s in [256, 512, 1024]:
             tasks_queue.append({"type": "7b_serving", "fn": run_7b_serving_task, "args": (b, s)})
 
-    print(f"Total Parallel Tasks Queued: {len(tasks_queue)}")
+    logger.info(f"Total Parallel Tasks Queued: {len(tasks_queue)}")
 
     # 3. Dynamic Parallel Executor with VRAM Pressure Guard
     num_streams = 4
@@ -237,9 +240,9 @@ def main():
     os.makedirs("results", exist_ok=True)
     all_results = []
 
-    print("-" * 88)
-    print(f"{'Task Target':<40} | {'Type':<15} | {'Latency':<12} | {'VRAM (GB)':<10} | {'Status'}")
-    print("-" * 88)
+    logger.info("-" * 88)
+    logger.info(f"{'Task Target':<40} | {'Type':<15} | {'Latency':<12} | {'VRAM (GB)':<10} | {'Status'}")
+    logger.info("-" * 88)
 
     task_idx = 0
     t_start_all = time.time()
@@ -301,14 +304,14 @@ def main():
                         lat_str = f"{res.get('latency_ms', 0):.2f} ms"
                         status_str = str(res.get("status", ""))[:12]
 
-                        print(
+                        logger.info(
                             f"{target_str:<40} | {type_str:<15} | {lat_str:<12} | {cur_vram:6.2f} GB | {status_str}",
                             flush=True,
                         )
                         if len(all_results) % 5 == 0 or len(all_results) == len(tasks_queue):
                             pd.DataFrame(all_results).to_csv(out_csv, index=False)
                     except Exception as err:
-                        print(f"Task {idx} Error: {err}", flush=True)
+                        logger.info(f"Task {idx} Error: {err}", flush=True)
 
             # Periodically empty cache if memory pressure is high
             if res_g > (VRAM_TARGET_CAP_GB - 1.0):
@@ -318,11 +321,11 @@ def main():
     df = pd.DataFrame(all_results)
     df.to_csv(out_csv, index=False)
 
-    print("=" * 88)
-    print(f"ALL PARALLEL BENCHMARKS COMPLETED in {total_time:.2f} seconds!")
-    print(f"Total Executed Records: {len(all_results)}")
-    print(f"Results Saved To: {out_csv}")
-    print("=" * 88)
+    logger.info("=" * 88)
+    logger.info(f"ALL PARALLEL BENCHMARKS COMPLETED in {total_time:.2f} seconds!")
+    logger.info(f"Total Executed Records: {len(all_results)}")
+    logger.info(f"Results Saved To: {out_csv}")
+    logger.info("=" * 88)
 
 
 if __name__ == "__main__":

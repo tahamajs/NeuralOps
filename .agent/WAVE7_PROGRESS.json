@@ -1,10 +1,10 @@
 {
   "wave": 7,
   "started_at": "2026-11-15T20:00:00Z",
-  "last_updated": "2026-11-15T17:37:05Z",
+  "last_updated": "2026-11-15T17:42:45Z",
   "agents": {
     "W7-1": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave7/W7-1",
       "worktree": null
     },
@@ -59,12 +59,12 @@
       "worktree": null
     },
     "W7-12": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave7/W7-12",
       "worktree": null
     },
     "W7-13": {
-      "status": "complete",
+      "status": "pending",
       "branch": "wave7/W7-13",
       "worktree": null
     },
@@ -74,7 +74,7 @@
       "worktree": null
     },
     "W7-15": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave7/W7-15",
       "worktree": null
     },

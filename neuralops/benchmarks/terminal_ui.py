@@ -13,6 +13,10 @@ Provides colorized banner, interactive module explorer, grouped help menus, prog
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 import os
 import sys
 import time
@@ -145,10 +149,10 @@ Categorized by mathematical formulation:
 def print_banner() -> None:
     """Prints the styled NeuralOps CLI banner."""
     if not HAS_RICH or console is None:
-        print("================================================================")
-        print(f"                   NeuralOps CLI (v{__version__})                       ")
-        print("     High-Performance Attention Zoo, SVD Compression & Triton   ")
-        print("================================================================")
+        logger.info("================================================================")
+        logger.info(f"                   NeuralOps CLI (v{__version__})                       ")
+        logger.info("     High-Performance Attention Zoo, SVD Compression & Triton   ")
+        logger.info("================================================================")
         return
 
     banner_text = Text(BANNER_ART, style="bold cyan")
@@ -174,13 +178,13 @@ def print_hf_style_help() -> None:
     print_banner()
 
     if not HAS_RICH or console is None:
-        print("\nUsage: neuralops [OPTIONS] <command> [ARGS]...\n")
-        print("Commands:")
+        logger.info("\nUsage: neuralops [OPTIONS] <command> [ARGS]...\n")
+        logger.info("Commands:")
         for grp in SUBCOMMAND_GROUPS:
-            print(f"\n  {grp['title']}:")
+            logger.info(f"\n  {grp['title']}:")
             for cmd, desc in grp["commands"]:
-                print(f"    {cmd:18s} {desc}")
-        print("\nRun 'neuralops <command> --help' for command-specific flags.\n")
+                logger.info(f"    {cmd:18s} {desc}")
+        logger.info("\nRun 'neuralops <command> --help' for command-specific flags.\n")
         return
 
     console.print(
@@ -428,7 +432,7 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
             spec = inspect_architecture(target)
             card_lines = render_architecture_card(spec).split("\n")
         except Exception as e:
-            print(f"[-] Could not inspect '{target}': {e}")
+            logger.info(f"[-] Could not inspect '{target}': {e}")
             return
 
         from neuralops.core.registry import ATTENTION_REGISTRY, COMPRESSOR_REGISTRY
@@ -445,14 +449,14 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
         start_idx = max(0, min(target_idx - 10, len(all_modules) - total_rows))
         visible_modules = all_modules[start_idx : start_idx + total_rows]
 
-        print("=" * w)
-        print("  🏛️ NEURALOPS MINIMALIST TWO-PANE ARCHITECTURE EXPLORER")
-        print(f"  Hardware Node: {dev_name}  │  131 Attentions · 72 Compressors · Unified Triton & CUDA Kernels")
-        print("=" * w)
-        print(
+        logger.info("=" * w)
+        logger.info("  🏛️ NEURALOPS MINIMALIST TWO-PANE ARCHITECTURE EXPLORER")
+        logger.info(f"  Hardware Node: {dev_name}  │  131 Attentions · 72 Compressors · Unified Triton & CUDA Kernels")
+        logger.info("=" * w)
+        logger.info(
             f"  {'REGISTRY EXPLORER':<{left_pane_width}} │ {'14-FIELD ARCHITECTURE SPECIFICATION SHEET':<{right_pane_width}}"
         )
-        print("─" * (left_pane_width + 2) + "┼─" + "─" * right_pane_width)
+        logger.info("─" * (left_pane_width + 2) + "┼─" + "─" * right_pane_width)
 
         for row_idx in range(total_rows):
             if row_idx < len(visible_modules):
@@ -467,23 +471,23 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
             right_entry = card_lines[row_idx] if row_idx < len(card_lines) else ""
             right_str = right_entry[:right_pane_width]
 
-            print(f"{left_str} │ {right_str}")
+            logger.info(f"{left_str} │ {right_str}")
 
-        print("=" * w)
+        logger.info("=" * w)
         return
 
     if inspect_target:
         try:
             spec = inspect_architecture(inspect_target)
             card = render_architecture_card(spec)
-            print(card)
+            logger.info(card)
         except Exception as e:
-            print(f"[-] Could not inspect '{inspect_target}': {e}")
+            logger.info(f"[-] Could not inspect '{inspect_target}': {e}")
         return
 
     print_banner()
     if not HAS_RICH or console is None:
-        print("Interactive mode requires 'rich'. Falling back to standard help.")
+        logger.info("Interactive mode requires 'rich'. Falling back to standard help.")
         print_hf_style_help()
         return
 
@@ -759,7 +763,7 @@ def run_interactive_ui(inspect_target: Optional[str] = None, snapshot: bool = Fa
             if HAS_RICH and console is not None:
                 console.print(Syntax(code, "python", theme="monokai", line_numbers=True))
             else:
-                print(code)
+                logger.info(code)
             input("\nPress Enter to return to main menu...")
 
         elif choice == "q":

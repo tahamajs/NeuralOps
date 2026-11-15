@@ -1,3 +1,6 @@
+
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
@@ -73,10 +76,10 @@ def get_gpu_power():
         return 0.0
 
 
-print("=" * 125)
-print("=== HIGH-TDP HIGH-THROUGHPUT HARDWARE-SATURATING EMPIRICAL BENCHMARK (NVIDIA RTX 3090 24GB) ===")
-print("Optimized for: 250W+ TDP Saturation | Zero CPU Stalls | High-Batch Matrix Engines | Zero Memory Leakage")
-print("=" * 125)
+logger.info("=" * 125)
+logger.info("=== HIGH-TDP HIGH-THROUGHPUT HARDWARE-SATURATING EMPIRICAL BENCHMARK (NVIDIA RTX 3090 24GB) ===")
+logger.info("Optimized for: 250W+ TDP Saturation | Zero CPU Stalls | High-Batch Matrix Engines | Zero Memory Leakage")
+logger.info("=" * 125)
 
 # High-TDP Saturation Test Scenarios
 ATTENTION_CANDIDATES = [
@@ -102,12 +105,12 @@ benchmark_records = []
 for reg in SATURATED_REGIMES:
     b, s, d, h = reg["batch"], reg["seq"], reg["dim"], reg["heads"]
     total_tokens = b * s
-    print(f"\n>>> REGIME: {reg['name']} | Tokens/Step: {total_tokens:,} | Dim: {d} | Heads: {h} <<<")
-    print("-" * 125)
-    print(
+    logger.info(f"\n>>> REGIME: {reg['name']} | Tokens/Step: {total_tokens:,} | Dim: {d} | Heads: {h} <<<")
+    logger.info("-" * 125)
+    logger.info(
         f"| {'Architecture':<26} | {'Latency':<12} | {'Throughput (tok/s)':<20} | {'Peak Power':<12} | {'Energy/Tok':<14} | {'Peak VRAM':<12} | {'Speedup':<8} |"
     )
-    print("-" * 125)
+    logger.info("-" * 125)
 
     if torch.cuda.is_available():
         x = torch.randn(b, s, d, device=device, dtype=torch.float16)
@@ -187,7 +190,7 @@ for reg in SATURATED_REGIMES:
             energy_uj = (power_w * (avg_lat / 1000.0) / total_tokens) * 1e6 if power_w > 0 else 0.0
             speedup = (base_lat / avg_lat) if base_lat else 1.0
 
-            print(
+            logger.info(
                 f"| {display_name:<26} | {avg_lat:>8.2f} ms | {throughput:>16.0f} t/s | {power_w:>8.1f} W   | {energy_uj:>10.2f} uJ/t | {vram_mb:>8.1f} MB  | {speedup:>6.2f}x |",
                 flush=True,
             )
@@ -208,15 +211,15 @@ for reg in SATURATED_REGIMES:
             )
             del mod
         except Exception as e:
-            print(
+            logger.info(
                 f"| {display_name:<26} | {'OOM / SKIP':<12} | {'-':<20} | {'-':<12} | {'-':<14} | {'-':<12} | {'-':<8} |",
                 flush=True,
             )
 
 # --- PART 2: MULTI-MODEL REAL BACKBONES (HIGH TDP SATURATION) ---
-print("\n" + "=" * 125)
-print("=== PART 2: REAL MODEL BACKBONES (DISTILBERT, ROBERTA, GPT-2, LLAMA-PROXY) ===")
-print("=" * 125)
+logger.info("\n" + "=" * 125)
+logger.info("=== PART 2: REAL MODEL BACKBONES (DISTILBERT, ROBERTA, GPT-2, LLAMA-PROXY) ===")
+logger.info("=" * 125)
 
 MODELS = [
     {
@@ -266,12 +269,12 @@ for m_spec in MODELS:
     s = m_spec["seq"]
     total_tokens = b * s
 
-    print(f"\n>>> BACKBONE: {m_name} | Batch={b}, Seq={s} (Tokens/Step={total_tokens:,}) <<<")
-    print("-" * 125)
-    print(
+    logger.info(f"\n>>> BACKBONE: {m_name} | Batch={b}, Seq={s} (Tokens/Step={total_tokens:,}) <<<")
+    logger.info("-" * 125)
+    logger.info(
         f"| {'Method':<26} | {'Latency':<12} | {'Throughput (tok/s)':<20} | {'Peak Power':<12} | {'Energy/Tok':<14} | {'Peak VRAM':<12} | {'Speedup':<8} |"
     )
-    print("-" * 125)
+    logger.info("-" * 125)
 
     input_ids = torch.randint(100, 1000, (b, s), device=device)
     base_m_lat = None
@@ -312,7 +315,7 @@ for m_spec in MODELS:
             energy_uj = (power_w * (avg_lat / 1000.0) / total_tokens) * 1e6 if power_w > 0 else 0.0
             speedup = (base_m_lat / avg_lat) if base_m_lat else 1.0
 
-            print(
+            logger.info(
                 f"| {meth_name:<26} | {avg_lat:>8.2f} ms | {throughput:>16.0f} t/s | {power_w:>8.1f} W   | {energy_uj:>10.2f} uJ/t | {vram_mb:>8.1f} MB  | {speedup:>6.2f}x |",
                 flush=True,
             )
@@ -333,7 +336,7 @@ for m_spec in MODELS:
             )
             del model
         except Exception as e:
-            print(
+            logger.info(
                 f"| {meth_name:<26} | {'FAILED / OOM':<12} | {'-':<20} | {'-':<12} | {'-':<14} | {'-':<12} | {'-':<8} |",
                 flush=True,
             )
@@ -347,7 +350,7 @@ with open(csv_file, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=list(benchmark_records[0].keys()))
         writer.writeheader()
         writer.writerows(benchmark_records)
-print(f"\n[OK] Saved Master CSV: {csv_file}")
+logger.info(f"\n[OK] Saved Master CSV: {csv_file}")
 
 tex_file = os.path.join(out_dir, "master_high_tdp_benchmarks.tex")
 with open(tex_file, "w") as f:
@@ -371,7 +374,7 @@ with open(tex_file, "w") as f:
             f"{r['Workload'].split()[0]} & {r['Model_or_Method']} & {r['Latency_ms']} & {int(r['Throughput_tok_s']):,} & {r['Power_Watts']} & {r['Energy_uJ_per_tok']} & {r['Peak_VRAM_MB']} & \\textbf{{{r['Speedup']}$\\times$}} \\\\\n"
         )
     f.write("\\bottomrule\n\\end{tabular}\n\\end{table*}\n")
-print(f"[OK] Saved Camera-Ready LaTeX Table: {tex_file}")
-print("=================================================================================")
-print("=== ALL HIGH-TDP HIGH-THROUGHPUT BENCHMARKS COMPLETED SUCCESSFULLY! ===")
-print("=================================================================================")
+logger.info(f"[OK] Saved Camera-Ready LaTeX Table: {tex_file}")
+logger.info("=================================================================================")
+logger.info("=== ALL HIGH-TDP HIGH-THROUGHPUT BENCHMARKS COMPLETED SUCCESSFULLY! ===")
+logger.info("=================================================================================")

@@ -13,6 +13,10 @@ diagnose installation.
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 import importlib
 import os
 import platform
@@ -147,16 +151,16 @@ def cmd_doctor() -> int:
         else:
             console.print("[bold red]✗ One or more diagnostics failed. Please resolve above issues.[/]\n")
     else:
-        print("=" * 65)
-        print(f"NeuralOps Production Diagnostics (v{ver})")
-        print("=" * 65)
+        logger.info("=" * 65)
+        logger.info(f"NeuralOps Production Diagnostics (v{ver})")
+        logger.info("=" * 65)
         for comp, details, status, cat in rows:
             icon = "✓ OK  " if status == "pass" else ("⚠ WARN" if status == "warn" else "✗ FAIL")
-            print(f"[{icon}] {comp:22s} ({cat:16s}): {details}")
-        print("=" * 65)
+            logger.info(f"[{icon}] {comp:22s} ({cat:16s}): {details}")
+        logger.info("=" * 65)
         if all_ok:
-            print("✓ Production environment diagnostics passed.\n")
+            logger.info("✓ Production environment diagnostics passed.\n")
         else:
-            print("✗ One or more diagnostics failed.\n")
+            logger.info("✗ One or more diagnostics failed.\n")
 
     return 0 if all_ok else 1

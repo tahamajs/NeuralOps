@@ -25,7 +25,7 @@ except ModuleNotFoundError:
 
 
 def test_console_scripts_resolve_to_canonical_parser():
-    """Assert all console scripts in pyproject.toml resolve to neuralops.benchmarks.cli:main."""
+    """Assert all console scripts in pyproject.toml resolve to neuralops.benchmarks.cli_v2.main:main."""
     root_dir = Path(__file__).resolve().parents[2]
     pyproject_path = root_dir / "pyproject.toml"
     assert pyproject_path.exists(), "pyproject.toml missing"
@@ -39,8 +39,8 @@ def test_console_scripts_resolve_to_canonical_parser():
     for script_name in expected_scripts:
         assert script_name in scripts, f"Console script '{script_name}' not defined in pyproject.toml"
         target = scripts[script_name]
-        assert target == "neuralops.benchmarks.cli:main", (
-            f"Script '{script_name}' points to '{target}' instead of 'neuralops.benchmarks.cli:main'"
+        assert target == "neuralops.benchmarks.cli_v2.main:main", (
+            f"Script '{script_name}' points to '{target}' instead of 'neuralops.benchmarks.cli_v2.main:main'"
         )
 
         # Verify entry point target is dynamically importable

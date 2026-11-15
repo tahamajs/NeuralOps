@@ -1,3 +1,6 @@
+
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
@@ -115,7 +118,7 @@ def run_stress_test(
     if device.type == "cuda":
         torch.cuda.set_device(device.index if device.index is not None else 0)
     gpu_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "CPU"
-    print(f"Running multi-seed cross-validation on device: {device} ({gpu_name})")
+    logger.info(f"Running multi-seed cross-validation on device: {device} ({gpu_name})")
 
     attn_keys = sorted(ATTENTION_REGISTRY.keys())
     comp_keys = sorted(COMPRESSOR_REGISTRY.keys())
@@ -125,7 +128,7 @@ def run_stress_test(
     if limit_compressors is not None:
         comp_keys = comp_keys[:limit_compressors]
 
-    print(f"Auditing {len(attn_keys)} Attention Mechanisms & {len(comp_keys)} Compressors across seeds {seeds}")
+    logger.info(f"Auditing {len(attn_keys)} Attention Mechanisms & {len(comp_keys)} Compressors across seeds {seeds}")
 
     audit_results = {
         "device": str(device),
@@ -142,9 +145,9 @@ def run_stress_test(
     all_compressors_pass = True
     csv_rows = []
 
-    print("\n" + "=" * 80)
-    print(f"PHASE 1: ATTENTION MECHANISMS CROSS-VALIDATION ({len(attn_keys)} MECHANISMS)")
-    print("=" * 80)
+    logger.info("\n" + "=" * 80)
+    logger.info(f"PHASE 1: ATTENTION MECHANISMS CROSS-VALIDATION ({len(attn_keys)} MECHANISMS)")
+    logger.info("=" * 80)
 
     for idx, attn_name in enumerate(attn_keys, 1):
         attn_rec = {
@@ -252,7 +255,7 @@ def run_stress_test(
         audit_results["attentions"][attn_name] = attn_rec
         status_sym = "PASS" if attn_rec["status"] == "PASS" else "FAIL"
         if idx % 10 == 0 or idx == len(attn_keys):
-            print(
+            logger.info(
                 f"[{idx:3d}/{len(attn_keys)}] {status_sym} {attn_name:<32} | Zero-NaN: {attn_rec['zero_nan']} | Zero-Inf: {attn_rec['zero_inf']} | Min Speedup: {attn_rec['min_speedup']:.2f}x | Max FP16 Diff: {attn_rec['max_fp16_delta']:.4f}"
             )
 
@@ -268,9 +271,9 @@ def run_stress_test(
             }
         )
 
-    print("\n" + "=" * 80)
-    print(f"PHASE 2: COMPRESSORS CROSS-VALIDATION ({len(comp_keys)} COMPRESSORS)")
-    print("=" * 80)
+    logger.info("\n" + "=" * 80)
+    logger.info(f"PHASE 2: COMPRESSORS CROSS-VALIDATION ({len(comp_keys)} COMPRESSORS)")
+    logger.info("=" * 80)
 
     for idx, comp_name in enumerate(comp_keys, 1):
         comp_rec = {
@@ -329,7 +332,7 @@ def run_stress_test(
         audit_results["compressors"][comp_name] = comp_rec
         status_sym = "PASS" if comp_rec["status"] == "PASS" else "FAIL"
         if idx % 10 == 0 or idx == len(comp_keys):
-            print(
+            logger.info(
                 f"[{idx:2d}/{len(comp_keys)}] {status_sym} {comp_name:<32} | Zero-NaN: {comp_rec['zero_nan']} | Zero-Inf: {comp_rec['zero_inf']} | Min Speedup: {comp_rec['min_speedup']:.2f}x | Max Error: {comp_rec['max_reconstruction_error']:.4f}"
             )
 
@@ -361,7 +364,7 @@ def run_stress_test(
         out_p.parent.mkdir(parents=True, exist_ok=True)
         with open(out_p, "w", encoding="utf-8") as f:
             json.dump(audit_results, f, indent=2)
-        print(f"\nJSON results written to: {out_p}")
+        logger.info(f"\nJSON results written to: {out_p}")
 
     if output_csv:
         csv_p = Path(output_csv)
@@ -372,13 +375,13 @@ def run_stress_test(
             )
             writer.writeheader()
             writer.writerows(csv_rows)
-        print(f"CSV results written to: {csv_p}")
+        logger.info(f"CSV results written to: {csv_p}")
 
-    print("\n" + "=" * 80)
-    print("AUDIT COMPLETE")
-    print(f"All {len(attn_keys)} Attentions PASS: {all_attentions_pass}")
-    print(f"All {len(comp_keys)} Compressors PASS: {all_compressors_pass}")
-    print("=" * 80)
+    logger.info("\n" + "=" * 80)
+    logger.info("AUDIT COMPLETE")
+    logger.info(f"All {len(attn_keys)} Attentions PASS: {all_attentions_pass}")
+    logger.info(f"All {len(comp_keys)} Compressors PASS: {all_compressors_pass}")
+    logger.info("=" * 80)
 
     return audit_results
 

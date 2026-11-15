@@ -1,3 +1,6 @@
+
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
@@ -139,7 +142,7 @@ def benchmark_single_kernel(
     except Exception as exc:
         parity_error_str = str(exc)
         tb_str = traceback.format_exc()
-        print(f"[FAIL] {name:<36s} | Forward Parity Exception: {exc}")
+        logger.info(f"[FAIL] {name:<36s} | Forward Parity Exception: {exc}")
         return {
             "kernel": name,
             "category": category,
@@ -309,7 +312,7 @@ def benchmark_single_kernel(
     }
 
     status_flag = "[PASS]" if status == "PASS" else f"[{status}]"
-    print(
+    logger.info(
         f"{status_flag:<15} {name:<36s} | Tri: {triton_gpu_ms:6.3f}ms | PT: {pytorch_gpu_ms:6.3f}ms | Speedup: {speedup:6.2f}x | Diff: {max_diff_fwd:.2e}"
     )
     return entry
@@ -404,7 +407,7 @@ def run_all_26_comprehensive(
 
     # Graceful degradation on non-CUDA hardware
     if device.type != "cuda" or not torch.cuda.is_available():
-        print(
+        logger.info(
             f"[WARN] CUDA unavailable (device={device}). "
             "Returning SKIPPED_UNSUPPORTED_HARDWARE for 26 Triton kernel comprehensive sweep."
         )
@@ -486,7 +489,7 @@ def run_all_26_comprehensive(
         import triton
         import triton.language as tl
     except ImportError as exc:
-        print(f"[WARN] Triton is not available: {exc}. Returning SKIPPED_UNSUPPORTED_HARDWARE.")
+        logger.info(f"[WARN] Triton is not available: {exc}. Returning SKIPPED_UNSUPPORTED_HARDWARE.")
         kernels_to_skip = selected_kernels if selected_kernels is not None else CANONICAL_26_TRITON_KERNELS
         skipped_results = BenchmarkSkipList()
         for kname in kernels_to_skip:
@@ -537,10 +540,10 @@ def run_all_26_comprehensive(
         raise ValueError(f"Unsupported dtype '{dtype_str}'. Choose float16, float32, or bfloat16.") from exc
 
     gpu_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "CPU"
-    print("=" * 85)
-    print(f"BENCHMARKING 26 TRITON HARDWARE KERNELS ON {gpu_name}")
-    print(f"Dimensions: B=4, H=8, N=512, D=64 | Precision: {dtype_str} | Warmup: {warmup} | Reps: {repeat}")
-    print("=" * 85)
+    logger.info("=" * 85)
+    logger.info(f"BENCHMARKING 26 TRITON HARDWARE KERNELS ON {gpu_name}")
+    logger.info(f"Dimensions: B=4, H=8, N=512, D=64 | Precision: {dtype_str} | Warmup: {warmup} | Reps: {repeat}")
+    logger.info("=" * 85)
 
     results = []
 
@@ -1307,7 +1310,7 @@ def run_all_26_comprehensive(
         out_p.parent.mkdir(parents=True, exist_ok=True)
         with open(out_p, "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2)
-        print(f"\n[OK] Successfully saved {len(results)} kernel benchmarks to {out_p}")
+        logger.info(f"\n[OK] Successfully saved {len(results)} kernel benchmarks to {out_p}")
 
     if output_csv:
         csv_p = Path(output_csv)
@@ -1342,7 +1345,7 @@ def run_all_26_comprehensive(
             writer.writeheader()
             for r in results:
                 writer.writerow(r)
-        print(f"[OK] Successfully saved {len(results)} kernel benchmarks to {csv_p}")
+        logger.info(f"[OK] Successfully saved {len(results)} kernel benchmarks to {csv_p}")
 
     # Persist directly into SQLite master ledger
     try:
@@ -1389,9 +1392,9 @@ def run_all_26_comprehensive(
             )
         conn.commit()
         conn.close()
-        print(f"[OK] Successfully persisted {len(results)} Triton benchmarks to {sqlite_p}")
+        logger.info(f"[OK] Successfully persisted {len(results)} Triton benchmarks to {sqlite_p}")
     except Exception as exc:
-        print(f"[WARN] Failed to persist Triton benchmarks to SQLite: {exc}")
+        logger.info(f"[WARN] Failed to persist Triton benchmarks to SQLite: {exc}")
 
     if report_md:
         rep_p = Path(report_md)
@@ -1428,7 +1431,7 @@ def run_all_26_comprehensive(
         )
         with open(rep_p, "w", encoding="utf-8") as f:
             f.write("\n".join(lines) + "\n")
-        print(f"[OK] Successfully generated report at {rep_p}")
+        logger.info(f"[OK] Successfully generated report at {rep_p}")
 
     return results
 
@@ -1494,7 +1497,7 @@ def main(argv=None):
     if results in ("SKIPPED_UNSUPPORTED_HARDWARE", "SKIPPED") or any(
         r.get("status") in ("SKIPPED", "SKIPPED_UNSUPPORTED_HARDWARE") for r in results
     ):
-        print("\n[SKIP] CUDA unavailable: 26 Triton kernel benchmarks skipped on unsupported hardware.")
+        logger.info("\n[SKIP] CUDA unavailable: 26 Triton kernel benchmarks skipped on unsupported hardware.")
         return 0
 
     # Fail-closed process exit check: verify target coverage and absence of errors
@@ -1511,16 +1514,16 @@ def main(argv=None):
 
     if not coverage_ok:
         missing = expected_set - actual_set
-        print(f"\n[FAIL] Target coverage check failed! Missing kernels: {missing}", file=sys.stderr)
+        logger.error(f"\n[FAIL] Target coverage check failed! Missing kernels: {missing}")
         return 1
 
     if failed_rows:
-        print(f"\n[FAIL] {len(failed_rows)} kernel benchmark(s) failed strict audit gates:", file=sys.stderr)
+        logger.error(f"\n[FAIL] {len(failed_rows)} kernel benchmark(s) failed strict audit gates:")
         for fr in failed_rows:
-            print(f"  * {fr['kernel']}: status={fr.get('status')} | error={fr.get('error')}", file=sys.stderr)
+            logger.error(f"  * {fr['kernel']}: status={fr.get('status')} | error={fr.get('error')}")
         return 1
 
-    print("\n[PASS] All canonical Triton kernels passed strict benchmark and parity gates!")
+    logger.info("\n[PASS] All canonical Triton kernels passed strict benchmark and parity gates!")
     return 0
 
 

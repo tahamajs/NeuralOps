@@ -1,3 +1,6 @@
+
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
@@ -23,7 +26,7 @@ def harvest():
     root = Path(os.environ.get("NEURALOPS_WORKSPACE", Path.cwd()))
     results_dir = root / "results"
     summary_files = glob.glob(os.path.join(str(results_dir), "**", "*summary*.csv"), recursive=True)
-    print(f"Found {len(summary_files)} summary files.")
+    logger.info(f"Found {len(summary_files)} summary files.")
 
     all_records = []
     for sf in summary_files:
@@ -35,12 +38,12 @@ def harvest():
                 rec["_source_path"] = sf.replace("\\", "/")
                 all_records.append(rec)
         except Exception as e:
-            print(f"Error reading {sf}: {e}")
+            logger.info(f"Error reading {sf}: {e}")
 
     out_file = root / "harvested_benchmark_data.json"
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(all_records, f, indent=2, default=str)
-    print(f"Successfully harvested {len(all_records)} records to {out_file}")
+    logger.info(f"Successfully harvested {len(all_records)} records to {out_file}")
 
 
 if __name__ == "__main__":

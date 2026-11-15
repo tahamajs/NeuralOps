@@ -613,13 +613,13 @@ def main():
     df.to_csv(args.out_csv, index=False)
     persist_qwen_sqlite(results, base_ppl=teacher_ppl, sqlite_path=args.ledger_db)
 
-    print("\n" + "=" * 105)
-    print(f"QWEN WIKITEXT-2 PERPLEXITY ABLATION SUMMARY (Teacher Baseline PPL: {teacher_ppl:.2f})")
-    print("=" * 105)
-    print(
+    logger.info("\n" + "=" * 105)
+    logger.info(f"QWEN WIKITEXT-2 PERPLEXITY ABLATION SUMMARY (Teacher Baseline PPL: {teacher_ppl:.2f})")
+    logger.info("=" * 105)
+    logger.info(
         f"{'Module':<25} | {'Zero-Shot PPL':<15} | {'Isolated PPL':<15} | {'Polished PPL':<15} | {'Total Time':<12} | {'Status'}"
     )
-    print("-" * 105)
+    logger.info("-" * 105)
     for r in results:
         mod = r.get("module", "")[:24]
         zs = f"{r.get('zero_shot_ppl', 0.0):.2f}"
@@ -627,8 +627,8 @@ def main():
         pol = f"{r.get('polished_ppl', 0.0):.2f}"
         tt = f"{r.get('total_time_s', 0.0):.1f}s"
         st = r.get("status", "")
-        print(f"{mod:<25} | {zs:<15} | {iso:<15} | {pol:<15} | {tt:<12} | {st}")
-    print("=" * 105)
+        logger.info(f"{mod:<25} | {zs:<15} | {iso:<15} | {pol:<15} | {tt:<12} | {st}")
+    logger.info("=" * 105)
 
 
 if __name__ == "__main__":

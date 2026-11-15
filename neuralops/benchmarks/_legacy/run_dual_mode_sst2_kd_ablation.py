@@ -430,11 +430,11 @@ def main() -> None:
 
     persist_to_sqlite_ledger(all_ablation_results, sqlite_path=args.ledger_db)
 
-    print("\n" + "=" * 95)
-    print(f"DUAL-MODE ABLATION SUMMARY ON SST-2 (Teacher Baseline: {base_acc:.2f}%)")
-    print("=" * 95)
-    print(f"{'Module':<25} | {'Mode':<18} | {'Accuracy':<10} | {'Retention %':<12} | {'Val Loss':<10} | {'Status'}")
-    print("-" * 95)
+    logger.info("\n" + "=" * 95)
+    logger.info(f"DUAL-MODE ABLATION SUMMARY ON SST-2 (Teacher Baseline: {base_acc:.2f}%)")
+    logger.info("=" * 95)
+    logger.info(f"{'Module':<25} | {'Mode':<18} | {'Accuracy':<10} | {'Retention %':<12} | {'Val Loss':<10} | {'Status'}")
+    logger.info("-" * 95)
     for r in all_ablation_results:
         mod = r.get("module", "")[:23]
         m = r.get("mode", "")[:16]
@@ -442,8 +442,8 @@ def main() -> None:
         ret = f"{r.get('retention_pct', 0.0):.2f}%"
         vl = f"{r.get('val_loss', 0.0):.4f}"
         st = r.get("status", "")
-        print(f"{mod:<25} | {m:<18} | {acc:<10} | {ret:<12} | {vl:<10} | {st}")
-    print("=" * 95)
+        logger.info(f"{mod:<25} | {m:<18} | {acc:<10} | {ret:<12} | {vl:<10} | {st}")
+    logger.info("=" * 95)
 
 
 if __name__ == "__main__":

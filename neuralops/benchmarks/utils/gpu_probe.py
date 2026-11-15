@@ -1,3 +1,6 @@
+
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
@@ -240,11 +243,11 @@ if __name__ == "__main__":
 
     if args.action == "logs":
         tail_data = get_raw_log_tail(source=args.source, target_module=args.module, lines_count=args.lines)
-        print(json.dumps(tail_data))
+        logger.info(json.dumps(tail_data))
     elif args.action == "telemetry":
-        print(json.dumps(get_telemetry()))
+        logger.info(json.dumps(get_telemetry()))
     elif args.action == "progress":
-        print(json.dumps(get_live_progress_and_trajectory(target_module=args.module)))
+        logger.info(json.dumps(get_live_progress_and_trajectory(target_module=args.module)))
     else:
         t = get_telemetry()
         active_m, active_arch, q_logs = get_active_process_and_logs()
@@ -262,4 +265,4 @@ if __name__ == "__main__":
             "live_progress": lp,
             "active_log_tail": raw_tail,
         }
-        print(json.dumps(output))
+        logger.info(json.dumps(output))

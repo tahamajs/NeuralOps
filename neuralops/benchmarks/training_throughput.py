@@ -258,7 +258,7 @@ if __name__ == "__main__":
         lora_rank=args.lora_rank,
         lora_alpha=args.lora_alpha,
     )
-    print(
+    logger.info(
         json.dumps(
             profiler.profile_training_step(
                 batch_size=args.batch_size, seq_len=args.seq_len, warmup_steps=args.warmup_steps, num_steps=args.steps

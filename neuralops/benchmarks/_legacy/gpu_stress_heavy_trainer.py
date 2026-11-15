@@ -18,6 +18,10 @@ Saturates GPU compute and VRAM on modern accelerators (e.g. NVIDIA RTX 3090 24GB
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 import warnings
 
 warnings.warn(
@@ -147,18 +151,18 @@ def run_heavy_stress_training(
     if device.startswith("cuda") and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
     device = torch.device(device)
-    print("=" * 75)
-    print("  [*] NeuralOps Heavy GPU Stress Training & Workload Engine")
-    print(f"  Target Device     : {device} ({torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'})")
+    logger.info("=" * 75)
+    logger.info("  [*] NeuralOps Heavy GPU Stress Training & Workload Engine")
+    logger.info(f"  Target Device     : {device} ({torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'})")
     if torch.cuda.is_available():
         vram_total = torch.cuda.get_device_properties(0).total_memory / 1e9
-        print(f"  VRAM Capacity     : {vram_total:.2f} GB")
-    print(f"  Model Arch        : {num_layers} layers | {hidden_dim} dim | {num_heads} heads")
-    print(f"  Batch Spec        : Batch Size {batch_size} | Seq Len {seq_len} | Total Steps {steps}")
-    print("=" * 75)
+        logger.info(f"  VRAM Capacity     : {vram_total:.2f} GB")
+    logger.info(f"  Model Arch        : {num_layers} layers | {hidden_dim} dim | {num_heads} heads")
+    logger.info(f"  Batch Spec        : Batch Size {batch_size} | Seq Len {seq_len} | Total Steps {steps}")
+    logger.info("=" * 75)
 
     # Initialize Student and Teacher models for Knowledge Distillation
-    print("Initializing Student and Teacher transformer architectures...", flush=True)
+    logger.info("Initializing Student and Teacher transformer architectures...", flush=True)
     student = HeavyTransformerModel(hidden_dim=hidden_dim, num_layers=num_layers, num_heads=num_heads).to(device)
     teacher = HeavyTransformerModel(hidden_dim=hidden_dim, num_layers=num_layers, num_heads=num_heads).to(device)
     teacher.eval()
@@ -166,7 +170,7 @@ def run_heavy_stress_training(
         param.requires_grad = False
 
     param_count = sum(p.numel() for p in student.parameters() if p.requires_grad)
-    print(f"  [+] Model initialized with {param_count / 1e6:.2f}M trainable parameters.", flush=True)
+    logger.info(f"  [+] Model initialized with {param_count / 1e6:.2f}M trainable parameters.", flush=True)
 
     optimizer = torch.optim.AdamW(student.parameters(), lr=base_lr, weight_decay=0.01)
     scaler = torch.amp.GradScaler("cuda") if torch.cuda.is_available() else None
@@ -183,7 +187,7 @@ def run_heavy_stress_training(
     t_start = time.perf_counter()
     tokens_processed = 0
 
-    print("Beginning stress execution loop...\n", flush=True)
+    logger.info("Beginning stress execution loop...\n", flush=True)
     for step in range(steps):
         t_step0 = time.perf_counter()
         lr = get_wsd_lr(step, steps, base_lr)
@@ -249,7 +253,7 @@ def run_heavy_stress_training(
                 vram_res = torch.cuda.memory_reserved() / 1e9
                 vram_info = f" | VRAM: {vram_alloc:.2f}/{vram_res:.2f} GB"
 
-            print(
+            logger.info(
                 f"  [Step {step+1:4d}/{steps:4d}] "
                 f"Loss: {total_loss.item() * accum_steps:.4f} "
                 f"(CE: {loss_ce.item():.3f}, KD: {loss_kd.item():.3f}) | "
@@ -272,16 +276,16 @@ def run_heavy_stress_training(
                 },
                 ckpt_file,
             )
-            print(f"  [SAVED] Saved stress checkpoint to {ckpt_file}", flush=True)
+            logger.info(f"  [SAVED] Saved stress checkpoint to {ckpt_file}", flush=True)
 
     total_duration = time.perf_counter() - t_start
     overall_throughput = tokens_processed / max(1e-4, total_duration)
-    print("\n" + "=" * 75)
-    print("  [SUCCESS] Heavy GPU Stress Training Completed Successfully!")
-    print(f"  Total Duration    : {total_duration:.2f}s ({total_duration/60:.2f} min)")
-    print(f"  Total Tokens      : {tokens_processed:,}")
-    print(f"  Mean Throughput   : {overall_throughput:.1f} tokens/second")
-    print("=" * 75, flush=True)
+    logger.info("\n" + "=" * 75)
+    logger.info("  [SUCCESS] Heavy GPU Stress Training Completed Successfully!")
+    logger.info(f"  Total Duration    : {total_duration:.2f}s ({total_duration/60:.2f} min)")
+    logger.info(f"  Total Tokens      : {tokens_processed:,}")
+    logger.info(f"  Mean Throughput   : {overall_throughput:.1f} tokens/second")
+    logger.info("=" * 75, flush=True)
 
 
 def main() -> int:

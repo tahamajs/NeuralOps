@@ -16,6 +16,10 @@ Generates:
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 import warnings
 
 warnings.warn(
@@ -93,9 +97,9 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path, default=FIGURES_DIR, help="Output figures directory")
     args = parser.parse_args()
 
-    print("=" * 70)
-    print("  NeuralOps Phase 9: Publication-Grade Visualization Engine")
-    print("=" * 70)
+    logger.info("=" * 70)
+    logger.info("  NeuralOps Phase 9: Publication-Grade Visualization Engine")
+    logger.info("=" * 70)
 
     roofline_p = args.output_dir / "roofline.svg"
     pareto_p = args.output_dir / "pareto_compressors.svg"
@@ -103,11 +107,11 @@ def main() -> int:
     p1 = generate_roofline_plot(roofline_p, demo=args.demo)
     p2 = generate_pareto_curve(pareto_p, demo=args.demo)
 
-    print(f"  ✓ Roofline diagram generated : {p1}")
-    print(f"  ✓ Pareto curve generated     : {p2}")
-    print("=" * 70)
-    print("✓ Phase 9 Visualization Engine verified.")
-    print("=" * 70)
+    logger.info(f"  ✓ Roofline diagram generated : {p1}")
+    logger.info(f"  ✓ Pareto curve generated     : {p2}")
+    logger.info("=" * 70)
+    logger.info("✓ Phase 9 Visualization Engine verified.")
+    logger.info("=" * 70)
     return 0
 
 

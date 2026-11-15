@@ -9,6 +9,10 @@
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 import argparse
 import json
 from types import SimpleNamespace
@@ -74,7 +78,7 @@ def main() -> int:
         gen_len=args.gen_len,
     )
     payload = json.dumps(result, indent=2)
-    print(payload)
+    logger.info(payload)
     if args.output:
         with open(args.output, "w", encoding="utf-8") as handle:
             handle.write(payload + "\n")

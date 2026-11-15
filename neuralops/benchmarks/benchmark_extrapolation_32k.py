@@ -1,3 +1,6 @@
+
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
@@ -108,8 +111,8 @@ def run_extrapolation_benchmark(
     dtype = dtype_map.get(dtype_str.lower(), torch.float16)
 
     gpu_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "CPU"
-    print(f"=== Long-Horizon Sequence Extrapolation Benchmark on {device} ({gpu_name}) ===")
-    print(f"Sequence lengths: {seq_lens} | Precision: {dtype_str} | Warmup: {warmup} | Repeat: {repeat}")
+    logger.info(f"=== Long-Horizon Sequence Extrapolation Benchmark on {device} ({gpu_name}) ===")
+    logger.info(f"Sequence lengths: {seq_lens} | Precision: {dtype_str} | Warmup: {warmup} | Repeat: {repeat}")
 
     torch.manual_seed(42)
     if device.type == "cuda":
@@ -125,7 +128,7 @@ def run_extrapolation_benchmark(
     results = []
 
     for L in seq_lens:
-        print(f"\n================ Sequence Length L = {L} ================")
+        logger.info(f"\n================ Sequence Length L = {L} ================")
 
         q = (torch.randn(B, H, L, D, device=device, dtype=dtype) / (D**0.5)).contiguous()
         k = (torch.randn(B, H, L, D, device=device, dtype=dtype) / (D**0.5)).contiguous()
@@ -228,11 +231,11 @@ def run_extrapolation_benchmark(
                     "memory_stats": mem_info["memory_stats"],
                 }
                 results.append(row)
-                print(
+                logger.info(
                     f"  {m_name:<28} | Latency: {lat_ms:6.2f} ms | Peak VRAM: {mem_info['peak_vram_mb']:6.1f} MB | Frag: {mem_info['fragmentation_ratio']:6.4f} | KV State: {kv_state_kb:8.1f} KB ({state_complexity}) | Drift: {drift:9.2e} | Stable: {not has_nan}"
                 )
             except Exception as exc:
-                print(f"  {m_name:<28} | EXCEPTION: {exc}")
+                logger.info(f"  {m_name:<28} | EXCEPTION: {exc}")
                 results.append(
                     {
                         "sequence_length": L,
@@ -274,14 +277,14 @@ def run_extrapolation_benchmark(
             writer.writeheader()
             for r in results:
                 writer.writerow(r)
-        print(f"\nSaved CSV to: {csv_path}")
+        logger.info(f"\nSaved CSV to: {csv_path}")
 
     if output_json:
         json_path = Path(output_json)
         json_path.parent.mkdir(parents=True, exist_ok=True)
         with open(json_path, mode="w", encoding="utf-8") as f:
             json.dump(results, f, indent=2)
-        print(f"Saved JSON to: {json_path}")
+        logger.info(f"Saved JSON to: {json_path}")
 
     if output_tex:
         tex_path = Path(output_tex)
@@ -333,7 +336,7 @@ def run_extrapolation_benchmark(
         )
         with open(tex_path, mode="w", encoding="utf-8") as f:
             f.write("\n".join(tex) + "\n")
-        print(f"Saved LaTeX Table to: {tex_path}")
+        logger.info(f"Saved LaTeX Table to: {tex_path}")
 
     return results
 
