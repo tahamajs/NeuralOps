@@ -1,0 +1,20 @@
+{
+  "attention_keys_count": 118,
+  "compressor_keys_count": 89,
+  "api_signatures": {
+    "replace_attention": {
+      "signature": "(model: 'nn.Module', attention: 'Optional[str]' = None, rank: 'Optional[int]' = None, copy_weights: 'bool' = True, layers: 'Optional[List[int]]' = None, attention_type: 'Optional[str]' = None, validation_level: 'Optional[str]' = None, **kwargs: 'Any') -> 'nn.Module'",
+      "doc_length": 953
+    },
+    "compress": {
+      "signature": "(model: 'nn.Module', method: 'str' = 'svd', rank: 'int' = 32, layers: 'Optional[List[int]]' = None, validation_level: 'Optional[str]' = None, **kwargs: 'Any') -> 'nn.Module'",
+      "doc_length": 613
+    },
+    "certify": {
+      "signature": "(model: 'nn.Module', strict: 'bool' = True) -> 'Dict[str, Any]'",
+      "doc_length": 493
+    }
+  },
+  "attention_distinct_classes_count": 118,
+  "compressor_distinct_classes_count": 73
+}

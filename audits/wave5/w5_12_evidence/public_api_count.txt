@@ -1,0 +1,53 @@
+neuralops - NeuralOps Core Modules.
+results - NeuralOps Benchmarks Results Subpackage.
+tests - NeuralOps unified test suite.
+tests.adapters - Tests for neuralops.adapters subsystem.
+tests.adapters.test_framework_serving_adapters - Comprehensive Verification Test Battery for NeuralOps Serving Infrastructure and Framework Integrations.
+tests.analysis.test_layerwise_analyzer - Tests for neuralops.analysis.layerwise_analyzer module.
+tests.analysis.test_metrics - Tests for neuralops.analysis.metrics module.
+tests.analysis.test_module_analysis - Unit tests for neuralops.analysis.module_analysis package.
+tests.analysis.test_plotting - Tests for neuralops.analysis.plotting module.
+tests.analysis.test_statistical_tests - Tests for neuralops.analysis.comparison.statistical_tests.
+tests.cli - Tests for neuralops.cli subsystem.
+tests.cli.test_all_commands - Comprehensive unit tests for all neuralops.cli commands, parsers, and handlers.
+tests.cli.test_cli_main - Tests for NeuralOps CLI Main Router and Fail-Fast Subcommand Registration (F-58).
+tests.compression - Tests for neuralops.compression subsystem.
+tests.config.test_benchmark_config - Unit test suite for NeuralOps benchmark configuration schemas and loader.
+tests.config.test_benchmark_schema - Unit tests for Pydantic V2 benchmark schema models in neuralops.config.benchmark_schema.
+tests.config.test_compression_config - Tests for neuralops.config.compression_config.
+tests.config.test_data_config - Tests for neuralops.config.data_config.
+tests.config.test_experiment_config - Tests for neuralops.config.experiment_config.
+tests.config.test_hardware_config - Tests for neuralops.config.hardware_config.
+tests.config.test_method_config - Tests for neuralops.config.method_config.
+tests.config.test_model_config - Tests for neuralops.config.model_config.
+tests.config.test_sweep_config - Tests for neuralops.config.sweep_config.
+tests.config.test_training_config - Tests for neuralops.config.training_config.
+tests.conftest - Shared pytest fixtures for neuralops unified test suite.
+tests.cuda_kernels.conftest - Shared test verification utilities for NeuralOps CUDA C++ Kernel Verification Suite.
+tests.cuda_kernels.test_gemm_decomposition_kernels - Production-Grade Test Suite for NeuralOps GEMM and Matrix Decomposition CUDA Kernels.
+tests.cuda_kernels.test_normalization_kernels - Production-Grade Test Suite for NeuralOps Normalization, Activation, and Elementwise CUDA Kernels.
+tests.data.test_augmentation - Tests for neuralops.data.augmentation module.
+tests.data.test_base - Tests for neuralops.data.base module.
+tests.data.test_cached_tensors - Tests for neuralops.data.cached_tensors module.
+tests.data.test_dataset_loader - Tests for neuralops.data.dataset_loader module.
+tests.data.test_glue_loader - Tests for neuralops.data.glue_loader module.
+tests.data.test_multi_choice - Tests for neuralops.data.multi_choice module.
+tests.data.test_synthetic_generator - Tests for neuralops.data.synthetic_generator module.
+tests.distributed - Tests for NeuralOps distributed modules (tensor parallel and context parallel).
+tests.distributed.test_distributed_cpu - CPU-safe tests for NeuralOps distributed modules (tensor parallel and context parallel).
+tests.evaluation - Tests for neuralops.evaluation subsystem.
+tests.evaluation.test_eval_pipeline - Unit tests for neuralops.evaluation.eval_pipeline.
+tests.evaluation.test_niah_passkey - Tests for NIAH Passkey Evaluator (neuralops.evaluation.niah_passkey).
+tests.evaluation.test_ruler - Tests for RULER benchmark evaluator (neuralops.evaluation.ruler).
+tests.export - Tests for neuralops.export subsystem.
+tests.gpu_exhaustive - NeuralOps Exhaustive GPU Test Suite Package.
+tests.hub - Tests for neuralops.hub.
+tests.integrations.test_tensorrt_llm_plugin - Unit tests for TensorRT-LLM Plugin Module for NeuralOps Attention.
+tests.kernels - Tests for neuralops.kernels subsystem.
+tests.kernels.test_kernels_unified - Verification suite for Complete Unified Triton & CUDA Kernels in NeuralOps.
+tests.layers - Tests for neuralops.layers subsystem.
+tests.models.test_config - Tests for NeuralOpsConfig validation and serialization.
+tests.models.test_model_forward - Tests for NeuralOps model creation, forward pass, loss computation, and generation.
+---
+Total public def count (non-test):
+    9425

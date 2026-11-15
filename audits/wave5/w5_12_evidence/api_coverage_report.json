@@ -1,0 +1,19 @@
+{
+  "audit_target": "NeuralOps Public Clean API and Registry Inventory",
+  "total_attention_registry_keys": 118,
+  "distinct_attention_classes": 118,
+  "total_compressor_registry_keys": 89,
+  "distinct_compressor_classes": 73,
+  "core_api_methods_audited": [
+    "replace_attention",
+    "compress",
+    "certify"
+  ],
+  "docstring_fidelity_score": 1.0,
+  "docstring_mismatch_count": 0,
+  "hardware_support": {
+    "cuda": "Full (NVIDIA CC >= 7.0)",
+    "mps": "PyTorch fallback (Apple Silicon Metal/MPS)",
+    "cpu": "Full fallback (x86/ARM)"
+  }
+}
