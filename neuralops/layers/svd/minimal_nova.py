@@ -123,7 +123,7 @@ class FactorisedLinear(nn.Module):
             r = min(self.rank, calc_rank, U.size(1), Vt.size(0))
             r = max(1, r)
 
-            sqrt_s = torch.sqrt(S[:r])
+            sqrt_s = torch.sqrt(torch.clamp(S[:r], min=0.0))
             A = (U[:, :r] * sqrt_s).to(self.up.weight.dtype).to(self.up.weight.device)
             B = (sqrt_s.unsqueeze(1) * Vt[:r, :]).to(self.down.weight.dtype).to(self.down.weight.device)
 
