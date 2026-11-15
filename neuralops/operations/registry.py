@@ -72,8 +72,19 @@ def register_operation(
     return _decorator
 
 
+def _ensure_operations_registered() -> None:
+    if not _OPERATION_REGISTRY:
+        import neuralops.operations.adaptation  # noqa: F401
+        import neuralops.operations.architecture  # noqa: F401
+        import neuralops.operations.attention  # noqa: F401
+        import neuralops.operations.export  # noqa: F401
+        import neuralops.operations.verify  # noqa: F401
+        import neuralops.operations.weights  # noqa: F401
+
+
 def get_operation(name: str, version: Optional[str] = "1.0.0") -> Operation:
     """Retrieve an operation instance by name and exact version."""
+    _ensure_operations_registered()
     if name == "attention.transplant" and "attention.transplant" not in _OPERATION_REGISTRY:
         name = "attention.replace"
     if name not in _OPERATION_REGISTRY:
@@ -97,6 +108,7 @@ def get_operation(name: str, version: Optional[str] = "1.0.0") -> Operation:
 
 def list_operations() -> List[str]:
     """Return sorted list of all registered operations in 'name@version' format."""
+    _ensure_operations_registered()
     ops: List[str] = []
     for name, v_map in sorted(_OPERATION_REGISTRY.items()):
         for ver in sorted(v_map.keys()):
@@ -106,6 +118,7 @@ def list_operations() -> List[str]:
 
 def get_operation_contracts() -> Dict[str, OperationContract]:
     """Return a dictionary of all registered contracts keyed by 'name@version'."""
+    _ensure_operations_registered()
     contracts: Dict[str, OperationContract] = {}
     for name, v_map in _OPERATION_REGISTRY.items():
         for ver, op in v_map.items():
