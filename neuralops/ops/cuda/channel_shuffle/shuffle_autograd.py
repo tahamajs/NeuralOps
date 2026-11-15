@@ -45,7 +45,29 @@ def channel_shuffle_pytorch_ref(
     x: torch.Tensor,
     groups: int = 2,
 ) -> torch.Tensor:
-    """Pure PyTorch reference implementation."""
+    """Pure PyTorch reference implementation of channel shuffle.
+
+    Args:
+        x: Input tensor of shape (B, C, ...). Must have at least 2 dimensions and
+            C divisible by groups.
+        groups: Number of groups to divide channels into. Must divide C evenly.
+
+    Returns:
+        Tensor with channels shuffled across groups, preserving original shape and dtype.
+
+    Raises:
+        ValueError: If x has fewer than 2 dimensions, or groups is non-positive,
+            or C is not divisible by groups.
+    """
+    if x.dim() < 2:
+        raise ValueError(
+            f"Input tensor x must have at least 2 dimensions (Batch, Channels), got shape {tuple(x.shape)}"
+        )
+    if groups <= 0:
+        raise ValueError(f"groups must be a positive integer, got {groups}")
+    if x.shape[1] % groups != 0:
+        raise ValueError(f"Number of channels ({x.shape[1]}) must be divisible by groups ({groups})")
+
     orig_shape = x.shape
     B, C = orig_shape[0], orig_shape[1]
     L = x.numel() // (B * C)
@@ -67,7 +89,19 @@ def channel_shuffle(
     x: torch.Tensor,
     groups: int = 2,
 ) -> torch.Tensor:
-    """3-Level Dispatched Channel Shuffle."""
+    """3-Level Dispatched Channel Shuffle operator.
+
+    Divides channels into groups and interleaves them, supporting Level 1 CUDA C++,
+    Level 2 Triton, and Level 3 CPU/fallback execution with AMP float16/bfloat16 compatibility.
+
+    Args:
+        x: Input tensor of shape (B, C, ...). Must have at least 2 dimensions and
+            C divisible by groups.
+        groups: Number of groups to divide channels into. Defaults to 2.
+
+    Returns:
+        Tensor with shuffled channels, matching x in shape, dtype, and device.
+    """
 
     def cuda_fn(x, groups=2, **kwargs):
         mod = _get_module()
