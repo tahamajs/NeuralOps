@@ -1,5 +1,3 @@
-from neuralops.ops.triton._low_rank.core import fwd
-from neuralops.ops.triton._low_rank.kernels_tt_kron import triton_fused_kronecker_matmul
 #!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
@@ -12,6 +10,9 @@ Modularized Low-Rank Submodule
 """
 
 from __future__ import annotations
+from neuralops.ops.triton._low_rank.fused_ops import fused_int4_lut_dequant_matmul_pytorch
+from neuralops.ops.triton._low_rank.core import fwd
+from neuralops.ops.triton._low_rank.kernels_tt_kron import triton_fused_kronecker_matmul
 
 import logging
 import math
@@ -21,7 +22,6 @@ from typing import Any, Optional, Tuple
 import torch
 import torch.nn.functional as F
 
-from neuralops.ops.triton._low_rank.fused_ops import fused_int4_lut_dequant_matmul_pytorch
 
 logger = logging.getLogger(__name__)
 

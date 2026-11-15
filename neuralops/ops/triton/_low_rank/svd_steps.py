@@ -11,6 +11,7 @@ Modularized Low-Rank Submodule
 """
 
 from __future__ import annotations
+from neuralops.ops.triton._low_rank.structured import _fused_hnc_nullspace_spectral_step_fwd_kernel, fused_svd_gemm_triton
 
 import logging
 import math
