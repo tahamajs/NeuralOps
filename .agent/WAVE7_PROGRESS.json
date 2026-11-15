@@ -2,10 +2,14 @@
   "wave": 7,
   "started_at": "2026-11-15T20:00:00Z",
 <<<<<<< HEAD
+<<<<<<< HEAD
   "last_updated": "2026-11-15T17:21:57Z",
 =======
   "last_updated": "2026-11-15T20:00:00Z",
 >>>>>>> wave7/W7-3
+=======
+  "last_updated": "2026-11-15T17:20:54Z",
+>>>>>>> wave7/W7-5
   "agents": {
     "W7-1": {
       "status": "pending",
@@ -18,7 +22,7 @@
       "worktree": null
     },
     "W7-3": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave7/W7-3",
       "worktree": null
     },
@@ -28,7 +32,7 @@
       "worktree": null
     },
     "W7-5": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave7/W7-5",
       "worktree": null
     },
