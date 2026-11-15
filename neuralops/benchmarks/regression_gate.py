@@ -13,6 +13,7 @@ import argparse
 import json
 from pathlib import Path
 from typing import Any
+from neuralops.core.exceptions import NeuralOpsError
 
 
 def _load(path: Path) -> dict[str, Any]:
@@ -24,7 +25,7 @@ def _load(path: Path) -> dict[str, Any]:
     return data
 
 
-class MetricNotFoundError(KeyError, ValueError):
+class MetricNotFoundError(NeuralOpsError, KeyError, ValueError):
     """Raised when metric is not found in baseline or candidate."""
 
 

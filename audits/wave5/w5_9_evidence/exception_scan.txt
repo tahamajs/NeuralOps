@@ -1,0 +1,1567 @@
+neuralops/results_saver/writers/parquet_writer.py:101:        raise RuntimeError("pyarrow is required to read Parquet files.")
+neuralops/results_saver/artifacts.py:61:            raise TypeError(f"Unsupported content type: {type(content_or_path)}")
+neuralops/ui/queries/ledger.py:50:        raise FileNotFoundError(
+neuralops/ui/__init__.py:32:    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+neuralops/ui/tunnel.py:40:            raise RuntimeError("cloudflared executable not found in PATH. Install cloudflared to use --share mode.")
+neuralops/ui/tunnel.py:65:                raise RuntimeError(f"cloudflared exited unexpectedly: {err}")
+neuralops/ui/tunnel.py:79:        raise TimeoutError("Timed out waiting for trycloudflare.com tunnel URL.")
+neuralops/ui/cli.py:130:        raise ValueError("--auth is required when sharing the Web UI via --share.")
+neuralops/ui/cli.py:138:            raise ValueError(
+neuralops/ui/cli.py:147:            raise ValueError("Web UI authentication password cannot be empty.")
+neuralops/ui/routes/attentions.py:48:        raise HTTPException(status_code=404, detail=f"Attention '{name}' not found")
+neuralops/ui/routes/compressors.py:48:        raise HTTPException(status_code=404, detail=f"Compressor '{name}' not found")
+neuralops/kernels/cuda/__init__.py:27:        raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+neuralops/kernels/cuda/__init__.py:41:    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+neuralops/kernels/triton/__init__.py:24:        raise AttributeError(f"module '{__name__}' has no attribute '{name}'") from None
+neuralops/kernels/__init__.py:64:        raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+neuralops/kernels/__init__.py:116:    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+neuralops/reporting/report.py:137:        raise ValueError(f"Unsupported report format: {format}. Supported: 'markdown'")
+neuralops/_optional.py:42:        raise TorchNotInstalledError(
+neuralops/_optional.py:76:        raise TritonNotInstalledError(
+neuralops/serving/request_batcher.py:47:            raise ValueError("request_id must be a non-empty string")
+neuralops/serving/request_batcher.py:49:            raise ValueError("input_ids must be a non-empty 1D tensor")
+neuralops/serving/request_batcher.py:51:            raise ValueError("max_new_tokens must be a positive integer")
+neuralops/serving/request_batcher.py:53:            raise ValueError("temperature must be finite and non-negative")
+neuralops/serving/request_batcher.py:55:            raise ValueError("top_k must be a non-negative integer")
+neuralops/serving/request_batcher.py:57:            raise TypeError("stop_sequences must contain strings")
+neuralops/serving/request_batcher.py:86:            raise ValueError("max_batch_size and max_seq_len must be positive integers")
+neuralops/serving/request_batcher.py:120:            raise ValueError(f"request_id {request.request_id!r} has already been used")
+neuralops/serving/request_batcher.py:122:            raise ValueError(f"request_id {request.request_id!r} is already queued")
+neuralops/serving/request_batcher.py:124:            raise ValueError("prompt plus max_new_tokens exceeds max_seq_len")
+neuralops/serving/request_batcher.py:296:            raise StopIteration
+neuralops/serving/request_batcher.py:321:            raise ValueError("max_batch_size and max_seq_len must be positive integers")
+neuralops/serving/request_batcher.py:375:        raise TypeError(f"Unsupported prompt format: {type(prompt)}")
+neuralops/serving/request_batcher.py:654:                raise ValueError("Either request_id or prompt must be provided")
+neuralops/serving/request_batcher.py:667:                raise ValueError(f"Request {request_id!r} not found in batch manager and no prompt was provided")
+neuralops/serving/request_batcher.py:717:            raise ImportError(
+neuralops/serving/request_batcher.py:737:                raise HTTPException(status_code=400, detail="request body must be a JSON object")
+neuralops/serving/request_batcher.py:743:                raise HTTPException(status_code=400, detail="parameters must be a JSON object")
+neuralops/serving/request_batcher.py:754:                raise HTTPException(status_code=400, detail="request body must be a JSON object")
+neuralops/serving/request_batcher.py:760:                raise HTTPException(status_code=400, detail="parameters must be a JSON object")
+neuralops/core/svd_utils.py:46:        raise ValueError(f"randomized_svd expects a 2D matrix, got shape {W.shape}")
+neuralops/core/model_utils.py:116:            raise ValueError(
+neuralops/core/_lazy.py:37:        raise AttributeError(f"module {package_name!r} has no attribute {name!r}")
+neuralops/core/device.py:230:        raise RuntimeError(
+neuralops/core/registry.py:317:                    raise RegistryError(f"Alias '{k}' collides with canonical key in registry '{self.name}'.")
+neuralops/core/registry.py:321:                    raise RegistryError(
+neuralops/core/registry.py:325:                    raise RegistryError(
+neuralops/core/registry.py:579:        """Retrieve a registered component and raise a descriptive error if missing."""
+neuralops/core/registry.py:604:            raise KeyError(str(e)) from e
+neuralops/core/registry.py:631:            raise KeyError(f"Unknown {self.name.rstrip('s')} '{key}'. Available: {list(self._dict.keys())}")
+neuralops/core/registry.py:948:        raise AttentionNotRegisteredError(
+neuralops/core/registry.py:974:            raise ValueError(f"num_heads ({resolved_heads}) must divide dim ({resolved_dim}) evenly.")
+neuralops/core/registry.py:1046:        raise TypeError(
+neuralops/core/registry.py:1064:        raise CompressorNotRegisteredError(f"Compressor '{name}' not found in COMPRESSOR_REGISTRY.")
+neuralops/core/registry.py:1080:                raise TypeError(
+neuralops/core/registry.py:1096:        raise TypeError(
+neuralops/core/registry.py:1111:        raise AttentionNotRegisteredError(f"Attention '{name}' not found in ATTENTION_REGISTRY.")
+neuralops/core/registry.py:1121:        raise CompressorNotRegisteredError(f"Compressor '{name}' not found in COMPRESSOR_REGISTRY.")
+neuralops/core/fused/fused_kd.py:77:        raise ValueError(f"Unknown reduction: {reduction}")
+neuralops/core/fused/fused_ce.py:84:        raise ValueError(f"Unknown reduction: {reduction}")
+neuralops/core/fused/fused_norm_linear.py:95:            raise ValueError(f"Unknown gating: {self.gating_type}")
+neuralops/core/__init__.py:125:    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+neuralops/core/_attention_helpers.py:44:        raise ValueError(f"Attention '{attention_name}' not registered in ATTENTION_REGISTRY.")
+neuralops/core/_attention_helpers.py:46:        raise ValueError(f"Attention '{attention_name}' is not callable.")
+neuralops/core/_attention_helpers.py:103:    raise ValueError(
+neuralops/core/utils/general.py:45:        raise RuntimeError("CUDA was requested, but no CUDA device is available")
+neuralops/core/utils/general.py:47:        raise RuntimeError("MPS was requested, but MPS is not available")
+neuralops/core/utils/general.py:51:            raise RuntimeError(f"CUDA device index {device.index} is unavailable; {count} device(s) detected")
+neuralops/core/backend/dispatch.py:207:            raise KernelNotAvailableError(
+neuralops/core/state_cache.py:98:            raise ValueError("max_window must be positive and sink_tokens non-negative")
+neuralops/core/state_cache.py:100:            raise ValueError("new key and value tensors must have matching token dimensions")
+neuralops/core/state_cache.py:138:                raise ValueError("window-cache shape, dtype, device, and capacity must remain stable")
+neuralops/core/state_cache.py:236:        raise NotImplementedError("benchmark() requires CUDA; cannot fabricate latency")
+neuralops/core/state_cache.py:238:        raise ValueError("autoregressive latency benchmarking requires a CUDA device")
+neuralops/core/state_cache.py:241:        raise ValueError("embed_dim must be positive and divisible by num_heads")
+neuralops/core/state_cache.py:243:        raise ValueError("batch_size and all sequence lengths must be positive")
+neuralops/core/peft/lora.py:210:            raise TypeError(f"from_linear expects nn.Linear, got {type(layer).__name__}")
+neuralops/core/lazy_import.py:67:        raise AttributeError(f"module '{self.__name__}' has no attribute '{name}'")
+neuralops/core/_attention_surgery.py:56:    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+neuralops/core/_attention_wrapper.py:258:                    raise ValueError(
+neuralops/core/_attention_wrapper.py:266:                        raise ValueError(
+neuralops/core/_attention_wrapper.py:404:            raise ValueError("ReplaceAttention.forward() requires input tensor (hidden_states/query/x)")
+neuralops/core/_attention_wrapper.py:406:            raise NotImplementedError("ReplaceAttention: cross-attention is not supported.")
+neuralops/core/_attention_wrapper.py:422:                raise ValueError("position_embeddings must be a (cos, sin) tensor pair")
+neuralops/core/extensibility.py:235:            raise TypeError(f"Unsupported module_or_name type: {type(module_or_name)}")
+neuralops/core/composable.py:80:        raise NotImplementedError
+neuralops/core/composable.py:87:        raise NotImplementedError
+neuralops/core/composable.py:94:        raise NotImplementedError
+neuralops/core/composable.py:101:        raise NotImplementedError
+neuralops/core/architecture.py:67:    raise ValueError("Could not locate transformer layers automatically.")
+neuralops/core/_attention_extractors.py:80:    raise ValueError(
+neuralops/core/_attention_extractors.py:100:    raise ValueError(f"Cannot infer num_heads from {type(old_attn).__name__}")
+neuralops/core/replace_attention.py:63:        raise NotImplementedError(
+neuralops/core/replace_attention.py:70:        raise ValueError(f"Attention '{attention_name}' not registered in ATTENTION_REGISTRY.")
+neuralops/core/replace_attention.py:72:        raise ValueError(f"Attention '{attention_name}' is not callable.")
+neuralops/core/replace_attention.py:81:            raise AttributeError("Could not locate encoder in model architecture.")
+neuralops/core/replace_attention.py:92:            raise AttributeError("Could not locate transformer in GPT-2 model.")
+neuralops/core/replace_attention.py:123:            raise AttributeError(f"Could not locate decoder layers for model_type={model_type}.")
+neuralops/core/replace_attention.py:127:        raise ValueError(f"Unsupported model type: {model_type}")
+neuralops/core/replace_attention.py:242:    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+neuralops/core/_attention_injectors.py:215:        raise RuntimeError(f"Could not instantiate attention class {attn_class.__name__}")
+neuralops/core/_attention_injectors.py:244:                        raise QwenIncompatibleError(
+neuralops/core/base.py:118:        raise NotImplementedError("Subclasses of BaseAttention must implement forward()")
+neuralops/core/base.py:287:        raise NotImplementedError("Subclasses of BaseCompressor must implement compress()")
+neuralops/core/attention_utils.py:250:    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+neuralops/core/adapters.py:196:        raise ValueError(f"Could not extract '{proj}' projection weights from {type(old_attn).__name__}")
+neuralops/analysis/metrics.py:27:        raise ValueError("predictions and labels must be non-empty")
+neuralops/analysis/metrics.py:29:        raise ValueError(f"Unsupported task type: {task}")
+neuralops/analysis/metrics.py:40:            raise ValueError(
+neuralops/analysis/metrics.py:45:            raise ValueError("regression metrics require at least two observations")
+neuralops/analysis/metrics.py:52:            raise ValueError(
+neuralops/analysis/inspector.py:400:                raise KeyError(f"Module '{name}' not found in ATTENTION_REGISTRY (131) or COMPRESSOR_REGISTRY (72).")
+neuralops/analysis/pareto_sweeper.py:34:            raise ValueError("objectives and directions must have identical lengths.")
+neuralops/analysis/generate_sweep_publication_artifacts.py:134:        raise FileNotFoundError(f"Summary file not found: {summary_csv}")
+neuralops/analysis/generate_sweep_publication_artifacts.py:144:        raise ValueError(f"Summary file is missing required result columns: {', '.join(missing)}")
+neuralops/analysis/layerwise_analyzer.py:336:        raise ValueError(f"k must be at least 2, got {k}")
+neuralops/analysis/layerwise_analyzer.py:340:        raise ValueError("hidden_states must have shape [samples, features], " f"got {hidden_states.shape}")
+neuralops/analysis/model_comparison.py:49:            raise ValueError("No performance.csv records were found in the configured results directories.")
+neuralops/analysis/comparison/statistical_testing.py:665:        raise ValueError("Welch's t-test requires at least 2 observations per sample.")
+neuralops/_lazy_family.py:88:                raise AttributeError(f"module {package_name!r} has no attribute {name!r}") from exc
+neuralops/_lazy_family.py:90:            raise AttributeError(f"module {package_name!r} has no attribute {name!r}")
+neuralops/layers/ssm/vspec.py:710:            raise NotImplementedError("Cross-attention is not implemented for VSpecAttention")
+neuralops/layers/ssm/goldfinch_ahn.py:608:                    raise RuntimeError(f"Goldfinch copy_weights: '{key}' norm too small ({w_norm:.2e})")
+neuralops/layers/ssm/goldfinch_ahn.py:697:            raise NotImplementedError("GoldFinchAHN does not support cross-attention.")
+neuralops/layers/ssm/goldfinch_ahn.py:792:                raise RuntimeError("mask not bool")
+neuralops/layers/ssm/mamba_block.py:561:            raise NotImplementedError("MambaBlock does not support cross-attention")
+neuralops/layers/ssm/selective_ssm.py:532:            raise NotImplementedError("SelectiveSSM does not support cross-attention.")
+neuralops/layers/ssm/upi_stuffed_mamba.py:299:                raise RuntimeError(
+neuralops/layers/ssm/upi_stuffed_mamba.py:544:            raise NotImplementedError(
+neuralops/layers/ssm/hymba_transx.py:541:        raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
+neuralops/layers/ssm/hymba_transx.py:560:            raise NotImplementedError("HymbaTransXBlock does not support cross-attention.")
+neuralops/layers/ssm/hymba_transx.py:566:            raise ValueError("HymbaTransXBlock.forward: no input tensor provided.")
+neuralops/layers/ssm/samba_moe.py:277:            raise NotImplementedError("SambaMoEBlock does not support cross-attention")
+neuralops/layers/ssm/mamba_svd_flash.py:406:                raise RuntimeError(f"norm too small: {torch.linalg.norm(old_attn.weight.float()).item()}")
+neuralops/layers/ssm/mamba_svd_flash.py:540:                    raise RuntimeError(f"norm too small for {key}: {torch.linalg.norm(w_chk.float()).item()}")
+neuralops/layers/ssm/mamba_svd_flash.py:858:            raise NotImplementedError("MambaSVDFlash does not support cross-attention.")
+neuralops/layers/ssm/samba_m3.py:154:            raise ValueError(f"d_model ({self.d_model}) must be divisible by n_heads ({self.n_heads})")
+neuralops/layers/ssm/samba_m3.py:530:            raise NotImplementedError("SAMBAM3Block does not support cross-attention")
+neuralops/layers/ssm/samba_m3.py:635:            raise RuntimeError(f"SAMBAM3Block: output dim {out.shape[-1]} != expected {D}")
+neuralops/layers/ssm/orion.py:313:            raise ValueError(f"hidden_size {self.hidden_size} must be divisible by num_heads {self.num_heads}")
+neuralops/layers/ssm/spectral_mamba.py:485:                        raise RuntimeError(
+neuralops/layers/ssm/spectral_mamba.py:528:            raise ValueError(
+neuralops/layers/experimental/template_attention.py:349:                raise RuntimeError(
+neuralops/layers/experimental/template_attention.py:412:            raise NotImplementedError("YourCustomAttention: cross-attention not supported.")
+neuralops/layers/experimental/template_attention.py:554:            raise RuntimeError(f"YourCustomAttention: output dim {output.shape[-1]} != hidden_size {self.hidden_size}")
+neuralops/layers/fast_kernels/xattention.py:585:            raise NotImplementedError("XAttention does not support cross-attention.")
+neuralops/layers/fast_kernels/flash_attention3_fp8.py:552:            raise RuntimeError(
+neuralops/layers/fast_kernels/soa_attn.py:546:                raise RuntimeError(
+neuralops/layers/fast_kernels/adasplash_attention.py:512:            raise RuntimeError(
+neuralops/layers/linear/linformer_attention.py:478:            raise RuntimeError(
+neuralops/layers/linear/cosformer.py:356:            raise RuntimeError(f"CosformerAttention.copy_weights: missing {missing} from {src.__class__.__name__}")
+neuralops/layers/linear/cosformer.py:378:                                raise ValueError(
+neuralops/layers/linear/nystrom_attention.py:607:            raise NotImplementedError("Cross-attention is not implemented for NystromAttention")
+neuralops/layers/linear/tpa_attention.py:65:        raise ValueError(f"rank_a * rank_b ({rank_a} * {rank_b}) must equal head_dim " f"({W_f.shape[0] // H})")
+neuralops/layers/linear/spectra_v2.py:329:                    raise RuntimeError(
+neuralops/layers/linear/spectra_v2.py:427:                        raise RuntimeError(
+neuralops/layers/linear/spectra_v2.py:443:                    raise RuntimeError(
+neuralops/layers/linear/spectra_v2.py:479:                raise RuntimeError(
+neuralops/layers/linear/spectra_v2.py:487:            raise RuntimeError(
+neuralops/layers/linear/spectraformer_attention.py:324:            raise RuntimeError(
+neuralops/layers/linear/spectraformer_attention.py:435:            raise ValueError("SpectraformerAttention forward requires hidden_states")
+neuralops/layers/linear/performer_attention.py:199:            raise ValueError(f"Invalid head counts: num_heads={num_heads}, num_kv_heads={num_kv_heads}")
+neuralops/layers/linear/performer_attention.py:201:            raise ValueError(f"num_heads ({num_heads}) must be divisible by num_kv_heads ({num_kv_heads})")
+neuralops/layers/linear/performer_attention.py:356:                    raise RuntimeError("PerformerAttention: copy_weights failed")
+neuralops/layers/linear/performer_attention.py:641:            raise NotImplementedError(
+neuralops/layers/linear/tlinformer_attention.py:377:            raise RuntimeError(f"TLinFormer copy_weights: missing {missing_after} from {src.__class__.__name__}.")
+neuralops/layers/linear/tlinformer_attention.py:492:        raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
+neuralops/layers/linear/tlinformer_attention.py:532:        raise ValueError(f"Unsupported head_mask dim: {hm.dim()}")
+neuralops/layers/linear/primal_attention.py:296:            raise RuntimeError(
+neuralops/layers/linear/rpc_attention.py:435:            raise RuntimeError(f"RPCAttention.copy_weights: missing {missing_after} from {cls_name}.")
+neuralops/layers/linear/rpc_attention.py:520:        raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
+neuralops/layers/linear/rpc_attention.py:616:            raise RuntimeError(f"RPCAttention: output feature dim {out.shape[-1]} != input {D}")
+neuralops/layers/linear/chela_slay.py:884:            raise RuntimeError(
+neuralops/layers/linear/chela_slay.py:946:            raise RuntimeError(
+neuralops/layers/__init__.py:53:        raise AttributeError(f"module '{__name__}' has no attribute {name!r}")
+neuralops/layers/__init__.py:67:    raise AttributeError(f"module '{__name__}' has no attribute {name!r}")
+neuralops/layers/svd/svd_projection_attention.py:631:            raise RuntimeError(
+neuralops/layers/svd/fused_svd_kernel.py:910:            raise NotImplementedError("Cross-attention is not supported in FusedSVDKernelAttention")
+neuralops/layers/svd/fused_svd_kernel.py:983:                    raise RuntimeError("Use explicit attention path for 3D/4D mask")
+neuralops/layers/svd/factorised_matrix_state.py:440:            raise RuntimeError(
+neuralops/layers/svd/svd_attention.py:350:                raise RuntimeError(
+neuralops/layers/svd/svd_attention.py:360:                    raise RuntimeError(
+neuralops/layers/svd/asvd_attention.py:458:                raise ValueError(f"Expected 2D weight matrix for projection {proj_name}, got shape {W.shape}")
+neuralops/layers/svd/asvd_attention.py:653:            raise RuntimeError(
+neuralops/layers/svd/asvd_attention.py:727:            raise NotImplementedError("Cross-attention is not supported in ASVDAttention.")
+neuralops/layers/svd/residual_svd_attention.py:403:            raise RuntimeError(
+neuralops/layers/svd/residual_svd_attention.py:480:        raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
+neuralops/layers/svd/residual_svd_attention.py:499:            raise NotImplementedError("ResSVDAttention: cross-attention (encoder_hidden_states) is not supported.")
+neuralops/layers/svd/svd_linear_attention.py:66:        raise ValueError(f"Unsupported decay activation '{activation}'. Must be 'softplus' or 'sigmoid'.")
+neuralops/layers/svd/svd_linear_attention.py:689:                raise RuntimeError(
+neuralops/layers/svd/svd_linear_attention.py:708:                        raise RuntimeError(f"SVDLinearAttention: {name} has near-zero Frobenius norm ({n:.2e})")
+neuralops/layers/svd/svd_linear_attention.py:1132:            raise ValueError(f"return_state=True is only supported in decay/gated modes, got mode='{self.mode}'")
+neuralops/layers/svd/svd_linear_attention.py:1214:            raise RuntimeError(
+neuralops/layers/svd/svd_linear_attention.py:1292:            raise RuntimeError(
+neuralops/layers/svd/svd_linear_attention.py:1475:            raise FileNotFoundError(f"No compressed weights found at {path}")
+neuralops/layers/svd/adaptive_svd_attention.py:610:            raise RuntimeError(f"AdaptiveSVDAttention.copy_weights: missing {missing} from {cls_name}.")
+neuralops/layers/gated/kda_attention.py:473:            raise RuntimeError(
+neuralops/layers/gated/kda_attention.py:543:                    raise RuntimeError(f"KDA copy_weights: '{proj_key}' norm too small ({w_norm:.2e})")
+neuralops/layers/gated/hgrn2_gated_outer.py:595:            raise NotImplementedError("HGRN2GatedOuterBlock does not support cross-attention.")
+neuralops/layers/gated/hgrn2_gated_deltanet.py:301:            raise RuntimeError("Both branches disabled. Nothing to compute.")
+neuralops/layers/gated/hgrn2_gated_deltanet.py:404:                raise RuntimeError("Both branches returned None.")
+neuralops/layers/gated/hgrn2_gated_deltanet.py:410:                raise RuntimeError(
+neuralops/layers/gated/hgrn2_gated_layer.py:667:            raise RuntimeError(
+neuralops/layers/gated/hgrn2_gated_layer.py:677:            raise NotImplementedError("Cross-attention not supported in HGRN2Layer")
+neuralops/layers/gated/hla_attention.py:363:                raise RuntimeError(
+neuralops/layers/gated/decay_linear_attention.py:513:            raise RuntimeError(
+neuralops/layers/paged_attention.py:66:                raise ValueError(
+neuralops/layers/paged_attention.py:71:                raise ValueError(
+neuralops/layers/paged_attention.py:80:            raise ValueError(f"Out-of-bounds page ID: negative block index {min_id} is illegal.")
+neuralops/layers/paged_attention.py:82:            raise ValueError(
+neuralops/layers/sparse/routing_attention.py:76:            raise ValueError(f"dim={self.dim} not divisible by num_heads={self.num_heads}")
+neuralops/layers/sparse/routing_attention.py:382:            raise RuntimeError(f"RoutingAttention.copy_weights: missing {missing_after} from {cls_name}.")
+neuralops/layers/sparse/routing_attention.py:451:        raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
+neuralops/layers/sparse/cluster_attention.py:479:            raise RuntimeError(f"ClusterAttention missing required weights for projections: {missing}")
+neuralops/layers/sparse/cluster_attention.py:486:                    raise RuntimeError(
+neuralops/layers/sparse/cluster_attention.py:493:                raise RuntimeError(
+neuralops/layers/sparse/lsh_attention.py:428:            raise RuntimeError(
+neuralops/layers/sparse/reap_moe.py:491:            raise RuntimeError(
+neuralops/layers/sparse/reap_moe.py:510:                        raise RuntimeError(f"REAPMoEAttention: missing weight for {proj_key}.")
+neuralops/layers/sparse/reap_moe.py:592:        raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
+neuralops/layers/sparse/reap_moe.py:611:            raise NotImplementedError("REAPMoEAttention does not support cross-attention.")
+neuralops/layers/sparse/nsa_attention.py:491:            raise RuntimeError(
+neuralops/layers/sparse/bam_umoe.py:134:                raise ValueError(
+neuralops/layers/sparse/bam_umoe.py:710:            raise RuntimeError(
+neuralops/layers/sparse/bam_umoe.py:911:                    raise RuntimeError(f"BAMUMoE: output dim {out.shape[-1]} != hidden_size {D}")
+neuralops/layers/sparse/bam_umoe.py:962:            raise RuntimeError(f"BAMUMoE: output dim {out.shape[-1]} != hidden_size {D}")
+neuralops/layers/sparse/adaptive_sparse_attention.py:505:            raise RuntimeError(f"AdaptiveSparseAttention missing required weights for projections: {missing}")
+neuralops/layers/sparse/adaptive_sparse_attention.py:518:                    raise RuntimeError(
+neuralops/layers/sparse/adaptive_sparse_attention.py:528:                raise RuntimeError(
+neuralops/layers/modern/mqa.py:361:            raise RuntimeError(
+neuralops/layers/modern/unified_rope.py:370:                raise RuntimeError(
+neuralops/layers/modern/gqa_attention.py:702:                        raise ValueError(f"head_mask last dim {hm.shape[-1]} != num_heads {H}")
+neuralops/layers/modern/vig_attention.py:429:        raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
+neuralops/layers/modern/dynamic_conv_attention.py:342:            raise RuntimeError(f"DynamicConvAttention.copy_weights: missing V projection from {cls_name}.")
+neuralops/layers/modern/qcqa_attention.py:82:            raise ValueError("QCQAAttention: could not infer hidden_size.")
+neuralops/layers/modern/qcqa_attention.py:342:            raise RuntimeError(
+neuralops/layers/modern/qcqa_attention.py:359:                        raise RuntimeError(f"QCQAAttention: missing weight for {proj_key}.")
+neuralops/layers/modern/qcqa_attention.py:425:        raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
+neuralops/layers/modern/nha_attention.py:367:                    raise RuntimeError(
+neuralops/layers/modern/nha_attention.py:379:                    raise RuntimeError(f"NHA: missing weights for {key}")
+neuralops/layers/modern/nha_attention.py:569:            raise NotImplementedError("NHA does not support cross-attention.")
+neuralops/layers/base.py:141:        raise NotImplementedError("Subclasses of ModularAttention must implement compute_attention()")
+neuralops/layers/adaptive/eat.py:508:            raise RuntimeError(
+neuralops/layers/adaptive/eat.py:772:            raise RuntimeError(f"EATBlock: output dim {out.shape[-1]} != hidden_size {D}")
+neuralops/layers/adaptive/progressive_token_pruning.py:345:            raise RuntimeError(
+neuralops/layers/adaptive/progressive_token_pruning.py:434:            raise NotImplementedError("PTP does not support cross-attention.")
+neuralops/layers/adaptive/span_expanded_attention.py:96:        raise IndexError(idx)
+neuralops/layers/adaptive/span_expanded_attention.py:150:            raise ValueError(
+neuralops/layers/adaptive/span_expanded_attention.py:378:            raise RuntimeError(
+neuralops/layers/adaptive/span_expanded_attention.py:546:            raise NotImplementedError("SpanExpandedAttention does not support cross-attention.")
+neuralops/layers/adaptive/sink_attention.py:94:        raise IndexError(idx)
+neuralops/layers/adaptive/sink_attention.py:175:            raise ValueError("num_sink_tokens must be >= 1.")
+neuralops/layers/adaptive/sink_attention.py:177:            raise ValueError("window_size must be > num_sink_tokens.")
+neuralops/layers/adaptive/sink_attention.py:417:            raise RuntimeError(
+neuralops/layers/adaptive/sink_attention.py:514:            raise NotImplementedError("SinkAttention does not support cross-attention.")
+neuralops/layers/adaptive/adaptive_span_attention.py:559:            raise RuntimeError("Source weight tensor has zero Frobenius norm")
+neuralops/layers/adaptive/adaptive_span_attention.py:563:                raise RuntimeError(f"Weight tensor for {k} has zero Frobenius norm")
+neuralops/layers/adaptive/adaptive_span_attention.py:779:                raise ValueError(f"Unexpected K head dim {K.shape[1]}")
+neuralops/layers/adaptive/squeezing_heads_distill.py:94:            raise ValueError(
+neuralops/layers/adaptive/squeezing_heads_distill.py:313:        raise RuntimeError(
+neuralops/layers/adaptive/squeezing_heads_distill.py:416:                raise RuntimeError(
+neuralops/layers/adaptive/squeezing_heads_distill.py:479:                            raise RuntimeError(
+neuralops/layers/adaptive/squeezing_heads_distill.py:484:                        raise RuntimeError(f"SqueezingHeadsDistiller: unexpected w_o shape " f"{tuple(w_o.shape)}.")
+neuralops/layers/adaptive/squeezing_heads_distill.py:516:        raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
+neuralops/layers/adaptive/squeezing_heads_distill.py:544:            raise RuntimeError(
+neuralops/layers/adaptive/squeezing_heads_distill.py:597:                raise ValueError(
+neuralops/layers/adaptive/squeezing_heads_distill.py:618:            raise RuntimeError(
+neuralops/layers/adaptive/squeezing_heads_distill.py:725:            raise RuntimeError(
+neuralops/layers/adaptive/token_compressed_attention.py:478:                    raise RuntimeError(f"TokenCompressedAttention: {name} weight norm is near zero (< 1e-4)")
+neuralops/layers/adaptive/token_compressed_attention.py:484:                raise RuntimeError(
+neuralops/layers/adaptive/token_compressed_attention.py:691:            raise NotImplementedError("TokenCompressedAttention: cross-attention not supported.")
+neuralops/layers/adaptive/token_compressed_attention.py:851:            raise RuntimeError(f"TokenCompressedAttention: output dim {output.shape[-1]} != " f"hidden_size {D}")
+neuralops/layers/adaptive/block_transformer_hiba.py:707:                    raise ValueError(f"head_mask 1D has {hm.shape[0]} heads, expected {self.num_heads}")
+neuralops/layers/adaptive/block_transformer_hiba.py:711:                    raise ValueError(f"head_mask 2D last dim = {hm.shape[-1]}, expected {self.num_heads}")
+neuralops/layers/adaptive/block_transformer_hiba.py:715:                    raise ValueError(f"head_mask 3D dim 1 = {hm.shape[1]}, expected {self.num_heads}")
+neuralops/layers/hybrid/regla_attention.py:385:            raise RuntimeError(f"ReGLAAttention.copy_weights: missing {missing_after} from {cls_name}.")
+neuralops/layers/hybrid/regla_attention.py:447:            raise NotImplementedError("ReGLAAttention does not support cross-attention")
+neuralops/layers/hybrid/regla_attention.py:609:            raise RuntimeError(f"ReGLAAttention: conv output dim {loc.shape[-1]} != hidden dim {self.dim}")
+neuralops/layers/hybrid/regla_attention.py:623:            raise RuntimeError(f"ReGLAAttention: output dim {output.shape[-1]} != input {D}")
+neuralops/layers/hybrid/gated_hybrid_kernel_attention.py:422:            raise ValueError(f"num_heads {self.h} not divisible by num_kv_heads {self.num_kv_heads}")
+neuralops/layers/hybrid/gated_hybrid_kernel_attention.py:590:        raise ValueError(f"Unsupported attention_mask dim: {mask.dim()}")
+neuralops/layers/hybrid/gated_hybrid_kernel_attention.py:1069:            raise RuntimeError(f"GatedHybridKernelAttention.copy_weights: missing {missing} " f"from {cls_name}.")
+neuralops/layers/hybrid/spectron_fp8_attention.py:484:            raise ValueError(
+neuralops/layers/hybrid/spectron_fp8_attention.py:608:                raise ValueError(f"Expected 2D weight, got shape {tuple(W.shape)}")
+neuralops/layers/hybrid/spectron_fp8_attention.py:769:            raise RuntimeError(
+neuralops/layers/hybrid/spectron_fp8_attention.py:833:        raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
+neuralops/layers/hybrid/spectron_fp8_attention.py:1194:            raise ValueError(f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}")
+neuralops/layers/hybrid/optimized_hybrid_attention.py:345:            raise RuntimeError(
+neuralops/layers/hybrid/optimized_hybrid_attention.py:432:            raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
+neuralops/layers/hybrid/landmark_local_attention.py:360:            raise ValueError(f"block_local_attention requires N_q == N_k, got {N} vs {N_k}")
+neuralops/layers/hybrid/landmark_local_attention.py:632:            raise RuntimeError(
+neuralops/layers/hybrid/refined_landmark_attention.py:358:            raise ValueError(f"block_local_attention requires N_q == N_k, got {N} vs {N_k}")
+neuralops/layers/hybrid/refined_landmark_attention.py:655:            raise RuntimeError(
+neuralops/layers/hybrid/split_head_hybrid_attention.py:491:            raise ValueError(
+neuralops/layers/hybrid/split_head_hybrid_attention.py:718:            raise RuntimeError(
+neuralops/layers/hybrid/split_head_hybrid_attention.py:796:        raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
+neuralops/layers/hybrid/tri_branch_hybrid_attention.py:503:                raise ValueError(
+neuralops/layers/hybrid/tri_branch_hybrid_attention.py:645:            raise RuntimeError(f"AegisHybridAttention: mandatory projections {missing} missing")
+neuralops/layers/hybrid/positive_kernel_linear_attention.py:436:            raise RuntimeError(
+neuralops/layers/hybrid/hybrid_local_kernel_attention.py:461:            raise ValueError(
+neuralops/layers/hybrid/hybrid_local_kernel_attention.py:708:            raise RuntimeError(
+neuralops/layers/hybrid/hybrid_local_kernel_attention.py:761:                raise ValueError(
+neuralops/layers/hybrid/hybrid_local_kernel_attention.py:811:        raise ValueError(f"Unsupported attention_mask dim: {attention_mask.dim()}")
+neuralops/layers/hybrid/hybrid_attention.py:87:        raise ValueError(f"RoPE seq len mismatch: cos {cos.shape[-2]} vs q {q.shape[-2]}")
+neuralops/distributed/fsdp2_distill.py:70:            raise DistributedError(
+neuralops/distributed/tensor_parallel.py:38:            raise ValueError("world_size must be positive")
+neuralops/distributed/tensor_parallel.py:47:        raise TypeError("tp_size must be an integer")
+neuralops/distributed/tensor_parallel.py:49:        raise TypeError("tp_rank must be an integer")
+neuralops/distributed/tensor_parallel.py:51:        raise ValueError(f"tp_size must be positive, got {tp_size}")
+neuralops/distributed/tensor_parallel.py:53:        raise ValueError(f"tp_rank must be in [0, {tp_size}), got {tp_rank}")
+neuralops/distributed/tensor_parallel.py:59:        raise TypeError("SimulatedTPGroup is metadata-only; pass a torch.distributed.ProcessGroup")
+neuralops/distributed/tensor_parallel.py:63:        raise RuntimeError(
+neuralops/distributed/tensor_parallel.py:69:        raise ValueError(f"tp_size={tp_size} does not match process-group world size {actual_size}")
+neuralops/distributed/tensor_parallel.py:72:        raise ValueError(f"tp_rank={tp_rank} does not match process-group rank {actual_rank}")
+neuralops/distributed/tensor_parallel.py:93:                raise RuntimeError("Tensor-parallel input-gradient reduction requires initialized torch.distributed")
+neuralops/distributed/tensor_parallel.py:113:                raise RuntimeError("Tensor-parallel all-reduce requires initialized torch.distributed")
+neuralops/distributed/tensor_parallel.py:128:        raise TypeError("SimulatedTPGroup cannot be used for collective operations")
+neuralops/distributed/tensor_parallel.py:138:        raise TypeError("SimulatedTPGroup cannot be used for collective operations")
+neuralops/distributed/tensor_parallel.py:160:        raise TypeError("SimulatedTPGroup cannot be used for collective operations")
+neuralops/distributed/tensor_parallel.py:163:        raise RuntimeError("Tensor-parallel all-reduce requires initialized torch.distributed")
+neuralops/distributed/tensor_parallel.py:183:            raise ValueError(f"Unsupported reduction operator: {op}")
+neuralops/distributed/tensor_parallel.py:228:            raise ValueError("in_features, out_features, and rank must be positive")
+neuralops/distributed/tensor_parallel.py:230:            raise ValueError(f"rank {rank} must be divisible by tp_size {tp_size}")
+neuralops/distributed/tensor_parallel.py:250:            raise ValueError(f"expected input width {self.in_features}, got {x.shape[-1]}")
+neuralops/distributed/tensor_parallel.py:281:            raise ValueError("in_features, out_features, and rank must be positive")
+neuralops/distributed/tensor_parallel.py:283:            raise ValueError(f"in_features {in_features} must be divisible by tp_size {tp_size}")
+neuralops/distributed/tensor_parallel.py:303:            raise ValueError(f"expected local input width {self.local_in_features}, got {x_local.shape[-1]}")
+neuralops/distributed/tensor_parallel.py:332:            raise ValueError("in_features, out_features, and rank must be positive")
+neuralops/distributed/tensor_parallel.py:334:            raise ValueError(f"out_features {out_features} must be divisible by tp_size {tp_size}")
+neuralops/distributed/tensor_parallel.py:353:            raise ValueError(f"expected input width {self.in_features}, got {x.shape[-1]}")
+neuralops/distributed/tensor_parallel.py:383:            raise ValueError("in_features and out_features must be positive")
+neuralops/distributed/tensor_parallel.py:385:            raise ValueError(f"out_features {out_features} must be divisible by tp_size {tp_size}")
+neuralops/distributed/tensor_parallel.py:408:            raise ValueError(f"expected input width {self.in_features}, got {x.shape[-1]}")
+neuralops/distributed/tensor_parallel.py:444:            raise ValueError("in_features and out_features must be positive")
+neuralops/distributed/tensor_parallel.py:446:            raise ValueError(f"in_features {in_features} must be divisible by tp_size {tp_size}")
+neuralops/distributed/tensor_parallel.py:467:                raise ValueError(f"expected local input width {self.local_in_features}, got {x.shape[-1]}")
+neuralops/distributed/tensor_parallel.py:469:            raise ValueError(f"expected full input width {self.in_features}, got {x.shape[-1]}")
+neuralops/distributed/tensor_parallel.py:506:            raise ValueError("embed_dim and num_heads must be positive")
+neuralops/distributed/tensor_parallel.py:508:            raise ValueError(f"num_heads {num_heads} must be divisible by tp_size {tp_size}")
+neuralops/distributed/tensor_parallel.py:510:            raise ValueError("head_dim must be positive when provided")
+neuralops/distributed/tensor_parallel.py:512:            raise ValueError("embed_dim must be divisible by num_heads when head_dim is omitted")
+neuralops/distributed/tensor_parallel.py:536:            raise ValueError(f"hidden_states must have shape [B, T, {self.embed_dim}]")
+neuralops/distributed/tensor_parallel.py:555:            raise ValueError(f"state must have shape {expected_state_shape}, got {tuple(state.shape)}")
+neuralops/distributed/tensor_parallel.py:586:    raise NotImplementedError(
+neuralops/distributed/context.py:53:                raise DistributedError("torch.distributed is not available.", code=E_DIST_INIT_FAILED)
+neuralops/distributed/context.py:79:                        raise DistributedError(
+neuralops/distributed/context.py:133:            raise DistributedError(f"Unsupported reduction operator: {op}", code=E_DIST_COMM_FAILED)
+neuralops/distributed/context.py:153:            raise DistributedError(f"all_reduce failed: {e}", code=E_DIST_COMM_FAILED) from e
+neuralops/distributed/context.py:164:            raise DistributedError(f"broadcast from rank {src} failed: {e}", code=E_DIST_COMM_FAILED) from e
+neuralops/distributed/context_parallel.py:35:        raise ValueError("q, k, and v must have shape [batch, heads, time, features]")
+neuralops/distributed/context_parallel.py:37:        raise ValueError("q and k must have identical shapes; v must match their batch, head, and time axes")
+neuralops/distributed/context_parallel.py:39:        raise ValueError("q, k, and v must be on the same device")
+neuralops/distributed/context_parallel.py:41:        raise ValueError("q, k, and v must have the same dtype")
+neuralops/distributed/context_parallel.py:43:        raise TypeError("q, k, and v must use a floating-point dtype")
+neuralops/distributed/context_parallel.py:45:        raise ValueError("g must match q's shape and device")
+neuralops/distributed/context_parallel.py:50:        raise ValueError("batch, head, and feature dimensions must be positive")
+neuralops/distributed/context_parallel.py:54:        raise ValueError("scale must be finite and positive")
+neuralops/distributed/context_parallel.py:59:            raise ValueError(f"init_state must have shape {expected_state}, got {tuple(init_state.shape)}")
+neuralops/distributed/context_parallel.py:61:            raise ValueError("init_state must be on the same device as q")
+neuralops/distributed/context_parallel.py:104:            raise ValueError("the scan requires W > 0 and exactly 4W input tensors")
+neuralops/distributed/context_parallel.py:183:        raise ValueError("q_chunks, k_chunks, and v_chunks must have the same nonzero length")
+neuralops/distributed/context_parallel.py:187:        raise ValueError("g_chunks must have the same length as q_chunks")
+neuralops/distributed/context_parallel.py:190:        raise ValueError("each context chunk must have shape [batch, heads, time, features]")
+neuralops/distributed/context_parallel.py:192:        raise ValueError("all q chunks must have matching shapes")
+neuralops/distributed/context_parallel.py:194:        raise ValueError("all k chunks must match the q chunk shape")
+neuralops/distributed/context_parallel.py:196:        raise ValueError("all v chunks must match q batch, head, and time dimensions")
+neuralops/distributed/context_parallel.py:198:        raise ValueError("all g chunks must match the q chunk shape")
+neuralops/distributed/context_parallel.py:200:        raise ValueError("context-parallel reference chunks must contain at least one token")
+neuralops/distributed/context_parallel.py:205:        raise ValueError("all context chunks must be on the same device")
+neuralops/distributed/context_parallel.py:207:        raise ValueError("q, k, and v chunks must have the same dtype")
+neuralops/distributed/context_parallel.py:232:            raise ValueError("embed_dim and num_heads must be positive and evenly divisible")
+neuralops/distributed/context_parallel.py:234:            raise ValueError("cp_size must be positive")
+neuralops/distributed/context_parallel.py:247:            raise ValueError(f"expected {self.cp_size} chunks, got {len(q_chunks)}")
+neuralops/distributed/context_parallel.py:260:        raise ValueError("rank must be in [0, world_size) and world_size must be positive")
+neuralops/distributed/context_parallel.py:262:        raise ValueError("K and V chunks must share batch, head, time dimensions and device")
+neuralops/distributed/context_parallel.py:266:        raise RuntimeError("ring exchange requires initialized torch.distributed when world_size > 1")
+neuralops/distributed/context_parallel.py:269:        raise ValueError(f"world_size={world_size} does not match process-group size {actual_world_size}")
+neuralops/distributed/context_parallel.py:271:        raise ValueError("rank must match the current process rank within the supplied process group")
+neuralops/distributed/context_parallel.py:309:            raise ValueError("embed_dim and num_heads must be positive and evenly divisible")
+neuralops/distributed/context_parallel.py:311:            raise ValueError("rank must be in [0, ring_size) and ring_size must be positive")
+neuralops/distributed/context_parallel.py:332:            raise ValueError("x_local must have shape [batch, local_time, embed_dim]")
+neuralops/distributed/context_parallel.py:335:            raise ValueError(f"expected input width {self.embed_dim}, got {D}")
+neuralops/distributed/context_parallel.py:347:                raise RuntimeError("RingLinearAttention requires initialized torch.distributed " "for ring_size > 1")
+neuralops/distributed/context_parallel.py:349:                raise ValueError("ring_size does not match the process-group size")
+neuralops/distributed/context_parallel.py:352:                raise RuntimeError(
+neuralops/config/benchmark_schema.py:61:            raise ValueError(f"Invalid compute device '{v_str}'. Must match pattern: {pattern}")
+neuralops/config/benchmark_schema.py:162:            raise ValueError("All dimensional quantities must be strictly positive integers.")
+neuralops/config/benchmark_schema.py:198:                raise ValueError(f"Compression ratio {r} must be strictly between 0.0 and 1.0")
+neuralops/config/benchmark_schema.py:285:            raise ValueError(f"Expected YAML dictionary root for BenchmarkRunConfig, got {type(data).__name__}")
+neuralops/config/loader.py:40:        raise ValueError(f"Configuration root in {path!s} must be a mapping")
+neuralops/config/loader.py:58:                raise ValueError(f"Cannot apply CLI override {raw_key!r}: {key!r} is not a mapping")
+neuralops/config/loader.py:83:        raise TypeError(f"{path} does not match {type_hint}: {'; '.join(failures)}")
+neuralops/config/loader.py:87:            raise TypeError(f"{path} must be a mapping for {type_hint.__name__}")
+neuralops/config/loader.py:92:            raise TypeError(f"{path} must be a list")
+neuralops/config/loader.py:98:            raise TypeError(f"{path} must be a list or tuple")
+neuralops/config/loader.py:102:            raise ValueError(f"{path} must contain exactly {len(args)} items")
+neuralops/config/loader.py:110:            raise TypeError(f"{path} must be a mapping")
+neuralops/config/loader.py:118:        raise TypeError(f"{path} must be an integer, got fractional value {value!r}")
+neuralops/config/loader.py:121:            raise TypeError(f"{path} must be {type_hint.__name__}, got {type(value).__name__}")
+neuralops/config/loader.py:125:            raise TypeError(f"{path} must be coercible to {type_hint.__name__}") from exc
+neuralops/config/loader.py:132:        raise TypeError(f"{path} must be a mapping")
+neuralops/config/loader.py:137:        raise ValueError(f"Unknown {cls.__name__} field(s) at {path}: {formatted}")
+neuralops/config/loader.py:244:            raise FileNotFoundError(f"Benchmark configuration file not found: {path}")
+neuralops/config/loader.py:251:                raise ValueError(f"Unsupported configuration extension: {path.suffix}")
+neuralops/config/loader.py:255:        raise TypeError(f"Invalid source type for configuration: {type(source)}")
+neuralops/recipe/loader.py:47:                raise RecipeParseError(
+neuralops/recipe/loader.py:69:            raise RecipeParseError(f"Duplicate key '{k}' detected in JSON payload", E_PARSE_DUP_KEY, k)
+neuralops/recipe/loader.py:89:        raise RecipeParseError("Recipe payload is empty", E_PARSE_EMPTY)
+neuralops/recipe/loader.py:104:            raise RecipeParseError(f"Failed to parse recipe JSON:{msg}", E_PARSE_JSON_SYNTAX) from exc
+neuralops/recipe/loader.py:106:            raise RecipeParseError(f"Failed to parse recipe JSON: {exc}", E_PARSE_JSON_SYNTAX) from exc
+neuralops/recipe/loader.py:109:            raise IntegrationNotImplementedError(
+neuralops/recipe/loader.py:117:                raise RecipeParseError(
+neuralops/recipe/loader.py:130:            raise RecipeParseError(f"Failed to parse recipe YAML:{msg}", E_PARSE_YAML_SYNTAX) from exc
+neuralops/recipe/loader.py:132:            raise RecipeParseError(f"Failed to parse recipe YAML: {exc}", E_PARSE_YAML_SYNTAX) from exc
+neuralops/recipe/canonical.py:69:            raise ValueError("Recipe was mutated after hashing. Recreate the recipe.")
+neuralops/recipe/versioning.py:38:        raise RecipeSchemaError(
+neuralops/recipe/versioning.py:44:        raise RecipeSchemaError(
+neuralops/recipe/serializer.py:33:            raise IntegrationNotImplementedError(
+neuralops/recipe/serializer.py:38:        raise ValueError(f"Unsupported recipe serialization format: '{format}'. Expected 'yaml' or 'json'.")
+neuralops/recipe/schema.py:43:            raise RecipeSchemaError(
+neuralops/recipe/schema.py:65:            raise RecipeSchemaError(
+neuralops/recipe/schema.py:84:                raise RecipeSchemaError(
+neuralops/recipe/schema.py:90:            raise RecipeSchemaError(f"Field '{path}.name' must be string", E_SCHEMA_WRONG_TYPE, f"{path}.name")
+neuralops/recipe/schema.py:92:            raise RecipeSchemaError(
+neuralops/recipe/schema.py:98:            raise RecipeSchemaError(f"Field '{path}.version' must be string", E_SCHEMA_WRONG_TYPE, f"{path}.version")
+neuralops/recipe/schema.py:100:            raise RecipeSchemaError(
+neuralops/recipe/schema.py:106:            raise RecipeSchemaError(
+neuralops/recipe/schema.py:112:            raise RecipeSchemaError(f"Field '{path}.tags' must be a list", E_SCHEMA_WRONG_TYPE, f"{path}.tags")
+neuralops/recipe/schema.py:139:            raise RecipeSchemaError(
+neuralops/recipe/schema.py:148:                raise RecipeSchemaError(
+neuralops/recipe/schema.py:154:            raise RecipeSchemaError(f"Field '{path}.source' must be string", E_SCHEMA_WRONG_TYPE, f"{path}.source")
+neuralops/recipe/schema.py:158:            raise RecipeSchemaError(f"Field '{path}.dtype' must be string", E_SCHEMA_WRONG_TYPE, f"{path}.dtype")
+neuralops/recipe/schema.py:163:                raise RecipeSchemaError(
+neuralops/recipe/schema.py:167:                raise RecipeSchemaError(
+neuralops/recipe/schema.py:194:            raise RecipeSchemaError(
+neuralops/recipe/schema.py:203:                raise RecipeSchemaError(
+neuralops/recipe/schema.py:209:            raise RecipeSchemaError(f"Field '{path}.type' must be string", E_SCHEMA_WRONG_TYPE, f"{path}.type")
+neuralops/recipe/schema.py:211:            raise RecipeSchemaError(
+neuralops/recipe/schema.py:219:            raise RecipeSchemaError(f"Field '{path}.version' must be string", E_SCHEMA_WRONG_TYPE, f"{path}.version")
+neuralops/recipe/schema.py:221:            raise RecipeSchemaError(
+neuralops/recipe/schema.py:227:            raise RecipeSchemaError(f"Field '{path}.config' must be mapping", E_SCHEMA_WRONG_TYPE, f"{path}.config")
+neuralops/recipe/schema.py:232:                raise RecipeSchemaError(f"Field '{path}.id' must be string", E_SCHEMA_WRONG_TYPE, f"{path}.id")
+neuralops/recipe/schema.py:234:                raise RecipeSchemaError(
+neuralops/recipe/schema.py:240:            raise RecipeSchemaError(
+neuralops/recipe/schema.py:263:            raise RecipeSchemaError(
+neuralops/recipe/schema.py:271:            raise RecipeSchemaError(
+neuralops/recipe/schema.py:288:            raise RecipeSchemaError(f"Invalid validation profile '{profile}'", E_SCHEMA_WRONG_TYPE, f"{path}.profile")
+neuralops/recipe/schema.py:292:            raise RecipeSchemaError(f"Invalid validation policy '{policy}'", E_SCHEMA_WRONG_TYPE, f"{path}.policy")
+neuralops/recipe/schema.py:312:            raise RecipeSchemaError(
+neuralops/recipe/schema.py:321:            raise RecipeSchemaError(f"Field '{path}.seed' must be an integer", E_SCHEMA_WRONG_TYPE, f"{path}.seed")
+neuralops/recipe/schema.py:341:            raise RecipeSchemaError(
+neuralops/recipe/schema.py:349:            raise RecipeSchemaError(
+neuralops/recipe/schema.py:399:            raise RecipeSchemaError(
+neuralops/recipe/schema.py:409:                raise RecipeSchemaError(f"Rule W1: Missing root field '{req}'", E_SCHEMA_MISSING_FIELD, req)
+neuralops/recipe/schema.py:413:            raise RecipeSchemaError(f"Unsupported apiVersion '{api_version}'", E_SCHEMA_WRONG_TYPE, "apiVersion")
+neuralops/recipe/schema.py:417:            raise RecipeSchemaError(f"Unsupported kind '{kind}', expected 'Recipe'", E_SCHEMA_WRONG_TYPE, "kind")
+neuralops/recipe/schema.py:424:            raise RecipeSchemaError("Field 'operations' must be a non-empty list", E_SCHEMA_WRONG_TYPE, "operations")
+neuralops/recipe/schema.py:436:            raise RecipeSchemaError(
+neuralops/optimization/__init__.py:43:        raise ValueError(f"Unknown optimizer '{name}'. Supported optimizers: {supported}")
+neuralops/runtime/config.py:69:        raise ValueError(f"Unsupported dtype '{self.dtype}'. Supported values: {list(mapping.keys())}")
+neuralops/runtime/circuit_breaker.py:189:            raise RuntimeError(f"All circuit-breaker levels failed. Errors: {err_details}") from level3_exc
+neuralops/surgery/mla_surgery.py:220:            raise ValueError(f"standard_mha_bytes_per_token must be positive, got {standard_mha_bytes_per_token}")
+neuralops/surgery/mla_surgery.py:247:            raise ValueError(f"uncompressed_kv_dim must be positive, got {uncompressed_kv_dim}")
+neuralops/surgery/mla_surgery.py:370:            raise RuntimeError(
+neuralops/surgery/mla_surgery.py:719:            raise ValueError(
+neuralops/surgery/mla_surgery.py:726:                raise RuntimeError(
+neuralops/surgery/mla_surgery.py:761:                    raise ValueError("forward_step requires either state or (state_c, state_r).")
+neuralops/surgery/mla_surgery.py:1151:            raise ValueError("Could not extract KV projection weights from teacher for SVD adapter initialization")
+neuralops/surgery/mla_surgery.py:1271:                raise ValueError(
+neuralops/surgery/mla_surgery.py:1289:            raise ValueError(
+neuralops/surgery/mla_surgery.py:1304:                raise ValueError(
+neuralops/surgery/scanner.py:64:            raise ValueError(f"AttentionTargetSpec requires positive head_dim, got {self.head_dim}")
+neuralops/surgery/scanner.py:66:            raise ValueError(
+neuralops/surgery/scanner.py:206:                raise ValueError(f"Cannot extract base weight from LoRA module {linear_or_conv}")
+neuralops/surgery/scanner.py:308:        raise ValueError(f"Cannot extract weight and bias from module {linear_or_conv}")
+neuralops/surgery/scanner.py:391:                raise ValueError(
+neuralops/surgery/scanner.py:511:                raise ValueError(
+neuralops/surgery/scanner.py:551:                raise ValueError(f"Invalid attention head count at {path!r}: {num_heads}")
+neuralops/surgery/scanner.py:578:                    raise ValueError(
+neuralops/surgery/scanner.py:584:                    raise ValueError(f"Fused KV width at {path!r} is not divisible by head_dim={head_dim}")
+neuralops/surgery/scanner.py:709:                raise ValueError(f"Invalid attention head count at {path!r}: {num_heads}")
+neuralops/surgery/scanner.py:712:                raise ValueError(
+neuralops/surgery/layers/prune.py:79:        raise ValueError("Cannot prune all layers; at least 1 layer must be preserved.")
+neuralops/surgery/topology_router.py:130:        raise ValueError(f"Key/value shape mismatch: {tuple(k.shape)} != {tuple(v.shape)}")
+neuralops/surgery/topology_router.py:132:        raise ValueError(f"Expected key/value tensors with rank 3 or 4, got rank {k.ndim}")
+neuralops/surgery/topology_router.py:245:            raise ValueError(f"d_model={d_model} must be divisible by positive num_heads={num_heads}")
+neuralops/surgery/topology_router.py:265:            raise ValueError(
+neuralops/surgery/topology_router.py:271:            raise ValueError("Query and encoder states must share batch and feature dimensions")
+neuralops/surgery/topology_router.py:284:                    raise ValueError(
+neuralops/surgery/topology_router.py:297:                    raise ValueError("3D cross-attention mask must match batch and key/value length")
+neuralops/surgery/topology_router.py:303:                    raise ValueError("4D cross-attention mask must match batch and key/value length")
+neuralops/surgery/topology_router.py:305:                    raise ValueError("4D cross-attention mask query dimension must be 1 or query length")
+neuralops/surgery/topology_router.py:309:                raise ValueError(f"Unsupported cross-attention mask rank: {sdpa_mask.ndim}")
+neuralops/surgery/topology_router.py:336:            raise RuntimeError("Static cross-attention matrix not initialized. Call prefill_encoder first.")
+neuralops/surgery/topology_router.py:426:            raise RuntimeError("TopologyRouter has zero registered branches.")
+neuralops/surgery/topology_router.py:495:                raise ValueError(f"TopologyRouter shape mismatch: expected {expected_shape}, got {accum_out.shape}")
+neuralops/surgery/topology_router.py:511:                raise ValueError(
+neuralops/surgery/topology_router.py:518:                raise ValueError(
+neuralops/surgery/moa_router.py:121:        raise ValueError("attention_matrices sequence cannot be empty")
+neuralops/surgery/moa_router.py:301:            raise ValueError(f"num_layers must be positive, got {num_layers}")
+neuralops/surgery/moa_router.py:316:                raise ValueError(
+neuralops/surgery/moa_router.py:375:            raise TypeError(
+neuralops/surgery/moa_router.py:380:            raise ValueError("compute_layer_entropy requires a valid torch.Tensor attn_matrix")
+neuralops/surgery/moa_router.py:471:            raise IndexError(f"Layer index {layer_idx} out of range for model with {self.num_layers} layers.")
+neuralops/surgery/moa_router.py:566:                raise ValueError(f"entropies length ({len(entropies)}) does not match num_layers ({l_total})")
+neuralops/surgery/moa_router.py:681:                raise ValueError(
+neuralops/surgery/moa_router.py:689:                raise ValueError(f"layer_speedups length {len(layer_speedups)} does not match num_layers {l_total}")
+neuralops/surgery/moa_router.py:821:            raise ValueError(f"depth must be positive, got {target_depth}")
+neuralops/surgery/moa_router.py:862:            raise ValueError(f"Schema validation error: data must be a dict, got {type(data)}")
+neuralops/surgery/moa_router.py:865:            raise ValueError("Schema validation error: missing required key 'num_layers'")
+neuralops/surgery/moa_router.py:868:            raise ValueError(f"Schema validation error: 'num_layers' must be a positive int, got {num_layers}")
+neuralops/surgery/moa_router.py:871:            raise ValueError("Schema validation error: missing required key 'full_attention_layers'")
+neuralops/surgery/moa_router.py:874:            raise ValueError(
+neuralops/surgery/moa_router.py:879:            raise ValueError("Schema validation error: missing required key 'linear_attention_layers'")
+neuralops/surgery/moa_router.py:882:            raise ValueError(
+neuralops/surgery/moa_router.py:889:                raise ValueError(
+neuralops/surgery/moa_router.py:894:                raise ValueError(
+neuralops/surgery/moa_router.py:903:            raise ValueError(f"Schema validation error: overlapping layers in full and linear partitions: {overlap}")
+neuralops/surgery/moa_router.py:907:            raise ValueError(f"Schema validation error: partition incomplete, missing layers: {missing}")
+neuralops/surgery/moa_router.py:918:            raise ValueError("uncompressed_kv_dim and seq_len must be positive")
+neuralops/surgery/moa_router.py:948:            raise ValueError("Latencies t_full and t_linear must be positive")
+neuralops/surgery/moa_router.py:1005:            raise FileNotFoundError(f"Routing schedule file not found: {path}")
+neuralops/surgery/moa_router.py:1041:            raise ValueError("attention_matrices sequence cannot be empty")
+neuralops/surgery/registry.py:95:        raise KeyError(
+neuralops/surgery/weights/quantize.py:47:        raise ValueError(f"Unsupported quantization method '{method}'. Choose 'awq' or 'gptq'.")
+neuralops/surgery/weights/quantize.py:53:            raise IntegrationNotImplementedError(
+neuralops/surgery/weights/quantize.py:61:            raise IntegrationNotImplementedError(
+neuralops/surgery/weights/quantize.py:66:        raise ValueError(
+neuralops/surgery/hf_cache_bridge.py:53:        raise IntegrationNotImplementedError(
+neuralops/surgery/hf_cache_bridge.py:264:                raise ValueError(
+neuralops/surgery/hf_cache_bridge.py:282:            raise ValueError("num_tokens must be non-negative")
+neuralops/surgery/hf_cache_bridge.py:309:            raise ValueError("window_size must be positive")
+neuralops/surgery/hf_cache_bridge.py:311:            raise ValueError("Sliding-window key/value states must have matching rank-3+ shapes")
+neuralops/surgery/hf_cache_bridge.py:367:            raise ValueError("repeats must be at least one")
+neuralops/surgery/hf_cache_bridge.py:475:            raise IndexError(f"Layer index {layer_idx} out of range for cache with length {len(self)}")
+neuralops/surgery/hf_cache_bridge.py:560:                        raise IntegrationNotImplementedError(
+neuralops/surgery/hf_cache_bridge.py:566:                raise IntegrationNotImplementedError(
+neuralops/surgery/hf_cache_bridge.py:688:            raise TypeError(f"Unsupported state format: {type(state)}")
+neuralops/surgery/hf_cache_bridge.py:1109:            raise ValueError(f"Request '{request_id}' is already registered in PagedCacheBridge.")
+neuralops/surgery/hf_cache_bridge.py:1127:            raise KeyError(f"Parent request '{parent_request_id}' not found.")
+neuralops/surgery/hf_cache_bridge.py:1129:            raise ValueError(f"Child request '{child_request_id}' already registered.")
+neuralops/surgery/hf_cache_bridge.py:1202:            raise KeyError(f"Request '{request_id}' not found.")
+neuralops/surgery/hf_cache_bridge.py:1233:            raise AssertionError(f"Leaked active requests: {list(self._request_to_seq.keys())}")
+neuralops/surgery/hf_cache_bridge.py:1235:            raise AssertionError(f"Leaked block tables in PagedKVCache: {self.paged_cache.block_tables}")
+neuralops/surgery/hf_cache_bridge.py:1237:            raise AssertionError(f"Leaked block ref counts: {dict(self.paged_cache.block_ref_counts)}")
+neuralops/surgery/hf_cache_bridge.py:1239:            raise AssertionError(
+neuralops/surgery/hf_cache_bridge.py:1259:    raise NotImplementedError("TensorRT export requires ONNX intermediate; not implemented")
+neuralops/surgery/layer_replacement.py:214:            raise ValueError(f"Attention key '{attention_key}' not found in ATTENTION_REGISTRY.")
+neuralops/surgery/layer_replacement.py:217:    raise ValueError("Either 'attention_key' or 'new_attention_cls' must be provided.")
+neuralops/surgery/streaming_distill.py:257:            raise ValueError("StreamingCKALoss.update requires both student and teacher tensors.")
+neuralops/surgery/streaming_distill.py:382:                raise ValueError("teacher_act must be provided if not stored from a previous forward/update.")
+neuralops/surgery/streaming_distill.py:393:            raise ValueError(f"Student tokens ({y_flat.size(0)}) and teacher tokens ({x_flat.size(0)}) must match.")
+neuralops/surgery/streaming_distill.py:452:                raise ValueError("student_act must be provided if forward() has not been called.")
+neuralops/surgery/streaming_distill.py:524:            raise ValueError(f"Expected last dimension {self.hidden_dim}, got {d}")
+neuralops/surgery/streaming_distill.py:815:                raise ValueError(f"hidden_dim must be specified to initialize StreamingCKALoss for layer {layer_idx}")
+neuralops/surgery/streaming_distill.py:830:        raise TypeError(f"Unsupported output type {type(outputs).__name__} for activation extraction")
+neuralops/surgery/streaming_distill.py:1097:        raise TypeError(f"Cannot extract hidden representation from {type(outputs).__name__}")
+neuralops/surgery/model_surgery.py:150:            raise TypeError(f"Invalid recipe type: {type(recipe_or_path).__name__}")
+neuralops/surgery/model_surgery.py:156:                raise ValueError("Recipe does not specify model.source; please pass 'model' explicitly")
+neuralops/surgery/model_surgery.py:199:                raise RuntimeError(f"Recipe execution failed: {pipeline_result.error}")
+neuralops/surgery/model_surgery.py:213:                raise RuntimeError(f"Recipe execution failed: {pipeline_result.error}")
+neuralops/surgery/model_surgery.py:251:        raise ValueError("Must provide operation name or Recipe to apply()")
+neuralops/surgery/model_surgery.py:315:            raise ValueError(f"Unknown surgery engine '{engine}'. Choose 'shell' or 'fx'.")
+neuralops/surgery/model_surgery.py:387:            raise ValueError(f"Unknown surgery engine '{engine}'. Choose 'shell' or 'fx'.")
+neuralops/surgery/pipeline.py:129:                raise RuntimeError(msg)
+neuralops/surgery/pipeline.py:141:                raise RuntimeError(msg)
+neuralops/surgery/pipeline.py:161:                raise RuntimeError(msg) from exc
+neuralops/surgery/pipeline.py:209:            raise RuntimeError(
+neuralops/surgery/pipeline.py:297:            raise ValueError("SurgeryPipeline requires a valid SurgeryRecipe to run.")
+neuralops/surgery/pipeline.py:341:            raise ValueError(f"Invalid laws specified: {invalid_laws}. Universal laws must be in 1..10.")
+neuralops/surgery/fx_surgery.py:885:        raise ValueError(f"Could not isolate softmax pattern from node: {node}")
+neuralops/surgery/fx_surgery.py:895:        raise ValueError(f"Invalid softmax dimension: expected dim=-1, got {dim}")
+neuralops/surgery/fx_surgery.py:1126:        raise ValueError(f"Could not locate downstream AV matmul for softmax node: {softmax_node}")
+neuralops/surgery/fx_surgery.py:1516:        raise RuntimeError(
+neuralops/surgery/fx_surgery.py:1980:        raise RuntimeError(f"TorchDynamo certification failed: {break_count} graph breaks detected: {breaks}")
+neuralops/surgery/fx_surgery.py:2041:                        raise AssertionError(f"Pointwise fusion violation: node {arg} causes DRAM spill before {node}.")
+neuralops/surgery/fx_surgery.py:2088:        raise ValueError(f"Expected 3D or 4D tensor, got {q.shape}")
+neuralops/surgery/fx_surgery.py:2214:        raise ValueError(
+neuralops/surgery/endoskeletal_shell.py:110:                        raise ValueError(f"NeuralOps attention returned incompatible shape {tuple(out.shape)}")
+neuralops/surgery/endoskeletal_shell.py:113:                    raise ValueError(f"NeuralOps attention returned incompatible shape {tuple(out.shape)}")
+neuralops/surgery/endoskeletal_shell.py:199:            raise ValueError(f"No pretrained Q/K/V/O projections were extracted for {spec.module_path!r}")
+neuralops/surgery/endoskeletal_shell.py:281:                    raise ValueError(
+neuralops/surgery/endoskeletal_shell.py:347:                raise ValueError(
+neuralops/surgery/endoskeletal_shell.py:359:                        raise ValueError(
+neuralops/surgery/endoskeletal_shell.py:386:                raise ValueError(f"Target projection {name} has no bias but source projection does")
+neuralops/surgery/endoskeletal_shell.py:400:        raise ValueError(
+neuralops/surgery/endoskeletal_shell.py:530:            raise ValueError(f"Invalid dispatch mode {mode!r}. Must be one of {valid_modes}")
+neuralops/surgery/endoskeletal_shell.py:613:            raise ValueError(f"Could not extract hidden states from forward call {args}, {kwargs}")
+neuralops/surgery/endoskeletal_shell.py:699:            raise RuntimeError("EndoskeletalShell has no underlying model attached.")
+neuralops/surgery/endoskeletal_shell.py:752:            raise ValueError("A target model (nn.Module) must be provided to apply_moa_schedule.")
+neuralops/surgery/recipe.py:74:        raise FileNotFoundError(f"Recipe file not found: {path}")
+neuralops/surgery/recipe.py:84:        raise ValueError(f"Invalid recipe schema in {path}: {'; '.join(errors)}")
+neuralops/surgery/recipe.py:113:        raise RuntimeError(f"Failed to publish recipe to HuggingFace Hub '{repo_id}': {exc}") from exc
+neuralops/surgery/director.py:205:        raise ValueError(f"Key/value shape mismatch: {tuple(k.shape)} != {tuple(v.shape)}")
+neuralops/surgery/director.py:207:        raise ValueError(f"Expected key/value tensors with rank 3 or 4, got rank {k.ndim}")
+neuralops/surgery/director.py:457:        raise ValueError(f"State decay gamma must be strictly within (0, 1), got {gamma}")
+neuralops/surgery/director.py:555:    raise ValueError(f"Cannot extract weight and bias from module {mod}")
+neuralops/surgery/director.py:590:            raise ValueError(f"Cannot extract weight from {c_attn}")
+neuralops/surgery/director.py:719:    raise ValueError(f"Could not extract QKV projections from module {module_or_model}")
+neuralops/surgery/director.py:1321:            raise RuntimeError("Static cross-attention matrix not initialized. Call prefill_encoder first.")
+neuralops/surgery/director.py:1367:            raise RuntimeError(
+neuralops/surgery/director.py:1579:            raise ValueError(f"Unknown surgery engine '{engine}'. Choose 'shell' or 'fx'.")
+neuralops/surgery/director.py:1893:            raise RuntimeError(f"Universal Surgery Certification failed: {'; '.join(violations)}")
+neuralops/surgery/universal_calibrator.py:50:            raise ValueError("damping must be non-negative")
+neuralops/surgery/universal_calibrator.py:133:            raise ValueError("num_batches must be non-negative or None")
+neuralops/surgery/universal_calibrator.py:197:                            raise TypeError(
+neuralops/surgery/calibration.py:56:            raise ValueError("damping must be non-negative")
+neuralops/surgery/calibration.py:86:            raise ValueError("num_batches must be non-negative or None")
+neuralops/surgery/calibration.py:128:                        raise TypeError(
+neuralops/surgery/calibration.py:144:                        raise ValueError(f"Cannot compute calibration loss from output of type {type(out).__name__}")
+neuralops/surgery/calibration.py:354:                raise ValueError(f"Cannot extract representation from output of type {type(out).__name__}")
+neuralops/surgery/mlp/shrink.py:158:        raise ValueError(f"Shrinkage ratio must be in (0.0, 1.0], got {ratio}")
+neuralops/__init__.py:193:        raise _torch_install_error(feature)
+neuralops/__init__.py:984:                raise _torch_install_error(f"neuralops.{name}", exc) from exc
+neuralops/__init__.py:996:                raise _torch_install_error(f"neuralops.{name}", exc) from exc
+neuralops/__init__.py:1023:            raise AttributeError(f"module '{__name__}' has no attribute '{name}'") from exc
+neuralops/__init__.py:1031:            raise AttributeError(f"module '{__name__}' has no attribute '{name}'") from exc
+neuralops/__init__.py:1033:    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+neuralops/utils/compat/architectures.py:284:        raise QwenIncompatibleError("rotary_position_embedding_required")
+neuralops/utils/compat/architectures.py:291:            raise QwenIncompatibleError(f"rotary_forward_signature: {exc}") from exc
+neuralops/utils/compat/architectures.py:297:        raise QwenIncompatibleError("rotary_forward_invalid_output")
+neuralops/utils/compat/architectures.py:346:    raise QwenIncompatibleError(f"causal_mask_format_{attention_mask.dim()}d_unsupported")
+neuralops/utils/compat/architectures.py:418:            raise QwenIncompatibleError("module_does_not_support_rope")
+neuralops/utils/__init__.py:137:    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+neuralops/utils/replace_attention.py:242:                raise last_err
+neuralops/utils/replace_attention.py:243:            raise RuntimeError(f"Failed to execute forward pass on {type(self._wrapped_attention).__name__}")
+neuralops/utils/replace_attention.py:563:    raise RuntimeError(
+neuralops/utils/replace_attention.py:583:                raise ValueError(
+neuralops/utils/replace_attention.py:588:        raise ValueError("Either 'attention_key' or 'new_attention_cls' must be provided.")
+neuralops/utils/replace_attention.py:591:        raise AttributeError("Model does not have a 'config' attribute.")
+neuralops/utils/replace_attention.py:802:    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+neuralops/utils/hub_integration.py:41:        raise ValueError("No NeuralOps attention or adapter weights were found in the model.")
+neuralops/utils/hub_integration.py:94:        raise ImportError("Selective saving requires safetensors.") from exc
+neuralops/utils/hub_integration.py:101:            raise ValueError("repo_id is required when push_to_hub=True.")
+neuralops/utils/hub_integration.py:135:        raise ValueError("Selective checkpoint is missing config.json:attention_type.")
+neuralops/pipeline_transform/planner.py:64:        raise PlanningError(str(e), error_code=e.error_code, stage=e.stage) from e
+neuralops/pipeline_transform/planner.py:88:        raise PlanningError(
+neuralops/pipeline_transform/planner.py:112:                raise PlanningError(
+neuralops/pipeline_transform/planner.py:122:            raise PlanningError(
+neuralops/pipeline_transform/planner.py:143:                    raise PlanningError(
+neuralops/pipeline_transform/planner.py:154:                raise PlanningError(
+neuralops/pipeline_transform/planner.py:166:                        raise PlanningError(
+neuralops/pipeline_transform/auto_config.py:54:        raise ConfigurationError(
+neuralops/pipeline_transform/auto_config.py:106:            raise ConfigurationError(
+neuralops/pipeline_transform/master_transformer.py:70:            strict: If True, re-raise exceptions; otherwise log warning.
+neuralops/pipeline_transform/master_transformer.py:178:            raise NotImplementedError(
+neuralops/pipeline_transform/snapshot.py:438:        raise RollbackError(f"Failed to restore model snapshot: {e}", error_code="E_EXEC_ROLLBACK_FAILED") from e
+neuralops/pipeline_transform/executor.py:60:        raise ValueError(
+neuralops/pipeline_transform/executor.py:97:                raise PipelineError(
+neuralops/pipeline_transform/executor.py:136:            # Rollback and raise PipelineError
+neuralops/pipeline_transform/executor.py:139:            raise PipelineError(
+neuralops/pipeline_transform/executor.py:179:            raise PipelineError(
+neuralops/models/gla_hf_model.py:99:        raise NotImplementedError("Autoregressive generation for GLAHFModel is not implemented yet.")
+neuralops/models/configuration.py:70:            raise ValueError(f"hidden_size must be positive, got {hidden_size}")
+neuralops/models/configuration.py:72:            raise ValueError(f"vocab_size must be positive, got {vocab_size}")
+neuralops/models/configuration.py:74:            raise ValueError(f"num_hidden_layers must be positive, got {num_hidden_layers}")
+neuralops/models/configuration.py:76:            raise ValueError(f"num_attention_heads must be positive, got {num_attention_heads}")
+neuralops/models/configuration.py:78:            raise ValueError("num_key_value_heads must be positive when provided, " f"got {num_key_value_heads}")
+neuralops/models/configuration.py:80:            raise ValueError("hidden_size must be divisible by num_attention_heads when " "head_dim is not provided")
+neuralops/models/configuration.py:82:            raise ValueError(f"head_dim must be positive, got {head_dim}")
+neuralops/models/configuration.py:84:            raise ValueError(f"intermediate_size must be positive, got {intermediate_size}")
+neuralops/models/configuration.py:86:            raise ValueError("max_position_embeddings must be positive, " f"got {max_position_embeddings}")
+neuralops/models/configuration.py:129:            raise ValueError(f"hidden_size must be positive, got {self.hidden_size}")
+neuralops/models/configuration.py:131:            raise ValueError(f"num_hidden_layers must be positive, got {self.num_hidden_layers}")
+neuralops/models/configuration.py:133:            raise ValueError(f"num_attention_heads must be positive, got {self.num_attention_heads}")
+neuralops/models/configuration.py:135:            raise ValueError(f"head_dim must be positive, got {self.head_dim}")
+neuralops/models/configuration.py:137:            raise ValueError("num_key_value_heads must be positive, " f"got {self.num_key_value_heads}")
+neuralops/models/configuration.py:139:            raise ValueError("num_attention_heads must be divisible by num_key_value_heads for GQA")
+neuralops/models/hybrid_spec.py:58:        raise ValueError(f"num_layers must be positive, got {num_layers}")
+neuralops/models/hybrid_spec.py:78:        raise ValueError(f"Unsupported spec format: {type(spec)}. Expected dict or list of dicts.")
+neuralops/models/hybrid_spec.py:84:            raise ValueError(f"Each spec entry must be a dict, got {type(item)}")
+neuralops/models/hybrid_spec.py:88:            raise ValueError(f"Module '{mod_type}' is not registered in registry.")
+neuralops/models/hybrid_spec.py:98:            raise ValueError(f"Invalid 'layers' field: {layers}")
+neuralops/models/hybrid_spec.py:102:                raise ValueError(f"Layer index {idx} out of range [0, {num_layers})")
+neuralops/models/hybrid_spec.py:104:                raise ValueError(f"Layer {idx} specified more than once in hybrid spec")
+neuralops/models/hybrid_spec.py:127:        raise IndexError(f"layer_idx {layer_idx} out of range [0, {len(normalized_specs)})")
+neuralops/models/surgery.py:505:            raise last_err
+neuralops/models/surgery.py:506:        raise RuntimeError(f"Failed to execute forward on injected module {type(module).__name__}")
+neuralops/models/surgery.py:1088:                raise last_exc
+neuralops/models/surgery.py:1089:            raise RuntimeError(f"Failed to forward surgical module {type(mod).__name__}")
+neuralops/models/surgery.py:1409:                raise NumericalError("Surgery forward verification gate detected NaN in output tensor.")
+neuralops/models/surgery.py:1411:                raise NumericalError("Surgery forward verification gate detected Inf in output tensor.")
+neuralops/models/surgery.py:1437:                            raise NumericalError("Surgery backward verification gate detected non-finite gradients.")
+neuralops/models/surgery.py:1504:        raise SurgeryTransactionError(
+neuralops/models/surgery.py:1535:    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+neuralops/models/cuda_graph.py:67:                raise ValueError(
+neuralops/models/cuda_graph.py:71:                raise ValueError(
+neuralops/models/cuda_graph.py:79:                raise TypeError(
+neuralops/models/paged_state.py:49:                raise ValueError(f"{name} must be positive, got {value}")
+neuralops/models/paged_state.py:70:            raise RuntimeError(f"PagedStateTable: Out of physical GPU pages (capacity {self.num_pages})")
+neuralops/models/paged_state.py:88:            raise ValueError(f"initial_pages must be non-negative, got {initial_pages}")
+neuralops/models/paged_state.py:115:            raise KeyError(f"Parent sequence {parent_seq_id} not registered")
+neuralops/models/paged_state.py:117:            raise ValueError("A sequence cannot be forked onto itself")
+neuralops/models/paged_state.py:144:            raise ValueError(f"max_pages must be positive, got {max_pages}")
+neuralops/models/paged_state.py:149:                raise KeyError(f"Sequence {s_id} is not registered")
+neuralops/models/paged_state.py:152:                raise ValueError(f"Sequence {s_id} owns {len(allocated)} pages, exceeding " f"max_pages={max_pages}")
+neuralops/models/paged_state.py:209:            raise KeyError(f"Physical page {physical_page} is not allocated")
+neuralops/models/modeling_norm.py:64:        raise ValueError(f"Unknown norm_type: {norm_type}. Supported: 'rmsnorm', 'layernorm'")
+neuralops/models/__init__.py:62:    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+neuralops/models/hub.py:123:        raise ValueError("HF_TOKEN must be provided as parameter or environment variable.")
+neuralops/models/hub.py:137:            raise ValueError(f"Aborting push to hub. Secrets detected: {leaks}")
+neuralops/models/modeling.py:126:            raise ValueError("Cannot specify both input_ids and inputs_embeds")
+neuralops/models/modeling.py:133:            raise ValueError("Must specify either input_ids or inputs_embeds")
+neuralops/models/surgical_io.py:583:        raise FileNotFoundError(f"Missing surgical_manifest.json in {load_dir}")
+neuralops/models/surgical_io.py:615:                    raise KeyError(f"Target module path '{module_path}' for LoRA adapter not found in base_model")
+neuralops/models/surgical_io.py:664:                raise ImportError(f"Could not import or resolve class '{cls_name}' from '{import_path}'")
+neuralops/models/surgical_io.py:767:                    raise KeyError(f"Failed to replace module at '{module_path}': {e_replace}") from e_replace
+neuralops/models/surgical_io.py:791:                raise RuntimeError(f"Could not reconstruct compressed_linear '{cls_name}' at '{module_path}'")
+neuralops/models/surgical_io.py:799:                    raise KeyError(
+neuralops/models/surgical_io.py:805:                raise ValueError(f"Unknown surgical submodule category '{category}' at '{module_path}'")
+neuralops/models/surgical_io.py:838:            raise RuntimeError(f"Failed loading weights from {load_dir}: {last_err}") from last_err
+neuralops/models/surgical_io.py:839:        raise FileNotFoundError(f"No valid state dict found in {load_dir}")
+neuralops/models/surgical_io.py:850:                raise RuntimeError(
+neuralops/models/surgical_io.py:871:                raise RuntimeError(
+neuralops/models/surgical_io.py:878:            raise RuntimeError(
+neuralops/models/surgical_io.py:900:            raise RuntimeError(f"Missing critical parameters during checkpoint load: {missing_critical}")
+neuralops/models/modeling_block.py:48:            raise KeyError(f"Attention mechanism '{attn_type}' not found in ATTENTION_REGISTRY.")
+neuralops/models/modeling_block.py:58:                raise TypeError(
+neuralops/models/modeling_block.py:74:                raise KeyError(f"Compression engine '{comp_type}' is not registered " f"for layer {layer_idx}.")
+neuralops/cli/eval_cmd.py:143:        raise torch_install_error("neuralops eval")
+neuralops/cli/compress_cmd.py:139:    raise RuntimeError(
+neuralops/cli/compress_cmd.py:166:        raise ValueError("--rank must be a positive integer")
+neuralops/cli/compress_cmd.py:173:        raise ValueError("--target-ratio must be in the interval (0, 1]")
+neuralops/cli/compress_cmd.py:181:        raise ValueError(
+neuralops/cli/compress_cmd.py:236:        raise RuntimeError(
+neuralops/cli/compress_cmd.py:241:        raise TypeError(
+neuralops/cli/core/locks.py:37:            raise RunDirectoryLockedError(
+neuralops/cli/core/locks.py:60:            raise RunDirectoryLockedError(
+neuralops/cli/core/config_merge.py:35:            raise ConfigurationError("Comma-separated list must contain at least one element.")
+neuralops/cli/core/config_merge.py:39:            raise ConfigurationError(f"Cannot cast token to {cast_type.__name__} in '{value}': {exc}") from exc
+neuralops/cli/core/config_merge.py:82:            raise ConfigurationError(
+neuralops/cli/core/config_merge.py:94:                    raise ConfigurationError(
+neuralops/cli/core/config_merge.py:104:            raise ConfigurationError(f"Failed parsing configuration file '{config_path}': {exc}") from exc
+neuralops/cli/core/config_merge.py:109:            raise ConfigurationError(
+neuralops/cli/core/commands/benchmark.py:196:                raise ExecutionError("Correctness gate failed; timing was not accepted for every requested operation")
+neuralops/cli/core/commands/model.py:35:            raise ArchitectureMismatchError(
+neuralops/cli/core/commands/model.py:63:        raise ValueError("--rank must be a positive integer")
+neuralops/cli/core/commands/model.py:65:        raise ValueError(
+neuralops/cli/core/commands/model.py:75:        raise ValueError("--heal-steps and --heal-lr must be positive finite values")
+neuralops/cli/core/commands/module.py:92:        raise NumericalGateError(
+neuralops/cli/core/devices.py:66:            raise BackendUnavailableError("Automatic device resolution is prohibited for this command.")
+neuralops/cli/core/devices.py:79:            raise BackendUnavailableError(
+neuralops/cli/core/devices.py:87:            raise ValueError(f"Invalid CUDA device index in '{req}'") from e
+neuralops/cli/core/devices.py:91:            raise BackendUnavailableError(
+neuralops/cli/core/devices.py:110:            raise BackendUnavailableError(
+neuralops/cli/core/devices.py:135:    raise ValueError(f"Unsupported device string '{requested}'. Allowed: 'cpu', 'cuda', 'cuda:N', 'mps', 'auto'.")
+neuralops/cli/__init__.py:42:    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+neuralops/cli/serve_cmd.py:87:        raise RuntimeError(
+neuralops/cli/serve_cmd.py:108:        raise ValueError("--port must be an integer between 1 and 65535")
+neuralops/cli/serve_cmd.py:110:        raise ValueError("--host must be a non-empty network interface name or address")
+neuralops/cli/serve_cmd.py:112:        raise ValueError(
+neuralops/cli/serve_cmd.py:116:        raise ValueError("--kv-cache-budget-gb must be a positive float")
+neuralops/cli/serve_cmd.py:119:        raise ValueError(
+neuralops/cli/serve_cmd.py:133:        raise RuntimeError(
+neuralops/cli/surgery_cmd.py:207:        raise ValueError("--rank must be a positive integer")
+neuralops/cli/surgery_cmd.py:209:        raise ValueError(
+neuralops/cli/surgery_cmd.py:219:        raise ValueError("--heal-steps and --heal-lr must be positive finite values")
+neuralops/cli/train_cmd.py:229:    raise RuntimeError(
+neuralops/operations/attention/configure.py:52:        raise IntegrationNotImplementedError("attention.configure runtime tuning is deferred to Phase 2.")
+neuralops/operations/attention/replace.py:69:            raise IntegrationNotImplementedError(
+neuralops/operations/registry.py:51:            raise TypeError(f"Target must be an Operation instance or subclass, got {type(target).__name__}")
+neuralops/operations/registry.py:60:            raise OperationError(
+neuralops/operations/registry.py:80:        raise OperationError(
+neuralops/operations/registry.py:89:        raise OperationError(
+neuralops/operations/weights/decompose.py:52:        raise IntegrationNotImplementedError("weights.decompose is deferred to Phase 2.")
+neuralops/operations/weights/quantize.py:85:        raise IntegrationNotImplementedError(f"weights.quantize method '{method}' (bits={bits}) is not supported.")
+neuralops/operations/weights/svd_aasvd.py:110:            raise PreconditionFailedError(
+neuralops/operations/weights/compress.py:62:        raise IntegrationNotImplementedError(
+neuralops/operations/weights/prune.py:52:        raise IntegrationNotImplementedError("weights.prune is deferred to Phase 2.")
+neuralops/operations/architecture/drop_layer.py:59:            raise IntegrationNotImplementedError(f"architecture.drop_layer failed: {exc}") from exc
+neuralops/operations/architecture/modify.py:52:        raise IntegrationNotImplementedError("architecture.modify is deferred to Phase 2.")
+neuralops/operations/architecture/reduce_mlp.py:58:            raise IntegrationNotImplementedError(f"architecture.reduce_mlp failed: {exc}") from exc
+neuralops/operations/adaptation/heal.py:52:        raise IntegrationNotImplementedError("adaptation.heal is deferred to Phase 2.")
+neuralops/operations/adaptation/distill.py:54:        raise IntegrationNotImplementedError(
+neuralops/operations/adaptation/lora.py:53:        raise IntegrationNotImplementedError("adaptation.lora is deferred to Phase 2.")
+neuralops/operations/export/model.py:71:            raise IntegrationNotImplementedError(f"export.model format='{fmt}' requires Serving Engine integration.")
+neuralops/operations/base.py:119:        raise NotImplementedError
+neuralops/integrations/compressed_tensors.py:68:            raise TypeError(f"Unsupported compressor_or_model type: {type(compressor_or_model)}")
+neuralops/integrations/compressed_tensors.py:71:            raise ValueError("The exporter requires a non-empty tensor state dictionary.")
+neuralops/integrations/compressed_tensors.py:73:            raise TypeError("Compressed tensor state must map string names to torch.Tensor values.")
+neuralops/integrations/compressed_tensors.py:81:            raise ValueError(
+neuralops/integrations/compressed_tensors.py:95:            raise ValueError(
+neuralops/integrations/hf_automodel.py:72:            raise ImportError(
+neuralops/integrations/hf_automodel.py:215:    raise NotImplementedError(
+neuralops/integrations/vllm.py:187:            raise IntegrationNotImplementedError("vLLM is not installed. Install with `pip install vllm>=0.6.0`.")
+neuralops/integrations/vllm.py:276:            raise IntegrationNotImplementedError(
+neuralops/integrations/vllm.py:308:            raise IntegrationNotImplementedError(
+neuralops/integrations/vllm.py:319:            raise IntegrationNotImplementedError("LM head is not initialized.")
+neuralops/integrations/vllm.py:344:                raise ValueError(f"Weight path {weights} is not a valid SafeTensors file or directory.")
+neuralops/integrations/vllm.py:350:            raise TypeError(f"Unsupported weights container type: {type(weights)}")
+neuralops/integrations/vllm.py:353:            raise ValueError("No authentic weights were provided to load_weights.")
+neuralops/integrations/vllm.py:401:        raise IntegrationNotImplementedError(f"Failed to register NeuralOps plugin in vLLM runtime: {exc}") from exc
+neuralops/integrations/vllm_plugin.py:57:        raise NotImplementedError(
+neuralops/integrations/vllm_plugin.py:69:        raise NotImplementedError(
+neuralops/integrations/serving.py:59:            raise RuntimeError("vLLM is not installed. Please install neuralops[serving] or run: pip install vllm")
+neuralops/integrations/serving.py:62:            raise ValueError("backend_cls must implement get_name() from vLLM's AttentionBackend contract")
+neuralops/integrations/serving.py:86:            raise ValueError("query must have shape [batch, heads, head_dim]")
+neuralops/integrations/serving.py:88:            raise ValueError("block_size must be a positive integer")
+neuralops/integrations/serving.py:126:            raise ValueError("max_cached_nodes must be a positive integer")
+neuralops/integrations/serving.py:176:                raise RuntimeError("Prefix cache is full and all entries are locked")
+neuralops/integrations/serving.py:202:            raise ValueError("num_nodes must be a non-negative integer")
+neuralops/integrations/serving.py:284:            raise IntegrationNotImplementedError(
+neuralops/integrations/serving.py:290:        raise ConfigError(f"Unsupported serving backend '{backend}'.")
+neuralops/integrations/serving.py:293:        raise ValueError(f"kv_cache_budget_gb must be positive, got {kv_cache_budget_gb}")
+neuralops/integrations/serving.py:296:        raise TypeError(f"create_openai_serving_app() got unexpected keyword argument(s): {list(kwargs.keys())}")
+neuralops/integrations/serving.py:302:        raise ImportError(
+neuralops/integrations/serving.py:390:            raise HTTPException(status_code=400, detail="request body must be a JSON object")
+neuralops/integrations/serving.py:448:            raise HTTPException(status_code=400, detail="request body must be a JSON object")
+neuralops/integrations/serving.py:452:            raise HTTPException(status_code=400, detail="messages must be a non-empty list")
+neuralops/integrations/serving.py:454:            raise HTTPException(status_code=400, detail="each message must contain a string role")
+neuralops/integrations/serving.py:564:        raise HTTPException(status_code=400, detail="max_tokens and temperature must be numeric") from exc
+neuralops/integrations/serving.py:567:        raise HTTPException(status_code=400, detail="stream must be a boolean")
+neuralops/integrations/serving.py:582:        raise HTTPException(status_code=503, detail="A model and tokenizer must be loaded to serve requests")
+neuralops/integrations/serving.py:584:        raise HTTPException(status_code=400, detail="prompt must be a string")
+neuralops/integrations/serving.py:586:        raise HTTPException(status_code=400, detail="max_tokens must be positive")
+neuralops/integrations/serving.py:588:        raise HTTPException(status_code=400, detail="temperature must be a finite, non-negative number")
+neuralops/integrations/serving.py:596:        raise HTTPException(status_code=400, detail="message content must be a string")
+neuralops/integrations/serving.py:613:        raise HTTPException(status_code=503, detail="A model and tokenizer must be loaded to serve requests")
+neuralops/integrations/serving.py:617:        raise RuntimeError("Tokenizer must return input_ids with shape [batch, sequence]")
+neuralops/integrations/serving.py:634:        raise RuntimeError("Model.generate must return token IDs with shape [batch, sequence]")
+neuralops/integrations/__init__.py:80:        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+neuralops/integrations/vllm/__init__.py:35:            raise IntegrationNotImplementedError(
+neuralops/integrations/vllm/__init__.py:44:            raise IntegrationNotImplementedError("vLLM is not installed. Cannot run generation.")
+neuralops/integrations/vllm/state_table.py:58:            raise RuntimeError("PagedStateTable: Out of state slots. No slots available.")
+neuralops/integrations/distributed_compile.py:34:        raise ValueError(f"stage must be one of 0, 1, 2, or 3; got {stage}")
+neuralops/integrations/distributed_compile.py:36:        raise ValueError("optimizer offload requires ZeRO stage 1, 2, or 3")
+neuralops/integrations/distributed_compile.py:54:        raise ValueError("min_num_params must be positive")
+neuralops/integrations/distributed_compile.py:59:        raise RuntimeError("NeuralOps FSDP policy dependencies could not be imported") from exc
+neuralops/integrations/distributed_compile.py:72:        raise RuntimeError("FSDP wrapping requires initialized torch.distributed")
+neuralops/integrations/distributed_compile.py:86:        raise RuntimeError("torch.compile is unavailable in this PyTorch version")
+neuralops/integrations/tgi.py:93:        raise IntegrationNotImplementedError(
+neuralops/integrations/sglang/__init__.py:44:        raise IntegrationNotImplementedError(
+neuralops/integrations/sglang/__init__.py:56:        raise IntegrationNotImplementedError(f"Failed to register NeuralOps plugin in SGLang runtime: {exc}") from exc
+neuralops/integrations/sglang/__init__.py:70:        raise IntegrationNotImplementedError(
+neuralops/integrations/fla/adapter.py:92:            raise IntegrationNotImplementedError(
+neuralops/integrations/fla/adapter.py:99:            raise IntegrationNotImplementedError(
+neuralops/integrations/fla/adapter.py:108:            raise IntegrationNotImplementedError("fla_layer_cls cannot be None when instantiating FLALayerAdapter.")
+neuralops/integrations/fla/cache_translator.py:48:        raise IntegrationNotImplementedError(
+neuralops/integrations/fla/cache_translator.py:60:            raise IntegrationNotImplementedError(
+neuralops/integrations/fla/cache_translator.py:67:    raise IntegrationNotImplementedError(
+neuralops/integrations/fla/__init__.py:41:        raise IntegrationNotImplementedError(
+neuralops/integrations/fla/__init__.py:45:        raise IntegrationNotImplementedError(
+neuralops/integrations/fla/registry_bridge.py:43:        raise ValueError(f"FLA extension mechanisms must begin with 'fla:' prefix, got '{name}'")
+neuralops/integrations/fla/weights_converter.py:82:        raise ValueError(
+neuralops/integrations/tensorrt_llm.py:176:            raise IntegrationNotImplementedError(
+neuralops/integrations/tensorrt_llm.py:181:        raise IntegrationNotImplementedError(
+neuralops/integrations/tensorrt_llm.py:424:        raise IntegrationNotImplementedError(
+neuralops/integrations/tensorrt_llm.py:438:            raise IntegrationNotImplementedError(
+neuralops/integrations/tensorrt_llm.py:444:            raise IntegrationNotImplementedError(
+neuralops/integrations/tensorrt_llm.py:449:        raise IntegrationNotImplementedError(
+neuralops/integrations/tensorrt_llm.py:456:        raise IntegrationNotImplementedError(
+neuralops/integrations/tensorrt_llm.py:472:            raise ImportError("TensorRT is required to load a TensorRT engine.")
+neuralops/integrations/tensorrt_llm.py:474:            raise FileNotFoundError(f"TensorRT engine does not exist: {self.engine_path}")
+neuralops/integrations/tensorrt_llm.py:479:            raise ValueError("The file is a legacy NeuralOps placeholder, not a TensorRT engine.")
+neuralops/integrations/tensorrt_llm.py:483:            raise RuntimeError(f"TensorRT could not deserialize engine: {self.engine_path}")
+neuralops/integrations/tensorrt_llm.py:486:            raise RuntimeError(f"TensorRT could not create an execution context: {self.engine_path}")
+neuralops/integrations/tensorrt_llm.py:490:        raise IntegrationNotImplementedError(
+neuralops/integrations/radix_prefix_cache.py:267:            raise RuntimeError("Model is required to execute prefill_with_reuse.")
+neuralops/integrations/radix_prefix_cache.py:301:            raise RuntimeError("Model is required to execute decode_step.")
+neuralops/integrations/sglang.py:46:        raise IntegrationNotImplementedError(
+neuralops/integrations/sglang.py:58:        raise IntegrationNotImplementedError(f"Failed to register NeuralOps plugin in SGLang runtime: {exc}") from exc
+neuralops/integrations/sglang.py:72:        raise IntegrationNotImplementedError(
+neuralops/api.py:29:        raise torch_install_error("neuralops.api", exc) from exc
+neuralops/api.py:68:        raise ValueError("model cannot be None.")
+neuralops/api.py:134:        raise ValueError("Must specify attention or attention_type.")
+neuralops/api.py:142:            raise IntegrationNotImplementedError(
+neuralops/api.py:147:            raise IntegrationNotImplementedError(
+neuralops/api.py:153:        raise AttentionNotRegisteredError(
+neuralops/api.py:434:        raise ValueError(
+neuralops/api.py:636:            raise ValueError("No input text or prompt provided to pipeline.")
+neuralops/api.py:682:            raise ValueError("A tokenizer must be provided to encode string inputs for 'text-generation' pipeline.")
+neuralops/api.py:748:            raise ValueError(f"Could not encode prompts with tokenizer: unexpected type {type(encoded)}")
+neuralops/api.py:832:                        raise RuntimeError(f"Tokenizer failed to decode token IDs: {e_seq}") from e_seq
+neuralops/api.py:834:            raise RuntimeError("Tokenizer failed to decode generated tokens; no valid decoded output produced.")
+neuralops/api.py:868:        raise ValueError(f"Unsupported pipeline task '{task}'. Currently supported tasks: ['text-generation'].")
+neuralops/api.py:952:            raise IntegrationNotImplementedError(
+neuralops/api.py:957:            raise IntegrationNotImplementedError(
+neuralops/api.py:965:        raise AttentionNotRegisteredError(f"Unknown attention '{name}'. Available: {list_attentions()}")
+neuralops/api.py:981:        raise CompressorNotRegisteredError(f"Unknown compressor '{name}'. Available: {list_compressors()}")
+neuralops/api.py:1266:            raise RuntimeError(f"Parallel healing failed: {exc}") from exc
+neuralops/api.py:1451:                    raise TypeError("Evaluation batches must be mappings or (inputs, labels) tuples.")
+neuralops/api.py:1544:        raise ImportError("train_grpo requires the optional 'trl' package.") from exc
+neuralops/api.py:1676:        raise RuntimeError("neuralops.__version__ is not defined")
+neuralops/api.py:1722:        raise ValueError("Must provide a model instance to validate.")
+neuralops/adapters/base.py:33:        raise NotImplementedError
+neuralops/adapters/base.py:38:        raise NotImplementedError
+neuralops/adapters/base.py:43:        raise NotImplementedError
+neuralops/adapters/base.py:60:        raise NotImplementedError
+neuralops/benchmarks/metrics/evaluator.py:39:        raise NotImplementedError
+neuralops/benchmarks/verify_ops.py:29:        raise RuntimeError(config.unavailable_reason or "No input contract")
+neuralops/benchmarks/verify_ops.py:33:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/verify_ops.py:49:    raise TypeError(f"Operation returned no tensor output: {type(value).__name__}")
+neuralops/benchmarks/benchmark_dynamic_range_stress.py:48:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/benchmark_dynamic_range_stress.py:102:                    raise ValueError(f"Unknown kernel name: {k_name}")
+neuralops/benchmarks/runner.py:59:            raise RuntimeError(
+neuralops/benchmarks/tasks/adapter.py:134:            raise RuntimeError("Setup must be run before applying module.")
+neuralops/benchmarks/kd/zoo_orchestrator.py:187:        raise ValueError("Cannot locate transformer layers in model architecture.")
+neuralops/benchmarks/kd/zoo_orchestrator.py:227:            raise KeyError(f"Attention key '{attn_key}' not found in ATTENTION_REGISTRY.")
+neuralops/benchmarks/kd/distill_engine.py:348:            raise ValueError("Either teacher_cache or teacher_model must be provided.")
+neuralops/benchmarks/kd/teacher_cache.py:207:    raise ValueError("Unable to determine num_hidden_layers from teacher model.")
+neuralops/benchmarks/kd/teacher_cache.py:361:        raise ValueError(f"Expected non-empty 2D train_chunks [N, L], got {tuple(train_chunks.shape)}.")
+neuralops/benchmarks/kd/teacher_cache.py:611:        raise ValueError("Cannot build VLM teacher cache with 0 training examples.")
+neuralops/benchmarks/precision_parity.py:32:        raise RuntimeError("CUDA was requested for precision parity, but CUDA is unavailable.")
+neuralops/benchmarks/precision_parity.py:48:                    raise RuntimeError(f"BF16 precision benchmark is unavailable on this CPU: {exc}") from exc
+neuralops/benchmarks/precision_parity.py:68:        raise RuntimeError("Precision parity gate failed; one or more results are FAIL_NUMERICS.")
+neuralops/benchmarks/precision_parity.py:81:    raise SystemExit(main())
+neuralops/benchmarks/config.py:100:            raise ValueError(
+neuralops/benchmarks/config.py:111:            raise ValueError(f"epochs must be a positive integer, got {self.epochs!r}")
+neuralops/benchmarks/config.py:114:            raise ValueError(f"lr must be a positive float, got {self.lr!r}")
+neuralops/benchmarks/config.py:118:                raise ValueError(f"rank must be a positive integer, got {self.rank!r}")
+neuralops/benchmarks/config.py:121:            raise ValueError(f"timeout_s must be a positive number, got {self.timeout_s!r}")
+neuralops/benchmarks/config.py:124:            raise ValueError(f"Invalid device '{self.device}'. Must match '^(cuda(:\\d+)?|cpu|mps)$'")
+neuralops/benchmarks/config.py:144:                raise RuntimeError(
+neuralops/benchmarks/config.py:153:                    raise RuntimeError(f"Invalid CUDA device index in '{self.device}'")
+neuralops/benchmarks/config.py:156:                raise RuntimeError(
+neuralops/benchmarks/config.py:194:            raise FileNotFoundError(f"Benchmark configuration not found: {config_path}")
+neuralops/benchmarks/config.py:200:                raise RuntimeError("YAML config requires PyYAML; use JSON or install PyYAML.") from exc
+neuralops/benchmarks/config.py:205:            raise ValueError(f"Benchmark configuration must contain an object: {config_path}")
+neuralops/benchmarks/config.py:233:            raise ValueError(f"Unknown configuration key(s) for {cls.__name__}: {', '.join(unknown_keys)}")
+neuralops/benchmarks/serving_matrix.py:25:        raise RuntimeError("CUDA was requested for serving, but CUDA is unavailable.")
+neuralops/benchmarks/serving_matrix.py:46:        raise RuntimeError(result.error or "Serving benchmark failed")
+neuralops/benchmarks/serving_matrix.py:63:    raise SystemExit(main())
+neuralops/benchmarks/core/kd.py:102:            raise ValueError(
+neuralops/benchmarks/core/kd.py:180:        raise TypeError(f"Unsupported batch type: {type(batch)}")
+neuralops/benchmarks/core/kd.py:211:                raise ValueError("Either teacher or teacher_logits must be provided.")
+neuralops/benchmarks/core/kd.py:249:            raise ValueError("Either teacher or teacher_logits must be provided.")
+neuralops/benchmarks/core/kd.py:324:                raise TypeError(f"Unsupported batch type: {type(batch)}")
+neuralops/benchmarks/core/evaluation.py:84:                raise TypeError(f"Unsupported batch type: {type(batch)}")
+neuralops/benchmarks/core/evaluation.py:156:                raise TypeError(f"Unsupported batch type: {type(batch)}")
+neuralops/benchmarks/core/evaluation.py:210:        raise TypeError(f"Unsupported sample_batch type: {type(sample_batch)}")
+neuralops/benchmarks/core/data_loader.py:80:        raise ValueError(f"Unsupported local dataset format '{suffix}'. Use .csv, .json, or .jsonl.")
+neuralops/benchmarks/core/data_loader.py:154:        raise RuntimeError("The 'datasets' package is required for GLUE, WikiText, and local dataset loading.") from exc
+neuralops/benchmarks/core/data_loader.py:194:            raise RuntimeError(f"Failed to load local dataset '{local_path}': {exc}") from exc
+neuralops/benchmarks/core/data_loader.py:204:                raise RuntimeError(
+neuralops/benchmarks/core/data_loader.py:255:                raise RuntimeError(
+neuralops/benchmarks/core/data_loader.py:274:    raise ValueError(f"Unsupported benchmark dataset '{name}'. Available: {list(GLUE_TASKS.keys())} + wikitext2/103")
+neuralops/benchmarks/core/data_loader.py:340:        raise FileNotFoundError(f"Preprocessing script not found: {path_obj}")
+neuralops/benchmarks/core/data_loader.py:343:        raise PermissionError(
+neuralops/benchmarks/core/data_loader.py:361:        raise ImportError(f"Could not load module specification from {path_obj}")
+neuralops/benchmarks/core/data_loader.py:368:        raise AttributeError(f"Preprocessing script '{path_obj}' does not expose a callable named 'preprocess(batch)'.")
+neuralops/benchmarks/core/model_loader.py:201:        raise ValueError(
+neuralops/benchmarks/core/model_loader.py:241:        raise ValueError(
+neuralops/benchmarks/core/training.py:195:                raise TypeError(f"Unsupported batch type: {type(batch)}")
+neuralops/benchmarks/multi_seed_stress_test_131_72.py:113:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/suites/attention.py:88:            raise ValueError(f"Unknown dtype '{dtype_str}'. Supported: {sorted(mapping.keys())}")
+neuralops/benchmarks/suites/attention.py:147:                    raise ValueError(f"Non-finite output detected in {mechanism}")
+neuralops/benchmarks/suites/niah.py:38:            raise NotImplementedError(
+neuralops/benchmarks/suites/qwen_kd.py:40:            raise NotImplementedError(
+neuralops/benchmarks/suites/cuda_ops.py:72:            raise ValueError(f"Unknown dtype '{dtype_str}'. Supported: {sorted(mapping.keys())}")
+neuralops/benchmarks/suites/cuda_ops.py:110:                raise RuntimeError(
+neuralops/benchmarks/suites/compression.py:138:                    raise ValueError(f"Non-finite output from compressed model using {compressor_name}")
+neuralops/benchmarks/suites/__init__.py:41:        raise KeyError(f"Unknown benchmark suite '{name}'. Available suites: {list(BENCHMARK_SUITES.keys())}")
+neuralops/benchmarks/suites/e2e_serving.py:35:            raise NotImplementedError(
+neuralops/benchmarks/suites/triton_ops.py:73:            raise ValueError(f"Unknown dtype '{dtype_str}'. Supported: {sorted(mapping.keys())}")
+neuralops/benchmarks/suites/triton_ops.py:111:            raise ValueError(f"Unsupported Triton kernel '{kernel_name}'")
+neuralops/benchmarks/serving.py:36:            raise RuntimeError("PagedKVCache capacity exceeded")
+neuralops/benchmarks/serving.py:46:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/registry.py:96:        raise NotImplementedError
+neuralops/benchmarks/registry.py:173:        raise ValueError(
+neuralops/benchmarks/registry.py:179:            raise ValueError(f"Conflicting benchmark registration for '{name}': already registered.")
+neuralops/benchmarks/quantization.py:43:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/stress_test_seeds_404_777_999.py:40:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/reproducibility.py:42:        raise RuntimeError("CUDA was requested for reproducibility, but CUDA is unavailable.")
+neuralops/benchmarks/reproducibility.py:60:        raise RuntimeError(result.error or "Reproducibility gate failed")
+neuralops/benchmarks/reproducibility.py:73:    raise SystemExit(main())
+neuralops/benchmarks/generation_speed.py:85:    raise SystemExit(main())
+neuralops/benchmarks/perplexity_eval.py:102:    raise SystemExit(main())
+neuralops/benchmarks/regression_gate.py:20:        raise FileNotFoundError(f"Benchmark result not found: {path}")
+neuralops/benchmarks/regression_gate.py:23:        raise ValueError(f"Invalid benchmark result schema: {path}")
+neuralops/benchmarks/regression_gate.py:35:        raise MetricNotFoundError(
+neuralops/benchmarks/regression_gate.py:40:        raise MetricNotFoundError(
+neuralops/benchmarks/regression_gate.py:47:        raise TypeError(f"Metric {metric!r} must be numeric in both results")
+neuralops/benchmarks/regression_gate.py:72:        raise SystemExit(1)
+neuralops/benchmarks/regression_gate.py:77:    raise SystemExit(main())
+neuralops/benchmarks/__init__.py:128:    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+neuralops/benchmarks/models/loader.py:268:        raise RuntimeError(f"Failed to instantiate model '{model_name}'. Last error: {last_err}")
+neuralops/benchmarks/varlen.py:21:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/storage/schema.py:47:            raise ValueError("run_id must be non-empty")
+neuralops/benchmarks/storage/schema.py:51:            raise ValueError(f"timestamp must be ISO 8601, got: {self.timestamp}")
+neuralops/benchmarks/storage/schema.py:53:            raise ValueError(f"Invalid status: {self.status}")
+neuralops/benchmarks/resource_scaling.py:65:        raise ValueError(f"Unsupported benchmark precision: {name}") from exc
+neuralops/benchmarks/resource_scaling.py:71:        raise RuntimeError("CUDA was requested for resource scaling, but CUDA is unavailable.")
+neuralops/benchmarks/resource_scaling.py:128:                    raise RuntimeError(
+neuralops/benchmarks/resource_scaling.py:239:    raise SystemExit(main())
+neuralops/benchmarks/pareto_paper_suite.py:59:            raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/adapters/attention.py:110:            raise KeyError(f"Attention '{self.attention_name}' not found in ATTENTION_REGISTRY")
+neuralops/benchmarks/adapters/triton_adapter.py:266:            raise ValueError(msg)
+neuralops/benchmarks/adapters/zeroshot.py:160:            raise RuntimeError("Setup must be run before applying module.")
+neuralops/benchmarks/adapters/classification.py:160:            raise RuntimeError("Setup must be run before applying module.")
+neuralops/benchmarks/adapters/classification.py:186:            raise ValueError(f"Unknown module type: {self.module_type}")
+neuralops/benchmarks/adapters/cuda_adapter.py:382:            raise RuntimeError(f"No PyTorch reference resolved for kernel '{self.kernel_name}'")
+neuralops/benchmarks/adapters/ruler.py:99:            raise RuntimeError("Setup must be called before applying module.")
+neuralops/benchmarks/adapters/perplexity.py:127:            raise RuntimeError("Setup must be run before applying module.")
+neuralops/benchmarks/adapters/perplexity.py:145:            raise ValueError(f"Unknown module type: {self.module_type}")
+neuralops/benchmarks/adapters/model.py:241:        raise AttributeError(f"Unable to extract logits from output type: {type(outputs)}")
+neuralops/benchmarks/adapters/model.py:259:            raise RuntimeError(
+neuralops/benchmarks/adapters/model.py:341:                    raise AttributeError(f"Unable to extract logits in generate loop: {type(outputs)}")
+neuralops/benchmarks/adapters/model.py:424:            raise FileNotFoundError(f"Checkpoint directory does not exist: {ckpt_path}")
+neuralops/benchmarks/adapters/model.py:428:            raise FileNotFoundError(
+neuralops/benchmarks/adapters/model.py:436:            raise ValueError(f"Corrupted or invalid JSON in surgery manifest {manifest_file}: {e}") from e
+neuralops/benchmarks/adapters/model.py:439:            raise ValueError(f"Invalid schema: manifest in {manifest_file} must be a JSON object")
+neuralops/benchmarks/adapters/model.py:455:            raise RuntimeError(f"Failed to load weights from checkpoint dir {ckpt_path}: {e}") from e
+neuralops/benchmarks/adapters/model.py:580:        raise TypeError(f"Unsupported model input type: {type(model_or_path)}")
+neuralops/benchmarks/adapters/compressor.py:193:            raise RuntimeError("Reference model snapshot was not created in build_inputs.")
+neuralops/benchmarks/adapters/compressor.py:212:            raise RuntimeError("Snapshot model was not created in build_inputs.")
+neuralops/benchmarks/adapters/compressor.py:218:        # If named compressor fails, this will raise and execute() sets status to FAILED.
+neuralops/benchmarks/adapters/compressor.py:245:            raise KeyError(f"Compressor '{name}' not found in COMPRESSOR_REGISTRY")
+neuralops/benchmarks/adapters/compressor.py:291:            raise RuntimeError(f"Compressor '{name}' failed to produce a valid nn.Module (got {type(compressed)}).")
+neuralops/benchmarks/adapters/compressor.py:394:            raise RuntimeError("Models not available for performance measurement.")
+neuralops/benchmarks/adapters/compressor.py:497:        raise ValueError(f"Unsupported PEFT method: {name}")
+neuralops/benchmarks/adapters/base.py:20:  - Device mismatch must raise RuntimeError before any kernel runs.
+neuralops/benchmarks/adapters/base.py:125:                raise RuntimeError(
+neuralops/benchmarks/adapters/base.py:131:                raise RuntimeError(
+neuralops/benchmarks/adapters/base.py:137:                raise RuntimeError(
+neuralops/benchmarks/results/index.py:170:            raise ValueError(f"Metric '{metric}' not found in any results. Available metrics: {sorted(all_metrics)}")
+neuralops/benchmarks/results/safetensors_io.py:72:        raise TypeError(f"Expected nn.Module or dict of tensors, got {type(model).__name__}")
+neuralops/benchmarks/results/safetensors_io.py:113:            raise RuntimeError(f"Failed to serialize numpy state to SafeTensors at {target}: {exc}") from exc
+neuralops/benchmarks/results/safetensors_io.py:123:        raise RuntimeError(f"Failed to serialize surgerized model weights to SafeTensors at {target}: {exc}") from exc
+neuralops/benchmarks/results/safetensors_io.py:143:        raise RuntimeError(f"Failed to serialize numpy state to SafeTensors at {target}: {exc}") from exc
+neuralops/benchmarks/results/safetensors_io.py:145:    raise RuntimeError(
+neuralops/benchmarks/results/safetensors_io.py:179:        raise FileNotFoundError(f"SafeTensors checkpoint not found at: {target}")
+neuralops/benchmarks/results/safetensors_io.py:202:                raise primary_exc
+neuralops/benchmarks/results/safetensors_io.py:213:            raise primary_exc
+neuralops/benchmarks/results/safetensors_io.py:217:        raise RuntimeError(f"Failed to load SafeTensors file at {target}: {exc}") from exc
+neuralops/benchmarks/results/safetensors_io.py:235:        raise RuntimeError(f"Failed to load SafeTensors file at {target}: {exc}") from exc
+neuralops/benchmarks/results/__init__.py:106:    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+neuralops/benchmarks/results/saver.py:341:            raise RuntimeError(f"Parquet export failed: {exc}") from exc
+neuralops/benchmarks/multi_seed.py:165:            raise AttributeError(f"'WelchTestResult' object has no attribute '{name}'")
+neuralops/benchmarks/cli.py:147:        raise argparse.ArgumentError(
+neuralops/benchmarks/cli.py:1618:            raise ValueError(f"Invalid benchmark '{token}'. Valid benchmark names are: {valid_names}")
+neuralops/benchmarks/cli.py:1634:            raise RuntimeError(
+neuralops/benchmarks/cli.py:1671:        raise ValueError(
+neuralops/benchmarks/cli.py:1760:            raise RuntimeError("Correctness gate failed; timing was not accepted for every requested operation")
+neuralops/benchmarks/cli.py:2051:        raise RuntimeError("Fused Triton timing requires a CUDA GPU; no CPU fallback timing is reported.")
+neuralops/benchmarks/cli.py:2518:            raise ValueError("--rank must be a positive integer")
+neuralops/benchmarks/cli.py:2520:            raise ValueError(
+neuralops/benchmarks/cli.py:2530:            raise ValueError("--heal-steps and --heal-lr must be positive finite values")
+neuralops/benchmarks/long_context_forensics.py:66:    raise TypeError(f"Attention returned unsupported value: {type(value)!r}")
+neuralops/benchmarks/long_context_forensics.py:153:        raise SystemExit("CUDA is required for long-context forensics")
+neuralops/benchmarks/pipeline.py:73:            raise KeyError(
+neuralops/benchmarks/pipeline.py:104:                raise TypeError(f"Registered benchmark target for '{task_key}' is not callable.")
+neuralops/benchmarks/pipeline.py:106:            raise TypeError(f"Unknown benchmark runner type for '{task_key}': {type(target)}")
+neuralops/benchmarks/pipeline.py:154:            raise ValueError("Either base_model_or_adapter or base_model must be provided.")
+neuralops/benchmarks/roofline.py:19:        raise ValueError("B, H, S, and D must be positive")
+neuralops/benchmarks/roofline.py:27:            raise ValueError("local attention requires a positive window")
+neuralops/benchmarks/roofline.py:33:        raise ValueError(f"Unsupported attention type: {attention_type}")
+neuralops/benchmarks/roofline.py:43:        raise ValueError("B, H, S, and D must be positive")
+neuralops/benchmarks/_legacy/gpu_master_suite.py:53:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/_legacy/gpu_master_suite.py:118:            raise RuntimeError(
+neuralops/benchmarks/_legacy/gpu_master_suite.py:140:            raise RuntimeError(f"Forward call signature failed for '{name}'. " f"Attempts: {' | '.join(call_errors)}")
+neuralops/benchmarks/_legacy/gpu_master_suite.py:290:            raise RuntimeError(f"Compressor '{name}' produced an invalid compressed model.")
+neuralops/benchmarks/_legacy/gpu_master_suite.py:298:            raise RuntimeError(f"Output shape mismatch: expected (1, 8, 64), got {tuple(out.shape)}")
+neuralops/benchmarks/_legacy/gpu_master_suite.py:302:            raise RuntimeError("Compressed model produced non-finite output.")
+neuralops/benchmarks/_legacy/gpu_stress_heavy_trainer.py:148:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/_legacy/run_layerwise_cached_kd_ablation.py:220:            raise FloatingPointError(
+neuralops/benchmarks/_legacy/run_layerwise_cached_kd_ablation.py:473:        raise RuntimeError(
+neuralops/benchmarks/_legacy/benchmark_kd_all_modules.py:279:        raise ValueError(f"Training settings must be > 0; invalid: {', '.join(invalid)}")
+neuralops/benchmarks/_legacy/benchmark_kd_all_modules.py:350:                    raise RuntimeError(f"Compressor {args.module} is not callable")
+neuralops/benchmarks/_legacy/root/benchmark_serving_matrix.py:17:    raise SystemExit(main())
+neuralops/benchmarks/_legacy/root/benchmark_reproducibility.py:17:    raise SystemExit(main())
+neuralops/benchmarks/_legacy/root/benchmark_regression_gate.py:17:    raise SystemExit(main())
+neuralops/benchmarks/_legacy/root/benchmark_resource_scaling.py:26:    raise SystemExit(main())
+neuralops/benchmarks/_legacy/root/benchmark_precision_parity.py:17:    raise SystemExit(main())
+neuralops/benchmarks/_legacy/gpu_telemetry.py:202:                raise exc
+neuralops/benchmarks/_legacy/smart_gpu_trainer.py:176:                raise RuntimeError("Training diverged: 3 consecutive NaN/Inf loss values encountered.")
+neuralops/benchmarks/_legacy/qwen_7b_transplant.py:85:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/_legacy/qwen_7b_transplant.py:223:        raise RuntimeError("Failed to capture layer activations during teacher forward pass!")
+neuralops/benchmarks/_legacy/benchmark_delta_healing.py:157:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/_legacy/benchmark_delta_healing.py:209:        raise RuntimeError(f"Failed to inject {module_name} into GPT-2")
+neuralops/benchmarks/_legacy/benchmark_config.py:98:            raise FileNotFoundError(f"Configuration file not found: {p}")
+neuralops/benchmarks/_legacy/validate_4_cuda_kernels.py:102:            raise RuntimeError(f"Backend identity violation: expected 'cuda', got '{backend}'")
+neuralops/benchmarks/_legacy/validate_4_cuda_kernels.py:146:            raise RuntimeError(f"Backend identity violation: expected 'cuda', got '{backend}'")
+neuralops/benchmarks/_legacy/validate_4_cuda_kernels.py:202:            raise RuntimeError(f"Backend identity violation: expected 'cuda', got '{backend}'")
+neuralops/benchmarks/_legacy/validate_4_cuda_kernels.py:258:            raise RuntimeError(f"Backend identity violation: expected 'cuda', got '{backend}'")
+neuralops/benchmarks/rope.py:26:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/sampling.py:23:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/benchmark_all_26_kernels.py:38:        raise RuntimeError(
+neuralops/benchmarks/benchmark_all_26_kernels.py:43:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/benchmark_all_26_kernels.py:58:        raise ValueError(f"Unsupported dtype '{dtype_str}'. Choose float16, float32, or bfloat16.") from exc
+neuralops/benchmarks/bench_llm_bandwidth.py:151:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/cli_v2/utils/completion.py:71:        raise ValueError(f"Unsupported shell '{shell}'. Supported shells are: {supported}.")
+neuralops/benchmarks/sweep.py:21:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/telemetry/hardware.py:266:            raise ValueError("Neither tracker nor log_dir was provided to monitor.")
+neuralops/benchmarks/benchmark_extrapolation_32k.py:95:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/moe.py:21:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/data/loader.py:48:        raise NotImplementedError
+neuralops/benchmarks/ops_runner.py:190:        raise ValueError(f"Operator '{op_name}' not in OP_REGISTRY. Available: {list(OP_REGISTRY.keys())}")
+neuralops/benchmarks/ops_runner.py:193:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/ops_registry.py:82:        raise KeyError(name)
+neuralops/benchmarks/ops_registry.py:300:                raise TypeError(
+neuralops/benchmarks/ops_registry.py:503:    """Return a registered operation or raise a descriptive error."""
+neuralops/benchmarks/ops_registry.py:508:        raise KeyError(f"Unknown benchmark operation: {name}") from exc
+neuralops/benchmarks/ops_registry.py:531:            raise ValueError(f"Duplicate op key in OPS_REGISTRY: {op_key}")
+neuralops/benchmarks/ops_registry.py:537:        raise ValueError(f"OPS_REGISTRY is missing required categories: {sorted(missing)}")
+neuralops/benchmarks/legacy_root/benchmark_serving_matrix.py:17:    raise SystemExit(main())
+neuralops/benchmarks/legacy_root/benchmark_reproducibility.py:17:    raise SystemExit(main())
+neuralops/benchmarks/legacy_root/benchmark_regression_gate.py:17:    raise SystemExit(main())
+neuralops/benchmarks/legacy_root/benchmark_resource_scaling.py:26:    raise SystemExit(main())
+neuralops/benchmarks/legacy_root/benchmark_precision_parity.py:17:    raise SystemExit(main())
+neuralops/benchmarks/ssm.py:21:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/benchmarks/benchmark_all_26_comprehensive.py:107:            raise ValueError(
+neuralops/benchmarks/benchmark_all_26_comprehensive.py:117:                raise ValueError(f"Shape mismatch: {t_tri.shape} vs {t_pt.shape}")
+neuralops/benchmarks/benchmark_all_26_comprehensive.py:537:        raise ValueError(f"Unsupported dtype '{dtype_str}'. Choose float16, float32, or bfloat16.") from exc
+neuralops/benchmarks/competitors/bench_vllm_poisson_serving.py:143:        raise RuntimeError("CUDA device requested for benchmark_vllm_poisson_serving, but CUDA is not available.")
+neuralops/benchmarks/competitors/bench_sglang_radix_cache.py:58:        raise RuntimeError("CUDA device requested for benchmark_radix_prefix_cache, but CUDA is not available.")
+neuralops/benchmarks/competitors/bench_deepspeed_zero3_overhead.py:45:        raise RuntimeError("CUDA device required for physical PCIe streaming bandwidth benchmark.")
+neuralops/benchmarks/competitors/bench_deepspeed_zero3_overhead.py:92:        raise RuntimeError("CUDA device requested for benchmark_deepspeed_zero3_overhead, but CUDA is not available.")
+neuralops/benchmarks/competitors/bench_tensorrt_quant_sqnr.py:124:        raise ValueError(f"Unsupported quantization format: {format_type}")
+neuralops/benchmarks/competitors/bench_tensorrt_quant_sqnr.py:149:        raise RuntimeError("CUDA device requested for run_tensorrt_quant_sqnr_suite, but CUDA is not available.")
+neuralops/benchmarks/competitors/bench_megatron_tp_sp.py:101:        raise ValueError("Invalid parameters provided for compute_megatron_mfu calculation.")
+neuralops/benchmarks/competitors/bench_megatron_tp_sp.py:147:        raise RuntimeError("CUDA device requested for benchmark_megatron_tp_sp, but CUDA is not available.")
+neuralops/benchmarks/competitors/bench_lm_eval_mmlu_gsm8k.py:149:        raise RuntimeError("CUDA device requested for benchmark_lm_eval_mmlu_gsm8k, but CUDA is not available.")
+neuralops/benchmarks/competitors/bench_medusa_speculative_tree.py:94:        raise RuntimeError("CUDA device requested for benchmark_medusa_speculative_tree, but CUDA is not available.")
+neuralops/benchmarks/competitors/bench_flash_attention_standard.py:46:        raise ValueError("latency_ms and peak_tflops must be strictly positive.")
+neuralops/benchmarks/competitors/bench_flash_attention_standard.py:82:        raise RuntimeError("CUDA device requested for benchmark_flash_attn_tflops, but CUDA is not available.")
+neuralops/benchmarks/competitors/bench_lighteval_fast_stream.py:116:        raise RuntimeError("CUDA device requested for benchmark_lighteval_fast_stream, but CUDA is not available.")
+neuralops/benchmarks/competitors/bench_ruler_long_context.py:50:            raise ValueError("depth_percentiles list cannot be empty.")
+neuralops/benchmarks/competitors/bench_ruler_long_context.py:53:        raise ValueError("context_length and num_needles must be strictly positive.")
+neuralops/benchmarks/competitors/bench_ruler_long_context.py:112:        raise RuntimeError("CUDA device requested for benchmark_ruler_long_context, but CUDA is not available.")
+neuralops/benchmarks/executor.py:198:            raise RuntimeError("Deliberate internal kernel test error")
+neuralops/benchmarks/measure_multiprecision.py:55:        raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
+neuralops/compression/tensor_decomp/kronecker_compressor.py:38:        raise ValueError(f"Dimension must be positive, got {dim}")
+neuralops/compression/tensor_decomp/kronecker_compressor.py:78:                raise ValueError(
+neuralops/compression/tensor_decomp/kronecker_compressor.py:209:        raise RuntimeError("KroneckerLinear has no valid parameter set.")
+neuralops/compression/tensor_decomp/tt_compressor.py:192:                raise ValueError(
+neuralops/compression/tensor_decomp/kronecker_tt_lora.py:126:            raise ValueError("Either (U_base, V_base) or base_layer must be provided")
+neuralops/compression/tensor_decomp/kronecker_tt_lora.py:138:            raise ValueError(f"m1*m2 ({self.padded_out_features}) must be >= out_features ({self.out_features})")
+neuralops/compression/tensor_decomp/kronecker_tt_lora.py:140:            raise ValueError(f"n1*n2 ({self.padded_in_features}) must be >= in_features ({self.in_features})")
+neuralops/compression/tensor_decomp/kronecker_tt_lora.py:145:            raise ValueError(
+neuralops/compression/tensor_decomp/kronecker_tt_lora.py:152:            raise ValueError(f"Boundary TT ranks must be 1; got {tt_ranks}")
+neuralops/compression/__init__.py:43:        raise AttributeError(f"module '{__name__}' has no attribute {name!r}")
+neuralops/compression/__init__.py:57:    raise AttributeError(f"module '{__name__}' has no attribute {name!r}")
+neuralops/compression/quantization/slicegpt_pca.py:550:                            raise ValueError(f"Eigh basis non-orthogonal (diff={eye_diff:.4f})")
+neuralops/compression/quantization/fp8_compressor.py:53:            raise ValueError(f"scale_type must be 'per_tensor' or 'per_channel', got '{scale_type}'")
+neuralops/compression/svd/dynamic_rank.py:69:        raise ValueError(f"compute_singular_entropy expects 1D or 2D tensor, got shape {spectrum_or_matrix.shape}")
+neuralops/compression/svd/optimal_subspace_projection.py:110:            raise ValueError("Either (U, V) or weight must be provided to OptimalSubspaceLoRALinear")
+neuralops/compression/svd/optimal_subspace_projection.py:526:                        raise ValueError("Cholesky produced non-finite values")
+neuralops/compression/svd/optimal_subspace_projection.py:547:                    raise ValueError("Empty SVD rank")
+neuralops/compression/svd/optimal_subspace_projection.py:582:                        raise CompressionVerificationError(
+neuralops/compression/svd/optimal_subspace_projection.py:610:                    raise SingularValueDecompositionError(
+neuralops/compression/svd/optimal_subspace_projection.py:620:            raise CompressionVerificationError(
+neuralops/compression/svd/gfws_d_compressor.py:81:            raise ValueError("Either (U, V) or weight must be provided to GFWSLoRALinear")
+neuralops/compression/svd/asvd_compressor.py:137:            raise FileNotFoundError(f"No compressed model weights found at {path}")
+neuralops/compression/svd/direct_svd.py:152:                raise ValueError(
+neuralops/compression/svd/direct_svd.py:535:            raise RuntimeError(
+neuralops/compression/svd/adaptive_ranks.py:993:                        raise ImportError("CompressedAttentionLayer is not available")
+neuralops/compression/svd/adasvd_compressor.py:102:            raise ValueError(f"FusedQKVSVDLinear requires out_features divisible by 3, got {out_features}")
+neuralops/compression/svd/adasvd_compressor.py:156:            raise ValueError(
+neuralops/compression/svd/adasvd_compressor.py:231:            raise ValueError(f"input_mean shape {tuple(mu_f.shape)} != ({self.in_features},)")
+neuralops/compression/pruning/ast_pruner.py:124:                raise ValueError("linear module must have a weight attribute if weight is None")
+neuralops/compression/pruning/flap.py:390:                raise RuntimeError(f"FLAP: shape mismatch on {name}: {tuple(res_w.shape)} vs {tuple(orig_shape)}")
+neuralops/compression/pruning/bonsai_pruner.py:188:                raise ValueError("linear module must have a weight attribute if weight is None")
+neuralops/compression/pruning/armor_pruner.py:614:                    raise RuntimeError("non-finite reconstruction")
+neuralops/compression/kv_cache/aatc_xkv_compressor.py:232:            raise KeyError(f"AATC_XKVCache: no cache for layer {layer_idx}")
+neuralops/compression/kv_cache/aatc_xkv_compressor.py:438:            raise RuntimeError("AATC_XKVCache: no entries for layer.")
+neuralops/compression/kv_cache/aatc_xkv_compressor.py:458:            raise RuntimeError("AATC_XKVCache: empty reconstruction.")
+neuralops/compression/kv_cache/aatc_xkv_compressor.py:506:        raise RuntimeError("Cannot compute loss: no tensor logits or hidden states found.")
+neuralops/compression/kv_cache/kvtc_compressor.py:656:                raise RuntimeError(f"KVTC produced a model that fails the forward pass sanity check: {e}") from e
+neuralops/compression/low_rank/mgie_svd_compressor.py:398:                    raise AttributeError(
+neuralops/compression/low_rank/grecodec_compressor.py:211:            raise LinearDecompositionError(f"GreCoDeC SVD non-convergence for shape {W_float.shape}: {e}") from e
+neuralops/compression/low_rank/oats_compressor.py:91:            raise ValueError("Either (U, V) or weight must be provided to OATSLoRALinear")
+neuralops/compression/low_rank/oats_compressor.py:501:                raise ValueError("Cholesky produced NaNs or Infs")
+neuralops/compression/low_rank/tomoe_compressor.py:127:                raise TypeError(f"Unsupported module type: {type(base_layer)}")
+neuralops/compression/low_rank/tomoe_compressor.py:131:                raise ValueError(
+neuralops/compression/low_rank/come_compressor.py:597:        raise ValueError(f"Cannot determine hidden_size for {type(layer).__name__}")
+neuralops/compression/low_rank/come_compressor.py:857:                raise RuntimeError(f"CoMe post-compression forward check failed: {e}") from e
+neuralops/compression/low_rank/modegpt_compressor.py:91:            raise ValueError("MoDeGPTLowRankLinear requires either `V` or `shared_V`.")
+neuralops/compression/low_rank/modegpt_compressor.py:230:                raise LinearDecompositionError(f"MoDeGPT decomposition failed: {qr_err}") from qr_err
+neuralops/compression/low_rank/modegpt_compressor.py:763:            raise CompressionVerificationError(
+neuralops/compression/low_rank/a3_compressor.py:191:                raise ValueError(f"Cannot determine in/out features for {type(linear)}")
+neuralops/compression/low_rank/a3_compressor.py:1007:                        raise RuntimeError(
+neuralops/compression/low_rank/mlorq_compressor.py:237:                raise CompressionVerificationError(f"MLoRQ low-rank projection failed during forward pass: {e}") from e
+neuralops/compression/low_rank/mlorq_compressor.py:255:                    raise CompressionVerificationError(f"MLoRQ LoRA low-rank projection failed during forward pass: {e}") from e
+neuralops/compression/low_rank/mlorq_compressor.py:301:                raise LinearDecompositionError(f"MLoRQ SVD failed for shape {W_float.shape}: {e}") from e
+neuralops/compression/low_rank/mlorq_compressor.py:746:            raise CompressionVerificationError(
+neuralops/recipes.py:75:            raise ValueError(f"Unknown builtin recipe '{recipe}'. Available: {list(BUILTIN_RECIPES.keys())}")
+neuralops/inference/__init__.py:42:        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+neuralops/inference/engine.py:67:            raise ValueError("input_ids must have shape [batch, non-empty sequence]")
+neuralops/inference/engine.py:69:            raise ValueError("max_new_tokens must be a non-negative integer")
+neuralops/inference/engine.py:71:            raise ValueError("temperature must be finite and non-negative")
+neuralops/inference/engine.py:73:            raise ValueError("top_p must be in (0, 1]")
+neuralops/inference/engine.py:75:            raise ValueError("top_k must be a non-negative integer or None")
+neuralops/inference/engine.py:77:            raise ValueError("repetition_penalty must be finite and positive")
+neuralops/inference/engine.py:134:        raise ValueError("stream_generate currently supports exactly one sequence")
+neuralops/inference/engine.py:136:        raise ValueError("max_new_tokens must be a non-negative integer")
+neuralops/inference/engine.py:160:        raise ValueError("K must be a positive integer")
+neuralops/inference/engine.py:162:        raise ValueError("max_new_tokens must be a non-negative integer")
+neuralops/inference/engine.py:249:            raise ValueError("max_batch_size and max_seq_len must be positive integers")
+neuralops/inference/engine.py:276:            raise TypeError("add_request expects (request_id, input_ids), a request tuple, or GenerationRequest")
+neuralops/inference/engine.py:278:            raise ValueError("request_id must be a non-empty string")
+neuralops/inference/engine.py:280:            raise TypeError("input_ids must be a torch.Tensor")
+neuralops/inference/engine.py:282:            raise ValueError("input_ids must have shape [1, sequence_length] with a non-empty sequence")
+neuralops/inference/engine.py:284:            raise ValueError("input_ids must use an integer dtype")
+neuralops/inference/engine.py:286:            raise ValueError("max_new_tokens must be a positive integer")
+neuralops/inference/engine.py:288:            raise ValueError("prompt plus max_new_tokens exceeds max_seq_len")
+neuralops/inference/engine.py:290:            raise ValueError(f"request_id {req.request_id!r} is already queued")
+neuralops/inference/engine.py:298:            raise RuntimeError("ContinuousBatcher requires a model before step()")
+neuralops/inference/paged_cache.py:85:                raise ValueError(f"{name} must be a positive integer, got {value!r}.")
+neuralops/inference/paged_cache.py:118:            raise ValueError(f"Sequence {seq_id} already exists.")
+neuralops/inference/paged_cache.py:125:            raise KeyError(f"Sequence {seq_id} not registered.")
+neuralops/inference/paged_cache.py:138:            raise KeyError(f"Parent sequence {parent_seq_id} not registered.")
+neuralops/inference/paged_cache.py:140:            raise ValueError(f"Child sequence {child_seq_id} already exists.")
+neuralops/inference/paged_cache.py:156:            raise KeyError(f"Sequence {seq_id} not registered.")
+neuralops/inference/paged_cache.py:158:            raise ValueError(f"Block {block_idx} is not mapped by sequence {seq_id}.")
+neuralops/inference/paged_cache.py:161:            raise RuntimeError(f"Block {block_idx} has no live references.")
+neuralops/inference/paged_cache.py:166:            raise RuntimeError("PagedKVCache: Out of free physical blocks during Copy-on-Write.")
+neuralops/inference/paged_cache.py:189:                raise RuntimeError(f"Mapped blocks have no live reference counts: {missing_refs}.")
+neuralops/inference/paged_cache.py:207:            raise ValueError(
+neuralops/inference/paged_cache.py:212:            raise RuntimeError("Out of KV cache blocks.")
+neuralops/inference/paged_cache.py:221:                raise RuntimeError("Out of KV cache blocks.")
+neuralops/inference/paged_cache.py:247:            raise ValueError(
+neuralops/inference/paged_cache.py:256:            raise KeyError(f"Sequence {seq_id} not found.")
+neuralops/inference/paged_cache.py:295:            raise KeyError(f"Sequence {seq_id} not found.")
+neuralops/inference/pipeline_parallel.py:157:            raise NotImplementedError(
+neuralops/inference/pipeline_parallel.py:223:                raise RuntimeError(f"Failed to load model from model_id '{model_id}': {e}") from e
+neuralops/inference/pipeline_parallel.py:227:            raise TypeError(f"model_id must be a string or nn.Module, got {type(model_id)}")
+neuralops/inference/pipeline_parallel.py:313:            raise RuntimeError("Model has not been loaded. Call load_model() first.")
+neuralops/inference/speculative_decoding.py:80:            raise ValueError("max_draft_k must be a positive integer")
+neuralops/inference/speculative_decoding.py:82:            raise ValueError("min_draft_k must be a positive integer")
+neuralops/inference/speculative_decoding.py:84:            raise ValueError("min_draft_k cannot exceed max_draft_k")
+neuralops/inference/speculative_decoding.py:86:            raise TypeError(f"target_model must be an instance of nn.Module, got {type(target_model)}")
+neuralops/inference/speculative_decoding.py:89:                raise TypeError(f"draft_model must be an instance of nn.Module, got {type(draft_model)}")
+neuralops/inference/speculative_decoding.py:95:                raise ValueError(
+neuralops/inference/speculative_decoding.py:149:            raise ValueError("SelfSpeculativeDecoder currently requires input_ids shaped [1, non-empty sequence]")
+neuralops/inference/speculative_decoding.py:151:            raise ValueError("max_new_tokens must be a non-negative integer")
+neuralops/inference/speculative_decoding.py:153:            raise ValueError("temperature must be finite and non-negative")
+neuralops/inference/speculative_decoding.py:155:            raise ValueError("top_k must be a non-negative integer")
+neuralops/inference/speculative_decoding.py:157:            raise ValueError("top_p must be in (0, 1]")
+neuralops/inference/speculative_decoding.py:282:            raise ValueError("Draft counts must be non-negative")
+neuralops/inference/speculative_decoding.py:294:            raise ValueError("baseline_tokens_per_sec must be positive")
+neuralops/evaluation/eval_perplexity.py:189:            raise e
+neuralops/evaluation/eval_perplexity.py:266:            raise ValueError(f"Module '{module_name}' not found in ATTENTION_REGISTRY or COMPRESSOR_REGISTRY")
+neuralops/evaluation/eval_data.py:232:            raise RuntimeError(f"Genuine dataset '{ds}' failed to load ({e})")
+neuralops/evaluation/eval_pipeline.py:83:        raise ValueError("max_batch_cap must be >= min_batch_floor >= 1")
+neuralops/evaluation/eval_pipeline.py:177:        raise ValueError(f"Language-model evaluation is not supported for model family '{model_family}'.")
+neuralops/evaluation/eval_pipeline.py:582:        raise RuntimeError(f"Validation failed for dataset '{dataset}': {eval_e}") from eval_e
+neuralops/evaluation/eval_pipeline.py:589:        raise RuntimeError(f"Validation produced no language-model tokens for '{dataset}'.")
+neuralops/evaluation/eval_pipeline.py:603:                raise RuntimeError("Failed to compute STS-B Pearson correlation.") from metric_error
+neuralops/evaluation/eval_pipeline.py:608:                raise RuntimeError("Failed to compute STS-B Spearman correlation.") from metric_error
+neuralops/evaluation/eval_pipeline.py:618:                raise RuntimeError(f"Failed to compute F1 for dataset '{dataset}'.") from metric_error
+neuralops/evaluation/eval_pipeline.py:621:        raise RuntimeError(f"Validation produced no labeled examples for '{dataset}'.")
+neuralops/evaluation/ppl.py:156:            raise ValueError(f"Tokens length ({total_tokens}) must be >= block_size + 1 ({self.block_size + 1})")
+neuralops/evaluation/standalone/eval_speculative_decoding.py:25:        raise RuntimeError("This speculative decoding benchmark requires CUDA.")
+neuralops/evaluation/standalone/eval_cot_jitter_128steps.py:26:        raise RuntimeError("This token-latency experiment requires a CUDA-capable device.")
+neuralops/evaluation/standalone/eval_arithmetic_continuation_256steps.py:26:        raise RuntimeError("This arithmetic continuation stress experiment requires CUDA.")
+neuralops/evaluation/standalone/eval_continuous_500token_stress.py:25:        raise RuntimeError("This long-context stress experiment requires a CUDA-capable device.")
+neuralops/evaluation/standalone/eval_ultra_long_context_scaling.py:97:            raise RuntimeError("This ultra-long-context experiment requires CUDA.")
+neuralops/evaluation/standalone/eval_ultra_long_context_scaling.py:249:    raise SystemExit(main())
+neuralops/evaluation/standalone/eval_reasoning_and_cot_scaling.py:26:        raise RuntimeError("This reasoning and scaling experiment requires CUDA.")
+neuralops/evaluation/standalone/eval_speculative_sweep_k1_k8.py:26:        raise RuntimeError("This speculative decoding sweep requires CUDA.")
+neuralops/evaluation/standalone/eval_concurrent_offloading_jitter.py:27:        raise RuntimeError("This GPU contention experiment requires a CUDA-capable device.")
+neuralops/evaluation/standalone/__main__.py:13:    raise SystemExit(main())
+neuralops/evaluation/standalone/eval_reasoning_long_context.py:26:        raise RuntimeError("This long-context experiment requires a CUDA-capable device.")
+neuralops/evaluation/__init__.py:79:        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+neuralops/evaluation/eval_patcher.py:163:        raise ValueError(f"Unsupported model family: {model_family}")
+neuralops/evaluation/eval_patcher.py:325:            raise ValueError(f"No valid attention class in '{module_name}'")
+neuralops/evaluation/eval_patcher.py:415:        raise RuntimeError(f"Compressor '{module_name}' not in COMPRESSOR_REGISTRY")
+neuralops/evaluation/eval_patcher.py:417:        raise RuntimeError(f"Compressor '{module_name}' is not callable")
+neuralops/evaluation/eval_patcher.py:495:            raise RuntimeError(f"Could not instantiate compressor '{module_name}' with any signature.")
+neuralops/evaluation/eval_all_models_datasets.py:88:        raise ValueError(f"Unknown track: {track}")
+neuralops/evaluation/full_mnli_validation.py:76:        raise RuntimeError("Unknown text columns in dataset")
+neuralops/tracking/callbacks.py:29:            raise ImportError(
+neuralops/tracking/tracker.py:134:                raise ValueError(f"Unknown backend '{name}'. Available: {list(self.BACKEND_MAP.keys())}")
+neuralops/tracking/tracker.py:247:            raise ImportError(
+neuralops/ops/cuda/gla_scan/gla_autograd.py:112:            raise RuntimeError("GLA Triton implementation is unavailable")
+neuralops/ops/cuda/hla_attention/hla_attention_autograd.py:116:            raise NotImplementedError("CUDA HLA currently supports head_dim <= 64")
+neuralops/ops/cuda/gla_chunk_attn/autograd.py:100:        raise NotImplementedError("GLA Chunk Attention backward requires remote CUDA execution.")
+neuralops/ops/cuda/hgrn2_spatial_scan/hgrn2_spatial_scan_autograd.py:55:        raise ValueError(f"hgrn2_spatial_scan expected 2 or 4 arguments, got {len(args)}")
+neuralops/ops/cuda/hgrn2_spatial_scan/hgrn2_spatial_scan_autograd.py:92:            raise ValueError(f"hgrn2_spatial_scan expected 2 or 4 arguments, got {len(call_args)}")
+neuralops/ops/cuda/fwsvd/__init__.py:31:        raise ValueError(f"fwsvd_compress requires a 2D weight matrix, got shape {W.shape}")
+neuralops/ops/cuda/__init__.py:225:    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+neuralops/ops/cuda/wanda/__init__.py:28:        raise ValueError(f"wanda_compress requires 2D weight matrix, got shape {W.shape}")
+neuralops/ops/cuda/based_taylor_attention/autograd.py:108:        raise NotImplementedError("Based Taylor Attention backward requires remote CUDA execution.")
+neuralops/ops/cuda/fwht_transform/fwht_transform_autograd.py:54:        raise ValueError(f"fwht_transform: B_dim={B_dim} must be a power of 2")
+neuralops/ops/cuda/asvd/__init__.py:29:        raise ValueError(f"asvd_compress requires a 2D weight matrix, got shape {W.shape}")
+neuralops/ops/cuda/gated_deltanet/autograd.py:102:        raise NotImplementedError("Gated DeltaNet backward requires remote CUDA execution.")
+neuralops/ops/cuda/lightning_attention/autograd.py:113:        raise NotImplementedError("Lightning Attention backward requires remote CUDA execution.")
+neuralops/ops/cuda/causal_conv1d/conv1d_autograd.py:61:        raise ValueError(f"weight must be 2D or 3D, got shape {weight.shape}")
+neuralops/ops/cuda/_fallback.py:85:        raise ValueError(f"Unknown backend: {backend}")
+neuralops/ops/cuda/_fallback.py:91:            raise IntegrationNotImplementedError(
+neuralops/ops/cuda/_fallback.py:187:                raise RuntimeError(
+neuralops/ops/cuda/_fallback.py:266:        raise RuntimeError(
+neuralops/ops/cuda/_fallback.py:301:                raise RuntimeError(
+neuralops/ops/cuda/_fallback.py:310:                raise RuntimeError("implementation returned None")
+neuralops/ops/cuda/_fallback.py:313:                raise RuntimeError(f"[{kernel_name}] Backend forced to 'cuda', but execution failed: {e}") from e
+neuralops/ops/cuda/_fallback.py:318:                raise RuntimeError(
+neuralops/ops/cuda/_fallback.py:327:                raise RuntimeError("implementation returned None")
+neuralops/ops/cuda/_fallback.py:330:                raise RuntimeError(f"[{kernel_name}] Backend forced to 'triton', but execution failed: {e}") from e
+neuralops/ops/cuda/_fallback.py:365:            raise RuntimeError(
+neuralops/ops/cuda/_fallback.py:374:            raise RuntimeError("implementation returned None")
+neuralops/ops/cuda/_fallback.py:377:            raise RuntimeError(f"[{kernel_name}] Backend forced to 'cuda', but execution failed: {e}") from e
+neuralops/ops/cuda/_fallback.py:382:            raise RuntimeError(
+neuralops/ops/cuda/_fallback.py:391:            raise RuntimeError("implementation returned None")
+neuralops/ops/cuda/_fallback.py:394:            raise RuntimeError(f"[{kernel_name}] Backend forced to 'triton', but execution failed: {e}") from e
+neuralops/ops/cuda/_fallback.py:497:            raise RuntimeError("[direct_svd] Backend forced to 'cuda', but no CUDA implementation is available.")
+neuralops/ops/cuda/_fallback.py:511:            raise RuntimeError("[direct_svd] Backend forced to 'triton', but Triton is not available.")
+neuralops/ops/cuda/_fallback.py:515:        raise RuntimeError("No PyTorch fallback supplied for kernel 'direct_svd'; " "CUDA and Triton both unavailable")
+neuralops/ops/cuda/_fallback.py:537:            raise RuntimeError("[asvd] Backend forced to 'cuda', but no CUDA implementation is available.")
+neuralops/ops/cuda/_fallback.py:551:            raise RuntimeError("[asvd] Backend forced to 'triton', but Triton is not available.")
+neuralops/ops/cuda/_fallback.py:555:        raise RuntimeError("No PyTorch fallback supplied for kernel 'asvd'; " "CUDA and Triton both unavailable")
+neuralops/ops/cuda/_fallback.py:577:            raise RuntimeError("[fwsvd] Backend forced to 'cuda', but no CUDA implementation is available.")
+neuralops/ops/cuda/_fallback.py:591:            raise RuntimeError("[fwsvd] Backend forced to 'triton', but Triton is not available.")
+neuralops/ops/cuda/_fallback.py:595:        raise RuntimeError("No PyTorch fallback supplied for kernel 'fwsvd'; " "CUDA and Triton both unavailable")
+neuralops/ops/cuda/_fallback.py:617:            raise RuntimeError("[hnc_svd] Backend forced to 'cuda', but no CUDA implementation is available.")
+neuralops/ops/cuda/_fallback.py:631:            raise RuntimeError("[hnc_svd] Backend forced to 'triton', but Triton is not available.")
+neuralops/ops/cuda/_fallback.py:635:        raise RuntimeError("No PyTorch fallback supplied for kernel 'hnc_svd'; " "CUDA and Triton both unavailable")
+neuralops/ops/cuda/_fallback.py:657:            raise RuntimeError("[awq] Backend forced to 'cuda', but no CUDA implementation is available.")
+neuralops/ops/cuda/_fallback.py:671:            raise RuntimeError("[awq] Backend forced to 'triton', but Triton is not available.")
+neuralops/ops/cuda/_fallback.py:675:        raise RuntimeError("No PyTorch fallback supplied for kernel 'awq'; " "CUDA and Triton both unavailable")
+neuralops/ops/cuda/_fallback.py:697:            raise RuntimeError("[fp8_compressor] Backend forced to 'cuda', but no CUDA implementation is available.")
+neuralops/ops/cuda/_fallback.py:711:            raise RuntimeError("[fp8_compressor] Backend forced to 'triton', but Triton is not available.")
+neuralops/ops/cuda/_fallback.py:715:        raise RuntimeError(
+neuralops/ops/cuda/_fallback.py:739:            raise RuntimeError("[kmeans_quantize] Backend forced to 'cuda', but no CUDA implementation is available.")
+neuralops/ops/cuda/_fallback.py:753:            raise RuntimeError("[kmeans_quantize] Backend forced to 'triton', but Triton is not available.")
+neuralops/ops/cuda/_fallback.py:757:        raise RuntimeError(
+neuralops/ops/cuda/_fallback.py:781:            raise RuntimeError("[wanda] Backend forced to 'cuda', but no CUDA implementation is available.")
+neuralops/ops/cuda/_fallback.py:795:            raise RuntimeError("[wanda] Backend forced to 'triton', but Triton is not available.")
+neuralops/ops/cuda/_fallback.py:799:        raise RuntimeError("No PyTorch fallback supplied for kernel 'wanda'; " "CUDA and Triton both unavailable")
+neuralops/ops/cuda/_fallback.py:821:            raise RuntimeError("[sparsegpt] Backend forced to 'cuda', but no CUDA implementation is available.")
+neuralops/ops/cuda/_fallback.py:835:            raise RuntimeError("[sparsegpt] Backend forced to 'triton', but Triton is not available.")
+neuralops/ops/cuda/_fallback.py:839:        raise RuntimeError("No PyTorch fallback supplied for kernel 'sparsegpt'; " "CUDA and Triton both unavailable")
+neuralops/ops/cuda/_fallback.py:861:            raise RuntimeError("[admm] Backend forced to 'cuda', but no CUDA implementation is available.")
+neuralops/ops/cuda/_fallback.py:875:            raise RuntimeError("[admm] Backend forced to 'triton', but Triton is not available.")
+neuralops/ops/cuda/_fallback.py:879:        raise RuntimeError("No PyTorch fallback supplied for kernel 'admm'; " "CUDA and Triton both unavailable")
+neuralops/ops/cuda/_fallback.py:901:            raise RuntimeError("[routing_attention] Backend forced to 'cuda', but no CUDA implementation is available.")
+neuralops/ops/cuda/_fallback.py:915:            raise RuntimeError("[routing_attention] Backend forced to 'triton', but Triton is not available.")
+neuralops/ops/cuda/_fallback.py:919:        raise RuntimeError(
+neuralops/ops/cuda/_fallback.py:943:            raise RuntimeError("[lsh_attention] Backend forced to 'cuda', but no CUDA implementation is available.")
+neuralops/ops/cuda/_fallback.py:957:            raise RuntimeError("[lsh_attention] Backend forced to 'triton', but Triton is not available.")
+neuralops/ops/cuda/_fallback.py:961:        raise RuntimeError(
+neuralops/ops/cuda/_fallback.py:985:            raise RuntimeError("[cross_attention] Backend forced to 'cuda', but no CUDA implementation is available.")
+neuralops/ops/cuda/_fallback.py:999:            raise RuntimeError("[cross_attention] Backend forced to 'triton', but Triton is not available.")
+neuralops/ops/cuda/_fallback.py:1003:        raise RuntimeError(
+neuralops/ops/cuda/_fallback.py:1027:            raise RuntimeError("[adaptive_sparse] Backend forced to 'cuda', but no CUDA implementation is available.")
+neuralops/ops/cuda/_fallback.py:1041:            raise RuntimeError("[adaptive_sparse] Backend forced to 'triton', but Triton is not available.")
+neuralops/ops/cuda/_fallback.py:1045:        raise RuntimeError(
+neuralops/ops/cuda/_fallback.py:1069:            raise RuntimeError("[dynamic_conv] Backend forced to 'cuda', but no CUDA implementation is available.")
+neuralops/ops/cuda/_fallback.py:1083:            raise RuntimeError("[dynamic_conv] Backend forced to 'triton', but Triton is not available.")
+neuralops/ops/cuda/_fallback.py:1087:        raise RuntimeError(
+neuralops/ops/cuda/_fallback.py:1111:            raise RuntimeError("[token_compressed] Backend forced to 'cuda', but no CUDA implementation is available.")
+neuralops/ops/cuda/_fallback.py:1127:            raise RuntimeError("[token_compressed] Backend forced to 'triton', but Triton is not available.")
+neuralops/ops/cuda/_fallback.py:1131:        raise RuntimeError(
+neuralops/ops/cuda/_fallback.py:1155:            raise RuntimeError("[chela_slay] Backend forced to 'cuda', but no CUDA implementation is available.")
+neuralops/ops/cuda/_fallback.py:1169:            raise RuntimeError("[chela_slay] Backend forced to 'triton', but Triton is not available.")
+neuralops/ops/cuda/_fallback.py:1173:        raise RuntimeError("No PyTorch fallback supplied for kernel 'chela_slay'; " "CUDA and Triton both unavailable")
+neuralops/ops/cuda/_fallback.py:1195:            raise RuntimeError("[rala] Backend forced to 'cuda', but no CUDA implementation is available.")
+neuralops/ops/cuda/_fallback.py:1209:            raise RuntimeError("[rala] Backend forced to 'triton', but Triton is not available.")
+neuralops/ops/cuda/_fallback.py:1213:        raise RuntimeError("No PyTorch fallback supplied for kernel 'rala'; " "CUDA and Triton both unavailable")
+neuralops/ops/cuda/rwkv6_state_scan/autograd.py:100:        raise NotImplementedError("RWKV-6 State Scan backward requires remote CUDA execution.")
+neuralops/ops/cuda/direct_svd/__init__.py:26:        raise ValueError(f"direct_svd_compress requires a 2D matrix, got shape {W.shape}")
+neuralops/ops/cuda/sparsegpt/__init__.py:28:        raise ValueError(f"sparsegpt_compress requires 2D weight matrix, got shape {W.shape}")
+neuralops/ops/cuda/hnc_svd/__init__.py:29:        raise ValueError(f"hnc_svd_compress requires a 2D weight matrix, got shape {W.shape}")
+neuralops/ops/cuda/retnet_chunk_retention/autograd.py:110:        raise NotImplementedError("RetNet Chunk Retention backward requires remote CUDA execution.")
+neuralops/ops/triton/_base.py:36:            raise ImportError(
+neuralops/ops/triton/_base.py:44:                raise ImportError(
+neuralops/ops/triton/low_rank.py:2747:        raise ValueError(f"Shape mismatch for V_r: expected {K}, got {v_r.shape}")
+neuralops/ops/triton/low_rank.py:2755:        raise ValueError(f"Shape mismatch for U_r: expected rank {R}, got {u_r.shape}")
+neuralops/ops/triton/low_rank.py:2982:        raise ValueError(f"Shape mismatch for V_r: expected {K}, got {v_r.shape}")
+neuralops/ops/triton/low_rank.py:2990:        raise ValueError(f"Shape mismatch for U_r: expected rank {R}, got {u_r.shape}")
+neuralops/ops/triton/low_rank.py:3652:        raise ValueError(f"direct_svd_compress requires a 2D weight matrix, got shape {W.shape}")
+neuralops/ops/triton/low_rank.py:3715:        raise ValueError(f"direct_svd_compress_pytorch requires a 2D weight matrix, got shape {W.shape}")
+neuralops/ops/triton/low_rank.py:3823:        raise ValueError(f"asvd_compress requires a 2D weight matrix, got shape {W.shape}")
+neuralops/ops/triton/low_rank.py:3897:        raise ValueError(f"asvd_compress_pytorch requires a 2D weight matrix, got shape {W.shape}")
+neuralops/ops/triton/low_rank.py:4020:        raise ValueError(f"fwsvd_compress requires a 2D weight matrix, got shape {W.shape}")
+neuralops/ops/triton/low_rank.py:4107:        raise ValueError(f"fwsvd_compress_pytorch requires a 2D weight matrix, got shape {W.shape}")
+neuralops/ops/triton/low_rank.py:4239:        raise ValueError(f"hnc_svd_compress requires a 2D weight matrix, got shape {W.shape}")
+neuralops/ops/triton/low_rank.py:4303:        raise ValueError(f"hnc_svd_compress_pytorch requires a 2D weight matrix, got shape {W.shape}")
+neuralops/ops/triton/standalone/__init__.py:236:    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+neuralops/ops/triton/standalone/rpca_sparse_gemm.py:158:        raise ValueError(f"Shape mismatch for V_r: expected K={K}, got {v_r.shape}")
+neuralops/ops/triton/standalone/rpca_sparse_gemm.py:167:        raise ValueError(f"Shape mismatch for U_r: expected R={R}, got {u_r.shape}")
+neuralops/ops/triton/standalone/hybrid_local_kernel_triton.py:271:        raise RuntimeError("Triton is not available or tensor not on CUDA")
+neuralops/ops/triton/standalone/hybrid_local_kernel_triton.py:322:        raise RuntimeError("Triton is not available or tensor not on CUDA")
+neuralops/ops/triton/standalone/hybrid_local_kernel_triton.py:380:        raise RuntimeError("Triton is not available or tensor not on CUDA")
+neuralops/ops/triton/standalone/hybrid_local_kernel_triton.py:412:        raise RuntimeError("Triton is not available or tensor not on CUDA")
+neuralops/ops/triton/standalone/fused_lowrank_gemm.py:237:        raise ValueError(f"Shape mismatch for V_r: expected dimension {K}, got {v_r.shape}")
+neuralops/ops/triton/standalone/fused_lowrank_gemm.py:246:        raise ValueError(f"Shape mismatch for U_r: expected rank {R}, got {u_r.shape}")
+neuralops/ops/triton/fms_scan.py:473:        raise ValueError(f"FMS Triton head_dim {D} > {MAX_REGISTER_DIM}")
+neuralops/ops/triton/fms_scan.py:481:        raise ValueError(f"decay shape {decay.shape} does not match H={H}")
+neuralops/ops/triton/_common.py:658:            raise ValueError("triton_kernel cannot be None when calling triton_dispatch")
+neuralops/ops/triton/_common.py:660:            raise ValueError(
+neuralops/ops/triton/_common.py:699:    raise ValueError(f"Unknown triton kernel: '{kernel_name}'")
+neuralops/ops/triton/elementwise.py:88:        raise ValueError(f"fused_swiglu: shape mismatch x={tuple(x.shape)} gate={tuple(gate.shape)}")
+neuralops/ops/triton/elementwise.py:1180:        raise ValueError(f"scores must be at least 2D, got shape {scores.shape}")
+neuralops/ops/triton/__init__.py:497:        raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+neuralops/ops/triton/__init__.py:507:            raise ImportError(
+neuralops/ops/triton/__init__.py:519:            raise ImportError(
+neuralops/ops/triton/__init__.py:534:        raise ImportError(
+neuralops/ops/triton/__init__.py:538:    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+neuralops/ops/triton/gdn_scan.py:869:        raise ValueError(f"head_dim {D} > {MAX_REGISTER_DIM}")
+neuralops/ops/triton/gla_scan.py:829:        raise ValueError(f"GLA Triton head_dim {D} > {MAX_REGISTER_DIM}")
+neuralops/ops/triton/op_registry.py:101:                raise ValueError("num_heads must be divisible by num_kv_heads")
+neuralops/ops/triton/op_registry.py:103:                raise ValueError("GQA key and value tensors must have matching batch/sequence/head axes")
+neuralops/ops/triton/op_registry.py:105:                raise ValueError("KV tensor head dimension does not match num_kv_heads")
+neuralops/ops/triton/paged_linear_attn.py:111:        raise ValueError(f"block_tables must be 2D of shape [batch_size, max_num_blocks], got {block_tables.shape}")
+neuralops/ops/triton/paged_linear_attn.py:113:        raise ValueError(f"block_size must be positive, got {block_size}")
+neuralops/ops/triton/paged_linear_attn.py:115:        raise ValueError(f"seq_len cannot be negative, got {seq_len}")
+neuralops/ops/triton/paged_linear_attn.py:117:        raise ValueError(f"num_blocks must be positive, got {num_blocks}")
+neuralops/ops/triton/paged_linear_attn.py:121:        raise ValueError(
+neuralops/ops/triton/paged_linear_attn.py:125:        raise ValueError("block_tables contains negative block IDs")
+neuralops/ops/triton/paged_linear_attn.py:127:        raise ValueError(f"block_tables contains out-of-bounds block IDs >= total physical blocks ({num_blocks})")
+neuralops/ops/triton/paged_linear_attn.py:446:        raise TypeError(f"paged_linear_attention_pytorch expects dtype in {supported_dtypes}, got {q.dtype}")
+neuralops/ops/triton/paged_linear_attn.py:511:        raise TypeError(
+neuralops/ops/triton/paged_linear_attn.py:593:        raise TypeError(f"paged_linear_attention expects dtype in {supported_dtypes}, got {q.dtype}")
+neuralops/ops/triton/paged_linear_attn.py:619:        raise ValueError("Both v_cache and block_tables must be provided when k_cache is a raw tensor.")
+neuralops/ops/triton/paged_linear_attn.py:727:        raise TypeError(f"paged_linear_attention_decode_step expects dtype in {supported_dtypes}, got {q.dtype}")
+neuralops/ops/triton/svd_mamba_fused_triton.py:158:        raise ValueError(f"Unsupported d_state={d_state}. Must be one of 8, 16, 32, 64.")
+neuralops/ops/__init__.py:46:    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+neuralops/ops/pytorch/__init__.py:95:            raise ImportError(f"Could not load PyTorch reference '{name}' from '{module_path}': {exc}") from exc
+neuralops/ops/pytorch/__init__.py:96:    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+neuralops/runners/unified_orchestrator.py:50:        raise FileNotFoundError(f"Trainer script does not exist: {TRAINER_SCRIPT}")
+neuralops/runners/run_sweep.py:30:        raise FileNotFoundError(f"Sweep registry not found at {REGISTRY_PATH}")
+neuralops/runners/run_master_pipeline.py:35:            raise FileNotFoundError(
+neuralops/runners/run_master_pipeline.py:58:            raise FileNotFoundError(
+neuralops/runners/run_master_pipeline.py:86:            raise FileNotFoundError(
+neuralops/export/runtime_compat.py:234:                            raise ValueError(f"Invalid GGUF magic bytes: {magic!r}")
+neuralops/export/serving.py:56:            raise RuntimeError("vLLM is not installed. Please install neuralops[serving] or run: pip install vllm")
+neuralops/export/serving.py:59:            raise ValueError("backend_cls.get_name() must return the requested registry name")
+neuralops/export/serving.py:64:            raise RuntimeError(
+neuralops/export/serving.py:68:            raise TypeError("backend_cls must subclass vLLM's AttentionBackend")
+neuralops/export/serving.py:107:            raise ValueError("query must have shape [batch, heads, head_dim] or [batch, 1, heads, head_dim]")
+neuralops/export/serving.py:109:            raise ValueError("block_size must be a positive integer")
+neuralops/export/serving.py:125:        raise NotImplementedError(
+neuralops/export/serving.py:143:            raise ValueError("max_batch_size must be a positive integer")
+neuralops/export/serving.py:160:                raise ValueError(f"{name} must be a positive integer")
+neuralops/export/serving.py:214:        raise ValueError(f"Unsupported serving backend {target_backend!r}. Choose one of: {supported}.")
+neuralops/export/serving.py:218:            raise ValueError(f"{name} must be a positive integer, got {value!r}.")
+neuralops/export/serving.py:220:        raise NotImplementedError(
+neuralops/export/unified.py:58:        raise IntegrationNotImplementedError(
+neuralops/export/unified.py:70:            raise IntegrationNotImplementedError(
+neuralops/export/unified.py:89:            raise ValueError("ONNX export requires 'sample_input' tensor.")
+neuralops/export/unified.py:115:        raise IntegrationNotImplementedError(
+neuralops/export/safetensors_exporter.py:45:            raise RuntimeError(
+neuralops/export/exporter.py:50:        raise NotImplementedError(
+neuralops/export/exporter.py:58:        raise ValueError(f"Unsupported export format {format!r}. Choose from: {choices}.")
+neuralops/export/exporter.py:247:                        raise RuntimeError(
+neuralops/export/exporter.py:258:            raise RuntimeError(
+neuralops/export/exporter.py:268:            raise RuntimeError(
+neuralops/export/exporter.py:279:                raise RuntimeError(f"ONNX export verification failed for {onnx_file}: {verif_err}") from verif_err
+neuralops/export/exporter.py:358:        raise ValueError(f"Unsupported export format {format!r}. Choose from: {choices}.")
+neuralops/export/exporter.py:378:        raise FileNotFoundError(f"Missing neuralops_config.json in {export_dir}")
+neuralops/export/exporter.py:392:                raise ValueError(
+neuralops/export/exporter.py:404:                raise RuntimeError(f"Could not load AutoModel for base '{base_name}': {e}") from e
+neuralops/export/exporter.py:407:        raise ValueError(
+neuralops/export/exporter.py:423:            raise RuntimeError(f"Failed to replay surgery manifest from {surgery_manifest_file}: {e}") from e
+neuralops/export/exporter.py:467:                        raise ValueError(f"Unallowed kwargs {unexpected} in surgery replace configuration.")
+neuralops/export/exporter.py:472:                        raise ValueError(f"Unallowed kwargs {unexpected} in surgery compress configuration.")
+neuralops/export/exporter.py:495:            raise RuntimeError(f"Failed to load weights from {safetensors_path}: {err}") from err
+neuralops/export/exporter.py:501:            raise RuntimeError(f"Failed to load weights from {bin_path}: {err}") from err
+neuralops/export/exporter.py:503:        raise FileNotFoundError(
+neuralops/export/exporter.py:532:            raise RuntimeError(msg)
+neuralops/export/exporter.py:582:            raise ValueError(f"No Tensor found in output tuple of type {type(out)}")
+neuralops/export/exporter.py:589:            raise ValueError(f"No Tensor found in output dict: {list(out.keys())}")
+neuralops/export/exporter.py:592:        raise TypeError(f"Unsupported output type for AOT export: {type(out)}")
+neuralops/export/exporter.py:621:            raise FileNotFoundError(f"AOTInductor artifact not found at {self.artifact_path}")
+neuralops/export/exporter.py:649:        raise RuntimeError(f"No runner or fallback module available for {self.artifact_path}")
+neuralops/export/__init__.py:46:        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+neuralops/export/gguf_exporter.py:91:        raise ValueError(f"Tensor element count ({n}) must be a multiple of 32 for Q8_0 quantization.")
+neuralops/export/gguf_exporter.py:230:            raise ValueError(f"Unsupported GGUFValueType: {val_type}")
+neuralops/export/hf_compat.py:78:            raise ValueError("Input tensor required")
+neuralops/export/hf_compat.py:190:                raise FileNotFoundError("No weights file found in exported directory")
+neuralops/main.py:149:        raise RuntimeError(f"Data loading failed: {e}") from e
+neuralops/main.py:345:        raise RuntimeError(f"Failed to load checkpoint from {model_path}: {e}") from e
+neuralops/main.py:386:            raise ValueError(
+neuralops/data/glue_loader.py:40:        raise ValueError(f"Unsupported GLUE task: {task}")
+neuralops/data/glue_loader.py:50:        raise RuntimeError(f"GLUE task '{key}' is not cached at {task_path} and could not be downloaded") from exc
+neuralops/data/benchmark_datasets/synthetic.py:20:        raise ValueError("num_samples must be non-negative")
+neuralops/data/benchmark_datasets/loaders.py:46:        raise KeyError(f"Unknown benchmark dataset: {dataset_name}")
+neuralops/data/benchmark_datasets/loaders.py:51:        raise RuntimeError("remote dataset loading is disabled; pass use_synthetic=True")
+neuralops/data/__init__.py:68:    raise KeyError(f"Split '{split}' not found in GLUE task '{task_name}'. Available splits: {list(ds.keys())}")
+neuralops/data/__init__.py:138:        raise KeyError(
+neuralops/data/multidataset.py:73:            raise TypeError("Streaming fallback dataset has no defined length.")
+neuralops/data/multidataset.py:164:            raise ValueError("dataset_names must contain at least one valid dataset specification.")
+neuralops/data/multidataset.py:193:                raise ValueError(f"Number of weights ({len(raw_weights)}) must match number of datasets ({num_ds}).")
+neuralops/data/multidataset.py:197:                raise ValueError(f"Number of weights ({len(raw_weights)}) must match number of datasets ({num_ds}).")
+neuralops/data/multidataset.py:201:            raise ValueError("Dataset sampling weights must sum to a strictly positive value.")
+neuralops/data/synthetic_generator.py:24:        raise ValueError("num_samples must be non-negative; seq_len and vocab_size must be positive")
+neuralops/data/synthetic_generator.py:46:            raise ValueError("num_classes must be positive")
+neuralops/data/multi_choice.py:53:            raise ValueError("data must provide question, choices, and label columns")
+neuralops/data/multi_choice.py:91:    raise TypeError("choices must be a list, tuple, mapping, or JSON string")
+neuralops/data/streaming.py:40:            raise ValueError("seq_len must be positive")
+neuralops/data/streaming.py:42:            raise ValueError("dp_rank must be within [0, dp_world_size)")
+neuralops/data/streaming.py:90:            raise ValueError("chunk_counter cannot be negative")
+neuralops/hub/uploader.py:98:                raise exc
+neuralops/hub/uploader.py:121:    raise RuntimeError("Unreachable: retry loop exited without return or exception")
+neuralops/hub/uploader.py:150:        raise ValueError("HF_TOKEN environment variable is strictly required for uploading to Hugging Face Hub.")
+neuralops/hub/__init__.py:49:    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+neuralops/hub/surgery_loader.py:126:    raise ValueError(
+neuralops/hub/surgery_loader.py:193:    raise TypeError(f"Failed to instantiate attention '{attn_key}': {last_err}")
+neuralops/hub/surgery_loader.py:223:        raise KeyError(f"Attention key '{attn_key}' not found in ATTENTION_REGISTRY.")
+neuralops/hub/surgery_loader.py:306:        raise FileNotFoundError(f"Missing {filename} in local checkpoint directory {repo_id}")
+neuralops/hub/surgery_loader.py:602:    raise RuntimeError(f"Could not load tokenizer/processor from '{repo_id}' or base '{base_model_id}'.")
+neuralops/hub/surgery_loader.py:671:        raise FileNotFoundError(
+neuralops/hub/model_card.py:258:        raise ValueError(
+neuralops/trainer/metrics.py:61:        raise ValueError(f"Shape mismatch: y_true shape {t_arr.shape} does not match y_pred shape {p_arr.shape}")
+neuralops/trainer/hyperopt.py:42:            raise ImportError("optuna is required. pip install optuna")
+neuralops/trainer/hyperopt.py:104:            raise ValueError("Run optimization first")
+neuralops/trainer/hyperopt.py:106:            raise ImportError("pandas is required for get_trial_dataframe. Please install pandas.")
+neuralops/trainer/hyperopt.py:112:            raise ValueError("Run optimization first")
+neuralops/trainer/hyperopt.py:118:            raise ValueError("Run optimization first")
+neuralops/trainer/hyperopt.py:127:            raise ValueError("Run optimization first")
+neuralops/trainer/hyperopt.py:136:            raise ValueError("Run optimization first")
+neuralops/trainer/methods/gelora.py:30:        raise ValueError(f"Expected 2D or 3D tensor, got {hidden_states.dim()}D")
+neuralops/trainer/methods/gelora.py:66:    raise ValueError("Cannot find encoder layers")
+neuralops/trainer/neuralops_trainer.py:48:                raise ValueError("peft_method must be one of: lora, pissa, dora")
+neuralops/trainer/registry.py:34:                raise TypeError(f"{klass.__name__} must inherit from BaseTrainer")
+neuralops/trainer/registry.py:45:            raise ValueError(f"Unknown trainer '{name}'. Available: {list(cls._registry.keys())}")
+neuralops/trainer/base_trainer.py:68:        raise RuntimeError("Cannot train without a configured train_dataset.")
+neuralops/trainer/base_trainer.py:74:        raise RuntimeError("Cannot evaluate without a configured eval_dataset and trainer.")
+neuralops/trainer/distillation/multi_level_kd.py:163:            raise ValueError(f"Unknown distillation mode '{self.mode}'")
+neuralops/trainer/distillation/multi_level_kd.py:659:            raise TypeError(f"Unsupported batch type: {type(inputs).__name__}")
+neuralops/trainer/distillation/multi_level_kd.py:842:        raise ValueError("Both 'student' and 'teacher' models must be provided to distill()")
+neuralops/trainer/distillation/multi_level_kd.py:847:        raise ValueError("train_loader (or dataset) must be provided to distill()")
+neuralops/trainer/distillation/multi_level_kd.py:969:    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+neuralops/trainer/regimes/fisher_micro.py:137:            raise ValueError(f"Invalid learning rate: {lr}")
+neuralops/trainer/regimes/fisher_micro.py:139:            raise ValueError(f"Invalid damping parameter: {damping}")
+neuralops/trainer/optimizers/lion.py:42:            raise ValueError(f"Invalid learning rate: {lr}")
+neuralops/trainer/optimizers/lion.py:44:            raise ValueError(f"Invalid beta parameter at index 0: {betas[0]}")
+neuralops/trainer/optimizers/lion.py:46:            raise ValueError(f"Invalid beta parameter at index 1: {betas[1]}")
+neuralops/trainer/optimizers/lion.py:48:            raise ValueError(f"Invalid weight_decay value: {weight_decay}")
+neuralops/trainer/optimizers/lion.py:71:                    raise RuntimeError("Lion does not support sparse gradients")
+neuralops/trainer/optimizers/anyprecision.py:55:            raise ValueError(f"Invalid learning rate: {lr}")
+neuralops/trainer/optimizers/anyprecision.py:57:            raise ValueError(f"Invalid epsilon value: {eps}")
+neuralops/trainer/optimizers/anyprecision.py:59:            raise ValueError(f"Invalid beta parameter at index 0: {betas[0]}")
+neuralops/trainer/optimizers/anyprecision.py:61:            raise ValueError(f"Invalid beta parameter at index 1: {betas[1]}")
+neuralops/trainer/optimizers/anyprecision.py:63:            raise ValueError(f"Invalid weight_decay value: {weight_decay}")
+neuralops/trainer/optimizers/anyprecision.py:98:                    raise RuntimeError("AnyPrecisionAdamW does not support sparse gradients")
+neuralops/trainer/optimizers/muon.py:75:                raise ValueError(f"Muon only supports 2-D matrix parameters, got param shape {p.shape}")
+neuralops/trainer/optimizers/muon.py:97:                    raise RuntimeError("Muon does not support sparse gradients")
+neuralops/trainer/optimizers/muon.py:127:                raise ValueError("Each param_group must specify 'optimizer': 'muon' or 'adamw'")
+neuralops/trainer/optimizers/muon.py:240:        raise TypeError(f"Expected nn.Module or Iterable, got {type(model_or_params)}")
+neuralops/trainer/optimizers/muon.py:244:        raise ValueError("No trainable parameters provided")
+neuralops/trainer/optimizers/riemannian.py:49:            raise ValueError(f"Invalid learning rate: {lr}")
+neuralops/trainer/optimizers/riemannian.py:51:            raise ValueError(f"Invalid Stiefel learning rate: {lr_stiefel}")
+neuralops/trainer/optimizers/riemannian.py:53:            raise ValueError(f"Invalid epsilon value: {eps}")
+neuralops/trainer/optimizers/riemannian.py:55:            raise ValueError(f"Invalid beta parameter at index 0: {betas[0]}")
+neuralops/trainer/optimizers/riemannian.py:57:            raise ValueError(f"Invalid beta parameter at index 1: {betas[1]}")
+neuralops/trainer/optimizers/riemannian.py:59:            raise ValueError(f"Invalid weight_decay value: {weight_decay}")
+neuralops/trainer/layer_distill.py:40:            raise ValueError(f"Unsupported attention distillation loss: {loss_type}")
+neuralops/trainer/layer_distill.py:60:            raise ValueError("Student and teacher outputs must contain the same non-zero number of layers.")
+neuralops/trainer/layer_distill.py:69:                raise ValueError(
+neuralops/trainer/train_lra.py:104:                raise ImportError("ListOpsDataset not installed")
+neuralops/trainer/train_lra.py:109:                raise ImportError("IMDbByteDataset not installed")
+neuralops/trainer/smart_gpu_trainer.py:140:            raise StopIteration
+neuralops/trainer/smart_gpu_trainer.py:411:                        raise e
+neuralops/trainer/losses.py:232:        raise KeyError(f"Loss function '{name}' not found in LOSS_REGISTRY. Available: {list(LOSS_REGISTRY.keys())}")
+neuralops/trainer/schedulers.py:407:        raise KeyError(
+neuralops/trainer/schedulers.py:436:        raise ValueError(f"Optimizer must be specified to construct '{sched_name_str}' scheduler.")
+neuralops/validation/gates/empirical/perplexity.py:48:        raise ValueError("Dataset provided has no tokens or input_ids.")
+neuralops/validation/gates/empirical/perplexity.py:84:        raise ValueError("Zero evaluation tokens processed.")
+neuralops/validation/gates/empirical/accuracy.py:44:        raise ValueError("Dataset produced zero evaluatable targets.")
+neuralops/validation/runner.py:76:                raise RuntimeValidationError(
+neuralops/validation/numerical_guardrails.py:54:        raise ValueError(f"check_condition_number expects at least 2D tensor, got ndim={x.ndim}")
+neuralops/validation/memory_validator.py:90:            raise MemoryError(f"VRAM usage > {threshold * 100:.1f}%")
+neuralops/validation/static.py:48:        raise StaticValidationError("Recipe is missing apiVersion header", E_W4_INCOMPATIBLE_VERSION)
+neuralops/validation/static.py:50:        raise StaticValidationError("Recipe is missing metadata.name", E_W2_MISSING_REQUIRED_FIELD)
+neuralops/validation/static.py:52:        raise StaticValidationError("Recipe is missing model specification", E_W5_MISSING_TARGET_MODEL)
+neuralops/validation/static.py:56:        raise StaticValidationError(
+neuralops/validation/static.py:63:        raise StaticValidationError(
+neuralops/validation/static.py:70:        raise StaticValidationError(
+neuralops/validation/static.py:79:            raise StaticValidationError(
+neuralops/validation/static.py:97:            raise StaticValidationError(
+neuralops/validation/static.py:108:                raise StaticValidationError(
+neuralops/validation/static.py:119:                    raise StaticValidationError(
+neuralops/validation/static.py:128:            raise StaticValidationError(
+neuralops/validation/static.py:140:            raise StaticValidationError(
+neuralops/validation/profiles.py:102:            raise ValueError("Dataset produced zero evaluatable targets.")
+neuralops/validation/base.py:97:        raise NotImplementedError

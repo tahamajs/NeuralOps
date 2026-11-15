@@ -18,6 +18,7 @@ from typing import Any
 
 import torch
 import torch.nn as nn
+from neuralops.core.exceptions import NeuralOpsError
 
 
 @dataclass
@@ -34,7 +35,7 @@ class QwenConfigProxy:
         return getattr(self.source, name)
 
 
-class QwenIncompatibleError(RuntimeError):
+class QwenIncompatibleError(NeuralOpsError, RuntimeError):
     """Raised when a module has no truthful Qwen execution path."""
 
     reason = "qwen_incompatible"

@@ -1,0 +1,25 @@
+neuralops/analysis/roofline.py:98:    target_device = torch.device(device if device is not None else "cuda:0")
+neuralops/analysis/roofline.py:294:        target_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+neuralops/config/benchmark_schema.py:27:        default="cuda:0",
+neuralops/config/benchmark_schema.py:28:        description="Target compute device string ('cuda:0', 'cpu', 'mps')",
+neuralops/runtime/config.py:25:        device: Target execution device ("auto", "cuda", "cpu", "mps", or explicit e.g. "cuda:0").
+neuralops/cli/core/common.py:25:    parser.add_argument("--device", type=str, default=None, help="Target device (cpu, cuda, cuda:0, mps, auto)")
+neuralops/cli/core/devices.py:52:        requested: Requested device string (e.g. 'cuda', 'cuda:0', 'mps', 'cpu', 'auto').
+neuralops/cli/core/devices.py:68:            req = "cuda:0"
+neuralops/cli/core/devices.py:75:        req = "cuda:0"
+neuralops/cli/bench_cmd.py:462:        help="Execution device (e.g. cpu, cuda, cuda:0)",
+neuralops/cli/bench_cmd.py:641:    run_parser.add_argument("--device", type=str, default=None, help="Compute device override (e.g. cuda:0 or cpu)")
+neuralops/api.py:860:        device: Target execution device (e.g. 'cpu', 'cuda', 'cuda:0', torch.device).
+neuralops/compression/svd/hnc_svd_continuation.py:462:        self.device = torch.device(device or ("cuda:0" if torch.cuda.is_available() else "cpu"))
+neuralops/evaluation/metrics.py:307:        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+neuralops/evaluation/standalone/eval_speculative_decoding.py:31:    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+neuralops/evaluation/standalone/eval_cot_jitter_128steps.py:32:    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+neuralops/evaluation/standalone/eval_arithmetic_continuation_256steps.py:32:    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+neuralops/evaluation/standalone/eval_continuous_500token_stress.py:31:    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+neuralops/evaluation/standalone/eval_ultra_long_context_scaling.py:88:    device_name: str = "cuda:0",
+neuralops/evaluation/standalone/eval_ultra_long_context_scaling.py:216:    parser.add_argument("--device", type=str, default="cuda:0", help="Target device (cuda:0, cuda, cpu)")
+neuralops/evaluation/standalone/eval_reasoning_and_cot_scaling.py:32:    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+neuralops/evaluation/standalone/eval_speculative_sweep_k1_k8.py:32:    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+neuralops/evaluation/standalone/master_comprehensive_evaluation.py:254:    parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu")
+neuralops/evaluation/standalone/eval_concurrent_offloading_jitter.py:33:    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+neuralops/evaluation/standalone/eval_reasoning_long_context.py:32:    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

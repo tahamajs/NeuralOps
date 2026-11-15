@@ -1,0 +1,56 @@
+{
+  "scanner": "Wave 5 Subagent W5-18 Security Audit Suite",
+  "version": "2.4.0",
+  "timestamp": "2026-11-15T11:21:00Z",
+  "audit_scope": "neuralops/",
+  "critical_violations": 0,
+  "overall_verdict": "PASS",
+  "categories": {
+    "cuda_amp_violations": {
+      "count": 0,
+      "severity": "CRITICAL",
+      "status": "PASS",
+      "details": "Zero deprecated torch.cuda.amp usages. All trainer and utility code migrated to torch.amp per Rule 2.1; legacy shim annotated with # allowed."
+    },
+    "weights_only_violations": {
+      "count": 0,
+      "severity": "CRITICAL",
+      "status": "PASS",
+      "details": "Zero unannotated weights_only=False deserialization calls. Remediated neuralops/surgery/model_surgery.py to strictly enforce weights_only=True."
+    },
+    "secret_leaks": {
+      "count": 0,
+      "severity": "CRITICAL",
+      "status": "PASS",
+      "details": "Zero exposed HuggingFace tokens, OpenAI keys, GitHub tokens, or cloud credentials across neuralops/, tests/, and docs/."
+    },
+    "silent_swallow_violations": {
+      "count": 0,
+      "severity": "HIGH",
+      "status": "PASS",
+      "details": "Zero naked silent exception swallows (except: pass or except Exception: pass without # allowed-swallow:)."
+    },
+    "hardcoded_device_violations": {
+      "count": 25,
+      "severity": "MEDIUM",
+      "status": "NON_BLOCKING_FINDING",
+      "details": "25 occurrences of cuda:0 detected, primarily in CLI documentation, arg defaults, and standalone evaluation scripts in neuralops/evaluation/standalone/. Remediated neuralops/validation/gates/empirical/vram.py; logged remaining standalone scripts to issues/wave6_hotfix_backlog.md."
+    },
+    "unsafe_deserialization": {
+      "count": 13,
+      "severity": "LOW",
+      "status": "PASS",
+      "details": "All 13 torch.load call sites verified. Every active checkpoint loader (surgical_io.py, lora.py, teacher_cache.py, etc.) strictly enforces weights_only=True."
+    },
+    "dynamic_execution_ast": {
+      "builtin_eval": 0,
+      "builtin_exec": 0,
+      "status": "PASS",
+      "details": "AST walk across 1822 Python files verified zero built-in eval() or exec() invocations in library source code."
+    },
+    "dependency_vulnerabilities": {
+      "status": "DOCUMENTED",
+      "details": "pip-audit not installed in local Python environment. Local packages pinned; CI security workflow recommended."
+    }
+  }
+}

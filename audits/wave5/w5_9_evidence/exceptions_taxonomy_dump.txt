@@ -1,0 +1,4 @@
+Total Raises: 1567
+Standard Argument Validations: 839
+Domain Exceptions: 329
+Violations (Naked Exception/RuntimeError): 393

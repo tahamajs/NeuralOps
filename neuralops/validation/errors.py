@@ -12,6 +12,7 @@ Validation error definitions and error codes for NRL v1.0.0.
 from __future__ import annotations
 
 from typing import List, Optional
+from neuralops.core.exceptions import NeuralOpsError
 
 # W1-W15 Error Codes
 E_W1_INVALID_SYNTAX = "E_W1_INVALID_SYNTAX"
@@ -36,7 +37,7 @@ E_GATE_ERROR = "E_GATE_ERROR"
 E_GATE_WARNING = "E_GATE_WARNING"
 
 
-class ValidationError(Exception):
+class ValidationError(NeuralOpsError):
     """Base exception for all recipe and transformation validation errors."""
 
     def __init__(

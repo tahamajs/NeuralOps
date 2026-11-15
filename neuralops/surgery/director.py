@@ -43,6 +43,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from neuralops.core.exceptions import InvariantViolationError, SurgeryTransactionError
 
 from neuralops.surgery.topology_router import BiDirectionalScanWrapper, extract_binary_token_mask
 
@@ -1890,7 +1891,7 @@ class UniversalSurgeryDirector:
         }
 
         if violations and strict:
-            raise RuntimeError(f"Universal Surgery Certification failed: {'; '.join(violations)}")
+            raise InvariantViolationError(f"Universal Surgery Certification failed: {'; '.join(violations)}")
 
         return report
 
