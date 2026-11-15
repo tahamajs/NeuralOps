@@ -1,0 +1,146 @@
+{
+  "inventory_version": "1.0",
+  "audit_agent": "W5-5",
+  "generated_at": "2026-11-15T11:06:00Z",
+  "offline_mode": true,
+  "transformers_offline": "1",
+  "hf_datasets_offline": "1",
+  "zoos": [
+    {
+      "zoo_id": 1,
+      "zoo_name": "bert_attention",
+      "architecture": "BertForSequenceClassification",
+      "synthetic_config": {
+        "vocab_size": 1000,
+        "hidden_size": 128,
+        "num_hidden_layers": 2,
+        "num_attention_heads": 4,
+        "intermediate_size": 256
+      },
+      "operation": "replace_attention",
+      "target_mechanism": "cosformer",
+      "verification_test": "test_zoo1_bert_attention_cosformer_replacement",
+      "input_shape": [2, 32],
+      "output_shape": [2, 2],
+      "finite_values": true,
+      "status": "PASSED"
+    },
+    {
+      "zoo_id": 2,
+      "zoo_name": "bert_compressor",
+      "architecture": "BertForSequenceClassification",
+      "synthetic_config": {
+        "vocab_size": 1000,
+        "hidden_size": 128,
+        "num_hidden_layers": 2,
+        "num_attention_heads": 4,
+        "intermediate_size": 256
+      },
+      "operation": "compress",
+      "method": "direct_svd",
+      "compression_params": {
+        "ratio": 0.5
+      },
+      "verification_test": "test_zoo2_bert_compressor_svd",
+      "input_shape": [2, 32],
+      "output_shape": [2, 2],
+      "finite_values": true,
+      "status": "PASSED"
+    },
+    {
+      "zoo_id": 3,
+      "zoo_name": "qwen_attention",
+      "architecture": "LlamaForCausalLM (Qwen-like GQA)",
+      "synthetic_config": {
+        "vocab_size": 1000,
+        "hidden_size": 128,
+        "num_hidden_layers": 2,
+        "num_attention_heads": 4,
+        "num_key_value_heads": 2,
+        "intermediate_size": 256
+      },
+      "operation": "replace_attention",
+      "target_mechanism": "gla",
+      "verification_test": "test_zoo3_qwen_attention_gla_replacement",
+      "input_shape": [2, 32],
+      "output_shape": [2, 32, 1000],
+      "finite_values": true,
+      "status": "PASSED"
+    },
+    {
+      "zoo_id": 4,
+      "zoo_name": "qwen_compressor",
+      "architecture": "LlamaForCausalLM (Qwen-like GQA)",
+      "synthetic_config": {
+        "vocab_size": 1000,
+        "hidden_size": 128,
+        "num_hidden_layers": 2,
+        "num_attention_heads": 4,
+        "num_key_value_heads": 2,
+        "intermediate_size": 256
+      },
+      "operation": "compress",
+      "method": "kmeans",
+      "compression_params": {
+        "bits": 4
+      },
+      "verification_test": "test_zoo4_qwen_compressor_kmeans",
+      "input_shape": [2, 32],
+      "output_shape": [2, 32, 1000],
+      "finite_values": true,
+      "status": "PASSED"
+    },
+    {
+      "zoo_id": 5,
+      "zoo_name": "tinyllama",
+      "architecture": "LlamaForCausalLM (Autoregressive KV Cache)",
+      "synthetic_config": {
+        "vocab_size": 1000,
+        "hidden_size": 64,
+        "num_hidden_layers": 1,
+        "num_attention_heads": 2,
+        "num_key_value_heads": 1,
+        "intermediate_size": 128
+      },
+      "operation": "autoregressive_generation_with_cache",
+      "generation_steps": 3,
+      "verification_test": "test_zoo5_tinyllama_autoregressive_generation",
+      "input_shape": [1, 4],
+      "output_shape": [1, 1, 1000],
+      "cache_valid": true,
+      "finite_values": true,
+      "status": "PASSED"
+    },
+    {
+      "zoo_id": 6,
+      "zoo_name": "llava_vlm",
+      "architecture": "SyntheticMultimodalModel (Vision Encoder + Projection + Language Head)",
+      "synthetic_config": {
+        "vision_dim": 64,
+        "lang_dim": 128,
+        "vocab_size": 1000,
+        "num_patches": 16,
+        "seq_len": 8
+      },
+      "operation": "compress / projection surgery",
+      "method": "direct_svd",
+      "compression_params": {
+        "ratio": 0.5
+      },
+      "verification_test": "test_zoo6_llava_vlm_multimodal_projection_surgery",
+      "input_shapes": {
+        "pixel_values": [2, 16, 64],
+        "text_hidden": [2, 8, 128]
+      },
+      "output_shape": [2, 8, 1000],
+      "finite_values": true,
+      "status": "PASSED"
+    }
+  ],
+  "summary": {
+    "total_zoos": 6,
+    "passed": 6,
+    "failed": 0,
+    "all_finite": true
+  }
+}
