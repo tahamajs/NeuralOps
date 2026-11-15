@@ -194,6 +194,7 @@ def test_zoo5_tinyllama_autoregressive_generation():
 
     input_ids = torch.randint(0, 1000, (1, 4))
     past_key_values = None
+    next_token = input_ids
 
     for step in range(3):
         with torch.no_grad():
