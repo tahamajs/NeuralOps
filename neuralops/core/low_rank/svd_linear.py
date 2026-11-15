@@ -111,7 +111,12 @@ class SVDLinear(nn.Module):
     def reset_parameters(self) -> None:
         for param in (self.U, self.V):
             orig_dtype = param.data.dtype
-            if orig_dtype in (torch.float16, torch.bfloat16):
+            orig_device = param.data.device
+            if orig_device.type == "mps":
+                cpu_data = param.data.cpu().float()
+                nn.init.orthogonal_(cpu_data)
+                param.data.copy_(cpu_data.to(device=orig_device, dtype=orig_dtype))
+            elif orig_dtype in (torch.float16, torch.bfloat16):
                 param.data = param.data.float()
                 nn.init.orthogonal_(param)
                 param.data = param.data.to(orig_dtype)

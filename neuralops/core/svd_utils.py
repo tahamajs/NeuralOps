@@ -16,6 +16,14 @@ from __future__ import annotations
 import torch
 
 
+def _safe_qr(x: torch.Tensor, mode: str = "reduced") -> tuple[torch.Tensor, torch.Tensor]:
+    """Perform QR factorization with safe CPU fallback for devices lacking aten::linalg_qr (e.g. Apple Silicon MPS)."""
+    if x.device.type == "mps":
+        q, r = torch.linalg.qr(x.cpu(), mode=mode)
+        return q.to(x.device), r.to(x.device)
+    return torch.linalg.qr(x, mode=mode)
+
+
 def randomized_svd(W: torch.Tensor, rank: int, n_iter: int = 4) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     r"""
     Compute fast randomized Singular Value Decomposition (SVD) for 2D matrices.
@@ -53,12 +61,12 @@ def randomized_svd(W: torch.Tensor, rank: int, n_iter: int = 4) -> tuple[torch.T
     Y = W @ omega
 
     for _ in range(n_iter):
-        Q, _ = torch.linalg.qr(Y)
+        Q, _ = _safe_qr(Y)
         Z = W.T @ Q
-        Q_z, _ = torch.linalg.qr(Z)
+        Q_z, _ = _safe_qr(Z)
         Y = W @ Q_z
 
-    Q, _ = torch.linalg.qr(Y)
+    Q, _ = _safe_qr(Y)
     B = Q.T @ W
     U_b, S, Vh = torch.linalg.svd(B, full_matrices=False)
     U = Q @ U_b
