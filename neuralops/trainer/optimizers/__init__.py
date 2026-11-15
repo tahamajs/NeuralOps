@@ -63,4 +63,4 @@ __all__ = [
     "create_lars",
 ]
 
-from neuralops.trainer.optimizers import factory, muon, riemannian, stiefel
+from neuralops.trainer.optimizers import anyprecision, factory, lion, muon, riemannian, stiefel

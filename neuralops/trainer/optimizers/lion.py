@@ -67,6 +67,8 @@ class Lion(Optimizer):
                 if p.grad is None:
                     continue
                 grad = p.grad
+                if grad.is_sparse:
+                    raise RuntimeError("Lion does not support sparse gradients")
                 state = self.state[p]
 
                 if len(state) == 0:
