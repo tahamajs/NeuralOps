@@ -1,0 +1,2 @@
+Query run_id=test-index-001: found 1 records
+  - test-index-001 | index_test | SUCCESS

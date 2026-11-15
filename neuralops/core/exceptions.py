@@ -36,6 +36,10 @@ class ConfigError(NeuralOpsError, ValueError):
     """Raised when a configuration is invalid or incomplete."""
 
 
+class ConfigValidationError(ConfigError):
+    """Raised when benchmark config validation fails."""
+
+
 class BackendError(NeuralOpsError):
     """Raised when no backend can execute the requested operation."""
 
@@ -116,6 +120,14 @@ class InferenceError(NeuralOpsError):
     """Raised when autoregressive inference fails."""
 
 
+class LedgerError(NeuralOpsError):
+    """Base exception for benchmark results ledger operations."""
+
+
+class ChecksumMismatchError(LedgerError):
+    """Raised when record checksum fails validation."""
+
+
 def torch_install_error(feature: str, cause: ImportError | None = None) -> ImportError:
     """Build an actionable error for features that require PyTorch."""
     message = (
@@ -145,6 +157,7 @@ __all__ = [
     "AttentionNotRegisteredError",
     "CompressorNotRegisteredError",
     "ConfigError",
+    "ConfigValidationError",
     "BackendError",
     "KernelNotAvailableError",
     "KernelDispatchError",
@@ -165,6 +178,8 @@ __all__ = [
     "LinearDecompositionError",
     "SingularValueDecompositionError",
     "InferenceError",
+    "LedgerError",
+    "ChecksumMismatchError",
     "torch_install_error",
     "_torch_install_error",
 ]

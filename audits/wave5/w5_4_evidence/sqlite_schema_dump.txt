@@ -1,0 +1,18 @@
+TABLE: records
+CREATE TABLE records (
+                        run_id TEXT NOT NULL,
+                        timestamp TEXT NOT NULL,
+                        git_commit TEXT NOT NULL,
+                        git_dirty INTEGER NOT NULL,
+                        suite TEXT NOT NULL,
+                        module TEXT NOT NULL,
+                        model TEXT NOT NULL,
+                        dataset TEXT NOT NULL,
+                        device TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        metrics TEXT NOT NULL,
+                        config TEXT NOT NULL,
+                        telemetry TEXT NOT NULL,
+                        checksum TEXT PRIMARY KEY
+                    )
+

@@ -1,0 +1,18 @@
+{
+  "run_id": "test-ledger-001",
+  "timestamp": "2026-11-15T11:44:50Z",
+  "git_commit": "deadbeef",
+  "git_dirty": false,
+  "suite": "ledger_test",
+  "module": "test_module",
+  "model": "synthetic",
+  "dataset": "none",
+  "device": "cpu",
+  "status": "SUCCESS",
+  "metrics": {
+    "latency_ms": 5.5
+  },
+  "config": {},
+  "telemetry": {},
+  "checksum": "e263c876d06d2d2468f29bcbb8d8f024b9e55c068e83a86571d4f4b3cf348e71"
+}
