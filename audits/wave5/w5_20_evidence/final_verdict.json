@@ -1,0 +1,23 @@
+{
+  "target_version": "2.4.0",
+  "verdict": "READY TO TAG v2.4.0",
+  "evaluated_at": "2026-11-15T11:40:00Z",
+  "git_commit": "b67e84f1e0cc8dd70000d5ac0bc71a853d2ac13a",
+  "gate_script_exit_code": 0,
+  "prior_reports_verified": 19,
+  "prior_reports_missing": 0,
+  "release_invariants": {
+    "version_2_4_0": "PASS",
+    "critical_docs_present": "PASS",
+    "wheel_and_sdist_present": "PASS"
+  },
+  "scores": {
+    "unit_tests_pass_rate": "100%",
+    "contract_tests_pass_rate": "100%",
+    "ruff_lint_errors": 0,
+    "security_critical_vulnerabilities": 0,
+    "security_high_vulnerabilities": 0,
+    "secret_leaks": 0
+  },
+  "tag_authorization": "APPROVED FOR HUMAN COORDINATOR TAGGING"
+}
