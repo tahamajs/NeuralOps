@@ -263,6 +263,10 @@ class CRCompressor(BaseCompressor):
         if not (is_linear or is_conv1d or is_lora):
             return False
 
+        target_mod = getattr(module, "base_layer", getattr(module, "linear", module))
+        if not hasattr(target_mod, "weight") or target_mod.weight is None:
+            return False
+
         if isinstance(module, CRLinear) or (has_base and isinstance(module.base_layer, CRLinear)):
             return False
 
