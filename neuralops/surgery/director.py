@@ -181,9 +181,8 @@ class UniversalSurgeryDirector:
                         continue
 
                     # Check if target is cross-attention in encoder-decoder
-                    is_cross = (
-                        self.profile.is_encoder_decoder
-                        and ("cross" in spec.attr_name.lower() or "encoder_decoder" in spec.attr_name.lower())
+                    is_cross = self.profile.is_encoder_decoder and (
+                        "cross" in spec.attr_name.lower() or "encoder_decoder" in spec.attr_name.lower()
                     )
 
                     if is_cross:

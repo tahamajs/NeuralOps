@@ -1,28 +1,14 @@
-#!/usr/bin/env python3
-# Copyright (c) 2024-2026, Taha Majlesi
-#
-# This source code is licensed under the MIT license found in the
-# LICENSE file in the root directory of this source tree.
-# For a list of all contributors, visit:
-#   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Linear Attention Bridges Module.
-
-Provides:
-- InvariantPreservingLinearBridge: Invariant compliance for Laws 1, 2, 3, 7, and 9
-- CrossAttentionLinearBridge: Law 4 static cross-attention associative caching
-"""
-
 from __future__ import annotations
 
 import logging
 import math
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from neuralops.surgery.topology_router import BiDirectionalScanWrapper, extract_binary_token_mask
 from neuralops.surgery.director_modules.invariants import (
     sanitize_kv_for_padding_mask,
     sanitize_output_for_padding_mask,
@@ -60,180 +46,233 @@ class InvariantPreservingLinearBridge(nn.Module):
         self.num_attention_sinks = num_attention_sinks
         self.eps = eps
 
-        if self.has_qk_norm:
+        # Law 1: QK-Norm Modules
+        if has_qk_norm:
             self.q_norm = nn.RMSNorm(head_dim, eps=eps)
             self.k_norm = nn.RMSNorm(head_dim, eps=eps)
         else:
             self.q_norm = None
             self.k_norm = None
 
-        self.folded_scale = self.compute_folded_scale()
-
-        # Telemetry & verification attributes
-        self.last_accum_dtype: Optional[torch.dtype] = None
-        self.recurrent_state_dtype: Optional[torch.dtype] = None
-        self.cached_recurrent_state: Optional[torch.Tensor] = None
-        self.cached_normalizer_state: Optional[torch.Tensor] = None
+        # Law 9: Intermediate Accumulation Dtype Tracking
+        self.recurrent_state_dtype: torch.dtype = torch.float32
+        self.last_accum_dtype: torch.dtype = torch.float32
 
     def compute_folded_scale(self) -> float:
         """
-        Law 2: Folds logit soft-capping threshold c into the linear attention temperature:
+        Law 2: Folds logit soft-capping factor c into linear attention temperature scaling:
         tau_folded = (1 / sqrt(d_k)) * tanh(c / max(c, 1.0)).
+        Folds Gemma-2 soft-capping asymptote C into a bounded temperature scale,
+        preventing logit saturation and overflow during long-context generation.
         """
-        base_scale = 1.0 / math.sqrt(max(self.head_dim, 1))
+        base_scale = 1.0 / math.sqrt(self.head_dim)
         if self.softcapping_factor is not None and self.softcapping_factor > 0:
             c = float(self.softcapping_factor)
-            folding_ratio = math.tanh(c / max(c, 1.0))
-            return base_scale * folding_ratio
+            factor = math.tanh(c / max(c, 1.0))
+            return base_scale * factor
         return base_scale
 
     def fold_softcapping_feature_map(self, x: torch.Tensor) -> torch.Tensor:
-        """Applies mathematical feature mapping with folded temperature scaling."""
-        if self.folded_scale != 1.0:
-            x = x * self.folded_scale
+        """
+        Law 2: Bounded soft-capping feature map folding asymptote C:
+        phi_cap(x) = C * tanh(x / C) + C, where 0.0 <= phi_cap(x) <= 2C.
+        Guarantees non-negative activations, non-saturating gradients,
+        and absolute immunity to FP16 overflow during long-context generation.
+        """
+        if self.softcapping_factor is not None and self.softcapping_factor > 0:
+            c = float(self.softcapping_factor)
+            return c * torch.tanh(x / c) + c
         return F.elu(x) + 1.0
 
     def apply_qk_norm(
         self,
         q: torch.Tensor,
         k: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
-        """Law 1: Normalizes Q and K projections along head_dim before feature mapping."""
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Law 1: Normalizes query and key activations with RMSNorm prior to linear feature mapping:
+        q_tilde = RMSNorm(Q), k_tilde = RMSNorm(K).
+        """
         if self.has_qk_norm and self.q_norm is not None and self.k_norm is not None:
-            q = self.q_norm(q)
-            k = self.k_norm(k)
+            return self.q_norm(q), self.k_norm(k)
         return q, k
 
     def forward(
         self,
-        hidden_states: torch.Tensor,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
         attention_mask: Optional[torch.Tensor] = None,
-        cu_seqlens: Optional[torch.Tensor] = None,
-        *args: Any,
+        is_causal: bool = True,
         **kwargs: Any,
     ) -> torch.Tensor:
         """
-        Executes invariant-safe forward pass with Law 9 FP32 accumulation
-        and Law 3 zero-bleed padding sanitization.
+        Executes invariant-safe forward pass.
+        Shapes:
+          q, k, v: [B, H, T, D] or [B, T, D]
+          attention_mask: [B, T], [B, 1, 1, T], or [B, 1, T, T]
         """
-        orig_dtype = hidden_states.dtype
-        if orig_dtype in (torch.float16, torch.bfloat16):
-            self.last_accum_dtype = torch.float32
-            self.recurrent_state_dtype = torch.float32
+        orig_dtype = q.dtype
 
-        if self.base_attention is not None:
-            # Delegate to underlying replaced attention module
-            out = self.base_attention(hidden_states, *args, attention_mask=attention_mask, **kwargs)
-            if isinstance(out, tuple):
-                out_tensor = out[0]
-                rest = out[1:]
-                out_tensor = sanitize_output_for_padding_mask(out_tensor, attention_mask, cu_seqlens)
-                return (out_tensor, *rest)  # type: ignore[return-value]
-            return sanitize_output_for_padding_mask(out, attention_mask, cu_seqlens)
-
-        # Standalone Reference Linear Attention with Invariants
-        b = hidden_states.shape[0]
-        t = hidden_states.shape[1]
-        d = self.head_dim
-
-        q = hidden_states.view(b, t, -1, d).transpose(1, 2)
-        k = hidden_states.view(b, t, -1, d).transpose(1, 2)
-        v = hidden_states.view(b, t, -1, d).transpose(1, 2)
-
-        # Law 1: QK-Norm
+        # Law 1: QK-Norm Preservation
         q, k = self.apply_qk_norm(q, k)
 
-        # Law 3: Zero-Bleed Masking
-        k, v = sanitize_kv_for_padding_mask(k, v, attention_mask, cu_seqlens)
+        # Law 2: Folded Temperature Scale
+        scale = self.compute_folded_scale()
+        q_scaled = q * scale
 
-        # Law 2: Temperature Folded Feature Map
-        q_phi = self.fold_softcapping_feature_map(q)
-        k_phi = self.fold_softcapping_feature_map(k)
+        # Law 3: Zero-Bleed Padding Mask Sanitization (Keys & Values)
+        k, v = sanitize_kv_for_padding_mask(k, v, attention_mask)
 
-        # Law 9: Strict FP32 Accumulation & Law 7: Decay
-        q_phi_f = q_phi.to(torch.float32)
-        k_phi_f = k_phi.to(torch.float32)
-        v_f = v.to(torch.float32)
+        # Law 9: FP32 Accumulation Registers for Reduced Precision & Half-Precision Inputs
+        q_acc = q_scaled.to(torch.float32)
+        k_acc = k.to(torch.float32)
+        v_acc = v.to(torch.float32)
+        self.last_accum_dtype = torch.float32
 
-        s_state = torch.zeros(b, q.shape[1], d, d, device=hidden_states.device, dtype=torch.float32)
-        z_state = torch.zeros(b, q.shape[1], d, device=hidden_states.device, dtype=torch.float32)
-        out_f = torch.zeros_like(v_f)
+        if self.base_attention is not None:
+            out = self.base_attention(
+                q_acc.to(orig_dtype),
+                k_acc.to(orig_dtype),
+                v_acc.to(orig_dtype),
+                attention_mask=attention_mask,
+                is_causal=is_causal,
+                **kwargs,
+            )
+            return sanitize_output_for_padding_mask(out, attention_mask)
 
-        gamma = self.decay
-        for step in range(t):
-            qt = q_phi_f[:, :, step, :]
-            kt = k_phi_f[:, :, step, :]
-            vt = v_f[:, :, step, :]
+        # Vectorized Fallback Linear Attention (Level 3) in FP32
+        if self.softcapping_factor is not None and self.softcapping_factor > 0:
+            q_phi = self.fold_softcapping_feature_map(q_acc)
+            k_phi = self.fold_softcapping_feature_map(k_acc)
+        else:
+            q_phi = F.elu(q_acc) + 1.0
+            k_phi = F.elu(k_acc) + 1.0
 
-            # Law 7: Exponential Decay State Recurrence
-            s_state = s_state * gamma + torch.einsum("bhd,bhe->bhde", kt, vt)
-            z_state = z_state * gamma + kt
+        if is_causal:
+            # Law 7: Exponential State Decay in Recurrence with Attention Sinks
+            gamma = float(self.decay)
+            T = q_acc.shape[-2]
+            t_idx = torch.arange(T, device=q.device)
+            diff = t_idx.unsqueeze(1) - t_idx.unsqueeze(0)  # [T, T], diff[t, i] = t - i
+            causal_mask = diff >= 0
 
-            num = torch.einsum("bhd,bhde->bhe", qt, s_state)
-            den = torch.einsum("bhd,bhd->bh", qt, z_state).unsqueeze(-1) + self.eps
-            out_f[:, :, step, :] = num / den
+            if gamma < 1.0:
+                decay_weights = torch.where(
+                    causal_mask,
+                    torch.pow(torch.tensor(gamma, device=q.device, dtype=torch.float32), diff.float()),
+                    torch.zeros(1, device=q.device, dtype=torch.float32),
+                )
+                if self.num_attention_sinks > 0:
+                    sink_mask = (t_idx.unsqueeze(0) < self.num_attention_sinks) & causal_mask
+                    decay_weights = torch.where(sink_mask, torch.ones_like(decay_weights), decay_weights)
+            else:
+                decay_weights = causal_mask.to(dtype=torch.float32)
 
-        out = out_f.transpose(1, 2).contiguous().view(b, t, -1)
-        out = out.to(dtype=orig_dtype)
-        return sanitize_output_for_padding_mask(out, attention_mask, cu_seqlens)
+            if q_acc.ndim == 4:
+                k_cum = torch.einsum("ti,bhid->bhtd", decay_weights, k_phi)
+                kv = torch.einsum("bhtd,bhte->bhtde", k_phi, v_acc)
+                kv_cum = torch.einsum("ti,bhide->bhtde", decay_weights, kv)
+                out = torch.einsum("bhtd,bhtde->bhte", q_phi, kv_cum)
+                denom = torch.einsum("bhtd,bhtd->bht", q_phi, k_cum).unsqueeze(-1) + self.eps
+                result = out / denom
+            else:
+                k_cum = torch.einsum("ti,bid->btd", decay_weights, k_phi)
+                kv = torch.einsum("btd,bte->btde", k_phi, v_acc)
+                kv_cum = torch.einsum("ti,bide->btde", decay_weights, kv)
+                out = torch.einsum("btd,btde->bte", q_phi, kv_cum)
+                denom = torch.einsum("btd,btd->bt", q_phi, k_cum).unsqueeze(-1) + self.eps
+                result = out / denom
+        else:
+            # Non-causal Bidirectional Associative Scan in FP32
+            if q_acc.ndim == 4:
+                kv = torch.einsum("bhtd,bhte->bhde", k_phi, v_acc)
+                out = torch.einsum("bhtd,bhde->bhte", q_phi, kv)
+                k_sum = k_phi.sum(dim=2)
+                denom = torch.einsum("bhtd,bhd->bht", q_phi, k_sum).unsqueeze(-1) + self.eps
+                result = out / denom
+            else:
+                kv = torch.einsum("btd,bte->bde", k_phi, v_acc)
+                out = torch.einsum("btd,bde->bte", q_phi, kv)
+                k_sum = k_phi.sum(dim=1)
+                denom = torch.einsum("btd,bd->bt", q_phi, k_sum).unsqueeze(-1) + self.eps
+                result = out / denom
+
+        # Cast back to original activation dtype
+        result = result.to(dtype=orig_dtype)
+
+        # Law 3: Zero-Bleed Padding Output Sanitization (||O_t||_infty == 0 on padding)
+        result = sanitize_output_for_padding_mask(result, attention_mask)
+        return result
 
     def forward_step(
         self,
-        q_t: torch.Tensor,
-        k_t: torch.Tensor,
-        v_t: torch.Tensor,
-        prev_s: Optional[torch.Tensor] = None,
-        prev_z: Optional[torch.Tensor] = None,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        state: Optional[torch.Tensor] = None,
+        z_state: Optional[torch.Tensor] = None,
+        step_idx: Optional[int] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
-        O(1) Autoregressive Step with Law 7 Decay & Law 9 FP32 Accumulation.
-        q_t, k_t, v_t: [B, H, 1, D] or [B, H, D].
+        Autoregressive single-step O(1) recurrence with exponential state decay gamma:
+        S_t = gamma * S_{t-1} + phi(K_t)^T * V_t
+        z_t = gamma * z_{t-1} + phi(K_t)^T
+        O_t = (phi(Q_t) @ S_t) / (phi(Q_t) @ z_t + eps)
+
+        If step_idx < num_attention_sinks, state accumulates as an attention sink without decay.
         """
-        orig_dtype = q_t.dtype
-        d = self.head_dim
+        orig_dtype = q.dtype
+        q, k = self.apply_qk_norm(q, k)
+        scale = self.compute_folded_scale()
+        q_scaled = q * scale
 
-        q, k = self.apply_qk_norm(q_t, k_t)
-        q_phi = self.fold_softcapping_feature_map(q).to(torch.float32)
-        k_phi = self.fold_softcapping_feature_map(k).to(torch.float32)
-        v_f = v_t.to(torch.float32)
+        # Law 9: FP32 Accumulation Registers
+        q_acc = q_scaled.to(torch.float32)
+        k_acc = k.to(torch.float32)
+        v_acc = v.to(torch.float32)
+        self.last_accum_dtype = torch.float32
 
-        if q_phi.ndim == 4:
-            q_phi = q_phi.squeeze(-2)
-            k_phi = k_phi.squeeze(-2)
-            v_f = v_f.squeeze(-2)
+        if self.softcapping_factor is not None and self.softcapping_factor > 0:
+            q_phi = self.fold_softcapping_feature_map(q_acc)
+            k_phi = self.fold_softcapping_feature_map(k_acc)
+        else:
+            q_phi = F.elu(q_acc) + 1.0
+            k_phi = F.elu(k_acc) + 1.0
 
-        b, h = q_phi.shape[0], q_phi.shape[1]
-        if prev_s is None:
-            prev_s = torch.zeros(b, h, d, d, device=q_t.device, dtype=torch.float32)
-        if prev_z is None:
-            prev_z = torch.zeros(b, h, d, device=q_t.device, dtype=torch.float32)
+        delta_s = torch.matmul(k_phi.transpose(-2, -1), v_acc)
+        delta_z = k_phi.sum(dim=-2, keepdim=True)
 
-        # Update recurrent associative states
-        s_next = prev_s * self.decay + torch.einsum("bhd,bhe->bhde", k_phi, v_f)
-        z_next = prev_z * self.decay + k_phi
+        gamma = self.decay
+        is_sink = step_idx is not None and step_idx < self.num_attention_sinks
+        effective_gamma = 1.0 if is_sink else gamma
 
-        num = torch.einsum("bhd,bhde->bhe", q_phi, s_next)
-        den = torch.einsum("bhd,bhd->bh", q_phi, z_next).unsqueeze(-1) + self.eps
-        out_t = (num / den).to(dtype=orig_dtype)
+        if state is None:
+            new_s = delta_s
+            new_z = delta_z
+        else:
+            new_s = effective_gamma * state + delta_s
+            new_z = effective_gamma * (z_state if z_state is not None else 0.0) + delta_z
 
-        self.cached_recurrent_state = s_next
-        self.cached_normalizer_state = z_next
-        return out_t, s_next, z_next
+        num = torch.matmul(q_phi, new_s)
+        denom = torch.matmul(q_phi, new_z.transpose(-2, -1)).clamp(min=self.eps)
+        out = (num / denom).to(dtype=orig_dtype)
+        return out, new_s, new_z
 
     def get_surgical_manifest(self) -> Dict[str, Any]:
-        """Law 10 Compliance: Returns surgical manifest metadata for this bridge."""
+        """Returns structured metadata manifest for invariant auditing."""
         return {
-            "bridge_class": self.__class__.__name__,
-            "head_dim": self.head_dim,
             "has_qk_norm": self.has_qk_norm,
             "softcapping_factor": self.softcapping_factor,
             "decay": self.decay,
-            "target_attention": "invariant_linear_bridge",
+            "num_attention_sinks": self.num_attention_sinks,
+            "head_dim": self.head_dim,
+            "attention_family": self.get_attention_family(),
         }
 
     def get_attention_family(self) -> str:
-        """Law 10 Compliance: Returns canonical attention family key."""
-        return "invariant_linear_bridge"
+        """Returns the canonical attention architecture family."""
+        return "linear_attention"
 
 
 class CrossAttentionLinearBridge(nn.Module):
@@ -389,3 +428,6 @@ class CrossAttentionLinearBridge(nn.Module):
     def get_attention_family(self, layer_idx: int = 0) -> str:
         """Law 10 Compliance: Returns canonical attention family key."""
         return "cross_linear_attention"
+
+
+__all__ = ["InvariantPreservingLinearBridge", "CrossAttentionLinearBridge"]
