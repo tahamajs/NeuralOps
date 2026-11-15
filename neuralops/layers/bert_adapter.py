@@ -12,6 +12,7 @@ Wraps any NeuralOps attention module into a drop-in replacement for
 Hugging Face transformers' BertSelfAttention, standardizing forward signature,
 mask handling, and return shape contracts while enforcing the Single-W_O contract.
 """
+
 from __future__ import annotations
 
 import logging
@@ -74,7 +75,9 @@ class BertAttentionAdapter(nn.Module):
                 # If it's a standard square projection matching embed_dim, bypass it
                 if mod.in_features == self.embed_dim and mod.out_features == self.embed_dim:
                     setattr(self.core, attr_name, nn.Identity())
-                    logger.debug("Single-W_O Contract: Bypassed %s with nn.Identity() in %s", attr_name, type(self.core).__name__)
+                    logger.debug(
+                        "Single-W_O Contract: Bypassed %s with nn.Identity() in %s", attr_name, type(self.core).__name__
+                    )
                     break
 
     def _inherit_weights(self, source_attn: nn.Module) -> None:
@@ -119,6 +122,7 @@ class BertAttentionAdapter(nn.Module):
                         logger.debug("Initialized retention gate bias %s to [2.0, 3.0]", gate_attr)
 
         except Exception as e:
+            # allowed-swallow: Weight inheritance is best-effort across arbitrary core attention modules
             logger.debug("Weight inheritance partial or skipped: %s", e)
 
     def forward(
@@ -180,7 +184,10 @@ class BertAttentionAdapter(nn.Module):
         # Validate context shape
         if context.shape[-1] != self.embed_dim:
             if not hasattr(self, "_dim_proj"):
-                self._dim_proj = nn.Linear(context.shape[-1], self.embed_dim, device=context.device, dtype=context.dtype)
+                dim_proj = nn.Linear(context.shape[-1], self.embed_dim, device=context.device, dtype=context.dtype)
+                self.add_module("_dim_proj", dim_proj)
+            if self._dim_proj.weight.device != context.device or self._dim_proj.weight.dtype != context.dtype:
+                self._dim_proj = self._dim_proj.to(device=context.device, dtype=context.dtype)
             context = self._dim_proj(context)
 
         return (context, attn_weights)
