@@ -96,7 +96,7 @@ def test_pipeline_generate_matches_single_gpu_tokens():
         ref_tokens = ref_model.generate(prompt_ids, max_new_tokens=10, do_sample=False)
 
     pipe = PipelineParallelInference(ctx, num_micro_batches=2)
-    pipe.load_model(MODEL_ID)
+    pipe.load_model(_make_synthetic_llama())
     pipe_tokens = pipe.generate(prompt_ids, max_new_tokens=10)
 
     assert torch.equal(ref_tokens.cpu(), pipe_tokens.cpu()), "Generated tokens do not match single-GPU generate"
@@ -107,7 +107,7 @@ def test_pipeline_throughput_batch_16_larger_than_single_gpu():
     """Verify micro-batch pipelining executes batch 16 and measures positive throughput."""
     ctx = DistributedContext()
     pipe = PipelineParallelInference(ctx, num_micro_batches=4)
-    pipe.load_model(MODEL_ID)
+    pipe.load_model(_make_synthetic_llama())
 
     batch_size = 16
     seq_len = 32
