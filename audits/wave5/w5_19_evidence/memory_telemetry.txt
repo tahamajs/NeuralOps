@@ -1,0 +1,10 @@
+NeuralOps v2.4.0 Memory Telemetry Audit
+Timestamp: 2026-11-15T11:18:19Z
+Git Commit: 0f1e6211f9c24c80595933d011033add8357660b
+Initial Memory State:
+  Device cpu: allocated=0.00MB, reserved=0.00MB, peak=0.00MB
+  Device mps: allocated=0.00MB, reserved=0.38MB, peak=0.38MB
+
+Post-Benchmark Memory State:
+  Device cpu: allocated=0.00MB, reserved=0.00MB, peak=0.00MB
+  Device mps: allocated=0.31MB, reserved=8.62MB, peak=8.62MB
