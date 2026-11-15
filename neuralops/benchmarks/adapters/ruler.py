@@ -31,6 +31,7 @@ from neuralops.benchmarks.core.model_loader import (
     load_model_and_tokenizer,
 )
 from neuralops.benchmarks.result import DatasetMetadata, ModelMetadata
+from neuralops.benchmarks.results.schema import BenchmarkResult, BenchmarkStatus
 
 LOG = logging.getLogger(__name__)
 
@@ -125,7 +126,15 @@ class RulerAdapter:
         needle = f" The special magic passcode is {secret_number}. Remember this passcode."
         haystack_filler = " The grass is green. The sky is blue. Numbers and facts surround us every day."
 
-        tokens_per_filler = max(len(self.tokenizer(haystack_filler).input_ids), 1) if self.tokenizer else 15
+        tok_out = self.tokenizer(haystack_filler) if self.tokenizer else None
+        if tok_out is not None:
+            tok_ids = getattr(tok_out, "input_ids", None)
+            if tok_ids is None and isinstance(tok_out, dict):
+                tok_ids = tok_out.get("input_ids")
+            tokens_per_filler = max(len(tok_ids), 1) if tok_ids is not None else 15
+        else:
+            tokens_per_filler = 15
+
         needed_fillers = max(self.context_length // tokens_per_filler, 20)
 
         insertion_index = int(needed_fillers * depth)
@@ -152,8 +161,21 @@ class RulerAdapter:
             depth = depths[i % len(depths)]
             prompt, expected, _ = self._generate_synthetic_niah(depth)
 
-            inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=self.context_length)
-            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            raw_inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=self.context_length)
+            if isinstance(raw_inputs, dict):
+                inputs = {
+                    k: (v.to(self.device) if hasattr(v, "to") else v)
+                    for k, v in raw_inputs.items()
+                    if k in ("input_ids", "attention_mask")
+                }
+            elif hasattr(raw_inputs, "items"):
+                inputs = {
+                    k: (v.to(self.device) if hasattr(v, "to") else v)
+                    for k, v in raw_inputs.items()
+                    if k in ("input_ids", "attention_mask")
+                }
+            else:
+                inputs = raw_inputs
 
             start_t = time.perf_counter()
             with torch.no_grad():
@@ -195,6 +217,55 @@ class RulerAdapter:
             },
             "peak_memory_mb": peak_mem,
         }
+
+    def execute(self) -> BenchmarkResult:
+        """Run RULER benchmark lifecycle and return canonical BenchmarkResult."""
+        import traceback
+        import uuid
+
+        run_id = str(uuid.uuid4())
+        try:
+            report = self.run()
+            eval_metrics = report.get("eval_metrics", {})
+            metrics = dict(eval_metrics)
+            if "latency" in report and isinstance(report["latency"], dict):
+                metrics.update(report["latency"])
+            if "peak_memory_mb" in report:
+                metrics["peak_memory_mb"] = float(report["peak_memory_mb"])
+
+            return BenchmarkResult(
+                run_id=run_id,
+                module={"name": self.module_name, "type": self.module_type},
+                model={"name": self.model_name},
+                dataset={"name": self.dataset_name},
+                status=str(BenchmarkStatus.SUCCESS.value),
+                metrics=metrics,
+                metadata={
+                    "benchmark_name": self.dataset_name,
+                    "device": str(self.device),
+                    "dtype": str(self.dtype),
+                    "seed": self.seed,
+                    "context_length": self.context_length,
+                },
+            )
+        except Exception as e:
+            return BenchmarkResult(
+                run_id=run_id,
+                module={"name": self.module_name, "type": self.module_type},
+                model={"name": self.model_name},
+                dataset={"name": self.dataset_name},
+                status=str(BenchmarkStatus.FAILED.value),
+                error=traceback.format_exc(),
+                metadata={
+                    "benchmark_name": self.dataset_name,
+                    "device": str(self.device),
+                    "dtype": str(self.dtype),
+                    "seed": self.seed,
+                    "context_length": self.context_length,
+                },
+            )
+        finally:
+            self.cleanup()
 
     def cleanup(self) -> None:
         """Clean up model and memory."""

@@ -84,6 +84,7 @@ class CUDAKernelAdapter(BaseBenchmarkAdapter):
         timeout_s: float = BaseBenchmarkAdapter.DEFAULT_TIMEOUT_S,
         warmup_steps: int = 5,
         measure_steps: int = 20,
+        **kwargs: Any,
     ) -> None:
         dev_str = str(device) if device is not None else ("cuda" if torch.cuda.is_available() else "cpu")
         dev_obj = _DeviceStr(dev_str)
@@ -96,9 +97,11 @@ class CUDAKernelAdapter(BaseBenchmarkAdapter):
             timeout_s=timeout_s,
             warmup_steps=warmup_steps,
             measure_steps=measure_steps,
+            **kwargs,
         )
         self.kernel_name = kernel_name
         self.device = dev_obj
+        self.extra_kwargs = kwargs
         self._cuda_fn: Optional[Callable[..., Any]] = None
         self._triton_fn: Optional[Callable[..., Any]] = None
         self._pytorch_ref_fn: Optional[Callable[..., Any]] = None

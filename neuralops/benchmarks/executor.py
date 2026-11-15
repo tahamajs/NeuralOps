@@ -28,11 +28,7 @@ from typing import Any, Optional
 # Python 3.14 standard library introduces the 'compression' package. Ensure the internal
 # package directory '.../neuralops' and '.../tests' are never on sys.path directly (only repo root),
 # so they do not shadow Python's standard library 'compression' needed by gzip / torch.profiler.
-sys.path = [
-    p
-    for p in sys.path
-    if not p.rstrip("/\\").endswith("neuralops") and not p.rstrip("/\\").endswith("tests")
-]
+sys.path = [p for p in sys.path if not p.rstrip("/\\").endswith("neuralops") and not p.rstrip("/\\").endswith("tests")]
 
 import torch
 
@@ -187,18 +183,14 @@ def _isolated_worker_fn(pipe: Any, adapter_kwargs: dict[str, Any]) -> None:
     # Ensure tests/ directory does not shadow standard library modules (e.g. Python 3.14 compression)
     import sys
 
-    sys.path = [
-        p
-        for p in sys.path
-        if not p.rstrip("/").endswith("tests") and not p.rstrip("/").endswith("neuralops")
-    ]
+    sys.path = [p for p in sys.path if not p.rstrip("/").endswith("tests") and not p.rstrip("/").endswith("neuralops")]
     try:
-        test_behavior = adapter_kwargs.pop(
-            "_test_behavior", os.environ.get("_NEURALOPS_BENCHMARK_TEST_BEHAVIOR")
-        )
-        if test_behavior == "crash":
+        test_behavior = adapter_kwargs.pop("_test_behavior", os.environ.get("_NEURALOPS_BENCHMARK_TEST_BEHAVIOR"))
+        if test_behavior in ("crash", "abort"):
             os._exit(134)
-        elif test_behavior == "sleep":
+        elif test_behavior in ("sigkill", "kill"):
+            os._exit(137)
+        elif test_behavior in ("sleep", "timeout"):
             time.sleep(15.0)
             pipe.send(("success", {"eval_metrics": {}}))
             return

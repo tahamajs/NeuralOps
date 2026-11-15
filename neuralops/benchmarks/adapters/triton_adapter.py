@@ -126,6 +126,7 @@ class TritonKernelAdapter(BaseBenchmarkAdapter):
         timeout_s: float = BaseBenchmarkAdapter.DEFAULT_TIMEOUT_S,
         warmup_steps: int = 5,
         measure_steps: int = 20,
+        **kwargs: Any,
     ) -> None:
         target_name = kernel_name or module_name or "elementwise"
         dev_str = str(device) if device is not None else ("cuda" if torch.cuda.is_available() else "cpu")
@@ -139,11 +140,13 @@ class TritonKernelAdapter(BaseBenchmarkAdapter):
             timeout_s=timeout_s,
             warmup_steps=warmup_steps,
             measure_steps=measure_steps,
+            **kwargs,
         )
         self.kernel_name = target_name
         self.module_name = target_name
         self.is_extension = is_extension
         self.device = dev_obj
+        self.extra_kwargs = kwargs
         self._module_path = (
             f"neuralops.ops.triton.{target_name}" if is_extension else f"neuralops.core.triton_kernels.{target_name}"
         )

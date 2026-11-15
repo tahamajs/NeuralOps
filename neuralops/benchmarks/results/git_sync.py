@@ -50,7 +50,7 @@ class GitCommitter:
                 check=True,
             )
             return res.stdout.strip() == "true"
-        except Exception:
+        except Exception:  # allowed-swallow: git probe failure fallback
             return False
 
     def is_detached_head(self) -> bool:
@@ -63,7 +63,7 @@ class GitCommitter:
                 text=True,
             )
             return res.returncode != 0
-        except Exception:
+        except Exception:  # allowed-swallow: git symbolic-ref failure fallback
             return False
 
     def build_commit_message(self, result: BenchmarkResult, completed_count: int, failed_count: int) -> str:

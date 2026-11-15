@@ -29,6 +29,7 @@ from neuralops.benchmarks.core.model_loader import (
     load_model_and_tokenizer,
 )
 from neuralops.benchmarks.result import DatasetMetadata, ModelMetadata
+from neuralops.benchmarks.results.schema import BenchmarkResult, BenchmarkStatus
 
 LOG = logging.getLogger(__name__)
 
@@ -186,11 +187,37 @@ class ZeroShotAdapter:
             return 0.0
 
         full_text = prompt + " " + choice
-        enc_full = self.tokenizer(full_text, return_tensors="pt").to(self.device)
-        enc_prompt = self.tokenizer(prompt, return_tensors="pt")
+        raw_full = self.tokenizer(full_text, return_tensors="pt")
+        raw_prompt = self.tokenizer(prompt, return_tensors="pt")
 
-        prompt_len = enc_prompt.input_ids.shape[1]
-        input_ids = enc_full.input_ids
+        def _to_dev(v: Any) -> Any:
+            return v.to(self.device) if hasattr(v, "to") else v
+
+        if isinstance(raw_full, dict):
+            # Filter extraneous token_type_ids to prevent model signature mismatch
+            enc_full = {k: _to_dev(v) for k, v in raw_full.items() if k in ("input_ids", "attention_mask")}
+            input_ids = raw_full["input_ids"]
+        elif hasattr(raw_full, "to"):
+            enc_full = raw_full.to(self.device)
+            if hasattr(enc_full, "pop"):
+                enc_full.pop("token_type_ids", None)
+            input_ids = getattr(enc_full, "input_ids", None)
+            if input_ids is None and isinstance(enc_full, dict):
+                input_ids = enc_full["input_ids"]
+        else:
+            enc_full = raw_full
+            input_ids = getattr(
+                enc_full, "input_ids", raw_full.get("input_ids") if isinstance(raw_full, dict) else None
+            )
+
+        if isinstance(raw_prompt, dict):
+            prompt_input_ids = raw_prompt["input_ids"]
+        else:
+            prompt_input_ids = getattr(raw_prompt, "input_ids", None)
+            if prompt_input_ids is None and isinstance(raw_prompt, dict):
+                prompt_input_ids = raw_prompt["input_ids"]
+
+        prompt_len = prompt_input_ids.shape[1] if prompt_input_ids is not None else 0
 
         with torch.no_grad():
             outputs = self.model(**enc_full)
@@ -243,6 +270,53 @@ class ZeroShotAdapter:
             },
             "peak_memory_mb": peak_mem,
         }
+
+    def execute(self) -> BenchmarkResult:
+        """Run zero-shot evaluation lifecycle and return canonical BenchmarkResult."""
+        import traceback
+        import uuid
+
+        run_id = str(uuid.uuid4())
+        try:
+            report = self.run()
+            eval_metrics = report.get("eval_metrics", {})
+            metrics = dict(eval_metrics)
+            if "latency" in report and isinstance(report["latency"], dict):
+                metrics.update(report["latency"])
+            if "peak_memory_mb" in report:
+                metrics["peak_memory_mb"] = float(report["peak_memory_mb"])
+
+            return BenchmarkResult(
+                run_id=run_id,
+                module={"name": self.module_name, "type": self.module_type},
+                model={"name": self.model_name},
+                dataset={"name": self.dataset_name},
+                status=str(BenchmarkStatus.SUCCESS.value),
+                metrics=metrics,
+                metadata={
+                    "benchmark_name": self.dataset_name,
+                    "device": str(self.device),
+                    "dtype": str(self.dtype),
+                    "seed": self.seed,
+                },
+            )
+        except Exception as e:
+            return BenchmarkResult(
+                run_id=run_id,
+                module={"name": self.module_name, "type": self.module_type},
+                model={"name": self.model_name},
+                dataset={"name": self.dataset_name},
+                status=str(BenchmarkStatus.FAILED.value),
+                error=traceback.format_exc(),
+                metadata={
+                    "benchmark_name": self.dataset_name,
+                    "device": str(self.device),
+                    "dtype": str(self.dtype),
+                    "seed": self.seed,
+                },
+            )
+        finally:
+            self.cleanup()
 
     def cleanup(self) -> None:
         """Clean up model and memory."""

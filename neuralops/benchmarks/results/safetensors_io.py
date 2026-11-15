@@ -60,7 +60,7 @@ def save_surgerized_safetensors(
             else:
                 try:
                     st_metadata[str(k)] = json.dumps(v, default=str)
-                except Exception:
+                except Exception:  # allowed-swallow: json serialization fallback to str
                     st_metadata[str(k)] = str(v)
 
     # Extract state dict

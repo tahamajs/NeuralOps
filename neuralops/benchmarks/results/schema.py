@@ -51,9 +51,6 @@ class BenchmarkStatus(str, Enum):
         """Normalize legacy or loose status representations to a canonical BenchmarkStatus."""
         if isinstance(value, cls):
             return value
-        if not value:
-            return cls.FAILED
-        val_str = str(value).strip().lower()
         mapping = {
             "pass": cls.SUCCESS,
             "passed": cls.SUCCESS,
@@ -82,13 +79,22 @@ class BenchmarkStatus(str, Enum):
             "planned": cls.PLANNED,
             "running": cls.RUNNING,
         }
+        if not value:
+            import warnings
+
+            warnings.warn(
+                f"Unknown or empty benchmark status '{value}', defaulting to FAILED. "
+                f"Valid statuses: {sorted(set(mapping.keys()))}",
+                stacklevel=2,
+            )
+            return cls.FAILED
+        val_str = str(value).strip().lower()
         if val_str in mapping:
             return mapping[val_str]
         import warnings
 
         warnings.warn(
-            f"Unknown benchmark status '{value}', defaulting to FAILED. "
-            f"Valid statuses: {sorted(set(mapping.keys()))}",
+            f"Unknown benchmark status '{value}', defaulting to FAILED. Valid statuses: {sorted(set(mapping.keys()))}",
             stacklevel=2,
         )
         return cls.FAILED
@@ -105,7 +111,7 @@ def _get_git_commit() -> str:
             check=True,
         )
         return res.stdout.strip()
-    except Exception:
+    except Exception:  # allowed-swallow: git probe failure fallback
         return "unknown"
 
 
@@ -126,7 +132,7 @@ def _get_git_branch() -> str:
             check=True,
         )
         return res.stdout.strip()
-    except Exception:
+    except Exception:  # allowed-swallow: git probe failure fallback
         return "unknown"
 
 
@@ -141,7 +147,7 @@ def _is_git_dirty() -> bool:
             check=True,
         )
         return bool(res.stdout.strip())
-    except Exception:
+    except Exception:  # allowed-swallow: git probe failure fallback
         return False
 
 
@@ -158,7 +164,7 @@ def _get_git_diff() -> str:
             check=True,
         )
         return res.stdout.strip()
-    except Exception:
+    except Exception:  # allowed-swallow: git probe failure fallback
         return ""
 
 
@@ -805,6 +811,7 @@ def normalize_legacy_result_dict(legacy_dict: Dict[str, Any]) -> BenchmarkResult
 
 
 __all__ = [
+    "BenchmarkStatus",
     "RunMetadata",
     "ModuleMetadata",
     "ModelMetadata",
