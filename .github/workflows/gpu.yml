@@ -1,0 +1,24 @@
+name: GPU Hardware Tests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 2 * * *' # Nightly run
+
+jobs:
+  gpu-tests:
+    name: CUDA GPU Tests
+    runs-on: [self-hosted, gpu, linux]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CUDA dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e ".[cuda,dev]"
+      - name: Run Hardware Tests
+        run: |
+          pytest tests/hardware -m "gpu" -v --durations=20

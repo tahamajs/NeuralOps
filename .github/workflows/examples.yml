@@ -1,0 +1,43 @@
+name: Examples Verification
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'examples/**'
+      - 'neuralops/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'examples/**'
+      - 'neuralops/**'
+
+jobs:
+  run-examples:
+    name: Verify Examples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e ".[core,dev,serving]"
+      - name: Run Quickstart Example
+        run: |
+          python examples/quickstart.py
+      - name: Run Surgery Demo
+        run: |
+          python examples/surgery_demo.py
+      - name: Run Compression Demo
+        run: |
+          python examples/compression_demo.py
+      - name: Run Hub Loading Example
+        run: |
+          python examples/hub_loading.py
+      - name: Run Serving Demo Test
+        run: |
+          python -c "import examples.serving_demo; print('Serving demo import OK')"

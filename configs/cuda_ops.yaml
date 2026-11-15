@@ -1,0 +1,39 @@
+version: "1.0.0"
+benchmark_suite: "cuda_ops"
+name: "cuda_ops_microbenchmarks"
+description: "Microbenchmarks for 110 native CUDA C++ kernel modules"
+tag: "cuda_ops"
+output_root_directory: "results/benchmarks"
+
+hardware:
+  device: "${CUDA_VISIBLE_DEVICES:-cuda:0}"
+  backend_preference: "cuda"
+  enforce_deterministic: false
+  allow_tf32: true
+  memory_fraction_limit: null
+
+tracking:
+  enabled: true
+  enable_tensorboard: true
+  enable_local_jsonl: true
+  log_frequency_steps: 1
+  capture_gpu_telemetry: true
+  telemetry_sample_interval_ms: 250
+  tensorboard_flush_secs: 10
+  export_formats:
+    - "jsonl"
+    - "csv"
+    - "summary"
+
+custom_parameters:
+  kernel_selection: "all"
+  warmup_iterations: 10
+  benchmark_iterations: 50
+  batch_sizes:
+    - 1
+    - 4
+    - 16
+  sequence_lengths:
+    - 512
+    - 1024
+    - 2048

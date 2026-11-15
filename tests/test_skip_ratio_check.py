@@ -10,6 +10,7 @@
 from pathlib import Path
 import pytest
 
+pytest.importorskip("scripts.ci.check_skip_ratio", reason="scripts.ci was removed")
 from scripts.ci.check_skip_ratio import evaluate_junit_xml
 
 

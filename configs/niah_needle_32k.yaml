@@ -1,0 +1,44 @@
+version: "1.0.0"
+benchmark_suite: "niah"
+name: "niah_needle_32k"
+description: "Needle-In-A-Haystack long-context retrieval benchmark configuration up to 32k tokens"
+tag: "niah"
+output_root_directory: "results/benchmarks"
+
+hardware:
+  device: "${CUDA_VISIBLE_DEVICES:-cuda:0}"
+  backend_preference: "auto"
+  enforce_deterministic: false
+  allow_tf32: true
+  memory_fraction_limit: null
+
+tracking:
+  enabled: true
+  enable_tensorboard: true
+  enable_local_jsonl: true
+  log_frequency_steps: 1
+  capture_gpu_telemetry: true
+  telemetry_sample_interval_ms: 250
+  tensorboard_flush_secs: 10
+  export_formats:
+    - "jsonl"
+    - "csv"
+    - "summary"
+
+custom_parameters:
+  min_context_length: 1024
+  max_context_length: 32768
+  context_step: 4096
+  depth_percentages:
+    - 0.0
+    - 0.1
+    - 0.2
+    - 0.3
+    - 0.4
+    - 0.5
+    - 0.6
+    - 0.7
+    - 0.8
+    - 0.9
+    - 1.0
+  needle_prompt: "The secret password is ALPHA_CENTAURI_42"

@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-11-15
+
+### Added
+- **Canonical Test Suite Reorganization:** Reorganized test architecture into four strict tiers (`tests/unit/`, `tests/contract/`, `tests/integration/`, `tests/hardware/`) compliant with AGENTS.md Rule 5.1.
+- **Shared Test Fixtures:** Added standard test fixtures in `tests/conftest.py` including `tiny_bert`, `tiny_llama`, `tiny_gpt2`, `mock_cuda_device`, `mock_hf_api`, and `isolated_temp_ledger`.
+- **CI/CD Pipeline Matrix:** Added multi-version GitHub Actions workflows (`.github/workflows/ci.yml`, `gpu.yml`, `examples.yml`) testing across Python 3.10, 3.11, and 3.12 with ruff, mypy, and contract tests.
+- **Modernized CLI Entrypoints:** Migrated `neuralops` and `nops` console scripts to modular `neuralops.benchmarks.cli_v2.main:main`.
+- **Pre-commit and Developer Tooling:** Added `.pre-commit-config.yaml` for ruff and strict mypy enforcement; added `Makefile` with `lint`, `test`, `coverage`, and `build` recipes; added `.coveragerc`.
+- **Production Reference Examples:** Added complete runnable standalone scripts in `examples/`:
+  - `examples/quickstart.py` (BERT inference pipeline)
+  - `examples/surgery_demo.py` (subquadratic attention surgery with `cosformer`)
+  - `examples/compression_demo.py` (SVD low-rank compression on GPT-2)
+  - `examples/hub_loading.py` (discovery and loading from Hooshaai Hugging Face Hub)
+  - `examples/serving_demo.py` (FastAPI production OpenAI-compatible serving)
+- **Verified Benchmark Configurations:** Added schema-validated configurations in `configs/*.yaml`.
+
+### Changed
+- **Verified Canonical Census Invariants:** Updated census claims in `README.md` and documentation to match verified registry ground truths: **118** Attention Mechanisms in `neuralops.layers` and **89** Compression Engines in `neuralops.compression`.
+- **Pytest Import Isolation:** Switched default pytest configuration to `--import-mode=importlib` in `pyproject.toml`, resolving module naming collisions across deep hierarchical test trees.
+- **Version Bump:** Promoted library version to `2.4.0` in `neuralops/_version.py` and `pyproject.toml`.
+
+### Fixed
+- **Pytest Collection Resilience:** Fixed unhandled collection errors in test suites for deleted legacy scripts by adding graceful skip guards.
+- **Recipe Conformance Validation:** Ensured `Recipe.from_dict` strict SHA validation paths are cleanly exercised in `tests/contract/`.
+- **Hub Compressor Key Resolution:** Aligned Hub compressor catalog consumers to use canonical `compressor` key metadata.
+
+### Removed
+- **Quarantined Legacy Benchmark Scripts:** Removed unmaintained standalone benchmark entry points outside of `cli_v2`.
+- **Obsolete CI Scripts:** Cleaned up orphaned CI checks (`scripts/ci/check_skip_ratio.py` and `scripts/ci/check_test_layout.py`).
+
+### Deprecated
+- **Legacy CLI Module:** `neuralops.benchmarks.cli:main` is deprecated and operates as a compatibility shim delegating to `cli_v2` (scheduled for removal in v3.0.0).
+- **Legacy Namespace Aliases:** `neuralops.attentions` and `neuralops.compression_engine` emit deprecation warnings guiding callers to `neuralops.layers` and `neuralops.compression`.
+
+### Security
+- **Modern PyTorch AMP:** Standardized on `torch.amp.autocast` and `torch.amp.GradScaler`, eliminating deprecated `torch.cuda.amp.*` usage.
+- **Safe Weight Deserialization:** Strictly enforced `weights_only=True` on PyTorch tensor deserialization to mitigate CVE risk.
+- **Explicit Error Handling Policy:** Replaced bare `except:` and silent `except Exception: pass` swallows with typed exceptions and `# allowed-swallow: <reason>` annotations.
+
 ## [2.1.0] - 2026-11-08
 
 ### Added

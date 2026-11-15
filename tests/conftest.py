@@ -166,6 +166,153 @@ def tiny_gpt2_dummy():
 
 
 @pytest.fixture
+def tiny_bert():
+    """Lightweight real or synthetic BERT model for testing."""
+    try:
+        from transformers import BertConfig, BertModel
+
+        config = BertConfig(
+            hidden_size=64,
+            num_attention_heads=2,
+            num_hidden_layers=2,
+            intermediate_size=128,
+            vocab_size=256,
+            max_position_embeddings=512,
+        )
+        return BertModel(config)
+    except Exception:
+        class TinyBertDummy(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.config = type(
+                    "Config",
+                    (),
+                    {
+                        "hidden_size": 64,
+                        "num_attention_heads": 2,
+                        "num_hidden_layers": 2,
+                        "vocab_size": 256,
+                        "max_position_embeddings": 512,
+                        "model_type": "bert",
+                    },
+                )()
+                self.embeddings = torch.nn.Embedding(256, 64)
+                self.encoder = torch.nn.ModuleList([torch.nn.Linear(64, 64) for _ in range(2)])
+
+            def forward(self, input_ids, **kwargs):
+                x = self.embeddings(input_ids)
+                for layer in self.encoder:
+                    x = layer(x)
+                return type("Output", (), {"last_hidden_state": x})()
+
+        return TinyBertDummy()
+
+
+@pytest.fixture
+def tiny_llama():
+    """Lightweight real or synthetic LLaMA model for testing."""
+    try:
+        from transformers import LlamaConfig, LlamaForCausalLM
+
+        config = LlamaConfig(
+            hidden_size=64,
+            intermediate_size=128,
+            num_hidden_layers=2,
+            num_attention_heads=2,
+            num_key_value_heads=2,
+            vocab_size=256,
+            max_position_embeddings=512,
+        )
+        return LlamaForCausalLM(config)
+    except Exception:
+        class TinyLlamaDummy(torch.nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.config = type(
+                    "Config",
+                    (),
+                    {
+                        "hidden_size": 64,
+                        "intermediate_size": 128,
+                        "num_hidden_layers": 2,
+                        "num_attention_heads": 2,
+                        "num_key_value_heads": 2,
+                        "vocab_size": 256,
+                        "max_position_embeddings": 512,
+                        "model_type": "llama",
+                    },
+                )()
+                self.model = torch.nn.ModuleDict(
+                    {
+                        "embed_tokens": torch.nn.Embedding(256, 64),
+                        "layers": torch.nn.ModuleList([torch.nn.Linear(64, 64) for _ in range(2)]),
+                    }
+                )
+                self.lm_head = torch.nn.Linear(64, 256, bias=False)
+
+            def forward(self, input_ids, **kwargs):
+                x = self.model["embed_tokens"](input_ids)
+                for layer in self.model["layers"]:
+                    x = layer(x)
+                logits = self.lm_head(x)
+                return type("Output", (), {"logits": logits, "loss": torch.tensor(0.0)})()
+
+        return TinyLlamaDummy()
+
+
+@pytest.fixture
+def mock_cuda_device(monkeypatch):
+    """Mocks torch.cuda environment and device properties for testing without physical GPU."""
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: True)
+    monkeypatch.setattr(torch.cuda, "device_count", lambda: 1)
+
+    class MockDeviceProp:
+        name = "NVIDIA Mock Test GPU"
+        total_memory = 16 * 1024 * 1024 * 1024
+        major = 8
+        minor = 0
+        multi_processor_count = 108
+        L2_cache_size = 4 * 1024 * 1024
+
+    monkeypatch.setattr(torch.cuda, "get_device_properties", lambda *args, **kwargs: MockDeviceProp())
+    monkeypatch.setattr(torch.cuda, "memory_allocated", lambda *args, **kwargs: 1024 * 1024)
+    monkeypatch.setattr(torch.cuda, "memory_reserved", lambda *args, **kwargs: 2048 * 1024)
+    monkeypatch.setattr(torch.cuda, "max_memory_allocated", lambda *args, **kwargs: 2048 * 1024)
+    monkeypatch.setattr(torch.cuda, "synchronize", lambda *args, **kwargs: None)
+    return torch.device("cuda:0")
+
+
+@pytest.fixture
+def mock_hf_api(monkeypatch):
+    """Mocks Hugging Face API calls to prevent any remote network access during tests."""
+    from unittest.mock import MagicMock
+
+    mock_api = MagicMock()
+    mock_api.upload_file.return_value = "https://huggingface.co/mock/repo/commit"
+    mock_api.create_repo.return_value = "https://huggingface.co/mock/repo"
+    mock_api.model_info.return_value = MagicMock(sha="mocksha1234567890abcdef1234567890abcdef")
+    try:
+        import huggingface_hub
+
+        monkeypatch.setattr(huggingface_hub, "HfApi", lambda *args, **kwargs: mock_api)
+        monkeypatch.setattr(huggingface_hub, "create_repo", lambda *args, **kwargs: "https://huggingface.co/mock/repo")
+        monkeypatch.setattr(huggingface_hub, "upload_file", lambda *args, **kwargs: "https://huggingface.co/mock/repo/commit")
+    except ImportError:
+        pass
+    return mock_api
+
+
+@pytest.fixture
+def isolated_temp_ledger(tmp_path):
+    """Provides an isolated ResultsLedger in a clean temporary directory."""
+    from neuralops.analysis.results_ledger import ResultsLedger
+
+    ledger_root = tmp_path / "test_ledger"
+    ledger_root.mkdir(parents=True, exist_ok=True)
+    return ResultsLedger(root_dir=ledger_root)
+
+
+@pytest.fixture
 def repo_root():
     """Absolute path to repository root."""
     return _PROJECT_ROOT
@@ -267,6 +414,7 @@ def pytest_collection_modifyitems(config, items):
                 "test_triton_sample",
                 "test_timing_correct",
                 "test_cli_cuda_visible_devices",
+                "test_shared_fixtures",
             )
         ) or ("test_notebook_structure_and_syntax" in item_name or "test_notebook_smoke" in item_name)
         if ("cuda" in item_path or "cuda" in item.keywords or "cuda" in item_name) and not is_static_config_test:

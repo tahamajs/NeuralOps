@@ -1,0 +1,22 @@
+[run]
+source = neuralops
+omit =
+    */tests/*
+    */benchmarks/*
+    */scripts/*
+    */_archive/*
+    */_proposed/*
+branch = True
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    class .*\bProtocol\):
+    @(abc\.)?abstractmethod
+show_missing = True
+fail_under = 80

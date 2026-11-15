@@ -1,0 +1,48 @@
+version: "1.0.0"
+benchmark_suite: "e2e_serving"
+name: "e2e_serving_qwen"
+description: "High-throughput serving benchmark on Qwen2.5 with continuous batching and PagedAttention"
+tag: "e2e_serving"
+output_root_directory: "results/benchmarks"
+
+hardware:
+  device: "${CUDA_VISIBLE_DEVICES:-cuda:0}"
+  backend_preference: "auto"
+  enforce_deterministic: false
+  allow_tf32: true
+  memory_fraction_limit: null
+
+tracking:
+  enabled: true
+  enable_tensorboard: true
+  enable_local_jsonl: true
+  log_frequency_steps: 1
+  capture_gpu_telemetry: true
+  telemetry_sample_interval_ms: 250
+  tensorboard_flush_secs: 10
+  export_formats:
+    - "jsonl"
+    - "csv"
+    - "summary"
+
+custom_parameters:
+  model_name: "Qwen/Qwen2.5-0.5B"
+  batch_sizes:
+    - 1
+    - 4
+    - 8
+    - 16
+    - 32
+  input_lens:
+    - 128
+    - 512
+    - 1024
+    - 2048
+  output_lens:
+    - 128
+    - 512
+  concurrency_levels:
+    - 1
+    - 4
+    - 16
+    - 32
