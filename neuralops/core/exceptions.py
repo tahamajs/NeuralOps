@@ -19,23 +19,6 @@ from typing import Any, Optional
 class NeuralOpsError(Exception):
     """Base exception for all NeuralOps errors."""
 
-    def __init__(
-        self,
-        message: str = "",
-        *args: Any,
-        error_code: Optional[str] = None,
-        **kwargs: Any,
-    ) -> None:
-        if args:
-            super().__init__(message, *args)
-        elif message:
-            super().__init__(message)
-        else:
-            super().__init__()
-        self.message = message
-        self.error_code = error_code
-        self.details = kwargs
-
 
 class RegistryError(NeuralOpsError):
     """Raised when a registry lookup or registration fails."""
@@ -53,31 +36,12 @@ class ConfigError(NeuralOpsError, ValueError):
     """Raised when a configuration is invalid or incomplete."""
 
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 class ConfigValidationError(ConfigError):
     """Raised when benchmark config validation fails."""
-=======
-=======
->>>>>>> wave5/W5-12
-class ConfigurationError(ConfigError):
-    """Raised when a configuration is invalid, incomplete, or rejected."""
-
-
-class ConfigValidationError(ConfigError):
-    """Raised when benchmark or subsystem configuration validation fails."""
-<<<<<<< HEAD
->>>>>>> wave5/W5-9
-=======
->>>>>>> wave5/W5-12
 
 
 class BackendError(NeuralOpsError):
     """Raised when no backend can execute the requested operation."""
-
-
-class BackendUnavailableError(BackendError):
-    """Raised when an accelerator backend is unavailable or not configured."""
 
 
 class KernelNotAvailableError(BackendError, RuntimeError):
@@ -132,10 +96,6 @@ class SurgeryTransactionError(NeuralOpsError, RuntimeError):
     """Raised when an in-place model surgery transaction fails and is rolled back."""
 
 
-class InvariantViolationError(SurgeryTransactionError):
-    """Raised when a model surgery invariant certification check fails."""
-
-
 class KDError(NeuralOpsError):
     """Raised when knowledge distillation encounters a fatal error."""
 
@@ -161,49 +121,11 @@ class InferenceError(NeuralOpsError):
 
 
 class LedgerError(NeuralOpsError):
-<<<<<<< HEAD
-<<<<<<< HEAD
     """Base exception for benchmark results ledger operations."""
 
 
 class ChecksumMismatchError(LedgerError):
     """Raised when record checksum fails validation."""
-=======
-=======
->>>>>>> wave5/W5-12
-    """Raised when benchmark ledger read/write operations fail."""
-
-
-class ChecksumMismatchError(NeuralOpsError, ValueError):
-    """Raised when checksum validation of a record or artifact fails."""
-
-
-class BenchmarkError(NeuralOpsError):
-    """Base exception for benchmark subsystem failures."""
-
-
-class BenchmarkExecutionError(BenchmarkError):
-    """Raised when benchmark execution fails."""
-
-
-class WorkerCrashError(BenchmarkExecutionError, RuntimeError):
-    """Raised when an isolated benchmark worker crashes unexpectedly."""
-
-
-class HubUploadError(NeuralOpsError):
-    """Raised when uploading artifacts or models to the Hub fails."""
-
-
-class ChecksumVerificationError(NeuralOpsError, ValueError):
-    """Raised when artifact checksum verification fails."""
-
-
-class RecipeSyntaxError(NeuralOpsError, ValueError):
-    """Raised when recipe parsing or syntax validation fails."""
-<<<<<<< HEAD
->>>>>>> wave5/W5-9
-=======
->>>>>>> wave5/W5-12
 
 
 def torch_install_error(feature: str, cause: ImportError | None = None) -> ImportError:
@@ -235,17 +157,8 @@ __all__ = [
     "AttentionNotRegisteredError",
     "CompressorNotRegisteredError",
     "ConfigError",
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-    "ConfigurationError",
->>>>>>> wave5/W5-9
-=======
-    "ConfigurationError",
->>>>>>> wave5/W5-12
     "ConfigValidationError",
     "BackendError",
-    "BackendUnavailableError",
     "KernelNotAvailableError",
     "KernelDispatchError",
     "MissingDependencyError",
@@ -259,7 +172,6 @@ __all__ = [
     "ShapeError",
     "InjectionError",
     "SurgeryTransactionError",
-    "InvariantViolationError",
     "KDError",
     "CompressionError",
     "CompressionVerificationError",
@@ -268,21 +180,6 @@ __all__ = [
     "InferenceError",
     "LedgerError",
     "ChecksumMismatchError",
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> wave5/W5-12
-    "BenchmarkError",
-    "BenchmarkExecutionError",
-    "WorkerCrashError",
-    "HubUploadError",
-    "ChecksumVerificationError",
-    "RecipeSyntaxError",
-<<<<<<< HEAD
->>>>>>> wave5/W5-9
-=======
->>>>>>> wave5/W5-12
     "torch_install_error",
     "_torch_install_error",
 ]
