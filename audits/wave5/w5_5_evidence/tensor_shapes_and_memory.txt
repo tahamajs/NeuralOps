@@ -14,3 +14,9 @@ Zoo 6 llava_vlm: Shape (2, 8, 1000), Finite: True
 Peak Memory: N/A (CPU execution on macOS; all operations executed without OOM)
 Device: CPU
 All 6 Zoos verified finite and correctly dimensioned.
+Zoo 1 bert_attention: Shape (2, 2), Finite: True
+Zoo 2 bert_compressor: Shape (2, 2), Finite: True
+Zoo 3 qwen_attention: Shape (2, 32, 1000), Finite: True
+Zoo 4 qwen_compressor: Shape (2, 32, 1000), Finite: True
+Zoo 5 tinyllama: 3-step generation complete, Cache valid: True, Finite: True
+Zoo 6 llava_vlm: Shape (2, 8, 1000), Finite: True

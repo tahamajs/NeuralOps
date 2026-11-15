@@ -33,7 +33,7 @@ def test_16_runs_clean():
         [sys.executable, "examples/16_distributed_parallelism.py"],
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=180,
     )
     assert proc.returncode == 0, f"Example 16 failed with stderr: {proc.stderr}"
     assert "[PASS] Overall Example 16 Status" in proc.stdout

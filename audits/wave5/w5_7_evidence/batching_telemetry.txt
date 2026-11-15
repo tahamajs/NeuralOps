@@ -8,8 +8,8 @@
   "queued_requests": 0,
   "completed_requests": 3,
   "total_tokens_generated": 7,
-  "avg_latency_ms": 1.73,
-  "avg_tokens_per_sec": 577.01,
+  "avg_latency_ms": 0.14,
+  "avg_tokens_per_sec": 7397.36,
   "device": "cpu"
 }
 

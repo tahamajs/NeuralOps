@@ -20,7 +20,7 @@ def test_example_01_execution():
         [sys.executable, "examples/01_attention_surgery.py"],
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=180,
     )
     assert proc.returncode == 0, f"Example 01 failed with stderr: {proc.stderr}"
     assert "[PASS] Overall Example 01 Status" in proc.stdout

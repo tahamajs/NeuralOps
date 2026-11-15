@@ -27,6 +27,7 @@ CONTRACT = OperationContract(
         "type": "object",
         "properties": {
             "reduction_factor": {"type": "number", "minimum": 0.05, "maximum": 0.95},
+            "ratio": {"type": "number", "minimum": 0.05, "maximum": 0.95},
             "target_dim": {"type": "integer", "minimum": 16},
         },
         "additionalProperties": False,
@@ -45,7 +46,7 @@ class ArchitectureReduceMlpOperation(Operation):
         super().__init__(contract=CONTRACT)
 
     def apply(self, model: nn.Module, config: Dict[str, Any]) -> Tuple[nn.Module, Dict[str, Any]]:
-        reduction_factor = config.get("reduction_factor")
+        reduction_factor = config.get("reduction_factor", config.get("ratio"))
         target_dim = config.get("target_dim")
 
         if reduction_factor is None and target_dim is None:

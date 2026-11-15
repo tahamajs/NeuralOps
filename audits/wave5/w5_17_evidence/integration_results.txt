@@ -1,2 +1,6 @@
-............                                                             [100%]
-12 passed in 43.26s
+.................................x...................................... [ 47%]
+........................................................................ [ 94%]
+.........                                                                [100%]
+=========================== short test summary info ============================
+XFAIL tests/integration/test_all_131_attentions.py::test_single_attention_instantiation_and_forward[galerkin_attention] - Optional feature not implemented: The operator 'aten::linalg_qr.out' is not currently implemented for the MPS device. If you want this op to be considered for addition please comment on https://github.com/pytorch/pytorch/issues/141287 and mention use-case, that resulted in missing op as well as commit hash 70d99e998b4955e0049d13a98d77ae1b14db1f45. As a temporary fix, you can set the environment variable `PYTORCH_ENABLE_MPS_FALLBACK=1` to use the CPU as a fallback for this op. WARNING: this will be slower than running natively on MPS.
+152 passed, 2 deselected, 1 xfailed in 42.85s

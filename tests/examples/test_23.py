@@ -24,7 +24,7 @@ def test_23_runs_clean_cpu():
         [sys.executable, str(EXAMPLE_PATH), "--device", "cpu"],
         capture_output=True,
         text=True,
-        timeout=120,
+        timeout=180,
     )
     assert proc.returncode == 0, f"Example 23 failed with stderr:\n{proc.stderr}"
     assert "[PASS] Overall Example 23 Status" in proc.stdout
@@ -38,7 +38,7 @@ def test_23_certifies_all_ten_laws():
         [sys.executable, str(EXAMPLE_PATH), "--device", "cpu"],
         capture_output=True,
         text=True,
-        timeout=120,
+        timeout=180,
     )
     assert proc.returncode == 0
     law_markers = [

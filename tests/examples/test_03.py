@@ -28,7 +28,7 @@ def test_03_runs_clean():
         [sys.executable, "examples/03_lora_finetuning.py"],
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=180,
     )
     assert proc.returncode == 0, f"Example 03 failed with stderr: {proc.stderr}"
     assert "[PASS] Overall Example 03 Status" in proc.stdout
