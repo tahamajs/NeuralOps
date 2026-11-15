@@ -1,0 +1,26 @@
+=== NeuralOps v2.4.0 Release Verification ===
+Running at: 2026-11-15T11:36:34Z
+Git commit: b67e84f1e0cc8dd70000d5ac0bc71a853d2ac13a
+
+--- Step 1: Version check ---
+/Users/tahamajs/dev/Project/neuralops/__main__.py:21: DeprecationWarning: neuralops.benchmarks.cli is deprecated and will be removed in a future release. Please use neuralops.benchmarks.cli_v2 instead.
+  sys.exit(main())
+NeuralOps 2.4.0
+
+--- Step 2: Unit and contract tests ---
+...................................................                      [100%]
+51 passed in 134.43s (0:02:14)
+
+--- Step 3: Ruff linting ---
+All checks passed!
+
+--- Step 4: CHANGELOG version presence ---
+2
+
+--- Step 5: Critical file presence check ---
+PRESENT: CHANGELOG.md
+PRESENT: BREAKING_CHANGES.md
+PRESENT: docs/truth_audit.md
+PRESENT: issues/wave6_hotfix_backlog.md
+
+=== ALL GATES PASSED ===
