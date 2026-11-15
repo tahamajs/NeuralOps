@@ -16,7 +16,17 @@ from neuralops.adapters.distilbert import DistilBertAdapter
 from neuralops.adapters.errors import AdapterError
 from neuralops.adapters.generic import GenericAdapter
 from neuralops.adapters.gpt2 import Gpt2Adapter
+from neuralops.adapters.hf_transformers import HFTransformersAdapter
 from neuralops.adapters.llama import LlamaAdapter
+from neuralops.adapters.peft_adapter import (
+    NeuralOpsLoraConfig,
+    attach_lora_hooks,
+    inject_lora_adapter,
+    neuralops_to_peft_config,
+    neuralops_to_peft_state_dict,
+    peft_to_neuralops_config,
+    peft_to_neuralops_state_dict,
+)
 from neuralops.adapters.registry import find_adapter, list_adapters, register_adapter
 
 __all__ = [
@@ -25,8 +35,16 @@ __all__ = [
     "DistilBertAdapter",
     "GenericAdapter",
     "Gpt2Adapter",
+    "HFTransformersAdapter",
     "LlamaAdapter",
+    "NeuralOpsLoraConfig",
+    "attach_lora_hooks",
     "find_adapter",
+    "inject_lora_adapter",
     "list_adapters",
+    "neuralops_to_peft_config",
+    "neuralops_to_peft_state_dict",
+    "peft_to_neuralops_config",
+    "peft_to_neuralops_state_dict",
     "register_adapter",
 ]
