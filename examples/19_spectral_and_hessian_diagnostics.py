@@ -35,6 +35,7 @@ What You Will Learn:
 from __future__ import annotations
 
 import os
+
 # Ensure MPS device fallbacks to CPU gracefully for torch.linalg.svdvals if required
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
@@ -163,11 +164,7 @@ def main() -> int:
     top_k = min(3, target_param.numel())
     eigvals, _ = compute_top_eigenvalues(loss, target_param, num_eigenvalues=top_k, num_iters=10)
 
-    p_eig = bool(
-        len(eigvals) == top_k
-        and torch.isfinite(torch.tensor(eigvals)).all().item()
-        and eigvals[0] > 0.0
-    )
+    p_eig = bool(len(eigvals) == top_k and torch.isfinite(torch.tensor(eigvals)).all().item() and eigvals[0] > 0.0)
     pass_fail(
         "Top Hessian Eigenvalue Computation",
         p_eig,
@@ -176,12 +173,14 @@ def main() -> int:
 
     for i, ev in enumerate(eigvals, 1):
         kv(f"Hessian Eigenvalue lambda_{i}", f"{ev:.6f}")
-        diagnostics_rows.append({
-            "Diagnostic Metric": f"Hessian Eigenvalue lambda_{i}",
-            "Value": f"{ev:.6f}",
-            "Interpretation": "Leading curvature eigenvalue" if i == 1 else "Subdominant curvature mode",
-            "Status": "PASS" if math.isfinite(ev) else "FAIL",
-        })
+        diagnostics_rows.append(
+            {
+                "Diagnostic Metric": f"Hessian Eigenvalue lambda_{i}",
+                "Value": f"{ev:.6f}",
+                "Interpretation": "Leading curvature eigenvalue" if i == 1 else "Subdominant curvature mode",
+                "Status": "PASS" if math.isfinite(ev) else "FAIL",
+            }
+        )
 
     # =========================================================================
     # Part 2: Hessian / FIM Trace via Hutchinson's Estimator
@@ -196,12 +195,14 @@ def main() -> int:
     )
     kv("Estimated Hessian Trace Tr(H)", f"{trace_est:.6f}")
 
-    diagnostics_rows.append({
-        "Diagnostic Metric": "Hutchinson Hessian Trace Tr(H)",
-        "Value": f"{trace_est:.6f}",
-        "Interpretation": f"Empirical trace Tr(H)={trace_est:.4f}",
-        "Status": "PASS" if p_trace else "FAIL",
-    })
+    diagnostics_rows.append(
+        {
+            "Diagnostic Metric": "Hutchinson Hessian Trace Tr(H)",
+            "Value": f"{trace_est:.6f}",
+            "Interpretation": f"Empirical trace Tr(H)={trace_est:.4f}",
+            "Status": "PASS" if p_trace else "FAIL",
+        }
+    )
 
     # =========================================================================
     # Part 3: Layer Activation Covariance Spectrum
@@ -232,18 +233,22 @@ def main() -> int:
     kv("Condition Number kappa", f"{cond_num:.2f}")
     kv("Effective Rank (Entropy)", f"{eff_rank:.2f} / {d_channels}")
 
-    diagnostics_rows.append({
-        "Diagnostic Metric": "Covariance Condition Number kappa",
-        "Value": f"{cond_num:.2f}",
-        "Interpretation": f"Spectral condition kappa={cond_num:.2f}",
-        "Status": "PASS" if p_svd else "FAIL",
-    })
-    diagnostics_rows.append({
-        "Diagnostic Metric": "Effective Rank (Entropy)",
-        "Value": f"{eff_rank:.2f} / {d_channels}",
-        "Interpretation": f"{(eff_rank / d_channels) * 100:.1f}% Dimensional utilization",
-        "Status": "PASS" if p_svd else "FAIL",
-    })
+    diagnostics_rows.append(
+        {
+            "Diagnostic Metric": "Covariance Condition Number kappa",
+            "Value": f"{cond_num:.2f}",
+            "Interpretation": f"Spectral condition kappa={cond_num:.2f}",
+            "Status": "PASS" if p_svd else "FAIL",
+        }
+    )
+    diagnostics_rows.append(
+        {
+            "Diagnostic Metric": "Effective Rank (Entropy)",
+            "Value": f"{eff_rank:.2f} / {d_channels}",
+            "Interpretation": f"{(eff_rank / d_channels) * 100:.1f}% Dimensional utilization",
+            "Status": "PASS" if p_svd else "FAIL",
+        }
+    )
 
     # =========================================================================
     # Summary Table

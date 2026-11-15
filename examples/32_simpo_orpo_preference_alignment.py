@@ -56,7 +56,9 @@ from neuralops.trainer.rl_alignment.preference_and_onpolicy import ORPOLoss, Sim
 def resolve_device(requested: str) -> torch.device:
     """Resolve compute device with strict zero-fake fallback policy."""
     if requested.startswith("cuda") and not torch.cuda.is_available():
-        raise RuntimeError(f"CUDA was explicitly requested ('{requested}') but is unavailable; refusing silent CPU fallback.")
+        raise RuntimeError(
+            f"CUDA was explicitly requested ('{requested}') but is unavailable; refusing silent CPU fallback."
+        )
     if requested == "auto":
         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
     return torch.device(requested)
@@ -125,8 +127,12 @@ def run_demonstration(device: torch.device, beta: float = 2.0, gamma: float = 0.
         init_simpo_loss = float(simpo_criterion(logp_w, logp_l).item())
         init_orpo_loss = float(orpo_criterion(chosen_logprobs=logp_w, rejected_logprobs=logp_l).item())
 
-    initial_finite = bool(torch.isfinite(torch.tensor(init_simpo_loss)).item() and torch.isfinite(torch.tensor(init_orpo_loss)).item())
-    pass_fail("Initial Alignment Losses Finite", initial_finite, f"SimPO: {init_simpo_loss:.4f}, ORPO: {init_orpo_loss:.4f}")
+    initial_finite = bool(
+        torch.isfinite(torch.tensor(init_simpo_loss)).item() and torch.isfinite(torch.tensor(init_orpo_loss)).item()
+    )
+    pass_fail(
+        "Initial Alignment Losses Finite", initial_finite, f"SimPO: {init_simpo_loss:.4f}, ORPO: {init_orpo_loss:.4f}"
+    )
 
     # 5. Train model parameters using SimPO objective
     optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
@@ -161,11 +167,21 @@ def run_demonstration(device: torch.device, beta: float = 2.0, gamma: float = 0.
         post_logp_l = compute_sequence_logprobs(post_out_l.logits, rejected_ids)
 
         # Margin: beta * (reward_chosen - reward_rejected)
-        initial_margin = float(((logp_w.sum(dim=-1) / logp_w.size(-1) - logp_l.sum(dim=-1) / logp_l.size(-1)) * beta).mean().item())
-        final_margin = float(((post_logp_w.sum(dim=-1) / post_logp_w.size(-1) - post_logp_l.sum(dim=-1) / post_logp_l.size(-1)) * beta).mean().item())
+        initial_margin = float(
+            ((logp_w.sum(dim=-1) / logp_w.size(-1) - logp_l.sum(dim=-1) / logp_l.size(-1)) * beta).mean().item()
+        )
+        final_margin = float(
+            ((post_logp_w.sum(dim=-1) / post_logp_w.size(-1) - post_logp_l.sum(dim=-1) / post_logp_l.size(-1)) * beta)
+            .mean()
+            .item()
+        )
 
     margin_improved = final_margin >= initial_margin
-    pass_fail("Preference Reward Margin Separation", margin_improved, f"Initial Margin: {initial_margin:.4f} -> Final Margin: {final_margin:.4f}")
+    pass_fail(
+        "Preference Reward Margin Separation",
+        margin_improved,
+        f"Initial Margin: {initial_margin:.4f} -> Final Margin: {final_margin:.4f}",
+    )
 
     # 7. Summary metrics table
     summary_rows = [

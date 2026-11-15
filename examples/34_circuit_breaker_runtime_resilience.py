@@ -59,7 +59,9 @@ from neuralops.runtime.circuit_breaker import (
 def resolve_device(requested: str) -> torch.device:
     """Resolve compute device with strict zero-fake fallback policy."""
     if requested.startswith("cuda") and not torch.cuda.is_available():
-        raise RuntimeError(f"CUDA was explicitly requested ('{requested}') but is unavailable; refusing silent CPU fallback.")
+        raise RuntimeError(
+            f"CUDA was explicitly requested ('{requested}') but is unavailable; refusing silent CPU fallback."
+        )
     if requested == "auto":
         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
     return torch.device(requested)
@@ -98,12 +100,16 @@ def run_demonstration(device: torch.device, cooldown_ms: float = 25.0) -> bool:
     # 3. Test Phase 2: Inject Level 1 Chaos -> Degrade to Tier 2 (DEGRADED)
     out2 = cb.execute(level1_chaos_panic, level2_healthy, level3_reference, x)
     t2_valid = torch.allclose(out2, x * 2.0) and cb.fsm.state == CircuitState.DEGRADED
-    pass_fail("Tier 1 Chaos Handled -> Degraded to Tier 2", t2_valid, f"Output matched Tier 2, State: {cb.fsm.state.value}")
+    pass_fail(
+        "Tier 1 Chaos Handled -> Degraded to Tier 2", t2_valid, f"Output matched Tier 2, State: {cb.fsm.state.value}"
+    )
 
     # 4. Test Phase 3: Inject Level 2 Chaos while DEGRADED -> Trip to Tier 3 (TRIPPED)
     out3 = cb.execute(level1_chaos_panic, level2_chaos_panic, level3_reference, x)
     t3_valid = torch.allclose(out3, x * 3.0) and cb.fsm.state == CircuitState.TRIPPED
-    pass_fail("Tier 2 Chaos Handled -> Tripped to Tier 3", t3_valid, f"Output matched Tier 3, State: {cb.fsm.state.value}")
+    pass_fail(
+        "Tier 2 Chaos Handled -> Tripped to Tier 3", t3_valid, f"Output matched Tier 3, State: {cb.fsm.state.value}"
+    )
 
     # 5. Test Phase 4: Execute in TRIPPED state (Safe Reference Execution)
     out4 = cb.execute(level1_healthy, level2_healthy, level3_reference, x)
@@ -147,7 +153,9 @@ def run_demonstration(device: torch.device, cooldown_ms: float = 25.0) -> bool:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--device", default="auto", help="Execution device: 'auto', 'cpu', or 'cuda'")
-    parser.add_argument("--cooldown-ms", type=float, default=25.0, help="Circuit breaker cooldown window in milliseconds")
+    parser.add_argument(
+        "--cooldown-ms", type=float, default=25.0, help="Circuit breaker cooldown window in milliseconds"
+    )
     args = parser.parse_args()
 
     device = resolve_device(args.device)

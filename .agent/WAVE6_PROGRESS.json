@@ -40,14 +40,16 @@
       "tests_passed": 6
     },
     "W6-7": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave6/W6-7",
-      "worktree": null
+      "worktree": null,
+      "tests_passed": 5
     },
     "W6-8": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave6/W6-8",
-      "worktree": null
+      "worktree": null,
+      "tests_passed": 6
     },
     "W6-9": {
       "status": "complete",
@@ -188,7 +190,7 @@
       "tests_passed": 6
     },
     "W6-26": {
-      "status": "pending",
+      "status": "complete",
       "phase": 3,
       "assigned_examples": [
         "32_simpo_orpo_preference_alignment.py",
@@ -202,7 +204,8 @@
         "tests/examples/test_33.py",
         "tests/examples/test_34.py",
         "tests/examples/test_35.py"
-      ]
+      ],
+      "tests_passed": 10
     }
   }
 }

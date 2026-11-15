@@ -98,22 +98,26 @@ def main() -> int:
             p_level1 = bool(torch.isfinite(out_l1).all().item() and out_l1.shape == (b, h, seq_len, d_head))
             pass_fail("Level 1 (CUDA C++) Execution", p_level1, "CUDA C++ extension kernel executed successfully")
             kv("Latency Mean", f"{lat_l1:.4f} ms")
-            dispatch_records.append({
-                "Hierarchy Level": "Level 1: CUDA C++",
-                "Backend": "cuda",
-                "Available": "Yes",
-                "Latency (ms)": f"{lat_l1:.4f}",
-                "Status": "PASS",
-            })
+            dispatch_records.append(
+                {
+                    "Hierarchy Level": "Level 1: CUDA C++",
+                    "Backend": "cuda",
+                    "Available": "Yes",
+                    "Latency (ms)": f"{lat_l1:.4f}",
+                    "Status": "PASS",
+                }
+            )
     except Exception as exc:
         print(f"  [SKIPPED] CUDA not available on this device: {exc}")
-        dispatch_records.append({
-            "Hierarchy Level": "Level 1: CUDA C++",
-            "Backend": "cuda",
-            "Available": "No (GPU required)",
-            "Latency (ms)": "N/A",
-            "Status": "SKIPPED: CUDA binary missing on host",
-        })
+        dispatch_records.append(
+            {
+                "Hierarchy Level": "Level 1: CUDA C++",
+                "Backend": "cuda",
+                "Available": "No (GPU required)",
+                "Latency (ms)": "N/A",
+                "Status": "SKIPPED: CUDA binary missing on host",
+            }
+        )
 
     # =========================================================================
     # Level 2: Triton JIT Kernel
@@ -127,22 +131,26 @@ def main() -> int:
             p_level2 = bool(torch.isfinite(out_l2).all().item() and out_l2.shape == (b, h, seq_len, d_head))
             pass_fail("Level 2 (Triton JIT) Execution", p_level2, "Triton kernel executed successfully")
             kv("Latency Mean", f"{lat_l2:.4f} ms")
-            dispatch_records.append({
-                "Hierarchy Level": "Level 2: Triton JIT",
-                "Backend": "triton",
-                "Available": "Yes",
-                "Latency (ms)": f"{lat_l2:.4f}",
-                "Status": "PASS",
-            })
+            dispatch_records.append(
+                {
+                    "Hierarchy Level": "Level 2: Triton JIT",
+                    "Backend": "triton",
+                    "Available": "Yes",
+                    "Latency (ms)": f"{lat_l2:.4f}",
+                    "Status": "PASS",
+                }
+            )
     except Exception as exc:
         print(f"  [SKIPPED] Triton not available on this device: {exc}")
-        dispatch_records.append({
-            "Hierarchy Level": "Level 2: Triton JIT",
-            "Backend": "triton",
-            "Available": "No",
-            "Latency (ms)": "N/A",
-            "Status": f"SKIPPED: {type(exc).__name__}",
-        })
+        dispatch_records.append(
+            {
+                "Hierarchy Level": "Level 2: Triton JIT",
+                "Backend": "triton",
+                "Available": "No",
+                "Latency (ms)": "N/A",
+                "Status": f"SKIPPED: {type(exc).__name__}",
+            }
+        )
 
     # =========================================================================
     # Level 3: Universal Vectorized PyTorch Reference
@@ -155,13 +163,15 @@ def main() -> int:
         p_level3 = bool(torch.isfinite(out_l3).all().item() and out_l3.shape == (b, h, seq_len, d_head))
         pass_fail("Level 3 (PyTorch Reference) Execution", p_level3, "PyTorch reference fallback executed successfully")
         kv("Latency Mean", f"{lat_l3:.4f} ms")
-        dispatch_records.append({
-            "Hierarchy Level": "Level 3: PyTorch Ref",
-            "Backend": "pytorch",
-            "Available": "Yes (Universal)",
-            "Latency (ms)": f"{lat_l3:.4f}",
-            "Status": "PASS",
-        })
+        dispatch_records.append(
+            {
+                "Hierarchy Level": "Level 3: PyTorch Ref",
+                "Backend": "pytorch",
+                "Available": "Yes (Universal)",
+                "Latency (ms)": f"{lat_l3:.4f}",
+                "Status": "PASS",
+            }
+        )
 
     # =========================================================================
     # Cross-Backend Numerical Parity Verification
@@ -173,7 +183,9 @@ def main() -> int:
         b1, b2 = keys[0], keys[1]
         p_parity = bool(assert_parity(outputs[b1], outputs[b2], atol=1e-4, label=f"Parity: {b1} vs {b2}"))
     else:
-        print(f"  [NOTE] Only 1 backend ({list(outputs.keys())}) available on this host; parity check requires >= 2 backends.")
+        print(
+            f"  [NOTE] Only 1 backend ({list(outputs.keys())}) available on this host; parity check requires >= 2 backends."
+        )
 
     # =========================================================================
     # Dispatch Telemetry & Summary Table

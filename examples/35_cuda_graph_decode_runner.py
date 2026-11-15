@@ -52,7 +52,9 @@ from neuralops.models.cuda_graph import CUDAGraphDecodeRunner
 def resolve_device(requested: str) -> torch.device:
     """Resolve compute device with strict zero-fake fallback policy."""
     if requested.startswith("cuda") and not torch.cuda.is_available():
-        raise RuntimeError(f"CUDA was explicitly requested ('{requested}') but is unavailable; refusing silent CPU fallback.")
+        raise RuntimeError(
+            f"CUDA was explicitly requested ('{requested}') but is unavailable; refusing silent CPU fallback."
+        )
     if requested == "auto":
         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
     return torch.device(requested)
@@ -80,7 +82,8 @@ def run_demonstration(device: torch.device, decode_steps: int = 5) -> bool:
         device=device,
         warmup_steps=3,
     )
-    pass_fail("Runner Initialized", True, f"Device: {device}, Batch size: 1")
+    runner_initialized = runner.model is model and runner.batch_size == 1 and runner.device == device
+    pass_fail("Runner Initialized", runner_initialized, f"Device: {device}, Batch size: 1")
 
     # 3. Capture decode graph (or initialize fallback execution buffers on CPU)
     runner.capture()
@@ -88,7 +91,11 @@ def run_demonstration(device: torch.device, decode_steps: int = 5) -> bool:
     if device.type == "cuda":
         pass_fail("CUDA Graph Captured", is_captured)
     else:
-        pass_fail("CPU Reference Decode Engine Initialized", not is_captured, "CUDA Graph requires CUDA GPU; reference runner active")
+        pass_fail(
+            "CPU Reference Decode Engine Initialized",
+            not is_captured,
+            "CUDA Graph requires CUDA GPU; reference runner active",
+        )
 
     # 4. Run token-by-token autoregressive decode sequence
     generated_tokens: list[int] = []
@@ -127,7 +134,7 @@ def run_demonstration(device: torch.device, decode_steps: int = 5) -> bool:
     print()
     table(summary_rows, headers=["Metric / Parameter", "Value"])
 
-    return bool(valid_tokens and mean_lat > 0.0)
+    return bool(runner_initialized and valid_tokens and mean_lat > 0.0)
 
 
 def main() -> int:
@@ -143,14 +150,13 @@ def main() -> int:
     kv("Decode Steps", args.steps)
     print()
 
-    success = run_demonstration(device, decode_steps=args.steps)
+    success = bool(run_demonstration(device, decode_steps=args.steps))
     print()
-    if success:
-        pass_fail("Overall Example 35 Status", True, "Autoregressive decode runner verified successfully")
-        return 0
-    else:
-        pass_fail("Overall Example 35 Status", False, "One or more decode runner steps failed")
-        return 1
+    status_msg = (
+        "Autoregressive decode runner verified successfully" if success else "One or more decode runner steps failed"
+    )
+    pass_fail("Overall Example 35 Status", success, status_msg)
+    return 0 if success else 1
 
 
 if __name__ == "__main__":

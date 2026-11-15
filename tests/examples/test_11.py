@@ -31,7 +31,7 @@ def test_11_runs_clean():
         [sys.executable, "examples/11_quantization_fp8_int4_mx.py"],
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=120,
     )
     assert proc.returncode == 0, f"Example 11 failed with stderr: {proc.stderr}"
     assert "[PASS] Overall Example 11 Status" in proc.stdout

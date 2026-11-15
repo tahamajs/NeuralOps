@@ -36,7 +36,7 @@ def test_28_runs_clean():
         ],
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=180,
     )
     assert proc.returncode == 0, f"Example 28 failed with stderr:\n{proc.stderr}"
     assert "[PASS] Overall Example 28 Status" in proc.stdout

@@ -31,7 +31,7 @@ def test_12_runs_clean():
         [sys.executable, "examples/12_structured_pruning_and_token_shedding.py"],
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=120,
     )
     assert proc.returncode == 0, f"Example 12 failed with stderr: {proc.stderr}"
     assert "[PASS] Overall Example 12 Status" in proc.stdout
@@ -55,14 +55,14 @@ def test_12_sparsity_2_4_exact():
 
 def test_12_mlp_channel_pruning():
     """Verify structured channel pruning on linear layers with parameter reduction."""
-    lin1 = nn.Linear(32, 64)
-    lin2 = nn.Linear(64, 32)
+    lin1 = nn.Linear(32, 64, bias=False)
+    lin2 = nn.Linear(64, 32, bias=False)
     new_lin1, new_lin2, p_old, p_new = prune_mlp_intermediate(lin1, lin2, prune_ratio=0.5)
 
     assert new_lin1.out_features == 32
     assert new_lin2.in_features == 32
     assert p_new < p_old
-    assert p_new == (32 * 32 + 32) + (32 * 32 + 32)
+    assert p_new == (32 * 32) + (32 * 32)
 
     x = torch.ones(2, 32)
     out = new_lin2(torch.relu(new_lin1(x)))

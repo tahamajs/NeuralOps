@@ -64,7 +64,9 @@ import neuralops.ops.triton as notr
 def resolve_device(requested: str) -> torch.device:
     """Resolve compute device with strict zero-fake fallback policy."""
     if requested.startswith("cuda") and not torch.cuda.is_available():
-        raise RuntimeError(f"CUDA was explicitly requested ('{requested}') but is unavailable; refusing silent CPU fallback.")
+        raise RuntimeError(
+            f"CUDA was explicitly requested ('{requested}') but is unavailable; refusing silent CPU fallback."
+        )
     if requested == "auto":
         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
     return torch.device(requested)
@@ -77,7 +79,11 @@ def run_demonstration(device: torch.device) -> bool:
     # 1. Inspect kernel catalog
     catalog = getattr(notr, "TRITON_KERNEL_CATALOG", [])
     has_triton = getattr(notr, "HAS_TRITON", False) and device.type == "cuda"
-    pass_fail("Kernel Catalog Loaded", bool(len(catalog) > 0), f"Catalog size: {len(catalog)} operators read dynamically from registry")
+    pass_fail(
+        "Kernel Catalog Loaded",
+        bool(len(catalog) > 0),
+        f"Catalog size: {len(catalog)} operators read dynamically from registry",
+    )
 
     # 2. Execute and benchmark 10 representative kernel operators
     results: list[tuple[str, str, float, bool]] = []

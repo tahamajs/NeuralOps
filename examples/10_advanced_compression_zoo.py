@@ -18,7 +18,7 @@ Subsystem Demonstrated:
 Execution Environment:
     - CPU: Fully supported, deterministic, offline execution on macOS CPU.
     - GPU: Optional (accelerates SVD and Hessian vector products).
-    - Network: Not required; uses synthetic activations and Fisher statistics.
+    - Network: Not required; uses offline synthetic token sequences and real layer weights.
 
 What You Will Learn:
     1. How activation covariance and Fisher curvature reshape the singular spectrum.
@@ -39,16 +39,18 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 import torch
-import torch.nn as nn
 
 from examples._shared import (
+    TinyClassifier,
     get_backend_preference,
     gpu_name,
     kv,
     pass_fail,
     section,
     table,
+    tiny_inputs,
 )
+from neuralops.compression.svd.hnc_svd_continuation import HessianNullSpaceSVDContinuation
 
 
 def compute_spectral_metrics(
@@ -87,7 +89,6 @@ def compress_whitened_svd(
     W_tilde ~= U_r * S_r * V_r^T
     W_hat = U_r * S_r * V_r^T * Sigma_X^(-1/2)
     """
-    # Regularized symmetric square root of covariance
     eps = 1e-5
     eigvals, eigvecs = torch.linalg.eigh(cov_x + eps * torch.eye(cov_x.size(0)))
     eigvals = torch.clamp(eigvals, min=eps)
@@ -137,15 +138,13 @@ def compress_fisher_svd(
 def compress_hnc_svd(
     weight: torch.Tensor,
     target_rank: int,
-    cov_x: torch.Tensor,
+    activations: torch.Tensor,
 ) -> tuple[torch.Tensor, int]:
     """Hessian Null-Space SVD Continuation (HNC-SVD):
 
-    Walk along the Gauss-Newton Hessian null space to compress while minimizing
-    curvature degradation.
+    Leverages neuralops.compression.svd.hnc_svd_continuation to walk along
+    the Gauss-Newton null space and perform Riemannian continuation.
     """
-    from neuralops.compression.svd.hnc_svd_continuation import HessianNullSpaceSVDContinuation
-
     hnc = HessianNullSpaceSVDContinuation(
         target_rank=target_rank,
         walk_steps=20,
@@ -153,21 +152,9 @@ def compress_hnc_svd(
         step_size_eta=0.01,
         device="cpu",
     )
-
-    # Wrap weight in a Linear layer
+    w_recon = hnc.run_continuation(weight, probe_inputs=activations)
     d_out, d_in = weight.shape
-    lin = nn.Linear(d_in, d_out, bias=False)
-    lin.weight.data.copy_(weight)
-
-    # Perform Riemannian continuation on the layer
-    u, s, vh = torch.linalg.svd(weight, full_matrices=False)
-    u_r = u[:, :target_rank]
-    s_r = s[:target_rank]
-    vh_r = vh[:target_rank, :]
-
-    # Refine singular factors along null-space gradient
-    w_recon = (u_r * s_r) @ vh_r
-    comp_params = u_r.numel() + s_r.numel() + vh_r.numel()
+    comp_params = target_rank * (d_out + d_in + 1)
     return w_recon, comp_params
 
 
@@ -176,7 +163,7 @@ def compress_kronecker(
     m1: int = 8,
     m2: int = 8,
     n1: int = 8,
-    n2: int = 8,
+    n2: int = 4,
 ) -> tuple[torch.Tensor, int]:
     """Nearest Kronecker Product Factorization (Van Loan & Pitsianis):
 
@@ -185,7 +172,7 @@ def compress_kronecker(
     Solved by rearranging W into W_tilde in R^{(m1*n1) x (m2*n2)} and taking rank-1 SVD.
     """
     m, n = weight.shape
-    assert m == m1 * m2 and n == n1 * n2, f"Shape {weight.shape} != ({m1*m2}, {n1*n2})"
+    assert m == m1 * m2 and n == n1 * n2, f"Shape {weight.shape} != ({m1 * m2}, {n1 * n2})"
 
     # Reshape and permute into rearranged matrix W_tilde
     # W[i1*m2 + i2, j1*n2 + j2] -> W_tilde[i1*n1 + j1, i2*n2 + j2]
@@ -215,20 +202,42 @@ def main() -> int:
     kv("Target Device", device)
     kv("PyTorch Version", torch.__version__)
 
-    # Deterministic test setup: 64x64 linear layer
-    torch.manual_seed(42)
-    d_out, d_in = 64, 64
-    weight = torch.randn(d_out, d_in, device="cpu")
+    # Extract genuine layer weight from TinyClassifier transformer backbone
+    model = TinyClassifier().to("cpu")
+    target_layer = model.transformer.distilbert.transformer.layer[0].ffn.lin1
+    weight = target_layer.weight.data.clone()
+    d_out, d_in = weight.shape
     orig_params = weight.numel()
     target_rank = 16
 
-    # Generate synthetic activation covariance Sigma_X
-    x_calib = torch.randn(256, d_in, device="cpu")
-    cov_x = (x_calib.T @ x_calib) / x_calib.size(0)
+    # Extract real activation stream via forward hook over offline synthetic tokens
+    calib_tokens = tiny_inputs(batch_size=8, seq_len=16, seed=42)
+    activations: list[torch.Tensor] = []
 
-    # Generate synthetic Fisher diagonal curvature
-    fisher_diag = torch.rand(d_out, d_in, device="cpu") + 0.1
+    def hook(module: torch.nn.Module, inp: tuple[torch.Tensor, ...], out: torch.Tensor) -> None:
+        activations.append(inp[0].detach().reshape(-1, inp[0].shape[-1]))
 
+    hook_handle = target_layer.register_forward_hook(hook)
+    model.eval()
+    with torch.no_grad():
+        model(**calib_tokens)
+    hook_handle.remove()
+
+    x_act = activations[0]
+    cov_x = (x_act.T @ x_act) / x_act.size(0)
+
+    # Compute empirical Fisher curvature diagonal from actual parameter gradients
+    model.train()
+    model.zero_grad()
+    train_tokens = tiny_inputs(batch_size=8, seq_len=16, seed=123)
+    out = model(**train_tokens)
+    loss = (out.logits if hasattr(out, "logits") else out).sum()
+    loss.backward()
+    assert target_layer.weight.grad is not None, "Target layer gradient is missing"
+    fisher_diag = (target_layer.weight.grad**2).clamp(min=1e-8)
+    model.eval()
+
+    kv("Target Layer", "layer[0].ffn.lin1")
     kv("Layer Dimensions", f"{d_out} x {d_in}")
     kv("Original Parameters", f"{orig_params:,}")
     kv("Target Rank for SVD Methods", target_rank)
@@ -242,18 +251,21 @@ def main() -> int:
     w_asvd, params_asvd = compress_whitened_svd(weight, cov_x, target_rank)
     err_asvd, ret_asvd = compute_spectral_metrics(weight, w_asvd, target_rank)
     reduction_asvd = (1.0 - params_asvd / orig_params) * 100.0
-    pass_fail("Whitened SVD Reconstruction", bool(err_asvd < 0.75))
+    p_asvd = bool(err_asvd < 0.75 and ret_asvd > 0.50)
+    pass_fail("Whitened SVD Reconstruction", p_asvd)
     kv("Parameters", f"{params_asvd:,} ({reduction_asvd:.1f}% reduction)")
     kv("Frobenius Rel Error", f"{err_asvd:.4f}")
     kv("Energy Retention", f"{ret_asvd * 100:.2f}%")
-    results.append({
-        "Algorithm": "Whitened SVD (ASVD)",
-        "Params": f"{params_asvd:,}",
-        "Reduction": f"{reduction_asvd:.1f}%",
-        "Frob Error": f"{err_asvd:.4f}",
-        "Energy Ret": f"{ret_asvd * 100:.1f}%",
-        "Status": "PASS",
-    })
+    results.append(
+        {
+            "Algorithm": "Whitened SVD (ASVD)",
+            "Params": f"{params_asvd:,}",
+            "Reduction": f"{reduction_asvd:.1f}%",
+            "Frob Error": f"{err_asvd:.4f}",
+            "Energy Ret": f"{ret_asvd * 100:.1f}%",
+            "Status": "PASS" if p_asvd else "FAIL",
+        }
+    )
 
     # =========================================================================
     # 2. Fisher-Weighted SVD (FWSVD)
@@ -262,58 +274,67 @@ def main() -> int:
     w_fwsvd, params_fwsvd = compress_fisher_svd(weight, fisher_diag, target_rank)
     err_fwsvd, ret_fwsvd = compute_spectral_metrics(weight, w_fwsvd, target_rank)
     reduction_fwsvd = (1.0 - params_fwsvd / orig_params) * 100.0
-    pass_fail("Fisher-Weighted SVD Reconstruction", bool(err_fwsvd < 0.75))
+    p_fwsvd = bool(err_fwsvd < 0.75 and ret_fwsvd > 0.50)
+    pass_fail("Fisher-Weighted SVD Reconstruction", p_fwsvd)
     kv("Parameters", f"{params_fwsvd:,} ({reduction_fwsvd:.1f}% reduction)")
     kv("Frobenius Rel Error", f"{err_fwsvd:.4f}")
     kv("Energy Retention", f"{ret_fwsvd * 100:.2f}%")
-    results.append({
-        "Algorithm": "Fisher-Weighted SVD",
-        "Params": f"{params_fwsvd:,}",
-        "Reduction": f"{reduction_fwsvd:.1f}%",
-        "Frob Error": f"{err_fwsvd:.4f}",
-        "Energy Ret": f"{ret_fwsvd * 100:.1f}%",
-        "Status": "PASS",
-    })
+    results.append(
+        {
+            "Algorithm": "Fisher-Weighted SVD",
+            "Params": f"{params_fwsvd:,}",
+            "Reduction": f"{reduction_fwsvd:.1f}%",
+            "Frob Error": f"{err_fwsvd:.4f}",
+            "Energy Ret": f"{ret_fwsvd * 100:.1f}%",
+            "Status": "PASS" if p_fwsvd else "FAIL",
+        }
+    )
 
     # =========================================================================
     # 3. Hessian Null-Space SVD Continuation (HNC-SVD)
     # =========================================================================
     section("Method 3: Hessian Null-Space SVD (HNC-SVD Continuation)")
-    w_hnc, params_hnc = compress_hnc_svd(weight, target_rank, cov_x)
+    w_hnc, params_hnc = compress_hnc_svd(weight, target_rank, x_act)
     err_hnc, ret_hnc = compute_spectral_metrics(weight, w_hnc, target_rank)
     reduction_hnc = (1.0 - params_hnc / orig_params) * 100.0
-    pass_fail("HNC-SVD Null-Space Continuation", bool(err_hnc < 0.65))
+    p_hnc = bool(err_hnc < 0.65 and ret_hnc > 0.50)
+    pass_fail("HNC-SVD Null-Space Continuation", p_hnc)
     kv("Parameters", f"{params_hnc:,} ({reduction_hnc:.1f}% reduction)")
     kv("Frobenius Rel Error", f"{err_hnc:.4f}")
     kv("Energy Retention", f"{ret_hnc * 100:.2f}%")
-    results.append({
-        "Algorithm": "HNC-SVD (Riemannian)",
-        "Params": f"{params_hnc:,}",
-        "Reduction": f"{reduction_hnc:.1f}%",
-        "Frob Error": f"{err_hnc:.4f}",
-        "Energy Ret": f"{ret_hnc * 100:.1f}%",
-        "Status": "PASS",
-    })
+    results.append(
+        {
+            "Algorithm": "HNC-SVD (Riemannian)",
+            "Params": f"{params_hnc:,}",
+            "Reduction": f"{reduction_hnc:.1f}%",
+            "Frob Error": f"{err_hnc:.4f}",
+            "Energy Ret": f"{ret_hnc * 100:.1f}%",
+            "Status": "PASS" if p_hnc else "FAIL",
+        }
+    )
 
     # =========================================================================
     # 4. Kronecker Decomposition
     # =========================================================================
     section("Method 4: Kronecker Decomposition (Nearest Kronecker Product)")
-    w_kron, params_kron = compress_kronecker(weight, m1=8, m2=8, n1=8, n2=8)
+    w_kron, params_kron = compress_kronecker(weight, m1=8, m2=8, n1=8, n2=4)
     err_kron, ret_kron = compute_spectral_metrics(weight, w_kron, target_rank)
     reduction_kron = (1.0 - params_kron / orig_params) * 100.0
-    pass_fail("Kronecker Factorization A (x) B", bool(err_kron < 0.99))
+    p_kron = bool(err_kron < 0.99 and reduction_kron > 80.0)
+    pass_fail("Kronecker Factorization A (x) B", p_kron)
     kv("Parameters", f"{params_kron:,} ({reduction_kron:.1f}% reduction)")
     kv("Frobenius Rel Error", f"{err_kron:.4f}")
     kv("Energy Retention", f"{ret_kron * 100:.2f}%")
-    results.append({
-        "Algorithm": "Kronecker A (x) B",
-        "Params": f"{params_kron:,}",
-        "Reduction": f"{reduction_kron:.1f}%",
-        "Frob Error": f"{err_kron:.4f}",
-        "Energy Ret": f"{ret_kron * 100:.1f}%",
-        "Status": "PASS",
-    })
+    results.append(
+        {
+            "Algorithm": "Kronecker A (x) B",
+            "Params": f"{params_kron:,}",
+            "Reduction": f"{reduction_kron:.1f}%",
+            "Frob Error": f"{err_kron:.4f}",
+            "Energy Ret": f"{ret_kron * 100:.1f}%",
+            "Status": "PASS" if p_kron else "FAIL",
+        }
+    )
 
     # =========================================================================
     # Summary Comparison Table
@@ -323,12 +344,16 @@ def main() -> int:
     rows = [[str(r[h]) for h in headers] for r in results]
     table(rows, headers=headers)
 
+    # Compute honest overall status
+    all_passed = bool(p_asvd and p_fwsvd and p_hnc and p_kron)
     pass_fail(
         "Overall Example 10 Status",
-        True,
-        "All 4 advanced compression paradigms evaluated with spectral metrics",
+        all_passed,
+        "All 4 advanced compression paradigms evaluated with spectral metrics"
+        if all_passed
+        else "Sub-check failures detected in compression zoo",
     )
-    return 0
+    return 0 if all_passed else 1
 
 
 if __name__ == "__main__":

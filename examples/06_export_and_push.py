@@ -112,8 +112,9 @@ def export_and_verify_onnx(
     if (
         skip_if_missing("onnx", "onnx package not installed")
         or skip_if_missing("onnxruntime", "onnxruntime not installed")
+        or skip_if_missing("onnxscript", "onnxscript package not installed")
     ):
-        return True, 0, "SKIPPED: onnx/onnxruntime missing"
+        return True, 0, "SKIPPED: onnx/onnxruntime/onnxscript missing"
 
     try:
         import onnxruntime as ort

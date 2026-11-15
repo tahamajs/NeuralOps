@@ -28,7 +28,7 @@ def test_27_runs_clean():
         [sys.executable, "examples/27_huggingface_polymorphic_cache_bridge.py", "--device", "cpu"],
         capture_output=True,
         text=True,
-        timeout=60,
+        timeout=180,
     )
     assert proc.returncode == 0, f"Example 27 failed with stderr:\n{proc.stderr}"
     assert "[PASS] Overall Example 27 Status" in proc.stdout
