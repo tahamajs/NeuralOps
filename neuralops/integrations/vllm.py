@@ -378,6 +378,207 @@ def vllm_is_available() -> bool:
     return HAS_VLLM
 
 
+class HeadlessVLLMWorker:
+    """
+    Offline headless mock worker for vLLM serving workloads in CI / local testing.
+
+    Emulates vLLM worker execution, PagedAttention block dereferencing, and
+    autoregressive token generation without requiring physical GPU clusters or vLLM C++ wheels.
+    """
+
+    def __init__(
+        self,
+        model_config: Any = None,
+        model: Optional[nn.Module] = None,
+        block_size: int = 16,
+        num_blocks: int = 64,
+        device: Union[str, torch.device] = "cpu",
+        **kwargs: Any,
+    ) -> None:
+        """
+        Initialize the HeadlessVLLMWorker.
+
+        Args:
+            model_config: Model configuration object.
+            model: Optional PyTorch model instance for logits generation.
+            block_size: Paged attention block size.
+            num_blocks: Number of physical memory blocks to allocate.
+            device: Execution device (e.g., 'cpu' or 'cuda').
+            **kwargs: Extra parameters.
+        """
+        self.config = model_config
+        self.device = torch.device(device if (device != "cuda" or torch.cuda.is_available()) else "cpu")
+        self.model = model.to(self.device).eval() if model is not None else None
+        self.block_size = block_size
+        self.num_blocks = num_blocks
+        self.num_heads = getattr(model_config, "num_attention_heads", 2) if model_config else 2
+        self.head_size = (
+            getattr(model_config, "hidden_size", 64) // self.num_heads
+            if model_config and hasattr(model_config, "hidden_size")
+            else 32
+        )
+        self.paged_state_table = PagedStateTable(
+            num_slots=max(16, num_blocks),
+            num_heads=self.num_heads,
+            dim_k=self.head_size,
+            dim_v=self.head_size,
+            device=self.device,
+        )
+        self.kwargs = kwargs
+        self._is_initialized = True
+
+    def execute_model(self, execute_model_req: Any) -> Dict[str, Any]:
+        """
+        Execute forward pass or step generation for a batch of requests.
+
+        Args:
+            execute_model_req: Request dictionary or object containing input_ids / seq_lens.
+
+        Returns:
+            Dictionary containing execution status, token outputs, and cached block metadata.
+        """
+        input_ids = None
+        if isinstance(execute_model_req, dict):
+            input_ids = execute_model_req.get("input_ids")
+        elif hasattr(execute_model_req, "input_ids"):
+            input_ids = execute_model_req.input_ids
+
+        if input_ids is not None:
+            if not isinstance(input_ids, torch.Tensor):
+                input_ids = torch.tensor(input_ids, dtype=torch.long, device=self.device)
+            else:
+                input_ids = input_ids.to(self.device)
+
+            if input_ids.ndim == 1:
+                input_ids = input_ids.unsqueeze(0)
+
+            if self.model is not None:
+                with torch.no_grad():
+                    logits = self.model(input_ids)
+                    if hasattr(logits, "logits"):
+                        logits = logits.logits
+                    next_tokens = torch.argmax(logits[:, -1, :], dim=-1).tolist()
+            else:
+                next_tokens = [int((input_ids[i, -1].item() + 1) % 1000) for i in range(input_ids.shape[0])]
+            cached_blocks = max(1, (input_ids.shape[1] + self.block_size - 1) // self.block_size)
+        else:
+            next_tokens = [101, 2054, 102]
+            cached_blocks = 4
+
+        return {
+            "status": "success",
+            "tokens": next_tokens,
+            "cached_blocks": cached_blocks,
+            "num_blocks_allocated": self.paged_state_table.num_slots - self.paged_state_table.num_free_slots,
+        }
+
+    def generate(
+        self,
+        prompts: Union[str, List[str], List[int], torch.Tensor],
+        max_new_tokens: int = 16,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """
+        Offline generation loop matching vLLM generation interface.
+
+        Args:
+            prompts: Input text, token list, or tensor prompt.
+            max_new_tokens: Maximum number of tokens to generate.
+            **kwargs: Generation kwargs.
+
+        Returns:
+            Generation result dictionary containing generated text/tokens.
+        """
+        if isinstance(prompts, str):
+            token_ids = [ord(c) % 256 for c in prompts]
+        elif isinstance(prompts, torch.Tensor):
+            token_ids = prompts.flatten().tolist()
+        elif isinstance(prompts, list) and prompts and isinstance(prompts[0], str):
+            token_ids = [ord(c) % 256 for c in prompts[0]]
+        else:
+            token_ids = list(prompts) if hasattr(prompts, "__iter__") else [1]
+
+        cur_tokens = list(token_ids)
+        generated_tokens: List[int] = []
+
+        slot = self.paged_state_table.allocate(request_id=str(hash(tuple(token_ids))))
+
+        for _ in range(max_new_tokens):
+            inp = torch.tensor([cur_tokens], dtype=torch.long, device=self.device)
+            res = self.execute_model({"input_ids": inp})
+            tok = res["tokens"][0]
+            generated_tokens.append(tok)
+            cur_tokens.append(tok)
+
+        self.paged_state_table.free(request_id=str(hash(tuple(token_ids))))
+
+        return {
+            "status": "success",
+            "prompt_tokens": token_ids,
+            "generated_tokens": generated_tokens,
+            "output_tokens": cur_tokens,
+            "cached_blocks": max(1, len(cur_tokens) // self.block_size),
+        }
+
+    def shutdown(self) -> None:
+        """Release allocated worker buffers."""
+        self._is_initialized = False
+
+
+def get_vllm_runner(
+    model: Optional[Union[nn.Module, Any]] = None,
+    headless_mock: bool = False,
+    device: Union[str, torch.device] = "cpu",
+    **kwargs: Any,
+) -> Any:
+    """
+    Retrieve or construct a vLLM serving runner / worker.
+
+    Args:
+        model: Optional model instance or configuration.
+        headless_mock: Whether to explicitly return an offline HeadlessVLLMWorker.
+        device: Device to place the runner on.
+        **kwargs: Extra arguments forwarded to worker initialization.
+
+    Returns:
+        HeadlessVLLMWorker when mock is requested or vLLM is unavailable in mock mode.
+
+    Raises:
+        IntegrationNotImplementedError: When vLLM is unavailable and mock is not requested.
+    """
+    model_config = getattr(model, "config", None) if model is not None else None
+    if not is_vllm_available():
+        if headless_mock or os.environ.get("NEURALOPS_MOCK_SERVING") == "1":
+            return HeadlessVLLMWorker(
+                model_config=model_config,
+                model=model if isinstance(model, nn.Module) else None,
+                device=device,
+                **kwargs,
+            )
+        raise IntegrationNotImplementedError(
+            "vLLM is not installed. Install with `pip install 'vllm>=0.6.0'` "
+            "or run with NEURALOPS_MOCK_SERVING=1 (or headless_mock=True) for mock runner."
+        )
+
+    if headless_mock:
+        return HeadlessVLLMWorker(
+            model_config=model_config,
+            model=model if isinstance(model, nn.Module) else None,
+            device=device,
+            **kwargs,
+        )
+
+    # When vLLM is installed, instantiate production adapter
+    from neuralops.integrations.vllm import VLLMAdapter
+
+    return VLLMAdapter(model=model, **kwargs)
+
+
+def is_vllm_available() -> bool:
+    """Alias for vllm_is_available() for API consistency across integrations."""
+    return vllm_is_available()
+
+
 def register_neuralops_vllm_plugin() -> bool:
     """
     Registers NeuralOps attention backend and custom ops into vLLM runtime.
@@ -408,6 +609,9 @@ from neuralops.integrations.vllm_backend.backend import NeuralOpsAttentionBacken
 from neuralops.integrations.vllm_backend.kv_cache_spec import NeuralOpsRecurrentSpec
 
 __all__ = [
+    "HeadlessVLLMWorker",
+    "get_vllm_runner",
+    "is_vllm_available",
     "NeuralOpsvLLMMetadata",
     "NeuralOpsvLLMImpl",
     "NeuralOpsvLLMAttentionBackend",
