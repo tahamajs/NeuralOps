@@ -42,7 +42,27 @@ except ImportError:
 # sklearn is NOT imported here; all implementations are equivalent for our usage.
 
 
-def _confusion(y_true: np.ndarray, y_pred: np.ndarray, label: Any):
+def _prepare_inputs(y_true: Any, y_pred: Any) -> tuple[np.ndarray, np.ndarray]:
+    """Convert inputs to 1D squeezed numpy arrays and validate shape compatibility."""
+    if hasattr(y_true, "detach"):
+        y_true = y_true.detach().cpu().numpy()
+    if hasattr(y_pred, "detach"):
+        y_pred = y_pred.detach().cpu().numpy()
+
+    t_arr = np.asarray(y_true).squeeze()
+    p_arr = np.asarray(y_pred).squeeze()
+
+    # Handle 0-dim scalar case
+    if t_arr.ndim == 0 and p_arr.ndim == 0:
+        t_arr = np.atleast_1d(t_arr)
+        p_arr = np.atleast_1d(p_arr)
+
+    if t_arr.shape != p_arr.shape:
+        raise ValueError(f"Shape mismatch: y_true shape {t_arr.shape} does not match y_pred shape {p_arr.shape}")
+    return t_arr, p_arr
+
+
+def _confusion(y_true: np.ndarray, y_pred: np.ndarray, label: Any) -> tuple[int, int, int]:
     """Return (TP, FP, FN) for a single label."""
     tp = int(np.sum((y_pred == label) & (y_true == label)))
     fp = int(np.sum((y_pred == label) & (y_true != label)))
@@ -50,107 +70,136 @@ def _confusion(y_true: np.ndarray, y_pred: np.ndarray, label: Any):
     return tp, fp, fn
 
 
-def accuracy_score(y_true, y_pred) -> float:  # type: ignore[misc]
-    """Fraction of correctly classified samples."""
-    y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
-    return float(np.mean(y_true == y_pred))
+def accuracy_score(y_true: Any, y_pred: Any) -> float:
+    """Fraction of correctly classified samples.
+
+    Strictly validates input shapes, preventing unintended outer-product broadcasting
+    when given (N, 1) and (N,) inputs.
+    """
+    t_arr, p_arr = _prepare_inputs(y_true, y_pred)
+    if t_arr.size == 0:
+        return 0.0
+    return float(np.mean(t_arr == p_arr))
 
 
-def mean_squared_error(y_true, y_pred) -> float:  # type: ignore[misc]
+def mean_squared_error(y_true: Any, y_pred: Any) -> float:
     """Mean squared error."""
-    y_true = np.asarray(y_true, dtype=float)
-    y_pred = np.asarray(y_pred, dtype=float)
-    return float(np.mean((y_true - y_pred) ** 2))
+    t_arr, p_arr = _prepare_inputs(y_true, y_pred)
+    if t_arr.size == 0:
+        return 0.0
+    t_float = t_arr.astype(float)
+    p_float = p_arr.astype(float)
+    return float(np.mean((t_float - p_float) ** 2))
 
 
-def mean_absolute_error(y_true, y_pred) -> float:  # type: ignore[misc]
+def mean_absolute_error(y_true: Any, y_pred: Any) -> float:
     """Mean absolute error."""
-    y_true = np.asarray(y_true, dtype=float)
-    y_pred = np.asarray(y_pred, dtype=float)
-    return float(np.mean(np.abs(y_true - y_pred)))
+    t_arr, p_arr = _prepare_inputs(y_true, y_pred)
+    if t_arr.size == 0:
+        return 0.0
+    t_float = t_arr.astype(float)
+    p_float = p_arr.astype(float)
+    return float(np.mean(np.abs(t_float - p_float)))
 
 
-def f1_score(y_true, y_pred, average: str = "weighted", zero_division: int = 0) -> Any:  # type: ignore[misc]
+def f1_score(y_true: Any, y_pred: Any, average: str = "weighted", zero_division: int = 0) -> Any:
     """F1 score (macro / weighted / micro / None)."""
-    y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
-    labels = np.unique(np.concatenate([y_true, y_pred]))
-    f1s, weights = [], []
-    for lbl in labels:
-        tp, fp, fn = _confusion(y_true, y_pred, lbl)
-        denom = 2 * tp + fp + fn
-        f1 = (2 * tp / denom) if denom > 0 else float(zero_division)
-        f1s.append(f1)
-        weights.append(int(np.sum(y_true == lbl)))
-    f1s_arr = np.array(f1s, dtype=float)
-    w_arr = np.array(weights, dtype=float)
-    if average == "macro":
-        return float(np.mean(f1s_arr))
-    if average == "weighted":
-        return float(np.average(f1s_arr, weights=w_arr)) if w_arr.sum() > 0 else float(zero_division)
-    if average == "micro":
-        tps = sum(_confusion(y_true, y_pred, lbl)[0] for lbl in labels)
-        fps = sum(_confusion(y_true, y_pred, lbl)[1] for lbl in labels)
-        fns = sum(_confusion(y_true, y_pred, lbl)[2] for lbl in labels)
-        d = 2 * tps + fps + fns
-        return float(2 * tps / d) if d > 0 else float(zero_division)
-    return f1s_arr.tolist()
+    _, _, f1, _ = precision_recall_fscore_support(y_true, y_pred, average=average, zero_division=zero_division)
+    return f1
 
 
-def matthews_corrcoef(y_true, y_pred) -> float:  # type: ignore[misc]
-    """Matthews correlation coefficient (binary classification)."""
-    y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
-    tp = np.sum((y_pred == 1) & (y_true == 1))
-    tn = np.sum((y_pred == 0) & (y_true == 0))
-    fp = np.sum((y_pred == 1) & (y_true == 0))
-    fn = np.sum((y_pred == 0) & (y_true == 1))
-    denom = float(np.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)))
-    return float((tp * tn - fp * fn) / denom) if denom > 0 else 0.0
+def matthews_corrcoef(y_true: Any, y_pred: Any) -> float:
+    """Matthews correlation coefficient (supports binary and multiclass classification)."""
+    t_arr, p_arr = _prepare_inputs(y_true, y_pred)
+    if t_arr.size == 0:
+        return 0.0
+    labels = np.unique(np.concatenate([t_arr, p_arr]))
+    if len(labels) <= 1:
+        return 0.0
+
+    label_to_idx = {lbl: idx for idx, lbl in enumerate(labels)}
+    num_classes = len(labels)
+    conf_mat = np.zeros((num_classes, num_classes), dtype=np.int64)
+    for t_val, p_val in zip(t_arr, p_arr):
+        conf_mat[label_to_idx[t_val], label_to_idx[p_val]] += 1
+
+    t_k = conf_mat.sum(axis=1).astype(float)
+    p_k = conf_mat.sum(axis=0).astype(float)
+    c = float(np.trace(conf_mat))
+    s = float(t_arr.size)
+    numerator = c * s - float(np.dot(p_k, t_k))
+    denominator = float(np.sqrt((s**2 - np.sum(p_k**2)) * (s**2 - np.sum(t_k**2))))
+    return float(numerator / denominator) if denominator > 0 else 0.0
 
 
-def precision_recall_fscore_support(  # type: ignore[misc]
-    y_true, y_pred, average: str = "weighted", zero_division: int = 0
+def precision_recall_fscore_support(
+    y_true: Any, y_pred: Any, average: str | None = "weighted", zero_division: int = 0
 ) -> tuple:
-    """Precision, recall, F-score, and support."""
-    y_true, y_pred = np.asarray(y_true), np.asarray(y_pred)
-    labels = np.unique(y_true)
+    """Precision, recall, F-score, and support matching sklearn reference."""
+    t_arr, p_arr = _prepare_inputs(y_true, y_pred)
+    if t_arr.size == 0:
+        return (0.0, 0.0, 0.0, None) if average is not None else ([], [], [], [])
+
+    labels = np.unique(np.concatenate([t_arr, p_arr]))
     ps, rs, f1s, supports = [], [], [], []
     for lbl in labels:
-        tp, fp, fn = _confusion(y_true, y_pred, lbl)
+        tp, fp, fn = _confusion(t_arr, p_arr, lbl)
         p = tp / (tp + fp) if (tp + fp) > 0 else float(zero_division)
         r = tp / (tp + fn) if (tp + fn) > 0 else float(zero_division)
-        d = 2 * tp + fp + fn
-        f = (2 * tp / d) if d > 0 else float(zero_division)
+        denom = 2 * tp + fp + fn
+        f = (2 * tp / denom) if denom > 0 else float(zero_division)
         ps.append(p)
         rs.append(r)
         f1s.append(f)
         supports.append(tp + fn)
+
     ps_arr = np.array(ps, dtype=float)
     rs_arr = np.array(rs, dtype=float)
     f1s_arr = np.array(f1s, dtype=float)
     sup_arr = np.array(supports, dtype=float)
+
     if average == "weighted":
         w = sup_arr
+        total_w = w.sum()
         return (
-            float(np.average(ps_arr, weights=w)) if w.sum() > 0 else float(zero_division),
-            float(np.average(rs_arr, weights=w)) if w.sum() > 0 else float(zero_division),
-            float(np.average(f1s_arr, weights=w)) if w.sum() > 0 else float(zero_division),
+            float(np.average(ps_arr, weights=w)) if total_w > 0 else float(zero_division),
+            float(np.average(rs_arr, weights=w)) if total_w > 0 else float(zero_division),
+            float(np.average(f1s_arr, weights=w)) if total_w > 0 else float(zero_division),
             None,
         )
     if average == "macro":
         return float(np.mean(ps_arr)), float(np.mean(rs_arr)), float(np.mean(f1s_arr)), None
+    if average == "micro":
+        total_tp = sum(int(np.sum((p_arr == lbl) & (t_arr == lbl))) for lbl in labels)
+        total_fp = sum(int(np.sum((p_arr == lbl) & (t_arr != lbl))) for lbl in labels)
+        total_fn = sum(int(np.sum((p_arr != lbl) & (t_arr == lbl))) for lbl in labels)
+        micro_p = total_tp / (total_tp + total_fp) if (total_tp + total_fp) > 0 else float(zero_division)
+        micro_r = total_tp / (total_tp + total_fn) if (total_tp + total_fn) > 0 else float(zero_division)
+        micro_denom = 2 * total_tp + total_fp + total_fn
+        micro_f = (2 * total_tp / micro_denom) if micro_denom > 0 else float(zero_division)
+        return float(micro_p), float(micro_r), float(micro_f), None
     return ps_arr.tolist(), rs_arr.tolist(), f1s_arr.tolist(), sup_arr.tolist()
 
 
-def precision_score(y_true, y_pred, average: str = "weighted", zero_division: int = 0) -> float:  # type: ignore[misc]
+def precision_score(y_true: Any, y_pred: Any, average: str = "weighted", zero_division: int = 0) -> float:
     """Weighted/macro precision score."""
     p, _, _, _ = precision_recall_fscore_support(y_true, y_pred, average=average, zero_division=zero_division)
     return float(p)
 
 
-def recall_score(y_true, y_pred, average: str = "weighted", zero_division: int = 0) -> float:  # type: ignore[misc]
+def recall_score(y_true: Any, y_pred: Any, average: str = "weighted", zero_division: int = 0) -> float:
     """Weighted/macro recall score."""
     _, r, _, _ = precision_recall_fscore_support(y_true, y_pred, average=average, zero_division=zero_division)
     return float(r)
+
+
+def compute_perplexity(loss: float | Any) -> float:
+    """Compute perplexity metric from cross-entropy loss value."""
+    if hasattr(loss, "item"):
+        val = float(loss.item())
+    else:
+        val = float(loss)
+    return float(np.exp(val))
 
 
 def compute_accuracy(predictions, labels) -> Any:

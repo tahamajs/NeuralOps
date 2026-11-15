@@ -47,6 +47,12 @@ class DoRALinear(nn.Module):
         self.r = int(r)
         self.alpha = float(alpha)
         self.scaling = (self.alpha / self.r) if self.r > 0 else 1.0
+        self.merged = False
+        self._orig_weight: torch.Tensor | None = None
+        self._saved_lora_A: nn.Linear | None = None
+        self._saved_lora_B: nn.Linear | None = None
+        self._saved_r: int = self.r
+        self._saved_m: torch.Tensor | None = None
 
         if self.r > 0:
             # Magnitude parameter m: initialize to row-wise Frobenius norm of base weight
@@ -75,7 +81,7 @@ class DoRALinear(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass applying weight-decomposed low-rank adaptation."""
-        if self.r <= 0 or self.lora_A is None or self.lora_B is None:
+        if self.merged or self.r <= 0 or self.lora_A is None or self.lora_B is None:
             return self.linear(x)
 
         effective_w = self.get_effective_weight().to(dtype=x.dtype, device=x.device)
@@ -84,13 +90,39 @@ class DoRALinear(nn.Module):
 
     def merge_weights(self) -> None:
         """Permanently fold DoRA directional and magnitude weights into base linear weight."""
-        if self.r > 0 and self.lora_A is not None and self.lora_B is not None:
-            with torch.no_grad():
-                merged = self.get_effective_weight()
-                self.linear.weight.copy_(merged)
-                self.r = 0
-                self.lora_A = None
-                self.lora_B = None
+        if self.merged or self.r <= 0 or self.lora_A is None or self.lora_B is None:
+            return
+        with torch.no_grad():
+            self._orig_weight = self.linear.weight.data.clone()
+            self._saved_m = self.m.data.clone()
+            self._saved_lora_A = self.lora_A
+            self._saved_lora_B = self.lora_B
+            self._saved_r = self.r
+
+            merged = self.get_effective_weight()
+            self.linear.weight.copy_(merged)
+            self.r = 0
+            self.lora_A = None
+            self.lora_B = None
+            self.merged = True
+
+    def unmerge(self) -> None:
+        """Reverse weight merge, recovering base weights bitwise and restoring adapters."""
+        if not self.merged or self._orig_weight is None:
+            return
+        with torch.no_grad():
+            self.linear.weight.copy_(self._orig_weight)
+            if self._saved_m is not None:
+                self.m.data.copy_(self._saved_m)
+            self.lora_A = self._saved_lora_A
+            self.lora_B = self._saved_lora_B
+            self.r = self._saved_r
+            self._orig_weight = None
+            self._saved_m = None
+            self.merged = False
+
+    merge = merge_weights
+    unmerge_weights = unmerge
 
 
 def merge_dora_into_linear(dora_mod: DoRALinear) -> nn.Linear:
