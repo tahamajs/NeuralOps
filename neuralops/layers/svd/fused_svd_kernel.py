@@ -404,7 +404,7 @@ class FusedSVDLinear(nn.Module):
             S = S_cpu.to(dev)
             Vt = Vt_cpu.to(dev)
             r = min(self.rank, len(S))
-            sqrt_s = torch.sqrt(S[:r])
+            sqrt_s = torch.sqrt(torch.clamp(S[:r], min=0.0))
             self.U.data.zero_()
             self.V.data.zero_()
             self.U.data[:, :r] = (U[:, :r] * sqrt_s).to(self.U.dtype)

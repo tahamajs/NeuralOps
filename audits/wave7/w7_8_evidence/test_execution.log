@@ -1,0 +1,47 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.3, pytest-8.0.0, pluggy-1.6.0 -- /Library/Frameworks/Python.framework/Versions/3.14/bin/python3
+cachedir: .pytest_cache
+rootdir: /Users/tahamajs/dev/Project_W7_8
+configfile: pyproject.toml
+plugins: anyio-4.12.1, Faker-40.31.0, timeout-2.4.0, cov-4.1.0, django-4.8.0, xdist-3.5.0, sugar-0.9.7
+collecting ... collected 35 items
+
+tests/layers/test_svd_adaptive.py::test_svd_linear_decay_cpu_fallback PASSED [  2%]
+tests/layers/test_svd_adaptive.py::test_svd_mamba_cpu_fallback PASSED    [  5%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[AdaptiveSVDAttention-kwargs0] PASSED [  8%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[ASVDAttention-kwargs1] PASSED [ 11%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[CompressedAttentionLayer-kwargs2] PASSED [ 14%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[CompressedDistilBertAttention-kwargs3] PASSED [ 17%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[FactorisedMatrixState-kwargs4] PASSED [ 20%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[FusedSVDKernelAttention-kwargs5] PASSED [ 22%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[LoRAAttention-kwargs6] PASSED [ 25%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[MinimalNOVAAttention-kwargs7] PASSED [ 28%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[MinimalSVDAttention-kwargs8] PASSED [ 31%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[NaiveSVDAttention-kwargs9] PASSED [ 34%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[ProjectionFactorizedAttention-kwargs10] PASSED [ 37%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[ResidualSVDAttention-kwargs11] PASSED [ 40%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[SALTAttention-kwargs12] PASSED [ 42%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[SVDLinearAttention-kwargs13] PASSED [ 45%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[SVDCompressedAttention-kwargs14] PASSED [ 48%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[SVDLinearAttention-kwargs15] PASSED [ 51%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[DecayDecayLinearAttention-kwargs16] PASSED [ 54%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[SVDLLMV2Attention-kwargs17] PASSED [ 57%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[SVDMamba-kwargs18] PASSED [ 60%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[SVDProjectionAttention-kwargs19] PASSED [ 62%]
+tests/layers/test_svd_adaptive.py::test_svd_layers_cpu_forward_backward[TritonSVDLinearAttention-kwargs20] SKIPPED [ 65%]
+tests/layers/test_svd_adaptive.py::test_adaptive_layers_cpu_forward_backward[AdaptiveSpanAttention-kwargs0] PASSED [ 68%]
+tests/layers/test_svd_adaptive.py::test_adaptive_layers_cpu_forward_backward[BlockTransformerHIBA-kwargs1] PASSED [ 71%]
+tests/layers/test_svd_adaptive.py::test_adaptive_layers_cpu_forward_backward[EATBlock-kwargs2] PASSED [ 74%]
+tests/layers/test_svd_adaptive.py::test_adaptive_layers_cpu_forward_backward[LoLAAttention-kwargs3] PASSED [ 77%]
+tests/layers/test_svd_adaptive.py::test_adaptive_layers_cpu_forward_backward[ProgressiveTokenPruning-kwargs4] PASSED [ 80%]
+tests/layers/test_svd_adaptive.py::test_adaptive_layers_cpu_forward_backward[SinkAttention-kwargs5] PASSED [ 82%]
+tests/layers/test_svd_adaptive.py::test_adaptive_layers_cpu_forward_backward[SpanExpandedAttention-kwargs6] PASSED [ 85%]
+tests/layers/test_svd_adaptive.py::test_adaptive_layers_cpu_forward_backward[SqueezingHeadsDistiller-kwargs7] PASSED [ 88%]
+tests/layers/test_svd_adaptive.py::test_adaptive_layers_cpu_forward_backward[TokenCompressedAttention-kwargs8] PASSED [ 91%]
+tests/layers/test_svd_adaptive.py::test_svd_extreme_inputs_numerical_stability PASSED [ 94%]
+tests/layers/test_svd_adaptive.py::test_adaptive_extreme_inputs_numerical_stability PASSED [ 97%]
+tests/layers/test_svd_adaptive.py::test_decomposition_weight_clamping PASSED [100%]
+
+=========================== short test summary info ============================
+SKIPPED [1] tests/layers/test_svd_adaptive.py:111: CUDA device not available
+======================== 34 passed, 1 skipped in 7.03s =========================

@@ -1,7 +1,7 @@
 {
   "wave": 7,
   "started_at": "2026-11-15T20:00:00Z",
-  "last_updated": "2026-11-15T17:21:49Z",
+  "last_updated": "2026-11-15T17:38:46Z",
   "agents": {
     "W7-1": {
       "status": "pending",
@@ -34,12 +34,12 @@
       "worktree": null
     },
     "W7-7": {
-      "status": "complete",
+      "status": "pending",
       "branch": "wave7/W7-7",
       "worktree": null
     },
     "W7-8": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave7/W7-8",
       "worktree": null
     },
