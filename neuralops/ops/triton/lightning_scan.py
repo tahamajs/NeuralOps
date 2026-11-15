@@ -210,5 +210,6 @@ def lightning_scan(
         )
         return out
     except Exception as e:
+        # allowed-swallow: Triton runtime failure falls back to PyTorch reference
         logger.debug("lightning_scan Triton launch failed, falling back to PyTorch: %s", e)
         return lightning_scan_pytorch(q, k, v, s=s, slope=slope)

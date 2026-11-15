@@ -76,6 +76,8 @@ if HAS_TRITON and tl is not None:
 
         offs_k = tl.arange(0, D_K)
         offs_v = tl.arange(0, D_V)
+        mask_k = offs_k < D_K
+        mask_v = offs_v < D_V
 
         # In-register S state matrix: S is [D_V, D_K] maintained in fast on-chip SRAM register tiles.
         # Plastic error-correction delta rule update:
@@ -88,12 +90,16 @@ if HAS_TRITON and tl is not None:
             k_ptrs = k_ptr + pid_b * stride_kb + pid_h * stride_kh + t * stride_kl + offs_k * stride_kd
             v_ptrs = v_ptr + pid_b * stride_vb + pid_h * stride_vh + t * stride_vl + offs_v * stride_vd
 
-            q_t = tl.load(q_ptrs).to(tl.float32)
-            k_t = tl.load(k_ptrs).to(tl.float32)
-            v_t = tl.load(v_ptrs).to(tl.float32)
+            q_t = tl.load(q_ptrs, mask=mask_k, other=0.0).to(tl.float32)
+            k_t = tl.load(k_ptrs, mask=mask_k, other=0.0).to(tl.float32)
+            v_t = tl.load(v_ptrs, mask=mask_v, other=0.0).to(tl.float32)
 
-            alpha_val = tl.load(alpha_ptr + pid_b * stride_ab + pid_h * stride_ah + t * stride_al).to(tl.float32)
-            beta_val = tl.load(beta_ptr + pid_b * stride_bb + pid_h * stride_bh + t * stride_bl).to(tl.float32)
+            alpha_val = tl.load(
+                alpha_ptr + pid_b * stride_ab + pid_h * stride_ah + t * stride_al, mask=t < L, other=1.0
+            ).to(tl.float32)
+            beta_val = tl.load(
+                beta_ptr + pid_b * stride_bb + pid_h * stride_bh + t * stride_bl, mask=t < L, other=1.0
+            ).to(tl.float32)
 
             # 1. State decay in-register
             S = alpha_val * S
@@ -111,7 +117,7 @@ if HAS_TRITON and tl is not None:
             o_t = tl.sum(S * q_t[None, :], axis=1)
 
             o_ptrs = o_ptr + pid_b * stride_ob + pid_h * stride_oh + t * stride_ol + offs_v * stride_od
-            tl.store(o_ptrs, o_t.to(q_ptr.dtype.element_ty))
+            tl.store(o_ptrs, o_t.to(q_ptr.dtype.element_ty), mask=mask_v)
 
         if SAVE_STATE:
             s_ptrs = (
@@ -121,7 +127,7 @@ if HAS_TRITON and tl is not None:
                 + offs_v[:, None] * stride_sv
                 + offs_k[None, :] * stride_sk
             )
-            tl.store(s_ptrs, S.to(final_state_ptr.dtype.element_ty))
+            tl.store(s_ptrs, S.to(final_state_ptr.dtype.element_ty), mask=(mask_v[:, None] & mask_k[None, :]))
 
 else:
     _delta_net_scan_fwd_kernel = None

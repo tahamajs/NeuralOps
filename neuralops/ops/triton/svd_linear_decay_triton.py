@@ -68,6 +68,8 @@ def _svd_linear_decay_fwd_kernel(
 
     offs_k = tl.arange(0, D_k)
     offs_v = tl.arange(0, D_v)
+    mask_k = offs_k < D_k
+    mask_v = offs_v < D_v
 
     # Initialize running state recurrence matrices in SRAM / register tile:
     # S has shape [D_k, D_v]
@@ -81,9 +83,9 @@ def _svd_linear_decay_fwd_kernel(
         k_ptrs = k_ptr + pid_b * stride_kb + pid_h * stride_kh + n * stride_kn + offs_k * stride_kd
         v_ptrs = v_ptr + pid_b * stride_vb + pid_h * stride_vh + n * stride_vn + offs_v * stride_vd
 
-        q_val = tl.load(q_ptrs).to(tl.float32)
-        k_val = tl.load(k_ptrs).to(tl.float32)
-        v_val = tl.load(v_ptrs).to(tl.float32)
+        q_val = tl.load(q_ptrs, mask=mask_k, other=0.0).to(tl.float32)
+        k_val = tl.load(k_ptrs, mask=mask_k, other=0.0).to(tl.float32)
+        v_val = tl.load(v_ptrs, mask=mask_v, other=0.0).to(tl.float32)
 
         # Apply ELU feature map: F.elu(x) + 1.0
         phi_q = tl.where(q_val > 0.0, q_val + 1.0, tl.exp(q_val))
@@ -91,12 +93,12 @@ def _svd_linear_decay_fwd_kernel(
 
         if CHANNEL_WISE:
             lam_ptrs = lam_ptr + pid_b * stride_lb + pid_h * stride_lh + n * stride_ln + offs_k * stride_ld
-            lam_val = tl.load(lam_ptrs).to(tl.float32)
+            lam_val = tl.load(lam_ptrs, mask=mask_k, other=1.0).to(tl.float32)
             lam_2d = lam_val[:, None]
             lam_1d = lam_val
         else:
             lam_p = lam_ptr + pid_b * stride_lb + pid_h * stride_lh + n * stride_ln
-            lam_scalar = tl.load(lam_p).to(tl.float32)
+            lam_scalar = tl.load(lam_p, mask=n < N_sz, other=1.0).to(tl.float32)
             lam_2d = lam_scalar
             lam_1d = lam_scalar
 
@@ -116,7 +118,7 @@ def _svd_linear_decay_fwd_kernel(
         out_token = num / den
 
         out_ptrs = out_ptr + pid_b * stride_ob + pid_h * stride_oh + n * stride_on + offs_v * stride_od
-        tl.store(out_ptrs, out_token)
+        tl.store(out_ptrs, out_token, mask=mask_v)
 
 
 def svd_linear_decay_triton(

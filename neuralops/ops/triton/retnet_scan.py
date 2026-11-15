@@ -69,8 +69,10 @@ if HAS_TRITON and tl is not None:
 
         offs_k = tl.arange(0, D)
         offs_v = tl.arange(0, D)
+        mask_k = offs_k < D
+        mask_v = offs_v < D
 
-        gamma = tl.load(gamma_ptr + pid_h * stride_gh).to(tl.float32)
+        gamma = tl.load(gamma_ptr + pid_h * stride_gh, mask=pid_h < H, other=1.0).to(tl.float32)
         S = tl.zeros((D, D), dtype=tl.float32)
 
         for t in range(L):
@@ -78,15 +80,15 @@ if HAS_TRITON and tl is not None:
             k_ptrs = k_ptr + pid_b * stride_kb + pid_h * stride_kh + t * stride_kl + offs_k * stride_kd
             v_ptrs = v_ptr + pid_b * stride_vb + pid_h * stride_vh + t * stride_vl + offs_v * stride_vd
 
-            q_t = tl.load(q_ptrs).to(tl.float32)
-            k_t = tl.load(k_ptrs).to(tl.float32)
-            v_t = tl.load(v_ptrs).to(tl.float32)
+            q_t = tl.load(q_ptrs, mask=mask_k, other=0.0).to(tl.float32)
+            k_t = tl.load(k_ptrs, mask=mask_k, other=0.0).to(tl.float32)
+            v_t = tl.load(v_ptrs, mask=mask_v, other=0.0).to(tl.float32)
 
             S = gamma * S + (k_t[:, None] * v_t[None, :])
             o_t = tl.sum(q_t[:, None] * S, axis=0)
 
             o_ptrs = o_ptr + pid_b * stride_ob + pid_h * stride_oh + t * stride_ol + offs_v * stride_od
-            tl.store(o_ptrs, o_t.to(q_ptr.dtype.element_ty))
+            tl.store(o_ptrs, o_t.to(q_ptr.dtype.element_ty), mask=mask_v)
 
         if SAVE_STATE:
             s_ptrs = (
@@ -96,7 +98,7 @@ if HAS_TRITON and tl is not None:
                 + offs_k[:, None] * stride_sk
                 + offs_v[None, :] * stride_sv
             )
-            tl.store(s_ptrs, S.to(final_state_ptr.dtype.element_ty))
+            tl.store(s_ptrs, S.to(final_state_ptr.dtype.element_ty), mask=(mask_k[:, None] & mask_v[None, :]))
 
 else:
     _retnet_recurrent_scan_fwd_kernel = None
