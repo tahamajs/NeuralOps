@@ -1,32 +1,7 @@
 {
   "wave": 5,
   "started_at": "2026-11-15T02:15:00Z",
-<<<<<<< wave5/W5-13
-  "last_updated": "2026-11-15T02:15:00Z",
-  "phase": 1,
-  "agents": {
-    "W5-1":  {"status": "pending", "branch": "wave5/W5-1",  "worktree": null},
-    "W5-2":  {"status": "pending", "branch": "wave5/W5-2",  "worktree": null},
-    "W5-3":  {"status": "pending", "branch": "wave5/W5-3",  "worktree": null},
-    "W5-4":  {"status": "pending", "branch": "wave5/W5-4",  "worktree": null},
-    "W5-5":  {"status": "pending", "branch": "wave5/W5-5",  "worktree": null},
-    "W5-6":  {"status": "pending", "branch": "wave5/W5-6",  "worktree": null},
-    "W5-7":  {"status": "pending", "branch": "wave5/W5-7",  "worktree": null},
-    "W5-8":  {"status": "pending", "branch": "wave5/W5-8",  "worktree": null},
-    "W5-9":  {"status": "pending", "branch": "wave5/W5-9",  "worktree": null},
-    "W5-10": {"status": "pending", "branch": "wave5/W5-10", "worktree": null},
-    "W5-11": {"status": "pending", "branch": "wave5/W5-11", "worktree": null},
-    "W5-12": {"status": "pending", "branch": "wave5/W5-12", "worktree": null},
-    "W5-13": {"status": "pending", "branch": "wave5/W5-13", "worktree": null},
-    "W5-14": {"status": "pending", "branch": "wave5/W5-14", "worktree": null},
-    "W5-15": {"status": "pending", "branch": "wave5/W5-15", "worktree": null},
-    "W5-16": {"status": "pending", "branch": "wave5/W5-16", "worktree": null},
-    "W5-17": {"status": "pending", "branch": "wave5/W5-17", "worktree": null},
-    "W5-18": {"status": "pending", "branch": "wave5/W5-18", "worktree": null},
-    "W5-19": {"status": "pending", "branch": "wave5/W5-19", "worktree": null},
-    "W5-20": {"status": "pending", "branch": "wave5/W5-20", "worktree": null}
-=======
-  "last_updated": "2026-11-15T11:08:43Z",
+  "last_updated": "2026-11-15T11:22:19Z",
   "phase": 1,
   "agents": {
     "W5-1": {
@@ -35,7 +10,7 @@
       "worktree": null
     },
     "W5-2": {
-      "status": "complete",
+      "status": "pending",
       "branch": "wave5/W5-2",
       "worktree": null
     },
@@ -75,7 +50,7 @@
       "worktree": null
     },
     "W5-10": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave5/W5-10",
       "worktree": null
     },
@@ -90,7 +65,7 @@
       "worktree": null
     },
     "W5-13": {
-      "status": "complete",
+      "status": "pending",
       "branch": "wave5/W5-13",
       "worktree": null
     },
@@ -105,7 +80,7 @@
       "worktree": null
     },
     "W5-16": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave5/W5-16",
       "worktree": null
     },
@@ -115,7 +90,7 @@
       "worktree": null
     },
     "W5-18": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave5/W5-18",
       "worktree": null
     },
@@ -129,6 +104,5 @@
       "branch": "wave5/W5-20",
       "worktree": null
     }
->>>>>>> local
   }
 }
