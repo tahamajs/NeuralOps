@@ -29,8 +29,23 @@ _EXPORTS = {
     "check_compatibility": ("runtime_compat", "check_compatibility"),
     "CompatibilityReport": ("runtime_compat", "CompatibilityReport"),
     "EngineStatus": ("runtime_compat", "EngineStatus"),
+    "SafeTensorsExporter": ("safetensors", "SafeTensorsExporter"),
+    "save_sharded_safetensors": ("safetensors", "save_sharded_safetensors"),
+    "shard_state_dict": ("safetensors", "shard_state_dict"),
+    "export_to_onnx": ("onnx", "export_to_onnx"),
+    "export_model_to_gguf": ("gguf", "export_model_to_gguf"),
 }
-_MODULES = {"exporter", "serving", "surgery_manifest", "hf_compat", "runtime_compat", "gguf_exporter"}
+_MODULES = {
+    "exporter",
+    "serving",
+    "surgery_manifest",
+    "hf_compat",
+    "runtime_compat",
+    "gguf_exporter",
+    "safetensors",
+    "onnx",
+    "gguf",
+}
 
 __all__ = [*_EXPORTS, *_MODULES]
 
