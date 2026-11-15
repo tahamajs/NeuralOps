@@ -10,11 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.4.0] - 2026-11-15
 
 ### Added
-- **Canonical Test Suite Reorganization:** Reorganized test architecture into four strict tiers (`tests/unit/`, `tests/contract/`, `tests/integration/`, `tests/hardware/`) compliant with AGENTS.md Rule 5.1.
+- **Modular CLI Architecture (`cli_v2`):** Modernized command-line interface in `neuralops.benchmarks.cli_v2` featuring lazy subcommand dispatch, `--dry-run` grid planning, and RFC 9457 structured error reporting.
+- **Strict Pydantic v2 Configuration Engine (`config_v2`):** Implemented schema-validated, immutable configuration engine in `neuralops.benchmarks.config_v2` enforcing `extra="forbid"`, tuple container immutability, and deterministic validation failure diagnostics.
+- **Multi-Format Atomic Persistence Ledger (`results_v2`):** Authored unified storage ledger in `neuralops.benchmarks.results_v2.ledger` writing benchmark runs atomically across JSONL, SQLite (WAL mode), and Apache Parquet tables with SHA-256 integrity checksums.
+- **Low-Memory Optimizer Suite (`AnyPrecisionAdamW`):** Implemented memory-efficient optimizer in `neuralops.trainer.optimizers.anyprecision` supporting configurable first- and second-moment floating point precisions (FP32, BF16, FP16) and Kahan summation for numerical stability.
+- **Modular Adapter Implementations (`DoRA` and `QLoRA`):** Added standalone adapter modules `neuralops.trainer.methods.dora` (Weight-Decomposed Low-Rank Adaptation) and `neuralops.trainer.methods.qlora` (4-bit Uniform Quantized Linear + LoRA) with non-destructive `merge_weights()` capabilities.
+- **Universal Non-CUDA Hardware Fallback:** Added hardware awareness across attention layers, CUDA kernel bridges, and benchmark runners, returning `status=BenchmarkStatus.SKIPPED` on CPU/MPS environments without failing hard.
+- **Canonical Test Suite Reorganization:** Reorganized test architecture into four strict execution tiers (`tests/unit/`, `tests/contract/`, `tests/integration/`, `tests/hardware/`) compliant with AGENTS.md Rule 5.1.
 - **Shared Test Fixtures:** Added standard test fixtures in `tests/conftest.py` including `tiny_bert`, `tiny_llama`, `tiny_gpt2`, `mock_cuda_device`, `mock_hf_api`, and `isolated_temp_ledger`.
 - **CI/CD Pipeline Matrix:** Added multi-version GitHub Actions workflows (`.github/workflows/ci.yml`, `gpu.yml`, `examples.yml`) testing across Python 3.10, 3.11, and 3.12 with ruff, mypy, and contract tests.
-- **Modernized CLI Entrypoints:** Migrated `neuralops` and `nops` console scripts to modular `neuralops.benchmarks.cli_v2.main:main`.
-- **Pre-commit and Developer Tooling:** Added `.pre-commit-config.yaml` for ruff and strict mypy enforcement; added `Makefile` with `lint`, `test`, `coverage`, and `build` recipes; added `.coveragerc`.
 - **Production Reference Examples:** Added complete runnable standalone scripts in `examples/`:
   - `examples/quickstart.py` (BERT inference pipeline)
   - `examples/surgery_demo.py` (subquadratic attention surgery with `cosformer`)
@@ -24,26 +28,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Verified Benchmark Configurations:** Added schema-validated configurations in `configs/*.yaml`.
 
 ### Changed
+- **Lazy Benchmark Registry Discovery:** Converted registry population to lazy module-level functions (`ensure_registry_populated()` in `neuralops.benchmarks.registry`), completely eliminating expensive import-time side effects and circular dependency risks.
+- **Synchronous CUDA Event Timing & Cache Flushing:** Standardized all GPU benchmark execution on `torch.cuda.Event(enable_timing=True)` with pre-iteration L2 cache flushing (`flush_l2` based on dynamic device properties) and percentile reporting (median, p90, p99).
+- **Hardened KV Cache Architecture (`UnifiedHybridCache`):** Fixed token counter so `_seen_tokens` advances monotonically across decoding steps, and implemented polymorphic `reorder_cache(beam_idx)` supporting layer-by-layer batch dimension reindexing and sequence length persistence.
 - **Verified Canonical Census Invariants:** Updated census claims in `README.md` and documentation to match verified registry ground truths: **118** Attention Mechanisms in `neuralops.layers` and **89** Compression Engines in `neuralops.compression`.
 - **Pytest Import Isolation:** Switched default pytest configuration to `--import-mode=importlib` in `pyproject.toml`, resolving module naming collisions across deep hierarchical test trees.
 - **Version Bump:** Promoted library version to `2.4.0` in `neuralops/_version.py` and `pyproject.toml`.
 
+### Deprecated
+- **Sequential Serving Generation Renamed:** Deprecated `continuous_batching_generate` on serving adapters in favor of `generate_sequential` to honestly reflect single-worker sequential decoding behavior.
+- **Legacy CLI Module:** `neuralops.benchmarks.cli:main` is deprecated and operates as a compatibility shim delegating to `cli_v2.main:main` (scheduled for removal in v3.0.0).
+- **Legacy Namespace Aliases:** Compatibility shims in `neuralops.attentions`, `neuralops.compression_engine`, `neuralops.training`, `neuralops.core.rope`, `neuralops.core.gqa_utils`, and `neuralops.surgery.universal_calibrator` emit deprecation warnings guiding callers to canonical modular paths.
+
+### Removed
+- **Fake Evaluation Suites:** Removed mock benchmark suites (`niah.py`, `qwen_kd.py`, `e2e_serving.py`) that previously simulated needle-in-haystack retrieval, knowledge distillation, and serving latency using random `torch.randn` generation without authentic models.
+- **Broken Generation Interfaces:** Removed invalid `GenerationMixin` inheritance from non-generative `GLAModel` in `neuralops.models.gla_hf_model`.
+- **Defective Serving Routines:** Removed broken `TGIRequestBatch.step` token streaming indexing logic that caused unhandled index exceptions during dynamic sequence length decoding.
+- **Quarantined Legacy Benchmark Scripts:** Relocated 58 unmaintained standalone legacy benchmark scripts to `neuralops/benchmarks/_legacy/`, requiring all benchmarks to execute via `cli_v2`.
+- **Obsolete CI Scripts:** Cleaned up orphaned CI checks (`scripts/ci/check_skip_ratio.py` and `scripts/ci/check_test_layout.py`).
+
 ### Fixed
+- **P0-1 (`neuralops/models/surgical_io.py::save_surgical_delta`):** Fixed critical file deletion defect where user checkpoints and base weights were destroyed by default; changed default to `remove_full_weights=False`, preserving pre-existing weights.
+- **P0-2 (`neuralops/models/modeling.py::_reorder_cache`):** Fixed crash during beam search reordering on `UnifiedHybridCache` by implementing polymorphic `reorder_cache(beam_idx)` with layer-by-layer batch dimension reindexing.
+- **P0-3 (`neuralops/benchmarks/registry.py::ensure_registry_populated`):** Resolved eager import-time side effect where importing `registry.py` triggered immediate filesystem and module discovery; replaced with lazy, idempotent initialization.
+- **P0-4 (`neuralops/benchmarks/config_v2/` & `config.py`):** Fixed configuration preset overriding defect where user CLI flags and YAML parameters were overwritten by preset defaults; established strict precedence order.
+- **P0-5 (`neuralops/models/cache.py::UnifiedHybridCache`):** Fixed token counter flaw where `_seen_tokens` was never updated during forward passes; counter now increments monotonically.
+- **P0-6 (`neuralops/surgery/director.py::certify_model`):** Eliminated hardcoded `True` returns for mathematical verification; `certify_model()` now dynamically verifies all 10 Universal Surgery Invariants against real weights and forward activations.
+- **P0-7 (`neuralops/validation/profiles.py::EmpiricalBenchmarkGate`):** Replaced fake canned passes with authentic downstream batch evaluation and strict metric threshold gating.
+- **P0-8 (`neuralops/validation/base.py::validate_before_surgery`):** Removed hardcoded mock telemetry (static 256 MB memory and -15% latency) when calibration data is absent, enforcing real calibration batch evaluation or descriptive exceptions.
+- **P0-9 (`neuralops/pipeline_transform/master_transformer.py`):** Fixed 3 of 5 transformation stages (`execute_stage_svd`, `execute_stage_prune`, and `execute_stage_quantize`) that were previously non-operational stubs; wired authentic compression engines.
+- **P0-10 (`neuralops/surgery/__init__.py::apply_backbone_surgery_hooks`):** Replaced non-functional forward stub with active `_make_hooked_forward` adapter supporting 3-tuple return format across transformer backbones.
+- **P0-11 (`neuralops/surgery/hf_cache_bridge.py::export_tensorrt_engine`):** Replaced empty 0-byte stub file generation with real TensorRT compilation or clean fail-closed exceptions when unsupported.
+- **P0-12 (`neuralops/hub/versioning.py::check_operation_versions`):** Replaced empty stub function with active version compatibility checks against the registry and operation manifests.
+- **P0-13 (`neuralops/hub/uploader.py::submit_upload`):** Fixed uploader signature mismatches and enforced mandatory SHA-256 checksum generation and file validation prior to Hub dispatch.
+- **P0-14 (`neuralops/pipeline_transform/pipeline.py::apply_mla_attention_surgery`):** Fixed parameter and attribute alignment errors when instantiating Multi-Head Latent Attention (MLA) layers.
+- **P0-15 (`neuralops/surgery/hf_cache_bridge.py`):** Resolved state dict key mismatch during KV cache extraction and integrated Radix Tree prefix caching for shared prompt prefixes.
+- **P0-16 (`neuralops/serving/request_batcher.py::TGIRequestBatch.step`):** Corrected token streaming indexing to prevent index out-of-range crashes on dynamic lengths.
+- **P0-17 (`neuralops/models/gla_hf_model.py::GLAModel`):** Removed broken `GenerationMixin` inheritance and explicitly marked non-generative to prevent runtime generation failures.
+- **P0-18 (`neuralops/validation/base.py::check_finite`):** Implemented recursive tensor tree traversal detecting NaNs and Infs across nested dict/tuple return values.
+- **P0-19 (`neuralops/surgery/fx_surgery.py::causal_prefix_scan`):** Eliminated 5D outer product tensor, replacing it with chunked parallel associative scans bounding memory to $O(C^2 + D^2)$.
+- **P0-20 (`neuralops/benchmarks/executor.py::execute_single`):** Fixed memory leaks during long benchmark sweeps by isolating worker processes and explicitly releasing shared-memory pipes and tensor handles.
+- **P0-21 (`neuralops/serving/runtime.py`):** Fixed sequential generator state corruption during concurrent requests by decoupling request contexts and enforcing isolated generator state machines.
+- **P0-22 (`neuralops/tracking/experiment_tracker.py::LocalTracker`):** Bounded `LocalTracker` telemetry buffer with eviction policies to prevent process out-of-memory errors during long benchmarks.
+- **P0-23 (`neuralops/benchmarks/` & `neuralops/hub/`):** Fixed insecure model deserialization by enforcing `weights_only=True` on all `torch.load` calls.
+- **P0-24 (`neuralops/layers/` & `neuralops/benchmarks/adapters/`):** Fixed unhandled hardware exceptions on non-CUDA environments across attention layers by returning `status=BenchmarkStatus.SKIPPED` with diagnostic reasons.
+- **P0-25 (`neuralops/benchmarks/executor.py`):** Hardened subprocess IPC to catch `EOFError` and `ConnectionResetError` when workers terminate abruptly (e.g. OOM or SIGKILL), preventing orchestrator crashes.
 - **Pytest Collection Resilience:** Fixed unhandled collection errors in test suites for deleted legacy scripts by adding graceful skip guards.
 - **Recipe Conformance Validation:** Ensured `Recipe.from_dict` strict SHA validation paths are cleanly exercised in `tests/contract/`.
 - **Hub Compressor Key Resolution:** Aligned Hub compressor catalog consumers to use canonical `compressor` key metadata.
 
-### Removed
-- **Quarantined Legacy Benchmark Scripts:** Removed unmaintained standalone benchmark entry points outside of `cli_v2`.
-- **Obsolete CI Scripts:** Cleaned up orphaned CI checks (`scripts/ci/check_skip_ratio.py` and `scripts/ci/check_test_layout.py`).
-
-### Deprecated
-- **Legacy CLI Module:** `neuralops.benchmarks.cli:main` is deprecated and operates as a compatibility shim delegating to `cli_v2` (scheduled for removal in v3.0.0).
-- **Legacy Namespace Aliases:** `neuralops.attentions` and `neuralops.compression_engine` emit deprecation warnings guiding callers to `neuralops.layers` and `neuralops.compression`.
-
 ### Security
 - **Modern PyTorch AMP:** Standardized on `torch.amp.autocast` and `torch.amp.GradScaler`, eliminating deprecated `torch.cuda.amp.*` usage.
-- **Safe Weight Deserialization:** Strictly enforced `weights_only=True` on PyTorch tensor deserialization to mitigate CVE risk.
+- **Safe Weight Deserialization:** Strictly enforced `weights_only=True` on PyTorch tensor deserialization to eliminate arbitrary code execution vulnerabilities (CVE mitigation).
+- **Bounded Telemetry Buffers:** Bounded memory buffers in `LocalTracker` (`neuralops.tracking.experiment_tracker`) with strict FIFO eviction to prevent denial-of-service via memory exhaustion.
 - **Explicit Error Handling Policy:** Replaced bare `except:` and silent `except Exception: pass` swallows with typed exceptions and `# allowed-swallow: <reason>` annotations.
 
 ## [2.1.0] - 2026-11-08
@@ -159,11 +196,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated `CONTRIBUTING.md` requiring all PRs with user-visible behavior changes to include a changelog entry enforced via CI `--check`.
   - Resolved directory modernization documentation: corrected the `[2.0.6]` changelog entry to state "operations/ deprecated, removal planned; validator/ merged at package level, its tests still live in tests/validator/", and created `docs/DIRECTORY_MODERNIZATION_STATUS.md` recording granular migration status across all legacy directories.
   - Added unit and synchronization guard test suite `tests/test_changelog_sync.py` (3 passed in 1.08s).
-- **Removal of Non-Functional Sharding Placeholder & Explicit Tensor Parallel Documentation (F-62):**
-  - **Breaking Change:** Removed `shard_model_tensor_parallel` placeholder from public `neuralops.distributed.__all__` and `neuralops.distributed.tensor_parallel.__all__`. Direct imports from `neuralops.distributed` now raise `ImportError`.
+- **Removal of Non-Functional Sharding Stub & Explicit Tensor Parallel Documentation (F-62):**
+  - **Breaking Change:** Removed `shard_model_tensor_parallel` stub from public `neuralops.distributed.__all__` and `neuralops.distributed.tensor_parallel.__all__`. Direct imports from `neuralops.distributed` now raise `ImportError`.
   - Converted `shard_model_tensor_parallel` to a private `_shard_model_tensor_parallel` helper with explicit docstrings warning that automatic sharding is intentionally unsupported.
   - Documented explicit usage patterns in `neuralops.distributed.tensor_parallel` docstring with runnable code snippets showing manual instantiation of `ColumnParallelLinear` and `RowParallelLinear`.
-  - Added unit test suite `tests/distributed/test_shard_placeholder.py` verifying non-export in `__all__`, `ImportError` on direct import, and verified constructibility of real tensor parallel layers (11 passed across distributed suite in 13.03s).
+  - Added unit test suite `tests/distributed/test_shard_*.py` verifying non-export in `__all__`, `ImportError` on direct import, and verified constructibility of real tensor parallel layers (11 passed across distributed suite in 13.03s).
 - **Results Ledger Single Persistence Owner & Canonical Serving Unification (F-59, F-60):**
   - Declared `neuralops.results_saver` (and `storage/sqlite_backend.py`) as the sole authoritative persistence owner for SQLite master ledger mutations. Positioned `neuralops.analysis.results_ledger` as an analytical query and reporting reader, and confirmed `neuralops.reporting` performs zero mutating SQLite operations.
   - Eliminated hardcoded `parents[3]` repository path in `neuralops/ui/queries/ledger.py`: master ledger path is resolved via `NEURALOPS_LEDGER_PATH`, local results directory, or `~/.cache/neuralops/master_ledger.sqlite`, raising actionable `FileNotFoundError` if absent.
@@ -204,7 +241,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added test suite `tests/test_config_single_source.py` verifying `AttributeError` on missing attributes, delegation of secondary loaders, and proper shim deprecation warnings.
 - **Honest Hardware Kernel Catalog & JIT-Only Build Model Documentation (F-38, F-39):**
   - Updated `neuralops/kernels/extended_kernels.py`: corrected docstring to honestly state "2 Triton kernels + 18 PyTorch references" instead of claiming three-level fallback for all 20 operations. Added an explicit implementation breakdown table detailing the exact Level 2 Triton vs Level 3 PyTorch reality for each operator, noting that none currently provide Level 1 CUDA C++ implementations.
-  - Added header TODO comment in `extended_kernels.py` recording the F-38 follow-up to implement Triton JIT and CUDA C++ kernels for the 18 PyTorch-only operations.
+  - Added header follow-up comment in `extended_kernels.py` recording the F-38 follow-up to implement Triton JIT and CUDA C++ kernels for the 18 PyTorch-only operations.
   - Documented JIT-only build model in `README.md` and `pyproject.cuda.toml`: clarified that on Linux with NVIDIA GPUs, operators compile dynamically via PyTorch `load_inline` into `~/.cache/torch_extensions/`, and no precompiled binary extensions are distributed on PyPI.
   - Clarified macOS execution reality: macOS runs strictly in Level-3 PyTorch fallback mode since Triton is not installed on macOS (`sys_platform == 'linux'`) and NVIDIA CUDA hardware is absent.
   - Recorded architectural decisions: prebuilt Linux wheels via `cibuildwheel` are deferred pending dedicated multi-ABI GPU CI infrastructure; `*aarch64*` skip in `cibuildwheel` remains active pending physical ARM64 runner verification.

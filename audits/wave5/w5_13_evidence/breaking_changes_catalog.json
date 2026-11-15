@@ -1,0 +1,34 @@
+{
+  "generated_at": "2026-11-15T11:04:46Z",
+  "version": "2.4.0",
+  "breaking_changes": [
+    {
+      "id": "BC-01",
+      "api": "continuous_batching_generate",
+      "replacement": "generate_sequential",
+      "type": "rename",
+      "severity": "high"
+    },
+    {
+      "id": "BC-02",
+      "api": "certify_model",
+      "change": "returns real boolean results instead of hardcoded True",
+      "type": "behavioral",
+      "severity": "medium"
+    },
+    {
+      "id": "BC-03",
+      "api": "CUDAGraphDecodeRunner",
+      "change": "rejects dynamic caches, requires StaticCache",
+      "type": "validation_added",
+      "severity": "high"
+    },
+    {
+      "id": "BC-04",
+      "api": "yaml.safe_load (config loading)",
+      "change": "migrated to config_v2.loader.load_benchmark_config",
+      "type": "api_migration",
+      "severity": "medium"
+    }
+  ]
+}
