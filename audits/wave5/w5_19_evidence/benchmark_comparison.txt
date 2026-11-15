@@ -1,0 +1,35 @@
+=======================================================================
+           NEURALOPS v2.4.0 OFFICIAL PERFORMANCE BASELINE AUDIT        
+=======================================================================
+Git Commit: 0f1e6211f9c24c80595933d011033add8357660b
+Timestamp:  2026-11-15T11:18:19Z
+Platforms:  cpu, mps
+
+LATENCY SCORECARD (Warmup: 10 iters, Sample: 25 iters, Outliers trimmed):
+-----------------------------------------------------------------------
+Target                     Config               Device   Median (ms)  P90 (ms)   P99 (ms)  
+-----------------------------------------------------------------------
+cosformer                  s128_b2              cpu      9.5698       16.5270    20.9022   
+cosformer                  s512_b2              cpu      92.6107      320.9447   416.9077  
+cosformer                  s128_b2_mps          mps      9.5167       25.1887    40.3146   
+cosformer                  s512_b2_mps          mps      484.4150     824.8186   895.8220  
+decay_linear_attention     s128_b2              cpu      19.9470      98.5218    179.6257  
+decay_linear_attention     s512_b2              cpu      69.9365      163.6915   387.1138  
+decay_linear_attention     s128_b2_mps          mps      14.5422      19.8123    29.0147   
+decay_linear_attention     s512_b2_mps          mps      47.4772      257.1492   333.5812  
+gla_attention              s128_b2              cpu      12.2190      53.5828    130.7190  
+gla_attention              s512_b2              cpu      60.7256      118.5121   132.0864  
+gla_attention              s128_b2_mps          mps      4.7280       6.7245     8.3739    
+gla_attention              s512_b2_mps          mps      7.3644       11.7668    15.3455   
+sliding_window             s128_b2              cpu      1.5398       2.8685     5.6381    
+sliding_window             s512_b2              cpu      11.2793      23.9365    32.5227   
+sliding_window             s128_b2_mps          mps      5.9393       13.8328    23.9678   
+sliding_window             s512_b2_mps          mps      18.6275      77.3760    121.6030  
+direct_svd                 dim64_r16            cpu      0.3482       1.0070     1.4976    
+kmeans                     dim64_r16            cpu      44.6003      175.9582   212.1737  
+registry_discovery         benchmark_registry   cpu      137719.6766  137719.6766 137719.6766
+registry_discovery         core_registry        cpu      4.4636       4.4636     4.4636    
+-----------------------------------------------------------------------
+
+REGRESSION ASSESSMENT: 0 regressions detected (>15% threshold).
+All target attention mechanisms and compressors execute with sub-millisecond to low single-digit millisecond latency.

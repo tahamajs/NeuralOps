@@ -9,4 +9,6 @@
 NeuralOps Benchmarks Utils Subpackage.
 """
 
-from neuralops.benchmarks.utils import gpu_probe, harvest_data
+from neuralops.benchmarks.utils import gpu_probe, harvest_data, memory, timer
+
+__all__ = ["gpu_probe", "harvest_data", "memory", "timer"]
