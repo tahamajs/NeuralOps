@@ -57,9 +57,27 @@ class CudaOpsBenchmark(AbstractBaseBenchmark):
         self.start_time = time.time()
         self.results_table: List[Dict[str, Any]] = []
 
-    def _prepare_inputs(self, kernel_name: str) -> Tuple[Tuple[Any, ...], Dict[str, Any]]:
+    @staticmethod
+    def _resolve_torch_dtype(dtype_str: str) -> torch.dtype:
+        mapping = {
+            "fp16": torch.float16,
+            "float16": torch.float16,
+            "bf16": torch.bfloat16,
+            "bfloat16": torch.bfloat16,
+            "fp32": torch.float32,
+            "float32": torch.float32,
+        }
+        val = mapping.get(dtype_str.lower())
+        if val is None:
+            raise ValueError(f"Unknown dtype '{dtype_str}'. Supported: {sorted(mapping.keys())}")
+        return val
+
+    def _prepare_inputs(
+        self, kernel_name: str, dtype: Optional[torch.dtype] = None
+    ) -> Tuple[Tuple[Any, ...], Dict[str, Any]]:
         """Construct synthetic test tensors for the specified kernel."""
-        dtype = torch.float16 if (self.device.type == "cuda" and torch.cuda.is_available()) else torch.float32
+        if dtype is None:
+            dtype = torch.float16 if (self.device.type == "cuda" and torch.cuda.is_available()) else torch.float32
 
         if "cosformer" in kernel_name or "linear" in kernel_name:
             q = torch.randn(2, 4, 16, 32, device=self.device, dtype=dtype)
@@ -89,7 +107,9 @@ class CudaOpsBenchmark(AbstractBaseBenchmark):
             # Determine best available callable
             target_fn = adapter._cuda_fn or adapter._triton_fn or adapter._pytorch_ref_fn
             if target_fn is None:
-                raise RuntimeError(f"No backend available for kernel '{kernel_name}'")
+                raise RuntimeError(
+                    f"No CUDA, Triton, or PyTorch reference implementation available for kernel '{kernel_name}'"
+                )
 
             def call_kernel() -> Any:
                 return target_fn(*args, **kw)

@@ -30,6 +30,13 @@ class ServingBenchmark(AbstractBaseBenchmark):
     def setup(self) -> None:
         custom = self.config.custom_parameters or {}
 
+        model = custom.get("model")
+        if model is None:
+            raise NotImplementedError(
+                "ServingBenchmark requires an actual model instance passed via custom_parameters['model']"
+            )
+        self.model = model
+
         self.batch_sizes = custom.get("batch_sizes", [1, 4, 8])
         self.prompt_lens = custom.get("prompt_lens", [128, 512])
         self.gen_lens = custom.get("gen_lens", [32, 64])
@@ -49,7 +56,88 @@ class ServingBenchmark(AbstractBaseBenchmark):
         gen_len: int = 32,
         **kwargs: Any,
     ) -> Dict[str, float]:
-        raise NotImplementedError("e2e_serving requires real serving framework; not implemented")
+        self.flush_l2_cache()
+
+        vocab_size = getattr(getattr(self.model, "config", None), "vocab_size", 200)
+        prompt_ids = torch.randint(1, vocab_size, (batch_size, prompt_len), device=self.device)
+
+        def prefill() -> Any:
+            with torch.no_grad():
+                return self.model(prompt_ids, use_cache=True)
+
+        try:
+            ttft_ms, _ = self.measure_latency(prefill, warmup=1, repeat=2)
+
+            with torch.no_grad():
+                out_init = self.model(prompt_ids, use_cache=True)
+                logits = getattr(out_init, "logits", out_init)
+                pkv = getattr(out_init, "past_key_values", None)
+                next_tok = torch.argmax(logits[:, -1:, :], dim=-1)
+
+            curr_tok = next_tok
+            curr_pkv = pkv
+
+            def decode_step() -> Any:
+                nonlocal curr_tok, curr_pkv
+                with torch.no_grad():
+                    if curr_pkv is not None:
+                        out = self.model(curr_tok, use_cache=True, past_key_values=curr_pkv)
+                    else:
+                        out = self.model(curr_tok)
+                    return out
+
+            itl_ms, _ = self.measure_latency(decode_step, warmup=1, repeat=max(2, gen_len))
+
+            total_tokens = batch_size * gen_len
+            total_time_s = (ttft_ms + itl_ms * gen_len) / 1000.0
+            throughput = _sanitize_float(total_tokens / max(total_time_s, 1e-6))
+
+            self.tracker.log_metric("ttft_ms", ttft_ms, step=step)
+            self.tracker.log_metric("throughput_tokens_per_sec", throughput, step=step)
+
+            result_entry = {
+                "step": step,
+                "mechanism_or_kernel": "serving_simulation",
+                "batch_size": batch_size,
+                "seq_len": prompt_len + gen_len,
+                "dtype": "fp32",
+                "latency_ms": ttft_ms,
+                "latency_p50_ms": ttft_ms,
+                "latency_p90_ms": ttft_ms,
+                "latency_p99_ms": ttft_ms,
+                "ttft_ms": ttft_ms,
+                "itl_ms": itl_ms,
+                "throughput_tokens_per_sec": throughput,
+                "tflops": 0.0,
+                "peak_vram_mb": 0.0,
+                "status": "PASS",
+            }
+            self.results_table.append(result_entry)
+            return {"ttft_ms": ttft_ms, "throughput_tokens_per_sec": throughput}
+
+        except Exception as e:
+            logger.warning("Serving simulation error: %s", e)
+            self.results_table.append(
+                {
+                    "step": step,
+                    "mechanism_or_kernel": "serving_simulation",
+                    "batch_size": batch_size,
+                    "seq_len": prompt_len + gen_len,
+                    "dtype": "fp32",
+                    "latency_ms": 0.0,
+                    "latency_p50_ms": 0.0,
+                    "latency_p90_ms": 0.0,
+                    "latency_p99_ms": 0.0,
+                    "ttft_ms": 0.0,
+                    "itl_ms": 0.0,
+                    "throughput_tokens_per_sec": 0.0,
+                    "tflops": 0.0,
+                    "peak_vram_mb": 0.0,
+                    "status": f"FAILED_RUNTIME: {e}",
+                }
+            )
+            self.tracker.log_metric("ttft_ms", 0.0, step=step)
+            return {"ttft_ms": 0.0, "throughput_tokens_per_sec": 0.0}
 
     def run(self) -> None:
         step = 0

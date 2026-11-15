@@ -54,11 +54,20 @@ class RooflineBenchmark(AbstractBaseBenchmark):
     ) -> Dict[str, float]:
         self.flush_l2_cache()
 
-        # Dummy execution function simulating attention
+        dtype = torch.float16 if (self.device.type == "cuda" and torch.cuda.is_available()) else torch.float32
+        dtype_str = "fp16" if dtype == torch.float16 else "fp32"
+
+        q = torch.randn(batch_size, self.num_heads, seq_len, self.head_dim, device=self.device, dtype=dtype)
+        k = torch.randn(batch_size, self.num_heads, seq_len, self.head_dim, device=self.device, dtype=dtype)
+        v = torch.randn(batch_size, self.num_heads, seq_len, self.head_dim, device=self.device, dtype=dtype)
+
         def forward_fn() -> None:
-            q = torch.randn(batch_size, self.num_heads, seq_len, self.head_dim, device=self.device)
-            k = torch.randn(batch_size, self.num_heads, seq_len, self.head_dim, device=self.device)
-            _ = torch.matmul(q, k.transpose(-2, -1))
+            scores = torch.matmul(q, k.transpose(-2, -1))
+            if attention_type == "causal":
+                mask = torch.triu(torch.ones(seq_len, seq_len, device=self.device, dtype=torch.bool), diagonal=1)
+                scores = scores.masked_fill(mask, -float("inf"))
+            weights = torch.softmax(scores, dim=-1)
+            _ = torch.matmul(weights, v)
 
         try:
             latency_ms, _ = self.measure_latency(forward_fn, warmup=1, repeat=3)
@@ -70,6 +79,7 @@ class RooflineBenchmark(AbstractBaseBenchmark):
                 S=seq_len,
                 D=self.head_dim,
                 latency_ms=latency_ms,
+                dtype="float16" if dtype == torch.float16 else "float32",
             )
 
             achieved_tflops = _sanitize_float(metrics.get("achieved_tflops", 0.0))
@@ -82,7 +92,7 @@ class RooflineBenchmark(AbstractBaseBenchmark):
                 "mechanism_or_kernel": f"roofline_{attention_type}",
                 "batch_size": batch_size,
                 "seq_len": seq_len,
-                "dtype": "fp32",
+                "dtype": dtype_str,
                 "latency_ms": latency_ms,
                 "latency_p50_ms": latency_ms,
                 "latency_p90_ms": latency_ms,

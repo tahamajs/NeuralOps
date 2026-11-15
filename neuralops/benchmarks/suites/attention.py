@@ -188,7 +188,7 @@ class AttentionBenchmark(AbstractBaseBenchmark):
             self.results_table.append(result_entry)
             return {"latency_ms": mean_ms, "tflops": tflops, "peak_vram_mb": peak_vram_mb}
 
-        except (torch.cuda.OutOfMemoryError, RuntimeError) as e:
+        except (torch.cuda.OutOfMemoryError, Exception) as e:
             if "out of memory" in str(e).lower() or isinstance(e, torch.cuda.OutOfMemoryError):
                 logger.warning("OOM encountered for %s at seq_len=%d: %s", mechanism, seq_len, e)
                 if self.device.type == "cuda" and torch.cuda.is_available():

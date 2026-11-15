@@ -46,6 +46,32 @@ class _BenchmarkHostModule(nn.Module):
         return self.fc2(self.act(self.fc1(x)))
 
 
+def _count_module_params(model: nn.Module, compressor: Any = None) -> int:
+    """Count model parameters, ensuring factorized SVD components (U, V) are accurately counted."""
+    counted_ids: set[int] = set()
+    total = 0
+
+    if compressor is not None:
+        for attr in ("U", "V"):
+            t = getattr(compressor, attr, None)
+            if isinstance(t, torch.Tensor) and id(t) not in counted_ids:
+                counted_ids.add(id(t))
+                total += t.numel()
+
+    for m in model.modules():
+        for p in m.parameters(recurse=False):
+            if id(p) not in counted_ids:
+                counted_ids.add(id(p))
+                total += p.numel()
+        for attr in ("U", "V"):
+            t = getattr(m, attr, None)
+            if isinstance(t, torch.Tensor) and id(t) not in counted_ids:
+                counted_ids.add(id(t))
+                total += t.numel()
+
+    return total
+
+
 class CompressionBenchmark(AbstractBaseBenchmark):
     def setup(self) -> None:
         sweep_cfg = self.config.compression_sweep or CompressionSweepParameters()
@@ -80,7 +106,7 @@ class CompressionBenchmark(AbstractBaseBenchmark):
 
         torch.manual_seed(42 + step)
         host_model = _BenchmarkHostModule(self.dim, self.dim).to(device=self.device)
-        total_orig_params = sum(p.numel() for p in host_model.parameters())
+        total_orig_params = _count_module_params(host_model)
 
         rank = max(4, int(self.dim * (1.0 - target_ratio)))
 
@@ -94,9 +120,13 @@ class CompressionBenchmark(AbstractBaseBenchmark):
             )
 
             if hasattr(compressor, "compress"):
-                compressor.compress()
+                comp_out = compressor.compress()
+                if isinstance(comp_out, nn.Module):
+                    host_model = comp_out
             elif hasattr(compressor, "apply"):
-                compressor.apply(host_model)
+                comp_out = compressor.apply(host_model)
+                if isinstance(comp_out, nn.Module):
+                    host_model = comp_out
             t1 = time.perf_counter()
 
             compression_latency_ms = _sanitize_float((t1 - t0) * 1000.0)
@@ -117,7 +147,7 @@ class CompressionBenchmark(AbstractBaseBenchmark):
                 repeat=self.benchmark_iterations,
             )
 
-            total_compressed_params = sum(p.numel() for p in host_model.parameters())
+            total_compressed_params = _count_module_params(host_model, compressor)
             param_reduction = max(0.0, 1.0 - (total_compressed_params / max(total_orig_params, 1)))
 
             self.tracker.log_metric("compression_latency_ms", compression_latency_ms, step=step)
