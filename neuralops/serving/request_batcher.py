@@ -21,6 +21,7 @@ import json
 import logging
 import math
 import queue
+import threading
 import time
 from typing import Any, AsyncIterator, Dict, Iterator, List, Optional, Tuple, Union
 
@@ -91,6 +92,7 @@ class TGIRequestBatch:
         self.completed_slots: Dict[str, TGIRequest] = {}
         self.free_slot_ids: List[int] = list(range(max_batch_size))
         self.slot_to_request_id: Dict[int, str] = {}
+        self._lock = threading.RLock()
 
     def admit_request(self, request: TGIRequest) -> Optional[int]:
         """Binds a request to an available free slot if available, or queues it.
@@ -98,17 +100,19 @@ class TGIRequestBatch:
         Returns:
             Assigned slot_id if admitted immediately, or None if queued.
         """
-        self.add(request)
-        return request.slot_id
+        with self._lock:
+            self.add(request)
+            return request.slot_id
 
     def evict_completed_slots(self) -> List[str]:
         """Frees slots of finished requests, emits completion, and returns evicted request IDs."""
-        evicted = []
-        finished_ids = [r_id for r_id, req in self.active_slots.items() if req.finished]
-        for r_id in finished_ids:
-            self.remove(r_id)
-            evicted.append(r_id)
-        return evicted
+        with self._lock:
+            evicted = []
+            finished_ids = [r_id for r_id, req in self.active_slots.items() if req.finished]
+            for r_id in finished_ids:
+                self.remove(r_id)
+                evicted.append(r_id)
+            return evicted
 
     # Dynamic request stepping and forward execution are managed by
     # TGIServingAdapter (via decode_step / prefill), which properly preserves
@@ -116,56 +120,63 @@ class TGIRequestBatch:
     # TGIRequestBatch is dedicated to slot management and batch tensor assembly.
 
     def add(self, request: TGIRequest) -> None:
-        if request.request_id in self.active_slots or request.request_id in self.completed_slots:
-            raise ValueError(f"request_id {request.request_id!r} has already been used")
-        if any(queued.request_id == request.request_id for queued in self.queued_slots):
-            raise ValueError(f"request_id {request.request_id!r} is already queued")
-        if request.input_ids.numel() + request.max_new_tokens > self.max_seq_len:
-            raise ValueError("prompt plus max_new_tokens exceeds max_seq_len")
-        if len(self.active_slots) < self.max_batch_size and self.free_slot_ids:
-            slot_id = self.free_slot_ids.pop(0)
-            request.slot_id = slot_id
-            self.slot_to_request_id[slot_id] = request.request_id
-            self.active_slots[request.request_id] = request
-        else:
-            self.queued_slots.append(request)
+        with self._lock:
+            if request.request_id in self.active_slots or request.request_id in self.completed_slots:
+                raise ValueError(f"request_id {request.request_id!r} has already been used")
+            if any(queued.request_id == request.request_id for queued in self.queued_slots):
+                raise ValueError(f"request_id {request.request_id!r} is already queued")
+            if request.input_ids.numel() + request.max_new_tokens > self.max_seq_len:
+                raise ValueError("prompt plus max_new_tokens exceeds max_seq_len")
+            if len(self.active_slots) < self.max_batch_size and self.free_slot_ids:
+                slot_id = self.free_slot_ids.pop(0)
+                request.slot_id = slot_id
+                self.slot_to_request_id[slot_id] = request.request_id
+                self.active_slots[request.request_id] = request
+            else:
+                self.queued_slots.append(request)
 
     def remove(self, request_id: str) -> None:
-        if request_id in self.active_slots:
-            slot = self.active_slots.pop(request_id)
-            slot.past_kv = None
-            if slot.slot_id is not None:
-                self.slot_to_request_id.pop(slot.slot_id, None)
-                self.free_slot_ids.append(slot.slot_id)
-                self.free_slot_ids.sort()
-                slot.slot_id = None
-            self.completed_slots[request_id] = slot
-        self.admit_queued()
+        with self._lock:
+            if request_id in self.active_slots:
+                slot = self.active_slots.pop(request_id)
+                slot.past_kv = None
+                if slot.slot_id is not None:
+                    self.slot_to_request_id.pop(slot.slot_id, None)
+                    self.free_slot_ids.append(slot.slot_id)
+                    self.free_slot_ids.sort()
+                    slot.slot_id = None
+                self.completed_slots[request_id] = slot
+            self.admit_queued()
 
     def active_request_ids(self) -> List[str]:
-        return [r_id for r_id, s in self.active_slots.items() if not s.finished]
+        with self._lock:
+            return [r_id for r_id, s in self.active_slots.items() if not s.finished]
 
     def admit_queued(self) -> None:
-        while self.queued_slots and len(self.active_slots) < self.max_batch_size and self.free_slot_ids:
-            slot = self.queued_slots.popleft()
-            slot_id = self.free_slot_ids.pop(0)
-            slot.slot_id = slot_id
-            self.slot_to_request_id[slot_id] = slot.request_id
-            self.active_slots[slot.request_id] = slot
+        with self._lock:
+            while self.queued_slots and len(self.active_slots) < self.max_batch_size and self.free_slot_ids:
+                slot = self.queued_slots.popleft()
+                slot_id = self.free_slot_ids.pop(0)
+                slot.slot_id = slot_id
+                self.slot_to_request_id[slot_id] = slot.request_id
+                self.active_slots[slot.request_id] = slot
 
     def get_slot_id(self, request_id: str) -> Optional[int]:
         """Returns the assigned batch slot index (0..max_batch_size-1) for an active request."""
-        slot = self.active_slots.get(request_id)
-        return slot.slot_id if slot is not None else None
+        with self._lock:
+            slot = self.active_slots.get(request_id)
+            return slot.slot_id if slot is not None else None
 
     def get_request_by_slot(self, slot_id: int) -> Optional[TGIRequest]:
         """Returns the active request occupying the given slot index."""
-        req_id = self.slot_to_request_id.get(slot_id)
-        return self.active_slots.get(req_id) if req_id is not None else None
+        with self._lock:
+            req_id = self.slot_to_request_id.get(slot_id)
+            return self.active_slots.get(req_id) if req_id is not None else None
 
     def slot_table(self) -> Dict[int, Optional[str]]:
         """Returns mapping of all slot indices (0..max_batch_size-1) to request IDs."""
-        return {slot_idx: self.slot_to_request_id.get(slot_idx) for slot_idx in range(self.max_batch_size)}
+        with self._lock:
+            return {slot_idx: self.slot_to_request_id.get(slot_idx) for slot_idx in range(self.max_batch_size)}
 
     def assemble_batch(
         self,

@@ -1,0 +1,24 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.3, pytest-8.0.0, pluggy-1.6.0 -- /Users/tahamajs/.local/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/tahamajs/dev/Project_W7_13
+configfile: pyproject.toml
+plugins: anyio-4.12.1, Faker-40.31.0, timeout-2.4.0, cov-4.1.0, django-4.8.0, xdist-3.5.0, sugar-0.9.7
+collecting ... collected 14 items
+
+tests/serving/test_runtime_resilience.py::test_paged_kv_cache_initial_invariants PASSED [  7%]
+tests/serving/test_runtime_resilience.py::test_paged_kv_cache_zero_memory_leak_lifecycle PASSED [ 14%]
+tests/serving/test_runtime_resilience.py::test_paged_kv_cache_cow_forking_and_mutation PASSED [ 21%]
+tests/serving/test_runtime_resilience.py::test_paged_kv_cache_defragmentation_and_compaction PASSED [ 28%]
+tests/serving/test_runtime_resilience.py::test_request_batch_dynamic_slotting_and_eviction PASSED [ 35%]
+tests/serving/test_runtime_resilience.py::test_request_batch_concurrency_race_free PASSED [ 42%]
+tests/serving/test_runtime_resilience.py::test_tgi_serving_adapter_sequential_truthful_generation PASSED [ 50%]
+tests/serving/test_runtime_resilience.py::test_async_stream_generation_sse PASSED [ 57%]
+tests/serving/test_runtime_resilience.py::test_circuit_breaker_fsm_state_transitions PASSED [ 64%]
+tests/serving/test_runtime_resilience.py::test_circuit_breaker_auto_recovery_cooldown PASSED [ 71%]
+tests/serving/test_runtime_resilience.py::test_autonomous_circuit_breaker_fallback_execution PASSED [ 78%]
+tests/serving/test_runtime_resilience.py::test_circuit_breaker_fail_closed_contract PASSED [ 85%]
+tests/serving/test_runtime_resilience.py::test_runtime_context_scoping_and_isolation PASSED [ 92%]
+tests/serving/test_runtime_resilience.py::test_runtime_events_decoupled_telemetry PASSED [100%]
+
+============================= 14 passed in 33.34s ==============================
