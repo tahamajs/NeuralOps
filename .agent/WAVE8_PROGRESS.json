@@ -1,0 +1,35 @@
+{
+  "wave": 8,
+  "agents": {
+    "W8-1": {
+      "status": "pending",
+      "branch": "wave8/W8-1",
+      "title": "API & Core Entrypoints Decomposition"
+    },
+    "W8-2": {
+      "status": "pending",
+      "branch": "wave8/W8-2",
+      "title": "Hardcoded CUDA:0 & AMP Elimination"
+    },
+    "W8-3": {
+      "status": "pending",
+      "branch": "wave8/W8-3",
+      "title": "Naked Print() Cleanout in Core Subsystems"
+    },
+    "W8-4": {
+      "status": "pending",
+      "branch": "wave8/W8-4",
+      "title": "Core Stubs & NotImplementedError Resolution"
+    },
+    "W8-5": {
+      "status": "pending",
+      "branch": "wave8/W8-5",
+      "title": "Autograd CUDA Kernel Fallbacks & Stubs Resolution"
+    },
+    "W8-6": {
+      "status": "pending",
+      "branch": "wave8/W8-6",
+      "title": "Benchmarks v2 Suites Stubs Remediation"
+    }
+  }
+}
