@@ -3,25 +3,150 @@
   "started_at": "2026-11-15T00:00:00Z",
   "last_updated": "2026-11-15T00:00:00Z",
   "agents": {
-    "W4-L1": {"status": "pending", "branch": "wave4/W4-L1", "commits": 0, "worktree": null},
-    "W4-L2": {"status": "pending", "branch": "wave4/W4-L2", "commits": 0, "worktree": null},
-    "W4-L3": {"status": "pending", "branch": "wave4/W4-L3", "commits": 0, "worktree": null},
-    "W4-L4": {"status": "pending", "branch": "wave4/W4-L4", "commits": 0, "worktree": null},
-    "W4-O1": {"status": "pending", "branch": "wave4/W4-O1", "commits": 0, "worktree": null},
-    "W4-O2": {"status": "pending", "branch": "wave4/W4-O2", "commits": 0, "worktree": null},
-    "W4-C1": {"status": "pending", "branch": "wave4/W4-C1", "commits": 0, "worktree": null},
-    "W4-T1": {"status": "pending", "branch": "wave4/W4-T1", "commits": 0, "worktree": null},
-    "W4-T2": {"status": "pending", "branch": "wave4/W4-T2", "commits": 0, "worktree": null},
-    "W4-T3": {"status": "pending", "branch": "wave4/W4-T3", "commits": 0, "worktree": null},
-    "W4-A1": {"status": "pending", "branch": "wave4/W4-A1", "commits": 0, "worktree": null},
-    "W4-C2": {"status": "pending", "branch": "wave4/W4-C2", "commits": 0, "worktree": null},
-    "W4-E1": {"status": "pending", "branch": "wave4/W4-E1", "commits": 0, "worktree": null},
-    "W4-U1": {"status": "pending", "branch": "wave4/W4-U1", "commits": 0, "worktree": null},
-    "W4-U2": {"status": "pending", "branch": "wave4/W4-U2", "commits": 0, "worktree": null},
-    "W4-B1": {"status": "pending", "branch": "wave4/W4-B1", "commits": 0, "worktree": null},
-    "W4-B2": {"status": "pending", "branch": "wave4/W4-B2", "commits": 0, "worktree": null},
-    "W4-B3": {"status": "pending", "branch": "wave4/W4-B3", "commits": 0, "worktree": null},
-    "W4-I1": {"status": "pending", "branch": "wave4/W4-I1", "commits": 0, "worktree": null},
-    "W4-R1": {"status": "pending", "branch": "wave4/W4-R1", "commits": 0, "worktree": null}
+    "W4-L1": {
+      "status": "in_progress",
+      "branch": "wave4/W4-L1",
+      "commits": 0,
+      "worktree": "/Users/tahamajs/dev/Project_W4_L1"
+    },
+    "W4-L2": {
+      "status": "in_progress",
+      "branch": "wave4/W4-L2",
+      "commits": 0,
+      "worktree": "/Users/tahamajs/dev/Project_W4_L2"
+    },
+    "W4-L3": {
+      "status": "in_progress",
+      "branch": "wave4/W4-L3",
+      "commits": 0,
+      "worktree": "/Users/tahamajs/dev/Project_W4_L3"
+    },
+    "W4-L4": {
+      "status": "in_progress",
+      "branch": "wave4/W4-L4",
+      "commits": 0,
+      "worktree": "/Users/tahamajs/dev/Project_W4_L4"
+    },
+    "W4-O1": {
+      "status": "in_progress",
+      "branch": "wave4/W4-O1",
+      "commits": 0,
+      "worktree": "/Users/tahamajs/dev/Project_W4_O1"
+    },
+    "W4-O2": {
+      "status": "in_progress",
+      "branch": "wave4/W4-O2",
+      "commits": 0,
+      "worktree": "/Users/tahamajs/dev/Project_W4_O2"
+    },
+    "W4-C1": {
+      "status": "in_progress",
+      "branch": "wave4/W4-C1",
+      "commits": 0,
+      "worktree": "/Users/tahamajs/dev/Project_W4_C1"
+    },
+    "W4-T1": {
+      "status": "complete",
+      "branch": "wave4/W4-T1",
+      "commits": 1,
+      "worktree": "/Users/tahamajs/dev/Project_W4_T1",
+      "last_commit": "d3dc7b4e0c19551b572483d8818e900a790dc58d",
+      "last_report_at": "2026-11-14T23:16:52Z",
+      "tests_added": 62,
+      "bugs_fixed": ["P1-T1-1", "P1-T1-2", "P1-T1-3", "P1-T1-4", "P1-T1-5"]
+    },
+    "W4-T2": {
+      "status": "in_progress",
+      "branch": "wave4/W4-T2",
+      "commits": 0,
+      "worktree": "/Users/tahamajs/dev/Project_W4_T2"
+    },
+    "W4-T3": {
+      "status": "complete",
+      "branch": "wave4/W4-T3",
+      "commits": 2,
+      "worktree": "/Users/tahamajs/dev/Project_W4_T3",
+      "last_commit": "83857fc17de6e760ee82d9747bd9998434ba40de",
+      "last_report_at": "2026-11-14T23:11:18Z"
+    },
+    "W4-A1": {
+      "status": "complete",
+      "branch": "wave4/W4-A1",
+      "commits": 4,
+      "worktree": "/Users/tahamajs/dev/Project_W4_A1",
+      "last_commit": "365cfbe49c2fae9ec27621ba741534428e588b1a",
+      "last_report_at": "2026-11-14T23:18:49Z",
+      "tests_added": 24,
+      "bugs_fixed": [
+        "benchmark_schema-from-yaml-path",
+        "transplant_attention-calibrate",
+        "replace_attention-none-model",
+        "quick_benchmark-cuda-event",
+        "compare_attentions_ablation-device"
+      ]
+    },
+    "W4-C2": {
+      "status": "in_progress",
+      "branch": "wave4/W4-C2",
+      "commits": 0,
+      "worktree": "/Users/tahamajs/dev/Project_W4_C2"
+    },
+    "W4-E1": {
+      "status": "in_progress",
+      "branch": "wave4/W4-E1",
+      "commits": 0,
+      "worktree": "/Users/tahamajs/dev/Project_W4_E1"
+    },
+    "W4-U1": {
+      "status": "complete",
+      "branch": "wave4/W4-U1",
+      "commits": 1,
+      "worktree": "/Users/tahamajs/dev/Project_W4_U1",
+      "last_commit": "dd3e42e84644fff725aef3f8789f4c1fff4fb0f6",
+      "last_report_at": "2026-11-14T23:28:21Z",
+      "tests_added": 18,
+      "bugs_fixed": [
+        "NIAH-TRUNC-1",
+        "UI-PORT-CONFLICT-1",
+        "UI-JSON-ENDPOINTS-1",
+        "RULER-REAL-EVAL-1"
+      ]
+    },
+    "W4-U2": {
+      "status": "in_progress",
+      "branch": "wave4/W4-U2",
+      "commits": 0,
+      "worktree": "/Users/tahamajs/dev/Project_W4_U2"
+    },
+    "W4-B1": {
+      "status": "in_progress",
+      "branch": "wave4/W4-B1",
+      "commits": 0,
+      "worktree": "/Users/tahamajs/dev/Project_W4_B1"
+    },
+    "W4-B2": {
+      "status": "in_progress",
+      "branch": "wave4/W4-B2",
+      "commits": 0,
+      "worktree": "/Users/tahamajs/dev/Project_W4_B2"
+    },
+    "W4-B3": {
+      "status": "in_progress",
+      "branch": "wave4/W4-B3",
+      "commits": 0,
+      "worktree": "/Users/tahamajs/dev/Project_W4_B3"
+    },
+    "W4-I1": {
+      "status": "in_progress",
+      "branch": "wave4/W4-I1",
+      "commits": 0,
+      "worktree": "/Users/tahamajs/dev/Project_W4_I1"
+    },
+    "W4-R1": {
+      "status": "in_progress",
+      "branch": "wave4/W4-R1",
+      "commits": 0,
+      "worktree": "/Users/tahamajs/dev/Project_W4_R1"
+    }
   }
 }
