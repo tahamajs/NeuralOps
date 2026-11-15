@@ -1,0 +1,25 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.3, pytest-8.0.0, pluggy-1.6.0 -- /Library/Frameworks/Python.framework/Versions/3.14/bin/python3
+cachedir: .pytest_cache
+rootdir: /Users/tahamajs/dev/Project
+configfile: pyproject.toml
+plugins: anyio-4.12.1, Faker-40.31.0, timeout-2.4.0, cov-4.1.0, django-4.8.0, xdist-3.5.0, sugar-0.9.7
+collecting ... collected 15 items
+
+tests/contract/test_error_hierarchy.py::test_core_exceptions_inherit_from_neuralops_error PASSED [  6%]
+tests/contract/test_error_hierarchy.py::test_surgery_exceptions_inherit_from_neuralops_error PASSED [ 13%]
+tests/contract/test_error_hierarchy.py::test_exception_has_standard_attributes PASSED [ 20%]
+tests/contract/test_error_hierarchy.py::test_recipe_exceptions_inherit_from_neuralops_error PASSED [ 26%]
+tests/contract/test_error_hierarchy.py::test_cli_exceptions_inherit_from_neuralops_error PASSED [ 33%]
+tests/contract/test_error_hierarchy.py::test_operations_exceptions_inherit_from_neuralops_error PASSED [ 40%]
+tests/contract/test_error_hierarchy.py::test_adapters_exceptions_inherit_from_neuralops_error PASSED [ 46%]
+tests/contract/test_error_hierarchy.py::test_validation_exceptions_inherit_from_neuralops_error PASSED [ 53%]
+tests/contract/test_error_hierarchy.py::test_pipeline_exceptions_inherit_from_neuralops_error PASSED [ 60%]
+tests/contract/test_error_hierarchy.py::test_distributed_exceptions_inherit_from_neuralops_error PASSED [ 66%]
+tests/contract/test_error_hierarchy.py::test_results_v2_exceptions_inherit_from_neuralops_error PASSED [ 73%]
+tests/contract/test_error_hierarchy.py::test_config_v2_exceptions_inherit_from_neuralops_error PASSED [ 80%]
+tests/contract/test_error_hierarchy.py::test_hub_exceptions_inherit_from_neuralops_error PASSED [ 86%]
+tests/contract/test_error_hierarchy.py::test_neuralops_exceptions_shim PASSED [ 93%]
+tests/contract/test_error_hierarchy.py::test_all_custom_exceptions_catchable_via_neuralops_error PASSED [100%]
+
+============================= 15 passed in 22.39s ==============================
