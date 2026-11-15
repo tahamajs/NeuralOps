@@ -1,0 +1,18 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.3, pytest-8.0.0, pluggy-1.6.0 -- /Users/tahamajs/.local/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/tahamajs/dev/Project_W7_4
+configfile: pyproject.toml
+plugins: anyio-4.12.1, Faker-40.31.0, timeout-2.4.0, cov-4.1.0, django-4.8.0, xdist-3.5.0, sugar-0.9.7
+collecting ... collected 8 items
+
+tests/export/test_model_export.py::test_safetensors_shard_state_dict_single_shard PASSED [ 12%]
+tests/export/test_model_export.py::test_safetensors_shard_state_dict_multiple_shards PASSED [ 25%]
+tests/export/test_model_export.py::test_save_sharded_safetensors_writes_valid_files PASSED [ 37%]
+tests/export/test_model_export.py::test_safetensors_exporter_class_integration PASSED [ 50%]
+tests/export/test_model_export.py::test_build_dynamic_axes_for_recurrent PASSED [ 62%]
+tests/export/test_model_export.py::test_onnx_export_recurrent_model PASSED [ 75%]
+tests/export/test_model_export.py::test_gguf_export_model_to_gguf PASSED [ 87%]
+tests/export/test_model_export.py::test_export_model_operation_all_formats PASSED [100%]
+
+============================== 8 passed in 1.23s ===============================
