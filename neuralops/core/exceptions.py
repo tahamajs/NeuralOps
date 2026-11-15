@@ -152,6 +152,7 @@ _torch_install_error = torch_install_error
 
 
 __all__ = [
+    "InvariantViolationError",
     "NeuralOpsError",
     "RegistryError",
     "AttentionNotRegisteredError",
@@ -183,3 +184,8 @@ __all__ = [
     "torch_install_error",
     "_torch_install_error",
 ]
+
+
+
+class InvariantViolationError(SurgeryTransactionError):
+    """Raised when a surgical transformation violates an architectural or mathematical invariant."""
