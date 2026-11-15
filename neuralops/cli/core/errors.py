@@ -28,6 +28,8 @@ except ImportError:
     HAS_RICH = False
     err_console = None
 
+from neuralops.core.exceptions import NeuralOpsError
+
 
 class ExitCode(IntEnum):
     """Standardized POSIX process exit codes for NeuralOps CLI."""
@@ -53,7 +55,7 @@ class ExitCode(IntEnum):
     INTERNAL_ERROR = 70
 
 
-class CliError(Exception):
+class CliError(NeuralOpsError):
     """Base exception for expected user-facing errors with structured diagnostic metadata."""
 
     def __init__(
