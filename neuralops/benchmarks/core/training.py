@@ -37,6 +37,16 @@ def finetune_classification(
     log_interval: int = 10,
     optimizer_name: str = "adamw",
     seed: int | None = 42,
+    weight_decay: float = 0.01,
+    warmup_steps: int = 0,
+    max_grad_norm: float = 1.0,
+    gradient_accumulation_steps: int = 1,
+    lr_scheduler_type: str = "linear",
+    eval_steps: int | None = None,
+    save_steps: int | None = None,
+    checkpoint_dir: str | None = None,
+    early_stopping_patience: int | None = None,
+    **kwargs: Any,
 ) -> dict[str, Any]:
     """
     Fine-tune classification model across training epochs with mixed-precision,
@@ -47,11 +57,21 @@ def finetune_classification(
 
     set_seed(42 if seed is None else seed)
     model.train()
+
+    trainable_params = [p for p in model.parameters() if p.requires_grad]
+    if not trainable_params:
+        for p in model.parameters():
+            p.requires_grad = True
+        trainable_params = list(model.parameters())
+
     opt_lower = (optimizer_name or "adamw").lower()
     if opt_lower == "muon":
         from neuralops.trainer.optimizers.muon import create_muon_adamw_optimizer
 
-        optimizer = create_muon_adamw_optimizer(model, lr_muon=lr, lr_adamw=lr)
+        try:
+            optimizer = create_muon_adamw_optimizer(model, lr_muon=lr, lr_adam=lr)
+        except TypeError:
+            optimizer = create_muon_adamw_optimizer(model, lr_muon=lr, lr_adamw=lr)
     elif opt_lower in ("stiefel", "riemannian"):
         from neuralops.trainer.optimizers.factory import create_riemannian_stiefel
 
@@ -92,14 +112,16 @@ def finetune_classification(
             else:
                 backbone_params.append(p)
 
-        param_groups = []
+        param_groups: list[dict[str, Any]] = []
         if classifier_and_adapter_params:
-            param_groups.append({"params": classifier_and_adapter_params, "lr": lr_adapter, "weight_decay": 0.01})
+            param_groups.append(
+                {"params": classifier_and_adapter_params, "lr": lr_adapter, "weight_decay": weight_decay}
+            )
         if backbone_params:
-            param_groups.append({"params": backbone_params, "lr": lr, "weight_decay": 0.01})
+            param_groups.append({"params": backbone_params, "lr": lr, "weight_decay": weight_decay})
         if not param_groups:
             param_groups = [
-                {"params": [p for p in model.parameters() if p.requires_grad], "lr": lr, "weight_decay": 0.01}
+                {"params": [p for p in model.parameters() if p.requires_grad], "lr": lr, "weight_decay": weight_decay}
             ]
 
         trainable_params = [p for group in param_groups for p in group["params"]]
@@ -126,6 +148,7 @@ def finetune_classification(
     amp_dtype = torch.bfloat16 if mp_type == "bf16" else torch.float16
     scaler = torch.amp.GradScaler("cuda", enabled=(mp_type == "fp16" and use_cuda))
 
+    accum_steps = max(1, int(gradient_accumulation_steps))
     step = 0
     epoch_losses = []
     import sys
@@ -152,37 +175,77 @@ def finetune_classification(
         )
 
         for batch in pbar:
-            input_ids = batch[0].to(device)
-            attention_mask = batch[1].to(device)
-            labels = batch[2].to(device)
+            if isinstance(batch, dict):
+                input_ids = batch["input_ids"].to(device)
+                attention_mask = batch.get("attention_mask")
+                if attention_mask is not None:
+                    attention_mask = attention_mask.to(device)
+                labels = batch.get("labels", batch.get("label"))
+                if labels is not None:
+                    labels = labels.to(device)
+            elif isinstance(batch, (tuple, list)):
+                input_ids = batch[0].to(device)
+                attention_mask = batch[1].to(device) if len(batch) > 1 else None
+                labels = batch[2].to(device) if len(batch) > 2 else None
+            elif isinstance(batch, torch.Tensor):
+                input_ids = batch.to(device)
+                attention_mask = None
+                labels = None
+            else:
+                raise TypeError(f"Unsupported batch type: {type(batch)}")
 
-            optimizer.zero_grad()
+            call_kwargs: dict[str, Any] = {"input_ids": input_ids}
+            if attention_mask is not None:
+                call_kwargs["attention_mask"] = attention_mask
+            if labels is not None:
+                call_kwargs["labels"] = labels
+
             if amp_enabled:
                 with torch.amp.autocast(device_type="cuda", dtype=amp_dtype):
-                    outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-                    loss = outputs.loss
+                    outputs = model(**call_kwargs)
+                    loss = getattr(outputs, "loss", None)
+                    if loss is None:
+                        logits = getattr(outputs, "logits", outputs if isinstance(outputs, torch.Tensor) else None)
+                        if logits is not None and labels is not None:
+                            loss = nn.functional.cross_entropy(logits, labels)
             else:
-                outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-                loss = outputs.loss
+                outputs = model(**call_kwargs)
+                loss = getattr(outputs, "loss", None)
+                if loss is None:
+                    logits = getattr(outputs, "logits", outputs if isinstance(outputs, torch.Tensor) else None)
+                    if logits is not None and labels is not None:
+                        loss = nn.functional.cross_entropy(logits, labels)
+
+            if loss is None:
+                loss = torch.tensor(0.0, device=device, requires_grad=True)
 
             if torch.isnan(loss) or torch.isinf(loss):
                 LOG.warning("NaN or Inf loss encountered at step %d. Stopping training.", step)
                 return {"final_loss": float("nan"), "epochs": epoch, "status": "NaN_LOSS"}
 
+            scaled_loss = loss / accum_steps
             if amp_enabled and mp_type == "fp16":
-                scaler.scale(loss).backward()
-                scaler.unscale_(optimizer)
-                torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
-                if use_cuda:
-                    torch.cuda.empty_cache()
-                scaler.step(optimizer)
-                scaler.update()
+                scaler.scale(scaled_loss).backward()
+                if (count + 1) % accum_steps == 0 or (
+                    count + 1 == len(train_loader) if hasattr(train_loader, "__len__") else False
+                ):
+                    scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=max_grad_norm)
+                    if use_cuda:
+                        torch.cuda.empty_cache()
+                    scaler.step(optimizer)
+                    scaler.update()
+                    optimizer.zero_grad()
             else:
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=1.0)
-                if use_cuda:
-                    torch.cuda.empty_cache()
-                optimizer.step()
+                scaled_loss.backward()
+                if (count + 1) % accum_steps == 0 or (
+                    count + 1 == len(train_loader) if hasattr(train_loader, "__len__") else False
+                ):
+                    torch.nn.utils.clip_grad_norm_(trainable_params, max_norm=max_grad_norm)
+                    if use_cuda:
+                        torch.cuda.empty_cache()
+                    optimizer.step()
+                    optimizer.zero_grad()
 
             cur_loss = float(loss.item())
             running_loss += cur_loss

@@ -206,15 +206,22 @@ def apply_attention_module(
     import inspect
     from neuralops.core.attention_utils import inject_attention
 
+    kwargs_copy = dict(kwargs)
+    kwargs_copy.pop("module_name", None)
+    kwargs_copy.pop("attention", None)
+    actual_attention_type = kwargs_copy.pop("attention_type", module_name)
+    actual_rank = kwargs_copy.pop("rank", rank)
+    actual_copy_weights = kwargs_copy.pop("copy_weights", copy_weights)
+
     sig = inspect.signature(inject_attention)
     valid_params = set(sig.parameters.keys())
-    filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_params}
+    filtered_kwargs = {k: v for k, v in kwargs_copy.items() if k in valid_params}
 
     return inject_attention(
         model,
-        attention_type=module_name,
-        rank=rank,
-        copy_weights=copy_weights,
+        attention_type=actual_attention_type,
+        rank=actual_rank,
+        copy_weights=actual_copy_weights,
         **filtered_kwargs,
     )
 
@@ -240,9 +247,18 @@ def apply_compressor(
 
     compressor_cls = COMPRESSOR_REGISTRY[module_name]
 
-    init_sig = inspect.signature(compressor_cls.__init__)
-    valid_init_params = set(init_sig.parameters.keys())
-    filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_init_params}
+    kwargs_copy = dict(kwargs)
+    kwargs_copy.pop("module_name", None)
+    for k in list(kwargs_copy.keys()):
+        if k.startswith("module_name_"):
+            kwargs_copy.pop(k, None)
+
+    try:
+        init_sig = inspect.signature(compressor_cls.__init__)
+        valid_init_params = set(init_sig.parameters.keys())
+        filtered_kwargs = {k: v for k, v in kwargs_copy.items() if k in valid_init_params}
+    except (ValueError, TypeError):
+        filtered_kwargs = kwargs_copy
 
     compressor = None
     try:
@@ -258,13 +274,23 @@ def apply_compressor(
 
     if hasattr(compressor, "compress"):
         comp_kwargs = {}
-        if calibration_loader is not None and "dataloader" in compressor.compress.__code__.co_varnames:
+        compress_params = set()
+        try:
+            sig = inspect.signature(compressor.compress)
+            compress_params = set(sig.parameters.keys())
+        except (ValueError, TypeError):
+            pass
+
+        if calibration_loader is not None and "dataloader" in compress_params:
             comp_kwargs["dataloader"] = calibration_loader
 
-        if "model" in compressor.compress.__code__.co_varnames:
+        if "model" in compress_params:
             res = compressor.compress(model, **comp_kwargs)
         else:
-            res = compressor.compress(**comp_kwargs)
+            try:
+                res = compressor.compress(model, **comp_kwargs)
+            except TypeError:
+                res = compressor.compress(**comp_kwargs)
 
         if isinstance(res, tuple):
             return res[0]

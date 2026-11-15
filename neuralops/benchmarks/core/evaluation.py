@@ -64,22 +64,45 @@ def evaluate_classification(
 
     with torch.no_grad():
         for b_idx, batch in enumerate(pbar):
-            input_ids = batch[0].to(device)
-            attention_mask = batch[1].to(device)
-            labels = batch[2].to(device)
+            if isinstance(batch, dict):
+                input_ids = batch["input_ids"].to(device)
+                attention_mask = batch.get("attention_mask")
+                if attention_mask is not None:
+                    attention_mask = attention_mask.to(device)
+                labels = batch.get("labels", batch.get("label"))
+                if labels is not None:
+                    labels = labels.to(device)
+            elif isinstance(batch, (tuple, list)):
+                input_ids = batch[0].to(device)
+                attention_mask = batch[1].to(device) if len(batch) > 1 else None
+                labels = batch[2].to(device) if len(batch) > 2 else None
+            elif isinstance(batch, torch.Tensor):
+                input_ids = batch.to(device)
+                attention_mask = None
+                labels = None
+            else:
+                raise TypeError(f"Unsupported batch type: {type(batch)}")
 
-            outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-            loss = outputs.loss
-            logits = outputs.logits
+            call_kwargs: dict[str, Any] = {"input_ids": input_ids}
+            if attention_mask is not None:
+                call_kwargs["attention_mask"] = attention_mask
+            if labels is not None:
+                call_kwargs["labels"] = labels
 
-            preds = torch.argmax(logits, dim=-1)
-            correct += int((preds == labels).sum().item())
-            total += int(labels.numel())
+            outputs = model(**call_kwargs)
+            loss = getattr(outputs, "loss", None)
+            logits = getattr(outputs, "logits", outputs if isinstance(outputs, torch.Tensor) else None)
+            if logits is None and isinstance(outputs, (tuple, list)):
+                logits = outputs[0]
+
+            if labels is not None and logits is not None:
+                preds = torch.argmax(logits, dim=-1)
+                correct += int((preds == labels).sum().item())
+                total += int(labels.numel())
+                all_preds.extend(preds.cpu().tolist())
+                all_labels.extend(labels.cpu().tolist())
             total_loss += float(loss.item()) if loss is not None else 0.0
             num_batches += 1
-
-            all_preds.extend(preds.cpu().tolist())
-            all_labels.extend(labels.cpu().tolist())
 
             if max_eval_batches is not None and b_idx + 1 >= max_eval_batches:
                 break
@@ -118,12 +141,27 @@ def evaluate_perplexity(
 
     with torch.no_grad():
         for b_idx, batch in enumerate(eval_loader):
-            input_ids = batch[0].to(device)
-            attention_mask = batch[1].to(device)
+            if isinstance(batch, dict):
+                input_ids = batch["input_ids"].to(device)
+                attention_mask = batch.get("attention_mask")
+                if attention_mask is not None:
+                    attention_mask = attention_mask.to(device)
+            elif isinstance(batch, (tuple, list)):
+                input_ids = batch[0].to(device)
+                attention_mask = batch[1].to(device) if len(batch) > 1 else None
+            elif isinstance(batch, torch.Tensor):
+                input_ids = batch.to(device)
+                attention_mask = None
+            else:
+                raise TypeError(f"Unsupported batch type: {type(batch)}")
 
             labels = input_ids.clone()
-            outputs = model(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
-            loss = outputs.loss
+            call_kwargs: dict[str, Any] = {"input_ids": input_ids, "labels": labels}
+            if attention_mask is not None:
+                call_kwargs["attention_mask"] = attention_mask
+
+            outputs = model(**call_kwargs)
+            loss = getattr(outputs, "loss", None)
 
             if loss is not None and not torch.isnan(loss):
                 total_loss += float(loss.item()) * input_ids.size(0)
@@ -133,7 +171,8 @@ def evaluate_perplexity(
             if max_eval_batches is not None and b_idx + 1 >= max_eval_batches:
                 break
 
-    avg_loss = total_loss / max(num_batches * eval_loader.batch_size, 1)
+    loader_batch_size = getattr(eval_loader, "batch_size", None) or 1
+    avg_loss = total_loss / max(num_batches * loader_batch_size, 1)
     try:
         ppl = math.exp(avg_loss)
     except OverflowError:
@@ -147,7 +186,7 @@ def evaluate_perplexity(
 
 def measure_resources(
     model: nn.Module,
-    sample_batch: tuple[torch.Tensor, ...],
+    sample_batch: Any,
     device: str | torch.device = "cpu",
     warmup_iters: int = 3,
     measure_iters: int = 10,
@@ -156,10 +195,30 @@ def measure_resources(
     Profile peak VRAM consumption, latency per token, and token throughput.
     """
     model.eval()
-    input_ids = sample_batch[0].to(device)
-    attention_mask = sample_batch[1].to(device)
-    batch_size, seq_len = input_ids.shape
+    if isinstance(sample_batch, dict):
+        input_ids = sample_batch["input_ids"].to(device)
+        attention_mask = sample_batch.get("attention_mask")
+        if attention_mask is not None:
+            attention_mask = attention_mask.to(device)
+    elif isinstance(sample_batch, (tuple, list)):
+        input_ids = sample_batch[0].to(device)
+        attention_mask = sample_batch[1].to(device) if len(sample_batch) > 1 else None
+    elif isinstance(sample_batch, torch.Tensor):
+        input_ids = sample_batch.to(device)
+        attention_mask = None
+    else:
+        raise TypeError(f"Unsupported sample_batch type: {type(sample_batch)}")
+
+    if input_ids.dim() == 1:
+        input_ids = input_ids.unsqueeze(0)
+
+    batch_size = input_ids.shape[0]
+    seq_len = input_ids.shape[1] if input_ids.dim() > 1 else 1
     total_tokens_per_pass = batch_size * seq_len
+
+    call_kwargs: dict[str, Any] = {"input_ids": input_ids}
+    if attention_mask is not None:
+        call_kwargs["attention_mask"] = attention_mask
 
     if torch.cuda.is_available() and device != "cpu":
         torch.cuda.reset_peak_memory_stats(device)
@@ -167,7 +226,7 @@ def measure_resources(
 
     with torch.no_grad():
         for _ in range(warmup_iters):
-            _ = model(input_ids=input_ids, attention_mask=attention_mask)
+            _ = model(**call_kwargs)
 
     if torch.cuda.is_available() and device != "cpu":
         torch.cuda.synchronize(device)
@@ -175,7 +234,7 @@ def measure_resources(
     start_time = time.perf_counter()
     with torch.no_grad():
         for _ in range(measure_iters):
-            _ = model(input_ids=input_ids, attention_mask=attention_mask)
+            _ = model(**call_kwargs)
 
     if torch.cuda.is_available() and device != "cpu":
         torch.cuda.synchronize(device)
