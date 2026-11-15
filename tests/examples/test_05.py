@@ -36,7 +36,7 @@ def test_05_no_fake_vram_on_cpu():
     env = os.environ.copy()
     env["CUDA_VISIBLE_DEVICES"] = ""
     result = subprocess.run(
-        [sys.executable, str(EXAMPLE_PATH)],
+        [sys.executable, str(EXAMPLE_PATH), "--cpu"],
         capture_output=True,
         text=True,
         timeout=120,

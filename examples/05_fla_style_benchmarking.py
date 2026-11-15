@@ -194,8 +194,8 @@ def run_benchmark_suite(device: str) -> bool:
 
 def main() -> int:
     section("NeuralOps Example 05: FLA-Style Microbenchmarking")
-    backend = get_backend_preference()
-    kv("Hardware Accelerator", gpu_name())
+    backend = "cpu" if "--cpu" in sys.argv else get_backend_preference()
+    kv("Hardware Accelerator", "CPU (Forced)" if "--cpu" in sys.argv else gpu_name())
     kv("Target Device", backend)
     kv("PyTorch Version", torch.__version__)
     print()

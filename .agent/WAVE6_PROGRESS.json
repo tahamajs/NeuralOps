@@ -28,9 +28,10 @@
       "tests_passed": 5
     },
     "W6-5": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave6/W6-5",
-      "worktree": null
+      "worktree": null,
+      "tests_passed": 5
     },
     "W6-6": {
       "status": "complete",
@@ -73,9 +74,10 @@
       "tests_passed": 4
     },
     "W6-13": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave6/W6-13",
-      "worktree": null
+      "worktree": null,
+      "tests_passed": 4
     },
     "W6-14": {
       "status": "complete",
@@ -156,7 +158,7 @@
       "tests_passed": 4
     },
     "W6-24": {
-      "status": "pending",
+      "status": "complete",
       "phase": 3,
       "assigned_examples": [
         "27_huggingface_polymorphic_cache_bridge.py",
@@ -166,7 +168,8 @@
       "tests": [
         "tests/examples/test_27.py",
         "tests/examples/test_28.py"
-      ]
+      ],
+      "tests_passed": 5
     },
     "W6-25": {
       "status": "complete",
