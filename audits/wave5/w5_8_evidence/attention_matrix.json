@@ -1,0 +1,919 @@
+[
+  {
+    "index": 1,
+    "key": "adaptive_span_attention",
+    "family": "adaptive",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 2,
+    "key": "adaptive_sparse_attention",
+    "family": "sparse",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 3,
+    "key": "adaptive_svd_attention",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 4,
+    "key": "adasplash_attention",
+    "family": "fast_kernels",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 5,
+    "key": "alibi",
+    "family": "modern",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 6,
+    "key": "asvd_attention",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 7,
+    "key": "bam_umoe",
+    "family": "sparse",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 8,
+    "key": "block_transformer_hiba",
+    "family": "adaptive",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 9,
+    "key": "chela_slay",
+    "family": "linear",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 10,
+    "key": "cluster_attention",
+    "family": "sparse",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 11,
+    "key": "compressed_attention",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 12,
+    "key": "compressed_mha_attention",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 13,
+    "key": "cosformer",
+    "family": "linear",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 14,
+    "key": "cross_attention",
+    "family": "modern",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 15,
+    "key": "decay_linear_attention",
+    "family": "gated",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 16,
+    "key": "delta_product_attention",
+    "family": "gated",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 17,
+    "key": "dynamic_conv_attention",
+    "family": "modern",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 18,
+    "key": "eat",
+    "family": "adaptive",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 19,
+    "key": "expert_choice_moe",
+    "family": "sparse",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 20,
+    "key": "factorised_matrix_state",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 21,
+    "key": "flash_attention",
+    "family": "fast_kernels",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 22,
+    "key": "flash_attention3",
+    "family": "fast_kernels",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 23,
+    "key": "flash_attention3_fp8",
+    "family": "fast_kernels",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 24,
+    "key": "full_attention",
+    "family": "dense",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 25,
+    "key": "fused_svd_kernel",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 26,
+    "key": "fusion_attn",
+    "family": "hybrid",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 27,
+    "key": "galerkin_attention",
+    "family": "linear",
+    "status": "XFAIL",
+    "notes": "Not implemented"
+  },
+  {
+    "index": 28,
+    "key": "gated_delta_net",
+    "family": "gated",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 29,
+    "key": "gated_deltanet_block",
+    "family": "gated",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 30,
+    "key": "gated_hybrid_kernel_attention",
+    "family": "hybrid",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 31,
+    "key": "gdn2_attention",
+    "family": "gated",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 32,
+    "key": "gla",
+    "family": "linear",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 33,
+    "key": "gla_attention",
+    "family": "linear",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 34,
+    "key": "goldfinch_ahn",
+    "family": "ssm",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 35,
+    "key": "gqa",
+    "family": "modern",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 36,
+    "key": "gqa_attention",
+    "family": "modern",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 37,
+    "key": "granite_hybrid",
+    "family": "hybrid",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 38,
+    "key": "griffin_ssd",
+    "family": "ssm",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 39,
+    "key": "halo_regla",
+    "family": "hybrid",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 40,
+    "key": "hamming_attention",
+    "family": "sparse",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 41,
+    "key": "hgrn2_gated_deltanet",
+    "family": "gated",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 42,
+    "key": "hgrn2_gated_layer",
+    "family": "gated",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 43,
+    "key": "hgrn2_gated_outer",
+    "family": "gated",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 44,
+    "key": "hla_attention",
+    "family": "gated",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 45,
+    "key": "hybrid_attention",
+    "family": "hybrid",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 46,
+    "key": "hybrid_local_kernel",
+    "family": "hybrid",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 47,
+    "key": "hymba_transx",
+    "family": "ssm",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 48,
+    "key": "jamba",
+    "family": "ssm",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 49,
+    "key": "jamba_info",
+    "family": "ssm",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 50,
+    "key": "kda_attention",
+    "family": "gated",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 51,
+    "key": "landmark_local_attention",
+    "family": "hybrid",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 52,
+    "key": "linear_attention",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 53,
+    "key": "linformer",
+    "family": "linear",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 54,
+    "key": "linformer_attention",
+    "family": "linear",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 55,
+    "key": "lola_attention",
+    "family": "adaptive",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 56,
+    "key": "lora_attention",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 57,
+    "key": "lsh_attention",
+    "family": "sparse",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 58,
+    "key": "mamba",
+    "family": "ssm",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 59,
+    "key": "mamba_block",
+    "family": "ssm",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 60,
+    "key": "mamba_svd_flash",
+    "family": "ssm",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 61,
+    "key": "mha",
+    "family": "dense",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 62,
+    "key": "minimal_nova",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 63,
+    "key": "minimal_svd",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 64,
+    "key": "mixattention_moska",
+    "family": "hybrid",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 65,
+    "key": "mla",
+    "family": "modern",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 66,
+    "key": "mla_attention",
+    "family": "modern",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 67,
+    "key": "moba_attention",
+    "family": "sparse",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 68,
+    "key": "moe_deltakv_paged",
+    "family": "sparse",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 69,
+    "key": "mqa",
+    "family": "modern",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 70,
+    "key": "naive_svd",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 71,
+    "key": "nasc_attention",
+    "family": "linear",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 72,
+    "key": "nexus",
+    "family": "ssm",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 73,
+    "key": "nha_attention",
+    "family": "modern",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 74,
+    "key": "nsa_attention",
+    "family": "sparse",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 75,
+    "key": "nystrom",
+    "family": "linear",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 76,
+    "key": "nystrom_attention",
+    "family": "linear",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 77,
+    "key": "optimized_hybrid_attention",
+    "family": "hybrid",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 78,
+    "key": "orion",
+    "family": "ssm",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 79,
+    "key": "padre_attention",
+    "family": "sparse",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 80,
+    "key": "performer",
+    "family": "linear",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 81,
+    "key": "performer_attention",
+    "family": "linear",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 82,
+    "key": "phantom",
+    "family": "ssm",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 83,
+    "key": "positive_kernel_linear_attention",
+    "family": "hybrid",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 84,
+    "key": "preconditioned_gdn_attention",
+    "family": "gated",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 85,
+    "key": "primal_attention",
+    "family": "linear",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 86,
+    "key": "progressive_token_pruning",
+    "family": "adaptive",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 87,
+    "key": "projection_factorized_attn",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 88,
+    "key": "qcqa_attention",
+    "family": "modern",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 89,
+    "key": "rala_attention",
+    "family": "linear",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 90,
+    "key": "reap_moe",
+    "family": "sparse",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 91,
+    "key": "refined_landmark_attention",
+    "family": "hybrid",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 92,
+    "key": "regla_attention",
+    "family": "hybrid",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 93,
+    "key": "residual_svd_attention",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 94,
+    "key": "retnet",
+    "family": "linear",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 95,
+    "key": "retnet_attention",
+    "family": "linear",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 96,
+    "key": "routing_attention",
+    "family": "sparse",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 97,
+    "key": "rpc_attention",
+    "family": "linear",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 98,
+    "key": "rwkv",
+    "family": "ssm",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 99,
+    "key": "rwkv_attention",
+    "family": "ssm",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 100,
+    "key": "salt_attention",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 101,
+    "key": "samba_m3",
+    "family": "ssm",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 102,
+    "key": "samba_moe",
+    "family": "ssm",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 103,
+    "key": "selective_ssm",
+    "family": "ssm",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 104,
+    "key": "simple_ssm",
+    "family": "ssm",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 105,
+    "key": "sink_attention",
+    "family": "adaptive",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 106,
+    "key": "sliding_window",
+    "family": "modern",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 107,
+    "key": "soa_attn",
+    "family": "fast_kernels",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 108,
+    "key": "sparse_attention",
+    "family": "sparse",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 109,
+    "key": "spectraformer_attention",
+    "family": "linear",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 110,
+    "key": "spectron",
+    "family": "linear",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 111,
+    "key": "spectron_fp8",
+    "family": "hybrid",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 112,
+    "key": "split_head_hybrid",
+    "family": "hybrid",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 113,
+    "key": "svd_attention",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 114,
+    "key": "svd_compressed",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 115,
+    "key": "svd_linear_attention",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 116,
+    "key": "svd_linear_decay",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 117,
+    "key": "svd_llm_v2_attention",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 118,
+    "key": "svd_mamba",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 119,
+    "key": "svd_projection_attention",
+    "family": "svd",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 120,
+    "key": "token_compressed_attention",
+    "family": "adaptive",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 121,
+    "key": "tri_branch_hybrid",
+    "family": "hybrid",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 122,
+    "key": "triton_cosformer",
+    "family": "linear",
+    "status": "SKIPPED",
+    "notes": "Hardware-dependent (Triton kernel)"
+  },
+  {
+    "index": 123,
+    "key": "triton_svd_linear_attention",
+    "family": "svd",
+    "status": "SKIPPED",
+    "notes": "Hardware-dependent (Triton kernel)"
+  },
+  {
+    "index": 124,
+    "key": "ttt_linear_attention",
+    "family": "linear",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 125,
+    "key": "unified_rope",
+    "family": "modern",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 126,
+    "key": "upi_stuffed_mamba",
+    "family": "ssm",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 127,
+    "key": "vig_attention",
+    "family": "modern",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 128,
+    "key": "vspec",
+    "family": "ssm",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 129,
+    "key": "wgqa_attention",
+    "family": "modern",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 130,
+    "key": "xattention",
+    "family": "fast_kernels",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  },
+  {
+    "index": 131,
+    "key": "zeros_attention",
+    "family": "dense",
+    "status": "PASSED",
+    "notes": "Verified functional on CPU/MPS"
+  }
+]
