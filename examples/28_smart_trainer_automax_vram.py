@@ -95,7 +95,7 @@ def resolve_device(requested: str) -> torch.device:
 def run_demonstration(
     device: torch.device,
     target_global_batch_size: int = 16,
-    initial_micro_batch_size: int = 4,
+    initial_micro_batch_size: int = 0,
     epochs: int = 2,
 ) -> bool:
     """Execute AutoMaxGPUTrainer configuration, batch calibration, and multi-epoch training."""
@@ -137,6 +137,10 @@ def run_demonstration(
     kv("Calculated Accumulation Steps", accum_steps)
     kv("Effective Global Batch Size", effective_batch)
 
+    # Verify AutoMax dynamic micro-batch probing
+    probed_batch_ok = micro_batch > 0
+    pass_fail("AutoMax Probed Micro-Batch Size", probed_batch_ok, f"probed micro_batch = {micro_batch}")
+
     # Verify global batch size invariant
     batch_invariant_ok = effective_batch >= target_global_batch_size or micro_batch == target_global_batch_size
     pass_fail("Global Batch Size Invariant Check", batch_invariant_ok, f"{effective_batch} >= {target_global_batch_size}")
@@ -167,14 +171,14 @@ def run_demonstration(
     print()
     table(rows, headers=headers)
 
-    return bool(batch_invariant_ok and train_completed and losses_finite)
+    return bool(probed_batch_ok and batch_invariant_ok and train_completed and losses_finite)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--device", default="auto", help="Execution device: auto, cpu, or cuda[:index]")
     parser.add_argument("--global-batch-size", type=int, default=16, help="Target global effective batch size")
-    parser.add_argument("--micro-batch-size", type=int, default=4, help="Starting micro-batch size")
+    parser.add_argument("--micro-batch-size", type=int, default=0, help="Starting micro-batch size (0 for dynamic AutoMax search)")
     parser.add_argument("--epochs", type=int, default=2, help="Number of training epochs")
     args = parser.parse_args()
 
@@ -194,12 +198,12 @@ def main() -> int:
     )
 
     print()
-    if success:
-        pass_fail("Overall Example 28 Status", True, "AutoMax GPU training completed successfully")
-        return 0
-    else:
-        pass_fail("Overall Example 28 Status", False, "AutoMax GPU training verification failed")
-        return 1
+    pass_fail(
+        "Overall Example 28 Status",
+        success,
+        "AutoMax GPU training completed successfully" if success else "AutoMax GPU training verification failed",
+    )
+    return 0 if success else 1
 
 
 if __name__ == "__main__":

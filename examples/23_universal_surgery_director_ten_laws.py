@@ -93,6 +93,8 @@ def run_demonstration(device: torch.device, target_attention: str = "cosformer")
         target_attention=target_attention,
         inherit_weights=True,
     )
+    # Ensure all surgical adapter modules match the active device
+    surg_model.to(device)
 
     # 4. Verify post-surgery forward pass
     with torch.no_grad():
@@ -136,9 +138,10 @@ def run_demonstration(device: torch.device, target_attention: str = "cosformer")
     table(report_rows, headers=headers)
 
     is_certified = bool(cert_report.get("certified", False))
-    pass_fail("Ten Laws Certification Score", is_certified, cert_report.get("score", "N/A"))
+    all_laws_certified = bool(laws_status) and all(laws_status.values())
+    pass_fail("Ten Laws Certification Score", is_certified and all_laws_certified, cert_report.get("score", "N/A"))
 
-    return bool(is_finite and shape_matches and is_certified)
+    return bool(is_finite and shape_matches and is_certified and all_laws_certified)
 
 
 def main() -> int:
@@ -155,15 +158,16 @@ def main() -> int:
     kv("PyTorch Version", torch.__version__)
     print()
 
-    success = run_demonstration(device=device, target_attention=args.attention)
+    success = bool(run_demonstration(device=device, target_attention=args.attention))
 
     print()
-    if success:
-        pass_fail("Overall Example 23 Status", True, "All Ten Laws certified and forward verified")
-        return 0
-    else:
-        pass_fail("Overall Example 23 Status", False, "Surgery certification or verification failed")
-        return 1
+    status_msg = (
+        "All Ten Laws certified and forward verified"
+        if success
+        else "Surgery certification or verification failed"
+    )
+    pass_fail("Overall Example 23 Status", success, status_msg)
+    return 0 if success else 1
 
 
 if __name__ == "__main__":

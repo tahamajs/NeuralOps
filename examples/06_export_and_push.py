@@ -27,6 +27,7 @@ What You Will Learn:
 from __future__ import annotations
 
 import json
+import os
 import sys
 import tempfile
 from pathlib import Path
@@ -48,6 +49,7 @@ from examples._shared import (
     pass_fail,
     print_benchmark_table,
     section,
+    skip,
     skip_if_missing,
     tiny_inputs,
 )
@@ -186,20 +188,33 @@ def run_export_suite(device: str) -> bool:
 
         # 1. SafeTensors
         st_ok, st_size, st_status = export_and_verify_safetensors(model, inputs, ref_logits, tmp_dir)
-        all_passed = all_passed and st_ok
         table_rows.append(["SafeTensors", f"{st_size / 1024:.2f} KB", "Yes", st_status])
 
         # 2. ONNX
         onnx_ok, onnx_size, onnx_status = export_and_verify_onnx(model, inputs, ref_logits, tmp_dir)
-        all_passed = all_passed and onnx_ok
         size_str = f"{onnx_size / 1024:.2f} KB" if onnx_size > 0 else "N/A"
         table_rows.append(["ONNX", size_str, "N/A", onnx_status])
 
         # 3. GGUF
         gguf_ok, gguf_size, gguf_status = export_and_verify_gguf(tmp_dir)
-        all_passed = all_passed and gguf_ok
         size_str = f"{gguf_size / 1024:.2f} KB" if gguf_size > 0 else "N/A"
         table_rows.append(["GGUF", size_str, "N/A", gguf_status])
+
+        # 4. Hugging Face Hub Push Demonstration
+        section("Part 3: Hugging Face Hub Integration Demonstration")
+        hf_token = os.environ.get("HF_TOKEN")
+        if hf_token:
+            from neuralops.hub.uploader import AsyncHFHubUploader
+
+            uploader = AsyncHFHubUploader()
+            repo_id = uploader.resolve_repo_id("test-export-model", tmp_dir)
+            kv("Target HuggingFace Repo", repo_id)
+            hf_ok = True
+        else:
+            skip("Hugging Face Hub Push", "HF_TOKEN environment variable not set (skipping remote push)")
+            hf_ok = True
+
+        all_passed = bool(st_ok and onnx_ok and gguf_ok and hf_ok)
 
     print("\n" + "-" * 75)
     print_benchmark_table(
@@ -221,12 +236,9 @@ def main() -> int:
 
     success = run_export_suite(backend)
     print()
-    if success:
-        pass_fail("Overall Example 06 Status", True, "All available export formats validated")
-        return 0
-    else:
-        pass_fail("Overall Example 06 Status", False, "One or more export formats failed")
-        return 1
+    status_msg = "All available export formats validated" if success else "One or more export formats failed"
+    pass_fail("Overall Example 06 Status", success, status_msg)
+    return 0 if success else 1
 
 
 if __name__ == "__main__":

@@ -164,12 +164,12 @@ def main() -> int:
 
     success = run_demonstration(device, rank=args.rank, alpha=args.alpha, steps=args.steps)
     print()
-    if success:
-        pass_fail("Overall Example 29 Status", True, "All DoRA operations verified successfully")
-        return 0
-    else:
-        pass_fail("Overall Example 29 Status", False, "One or more DoRA verification steps failed")
-        return 1
+    pass_fail(
+        "Overall Example 29 Status",
+        success,
+        "All DoRA operations verified successfully" if success else "One or more DoRA verification steps failed",
+    )
+    return 0 if success else 1
 
 
 if __name__ == "__main__":

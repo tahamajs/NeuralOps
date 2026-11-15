@@ -278,7 +278,7 @@ def apply_compressor(
         try:
             sig = inspect.signature(compressor.compress)
             compress_params = set(sig.parameters.keys())
-        except (ValueError, TypeError):
+        except (ValueError, TypeError):  # allowed-swallow: signature reflection fallback
             pass
 
         if calibration_loader is not None and "dataloader" in compress_params:

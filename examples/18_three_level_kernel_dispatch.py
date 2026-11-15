@@ -70,15 +70,21 @@ def main() -> int:
     # Deterministic test tensors: B=2, H=4, L=16, D=32
     torch.manual_seed(42)
     b, h, seq_len, d_head = 2, 4, 16, 32
-    q = torch.randn(b, h, seq_len, d_head, device=device)
-    k = torch.randn(b, h, seq_len, d_head, device=device)
-    v = torch.randn(b, h, seq_len, d_head, device=device)
+    # Structured discrete input scaling to avoid unnormalized random evaluation tokens
+    q = torch.randint(1, 10, (b, h, seq_len, d_head), dtype=torch.float32, device=device) / 10.0
+    k = torch.randint(1, 10, (b, h, seq_len, d_head), dtype=torch.float32, device=device) / 10.0
+    v = torch.randint(1, 10, (b, h, seq_len, d_head), dtype=torch.float32, device=device) / 10.0
 
     kv("Operator Under Test", "cosformer_linear_attention")
     kv("Tensor Dimensions", f"B={b}, H={h}, L={seq_len}, D={d_head}")
 
     dispatch_records: list[dict[str, str | float]] = []
     outputs: dict[str, torch.Tensor] = {}
+
+    p_level1 = False
+    p_level2 = False
+    p_level3 = False
+    cuda_available = torch.cuda.is_available()
 
     # =========================================================================
     # Level 1: Native CUDA C++ Extension
@@ -89,7 +95,8 @@ def main() -> int:
             out_l1 = cosformer_linear_attention(q, k, v)
             outputs["cuda"] = out_l1
             lat_l1 = measure_latency(lambda: cosformer_linear_attention(q, k, v), warmup=2, iters=5)
-            pass_fail("Level 1 (CUDA C++) Execution", True)
+            p_level1 = bool(torch.isfinite(out_l1).all().item() and out_l1.shape == (b, h, seq_len, d_head))
+            pass_fail("Level 1 (CUDA C++) Execution", p_level1, "CUDA C++ extension kernel executed successfully")
             kv("Latency Mean", f"{lat_l1:.4f} ms")
             dispatch_records.append({
                 "Hierarchy Level": "Level 1: CUDA C++",
@@ -105,7 +112,7 @@ def main() -> int:
             "Backend": "cuda",
             "Available": "No (GPU required)",
             "Latency (ms)": "N/A",
-            "Status": "SKIPPED: CUDA binary missing on macOS",
+            "Status": "SKIPPED: CUDA binary missing on host",
         })
 
     # =========================================================================
@@ -117,7 +124,8 @@ def main() -> int:
             out_l2 = cosformer_linear_attention(q, k, v)
             outputs["triton"] = out_l2
             lat_l2 = measure_latency(lambda: cosformer_linear_attention(q, k, v), warmup=2, iters=5)
-            pass_fail("Level 2 (Triton JIT) Execution", True)
+            p_level2 = bool(torch.isfinite(out_l2).all().item() and out_l2.shape == (b, h, seq_len, d_head))
+            pass_fail("Level 2 (Triton JIT) Execution", p_level2, "Triton kernel executed successfully")
             kv("Latency Mean", f"{lat_l2:.4f} ms")
             dispatch_records.append({
                 "Hierarchy Level": "Level 2: Triton JIT",
@@ -144,7 +152,8 @@ def main() -> int:
         out_l3 = cosformer_linear_attention(q, k, v)
         outputs["pytorch"] = out_l3
         lat_l3 = measure_latency(lambda: cosformer_linear_attention(q, k, v), warmup=2, iters=5)
-        pass_fail("Level 3 (PyTorch Reference) Execution", True)
+        p_level3 = bool(torch.isfinite(out_l3).all().item() and out_l3.shape == (b, h, seq_len, d_head))
+        pass_fail("Level 3 (PyTorch Reference) Execution", p_level3, "PyTorch reference fallback executed successfully")
         kv("Latency Mean", f"{lat_l3:.4f} ms")
         dispatch_records.append({
             "Hierarchy Level": "Level 3: PyTorch Ref",
@@ -158,10 +167,11 @@ def main() -> int:
     # Cross-Backend Numerical Parity Verification
     # =========================================================================
     section("Cross-Backend Numerical Parity")
+    p_parity = True
     if len(outputs) >= 2:
         keys = list(outputs.keys())
         b1, b2 = keys[0], keys[1]
-        assert_parity(outputs[b1], outputs[b2], atol=1e-4, label=f"Parity: {b1} vs {b2}")
+        p_parity = bool(assert_parity(outputs[b1], outputs[b2], atol=1e-4, label=f"Parity: {b1} vs {b2}"))
     else:
         print(f"  [NOTE] Only 1 backend ({list(outputs.keys())}) available on this host; parity check requires >= 2 backends.")
 
@@ -176,12 +186,23 @@ def main() -> int:
     stats = get_dispatch_stats()
     kv("Recorded Dispatch Statistics", stats)
 
+    # Compute overall status from real execution and parity checks
+    # Level 3 must pass. If Level 2 passed, parity must hold. If CUDA is present, Level 1 must pass.
+    all_passed = bool(
+        p_level3
+        and (p_level1 or not cuda_available)
+        and p_parity
+        and (stats.get("pytorch", 0) > 0 or stats.get("triton", 0) > 0)
+    )
+
     pass_fail(
         "Overall Example 18 Status",
-        True,
-        "3-level fallback hierarchy gracefully probed with verified execution and telemetry",
+        all_passed,
+        "3-level fallback hierarchy gracefully probed with verified execution and telemetry"
+        if all_passed
+        else "Dispatch hierarchy verification failed",
     )
-    return 0
+    return 0 if all_passed else 1
 
 
 if __name__ == "__main__":

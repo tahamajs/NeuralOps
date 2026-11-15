@@ -184,7 +184,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 shell = raw_args[idx + 1]
                 print(generate_completion_script(shell))
                 return 0
-        except (ValueError, IndexError):
+        except (ValueError, IndexError):  # allowed-swallow: CLI argument parsing fallback
             pass
 
     # Check if non-flag tokens represent a legacy subcommand

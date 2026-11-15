@@ -165,14 +165,14 @@ def main() -> int:
     kv("PyTorch Version", torch.__version__)
     print()
 
-    success = run_lora_workflow(backend)
+    success = bool(run_lora_workflow(backend))
     print()
-    if success:
-        pass_fail("Overall Example 03 Status", True, "All LoRA lifecycle and merge checks passed")
-        return 0
-    else:
-        pass_fail("Overall Example 03 Status", False, "One or more LoRA checks failed")
-        return 1
+    pass_fail(
+        "Overall Example 03 Status",
+        success,
+        "All LoRA lifecycle and merge checks passed" if success else "One or more LoRA checks failed",
+    )
+    return 0 if success else 1
 
 
 if __name__ == "__main__":

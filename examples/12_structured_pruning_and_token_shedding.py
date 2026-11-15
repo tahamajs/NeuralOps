@@ -10,7 +10,7 @@ Example 12: Structured Pruning, 2:4 Hardware Sparsity, and Token Shedding.
 
 Subsystem Demonstrated:
     Comprehensive sparsity and structural token reduction techniques:
-    1. ADMM-Style Structured Channel Pruning (Group-Lasso intermediate MLP pruning)
+    1. L1-Norm / Group Magnitude Structured Channel Pruning on intermediate MLP layers
     2. NVIDIA Ampere/Ada 2:4 Structured Hardware Sparsity (Exact 50% block-sparse mask)
     3. Dynamic Token Shedding (Attention score-guided sequence truncation)
 
@@ -20,7 +20,7 @@ Execution Environment:
     - Network: Not required; uses offline synthetic tokens and weights.
 
 What You Will Learn:
-    1. How ADMM channel pruning removes intermediate neurons from MLP layers.
+    1. How structured channel pruning removes intermediate neurons from MLP layers.
     2. How 2:4 sparse masks guarantee exactly 2 zeros per 4 contiguous elements for Tensor Cores.
     3. How token shedding inspects cross-attention distributions to drop redundant sequence tokens.
     4. How to measure parameter reduction, sparsity percentage, and sequence speedup.
@@ -46,8 +46,8 @@ from examples._shared import (
     kv,
     pass_fail,
     section,
+    synthetic_tokens,
     table,
-    tiny_inputs,
 )
 
 
@@ -82,10 +82,11 @@ def prune_mlp_intermediate(
     lin2: nn.Linear,
     prune_ratio: float = 0.5,
 ) -> tuple[nn.Linear, nn.Linear, int, int]:
-    """ADMM / Group-Lasso Structured Channel Pruning on an MLP block:
+    """L1 / L2 Structured Channel Pruning on an MLP block:
 
     Given Lin1: d_in -> d_mid and Lin2: d_mid -> d_out,
-    channel importance is s_j = ||W1[j, :]||_2 * ||W2[:, j]||_2.
+    channel importance is calculated using group norm:
+    s_j = ||W1[j, :]||_2 * ||W2[:, j]||_2.
     Prune lowest s_j channels and resize weights in-place.
     """
     d_mid = lin1.out_features
@@ -101,9 +102,10 @@ def prune_mlp_intermediate(
     # Retain top-k channels
     retained_idx = torch.topk(scores, k=keep_count).indices.sort().values
 
-    # Create resized linear modules
-    new_lin1 = nn.Linear(lin1.in_features, keep_count, bias=(lin1.bias is not None))
-    new_lin2 = nn.Linear(keep_count, lin2.out_features, bias=(lin2.bias is not None))
+    device = lin1.weight.device
+    # Create resized linear modules on same device
+    new_lin1 = nn.Linear(lin1.in_features, keep_count, bias=(lin1.bias is not None), device=device)
+    new_lin2 = nn.Linear(keep_count, lin2.out_features, bias=(lin2.bias is not None), device=device)
 
     new_lin1.weight.data.copy_(w1[retained_idx, :])
     if lin1.bias is not None:
@@ -173,80 +175,109 @@ def main() -> int:
 
     summary_rows: list[dict[str, str]] = []
 
+    # Initialize model to obtain real architecture weights and forward activations
+    base_model = TinyClassifier().to(device)
+    base_model.eval()
+
     # =========================================================================
     # Part 1: NVIDIA 2:4 Structured Hardware Sparsity
     # =========================================================================
     section("Part 1: NVIDIA 2:4 Structured Hardware Sparsity")
-    torch.manual_seed(42)
-    m, n = 32, 64  # 32 rows, 64 cols (16 groups of 4 per row)
-    weight_dense = torch.randn(m, n)
+    # Extract real weight matrix from TinyClassifier layer 0 attention projection
+    weight_dense = base_model.transformer.distilbert.transformer.layer[0].attention.q_lin.weight.detach().cpu().clone()
+    m, n = weight_dense.shape  # 32 x 32 (8 groups of 4 per row)
     w_sparse, mask_24, sparsity = apply_24_sparsity(weight_dense)
 
     # Invariant: exactly 2 zeros in every 4-element block along each row
     zeros_per_block = (w_sparse.view(m, n // 4, 4) == 0).sum(dim=-1)
     is_exact_24 = bool((zeros_per_block == 2).all().item())
+    is_50pct = bool(abs(sparsity - 0.50) < 1e-6)
+    p_sparsity_ok = bool(is_exact_24 and is_50pct)
 
     pass_fail("Exact 2:4 Block Pattern Check", is_exact_24)
-    pass_fail("Overall 50.0% Sparsity Verification", bool(abs(sparsity - 0.50) < 1e-6))
+    pass_fail("Overall 50.0% Sparsity Verification", is_50pct)
+    kv("Weight Matrix Source", "TinyClassifier layer[0].attention.q_lin.weight")
     kv("Matrix Dimensions", f"{m} x {n} ({weight_dense.numel():,} elements)")
     kv("Sparsity Ratio", f"{sparsity * 100:.1f}%")
     kv("Zero Elements Count", f"{(w_sparse == 0).sum().item():,} / {w_sparse.numel():,}")
 
     summary_rows.append({
         "Technique": "NVIDIA 2:4 Structured Sparsity",
-        "Target": "Weight Matrix (32x64)",
+        "Target": f"Weight Matrix ({m}x{n})",
         "Metric": "50.0% Sparsity (2 of 4 zero)",
-        "Status": "PASS" if is_exact_24 else "FAIL",
+        "Status": "PASS" if p_sparsity_ok else "FAIL",
     })
 
     # =========================================================================
-    # Part 2: ADMM-Style Structured MLP Channel Pruning
+    # Part 2: Structured MLP Channel Pruning
     # =========================================================================
-    section("Part 2: ADMM-Style Structured MLP Channel Pruning")
-    # Simulate DistilBERT FFN block: hidden_dim=64 -> intermediate=256 -> hidden_dim=64
-    d_in, d_mid, d_out = 64, 256, 64
-    lin1 = nn.Linear(d_in, d_mid)
-    lin2 = nn.Linear(d_mid, d_out)
+    section("Part 2: Structured MLP Channel Pruning")
+    # Use real FFN block layers from TinyClassifier
+    lin1 = base_model.transformer.distilbert.transformer.layer[0].ffn.lin1
+    lin2 = base_model.transformer.distilbert.transformer.layer[0].ffn.lin2
+    d_in = lin1.in_features
+    d_mid = lin1.out_features
 
-    x_dummy = torch.randn(4, d_in)
+    # Forward check with real synthetic embeddings
+    tokens = synthetic_tokens(batch_size=4, seq_len=16, device=device)
+    word_emb = base_model.transformer.distilbert.embeddings.word_embeddings(tokens["input_ids"])
+    # Take token vectors at position 0: shape (4, d_in)
+    x_input = word_emb[:, 0, :].detach()
+
     with torch.no_grad():
-        out_before = lin2(torch.relu(lin1(x_dummy)))
+        out_before = lin2(torch.relu(lin1(x_input)))
 
     prune_ratio = 0.50
     new_lin1, new_lin2, p_old, p_new = prune_mlp_intermediate(lin1, lin2, prune_ratio=prune_ratio)
     with torch.no_grad():
-        out_after = new_lin2(torch.relu(new_lin1(x_dummy)))
+        out_after = new_lin2(torch.relu(new_lin1(x_input)))
 
     param_reduction = (1.0 - p_new / p_old) * 100.0
-    pass_fail("MLP Intermediate Dimension Pruning", bool(new_lin1.out_features == int(d_mid * (1 - prune_ratio))))
-    pass_fail("Post-Pruning Forward Finite Check", bool(torch.isfinite(out_after).all().item()))
+    dim_ok = bool(new_lin1.out_features == int(d_mid * (1 - prune_ratio)))
+    finite_ok = bool(torch.isfinite(out_after).all().item())
+    p_prune_ok = bool(dim_ok and finite_ok)
+
+    pass_fail("MLP Intermediate Dimension Pruning", dim_ok)
+    pass_fail("Post-Pruning Forward Finite Check", finite_ok)
     kv("Original MLP Parameters", f"{p_old:,}")
     kv("Pruned MLP Parameters", f"{p_new:,} ({param_reduction:.1f}% reduction)")
     kv("Intermediate Width", f"{d_mid} -> {new_lin1.out_features}")
 
     summary_rows.append({
-        "Technique": "ADMM Channel Pruning",
-        "Target": "MLP Intermediate (256 -> 128)",
+        "Technique": "Structured Channel Pruning",
+        "Target": f"MLP Intermediate ({d_mid} -> {new_lin1.out_features})",
         "Metric": f"{param_reduction:.1f}% Param Reduction",
-        "Status": "PASS",
+        "Status": "PASS" if p_prune_ok else "FAIL",
     })
 
     # =========================================================================
     # Part 3: Dynamic Token Shedding
     # =========================================================================
     section("Part 3: Dynamic Token Shedding")
-    batch_size, seq_len, hidden_dim, num_heads = 2, 16, 64, 4
-    hidden_states = torch.randn(batch_size, seq_len, hidden_dim)
+    batch_size, seq_len = 2, 16
+    tokens = synthetic_tokens(batch_size=batch_size, seq_len=seq_len, device=device)
+    base_model.transformer.config._attn_implementation = "eager"
 
-    # Synthetic attention weights with non-uniform distribution
-    attn_logits = torch.randn(batch_size, num_heads, seq_len, seq_len)
-    attn_weights = torch.softmax(attn_logits, dim=-1)
+    with torch.no_grad():
+        out = base_model(
+            input_ids=tokens["input_ids"],
+            attention_mask=tokens["attention_mask"],
+            output_attentions=True,
+            output_hidden_states=True,
+        )
+        hidden_states = out.hidden_states[-1]
+        attn_weights = out.attentions[-1]
 
     shedder = TokenSheddingWrapper(keep_ratio=0.50)
     shortened, retained_idx, red_pct = shedder(hidden_states, attn_weights)
 
-    pass_fail("Sequence Length Shortening (16 -> 8 tokens)", bool(shortened.size(1) == 8))
-    pass_fail("Sink Token Protection (Token 0 retained)", bool((retained_idx[:, 0] == 0).all().item()))
+    target_tokens = int(seq_len * 0.50)
+    len_ok = bool(shortened.size(1) == target_tokens)
+    sink_ok = bool((retained_idx[:, 0] == 0).all().item())
+    p_shed_ok = bool(len_ok and sink_ok)
+
+    pass_fail(f"Sequence Length Shortening ({seq_len} -> {target_tokens} tokens)", len_ok)
+    pass_fail("Sink Token Protection (Token 0 retained)", sink_ok)
     kv("Initial Sequence Length", seq_len)
     kv("Shedded Sequence Length", shortened.size(1))
     kv("Sequence Reduction", f"{red_pct:.1f}%")
@@ -255,7 +286,7 @@ def main() -> int:
         "Technique": "Attention Token Shedding",
         "Target": f"Sequence (L={seq_len} -> {shortened.size(1)})",
         "Metric": f"{red_pct:.1f}% Token Reduction",
-        "Status": "PASS",
+        "Status": "PASS" if p_shed_ok else "FAIL",
     })
 
     # =========================================================================
@@ -266,12 +297,15 @@ def main() -> int:
     rows = [[str(r[h]) for h in headers] for r in summary_rows]
     table(rows, headers=headers)
 
+    all_passed = bool(p_sparsity_ok and p_prune_ok and p_shed_ok)
     pass_fail(
         "Overall Example 12 Status",
-        True,
-        "Structured pruning, 2:4 sparsity, and token shedding verified",
+        all_passed,
+        "Structured pruning, 2:4 sparsity, and token shedding verified"
+        if all_passed
+        else "Sub-check failure detected in pruning or shedding",
     )
-    return 0
+    return 0 if all_passed else 1
 
 
 if __name__ == "__main__":

@@ -165,12 +165,9 @@ def main() -> int:
     )
 
     print()
-    if success:
-        pass_fail("Overall Example 26 Status", True, "Streaming shadow twin distillation verified")
-        return 0
-    else:
-        pass_fail("Overall Example 26 Status", False, "Distillation verification failed")
-        return 1
+    details = "Streaming shadow twin distillation verified" if success else "Distillation verification failed"
+    pass_fail("Overall Example 26 Status", success, details)
+    return 0 if success else 1
 
 
 if __name__ == "__main__":

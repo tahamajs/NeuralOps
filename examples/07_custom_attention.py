@@ -163,7 +163,10 @@ def verify_causality() -> bool:
     section("Part 1: Strict Temporal Causality Verification")
 
     module = MyCausalLinearAttention(embed_dim=32, num_heads=2).eval()
-    x1 = torch.randn(2, 12, 32)
+    inputs = tiny_inputs(batch_size=2, seq_len=12)
+    # Project synthetic tokens to continuous embeddings
+    with torch.no_grad():
+        x1 = nn.Embedding(128, 32)(inputs["input_ids"])
     x2 = x1.clone()
 
     target_t = 3
@@ -246,12 +249,14 @@ def main() -> int:
 
     success = p1 and p2
     print()
-    if success:
-        pass_fail("Overall Example 07 Status", True, "Custom attention and compressor fully operational")
-        return 0
-    else:
-        pass_fail("Overall Example 07 Status", False, "One or more custom registration checks failed")
-        return 1
+    pass_fail(
+        "Overall Example 07 Status",
+        success,
+        "Custom attention and compressor fully operational"
+        if success
+        else "One or more custom registration checks failed",
+    )
+    return 0 if success else 1
 
 
 if __name__ == "__main__":

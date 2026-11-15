@@ -156,12 +156,12 @@ def main() -> int:
 
     success = run_demonstration(device, inner_lr=args.lr, inner_steps=args.steps)
     print()
-    if success:
-        pass_fail("Overall Example 30 Status", True, "All TTT adaptation and restoration steps passed")
-        return 0
-    else:
-        pass_fail("Overall Example 30 Status", False, "One or more TTT adaptation steps failed")
-        return 1
+    pass_fail(
+        "Overall Example 30 Status",
+        success,
+        "All TTT adaptation and restoration steps passed" if success else "One or more TTT adaptation steps failed",
+    )
+    return 0 if success else 1
 
 
 if __name__ == "__main__":

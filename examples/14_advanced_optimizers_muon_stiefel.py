@@ -84,9 +84,10 @@ def main() -> int:
     s_ns = torch.linalg.svdvals(ortho_ns)
     cond_ns = (s_ns[0] / s_ns[-1]).item()
 
+    p_muon_ortho = bool(cond_ns < 2.5)
     pass_fail(
         "Newton-Schulz Condition Number Orthogonalization Check (cond -> 1.0)",
-        bool(cond_ns < 2.5),
+        p_muon_ortho,
         f"Condition number reduced from {cond_orig:.1f} to {cond_ns:.2f}",
     )
     kv("Original Condition Number", f"{cond_orig:.2f}")
@@ -120,10 +121,10 @@ def main() -> int:
     rows_muon = [[str(r[h]) for h in headers_muon] for r in muon_table_rows]
     table(rows_muon, headers=headers_muon)
 
-    muon_converged = bool(muon_losses[-1] < muon_losses[0])
+    p_loss_decreased = bool(muon_losses[-1] < muon_losses[0])
     pass_fail(
         "Muon Loss Convergence Check",
-        muon_converged,
+        p_loss_decreased,
         f"{muon_losses[0]:.4f} -> {muon_losses[-1]:.4f}",
     )
 
@@ -138,12 +139,24 @@ def main() -> int:
     u_stiefel = q_init.clone()
 
     init_ortho_err = torch.norm(u_stiefel.T @ u_stiefel - torch.eye(p_dim), p="fro").item()
-    pass_fail("Initial Stiefel Manifold Invariant (U^T U = I)", bool(init_ortho_err < 1e-5))
+    p_init_stiefel = bool(init_ortho_err < 1e-5)
+    pass_fail("Initial Stiefel Manifold Invariant (U^T U = I)", p_init_stiefel)
     kv("Initial Orthogonality Error", f"{init_ortho_err:.2e}")
 
     # Objective: Minimize linear potential Tr(U^T M) where M is a fixed preference matrix
     m_pref = torch.randn(n_dim, p_dim, device="cpu")
     eta_stiefel = 0.05
+
+    # Verify horizontal tangent space projection condition: U^T grad_R + grad_R^T U = 0
+    init_grad_r = project_stiefel_gradient(u_stiefel, m_pref)
+    tangent_skew = u_stiefel.T @ init_grad_r + init_grad_r.T @ u_stiefel
+    skew_residual = torch.linalg.norm(tangent_skew).item()
+    p_stiefel_tangent = bool(skew_residual < 1e-4)
+    pass_fail(
+        "Stiefel Tangent Space Projection Check (U^T grad_R + grad_R^T U == 0)",
+        p_stiefel_tangent,
+        f"Skew residual: {skew_residual:.2e}",
+    )
 
     stiefel_table_rows: list[dict[str, str | float]] = []
     max_ortho_err = 0.0
@@ -176,18 +189,28 @@ def main() -> int:
     rows_stiefel = [[str(r[h]) for h in headers_stiefel] for r in stiefel_table_rows]
     table(rows_stiefel, headers=headers_stiefel)
 
+    p_stiefel_step = bool(max_ortho_err < 1e-5)
     pass_fail(
         "Strict Stiefel Orthogonality Error Check (||U^T U - I||_F < 1e-5)",
-        bool(max_ortho_err < 1e-5),
+        p_stiefel_step,
         f"Max error across 5 steps: {max_ortho_err:.2e}",
     )
 
+    all_passed = bool(
+        p_muon_ortho
+        and p_loss_decreased
+        and p_init_stiefel
+        and p_stiefel_tangent
+        and p_stiefel_step
+    )
     pass_fail(
         "Overall Example 14 Status",
-        True,
-        "Muon Newton-Schulz and Riemannian Stiefel SGD mathematically verified",
+        all_passed,
+        "Muon Newton-Schulz and Riemannian Stiefel SGD mathematically verified"
+        if all_passed
+        else "Optimizer invariant or convergence check failed",
     )
-    return 0
+    return 0 if all_passed else 1
 
 
 if __name__ == "__main__":

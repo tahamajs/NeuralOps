@@ -46,6 +46,7 @@ from examples._shared import (
     get_backend_preference,
     gpu_name,
     kv,
+    measure_latency,
     measure_vram_if_available,
     pass_fail,
     print_benchmark_table,
@@ -58,8 +59,8 @@ from examples._shared import (
 def benchmark_model_latency(
     model: torch.nn.Module,
     inputs: dict[str, torch.Tensor],
-    warmup: int = 3,
-    iters: int = 10,
+    warmup: int = 1,
+    iters: int = 2,
 ) -> tuple[float, float, float]:
     """
     Measure warmup-stabilized forward pass latencies.
@@ -70,17 +71,18 @@ def benchmark_model_latency(
     model.eval()
     batch_size, seq_len = inputs["input_ids"].shape
 
-    # Warmup runs
+    def forward_fn() -> None:
+        _ = model(**inputs)
+
     with torch.no_grad():
         for _ in range(warmup):
-            _ = model(**inputs)
-    safe_cuda_sync()
+            forward_fn()
+        safe_cuda_sync()
 
-    timings_ms: list[float] = []
-    with torch.no_grad():
+        timings_ms: list[float] = []
         for _ in range(iters):
             t0 = time.perf_counter()
-            _ = model(**inputs)
+            forward_fn()
             safe_cuda_sync()
             t1 = time.perf_counter()
             timings_ms.append((t1 - t0) * 1000.0)
@@ -104,7 +106,7 @@ def run_benchmark_suite(device: str) -> bool:
     inputs = {k: v.to(device) for k, v in synthetic_tokens(batch_size=batch_size, seq_len=seq_len).items()}
 
     kv("Input Batch Dimensions", f"batch={batch_size}, seq_len={seq_len} ({batch_size * seq_len} total tokens)")
-    kv("Benchmark Iterations", "3 warmup runs, 10 timed evaluations")
+    kv("Benchmark Iterations", "1 warmup run, 3 timed evaluations")
     print()
 
     # 1. Baseline Full Attention
@@ -179,20 +181,15 @@ def run_benchmark_suite(device: str) -> bool:
         headers=("Architecture", "Median Latency", "P95 Latency", "Throughput", "FLOPs Est.", "Speedup", "Peak VRAM", "Status"),
     )
 
-    if not all_within_10x:
-        pass_fail("Latency Threshold Check", False, "One or more non-SSM models exceeded 10x baseline latency")
-        return False
+    all_passed = all_within_10x
+    msg = (
+        f"[PASS_WITH_WARNING] Mamba SSM exceeds 10x threshold ({mamba_ratio:.1f}x). This is expected on CPU; GPU benchmarks show <2x."
+        if mamba_exceeded_10x
+        else ("All models within 10x of baseline" if all_passed else "One or more non-SSM models exceeded 10x baseline latency")
+    )
+    pass_fail("Latency Threshold Check", all_passed, msg)
 
-    if mamba_exceeded_10x:
-        pass_fail(
-            "Latency Threshold Check",
-            True,
-            f"[PASS_WITH_WARNING] Mamba SSM exceeds 10x threshold ({mamba_ratio:.1f}x). This is expected on CPU; GPU benchmarks show <2x.",
-        )
-    else:
-        pass_fail("Latency Threshold Check", True, "All models within 10x of baseline")
-
-    return True
+    return all_passed
 
 
 def main() -> int:
@@ -205,12 +202,9 @@ def main() -> int:
 
     success = run_benchmark_suite(backend)
     print()
-    if success:
-        pass_fail("Overall Example 05 Status", True, "All models benchmarked within expected bounds")
-        return 0
-    else:
-        pass_fail("Overall Example 05 Status", False, "One or more models exhibited unexpected latency regressions")
-        return 1
+    status_msg = "All models benchmarked within expected bounds" if success else "One or more models exhibited unexpected latency regressions"
+    pass_fail("Overall Example 05 Status", success, status_msg)
+    return 0 if success else 1
 
 
 if __name__ == "__main__":

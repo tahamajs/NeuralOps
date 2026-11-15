@@ -42,7 +42,6 @@ What You Will Learn:
 
 from __future__ import annotations
 
-import importlib.util
 import inspect
 import tempfile
 from pathlib import Path
@@ -61,13 +60,10 @@ from examples._shared import (
     kv,
     pass_fail,
     section,
+    skip,
+    skip_if_missing,
     table,
 )
-
-
-def is_package_installed(pkg_name: str) -> bool:
-    """Check whether a third-party package is installed in the current environment."""
-    return importlib.util.find_spec(pkg_name) is not None
 
 
 def main() -> int:
@@ -79,12 +75,14 @@ def main() -> int:
     kv("PyTorch Version", torch.__version__)
 
     compat_rows: list[list[str]] = []
+    checks: list[bool] = []
 
     # =========================================================================
     # Backend 1: vLLM (PagedAttention & Recurrent KV Cache Spec)
     # =========================================================================
     section("Backend 1: vLLM Custom Attention Backend")
-    vllm_installed = is_package_installed("vllm")
+    vllm_missing = skip_if_missing("vllm", "vLLM package is not installed in current environment")
+    vllm_installed = not vllm_missing
     kv("vLLM Package Installed", vllm_installed)
 
     has_vllm_module = False
@@ -100,41 +98,54 @@ def main() -> int:
         )
 
         has_vllm_module = True
-        register_vllm()
-        can_register_vllm = True
-        pass_fail("vLLM Backend Module Import & Registration", True)
-
-        # Introspect API surface
         methods = [m for m in dir(NeuralOpsAttentionBackend) if not m.startswith("_")]
         kv("Backend Class", NeuralOpsAttentionBackend.__name__)
         kv("Implementation Class", NeuralOpsImpl.__name__)
         kv("KV Cache Spec Class", NeuralOpsRecurrentSpec.__name__)
         kv("Public Methods", ", ".join(methods))
 
-        if not vllm_installed:
-            print("  [SKIPPED] vLLM backend requires pip install vllm (not installed)")
-            status_vllm = "SKIP: Package missing"
+        if vllm_installed:
+            reg_ok = bool(register_vllm())
+            can_register_vllm = reg_ok
+            can_exec_vllm = reg_ok
+            vllm_subcheck = reg_ok
+            pass_fail(
+                "vLLM Backend Live Registration",
+                reg_ok,
+                "Live vLLM registration successful" if reg_ok else "Registration failed",
+            )
+            status_vllm = "PASS" if reg_ok else "FAIL: Registration failed"
         else:
-            can_exec_vllm = True
-            status_vllm = "PASS"
+            vllm_contract_ok = hasattr(NeuralOpsAttentionBackend, "get_name") and hasattr(
+                NeuralOpsAttentionBackend, "get_builder_cls"
+            )
+            vllm_subcheck = vllm_contract_ok
+            pass_fail("vLLM Interface Contract Verification", vllm_contract_ok, "Backend contract validated statically")
+            status_vllm = "SKIP: Package missing"
+
+        checks.append(vllm_subcheck)
     except Exception as exc:
         pass_fail("vLLM Backend Integration", False, str(exc))
         status_vllm = f"FAIL: {exc}"
+        checks.append(False)
 
-    compat_rows.append([
-        "vLLM",
-        "YES" if vllm_installed else "NO",
-        "YES" if has_vllm_module else "NO",
-        "YES" if can_register_vllm else "NO",
-        "YES" if can_exec_vllm else "NO",
-        status_vllm,
-    ])
+    compat_rows.append(
+        [
+            "vLLM",
+            "YES" if vllm_installed else "NO",
+            "YES" if has_vllm_module else "NO",
+            "YES" if can_register_vllm else "NO",
+            "YES" if can_exec_vllm else "NO",
+            status_vllm,
+        ]
+    )
 
     # =========================================================================
     # Backend 2: SGLang (Linear Attention & Radix Tree Cache)
     # =========================================================================
     section("Backend 2: SGLang Linear Attention & Radix Cache")
-    sglang_installed = is_package_installed("sglang")
+    sglang_missing = skip_if_missing("sglang", "SGLang package is not installed in current environment")
+    sglang_installed = not sglang_missing
     kv("SGLang Package Installed", sglang_installed)
 
     has_sglang_module = False
@@ -148,10 +159,6 @@ def main() -> int:
         )
 
         has_sglang_module = True
-        register_sglang()
-        can_register_sglang = True
-        pass_fail("SGLang Backend Module Import & Registration", True)
-
         kv("Backend Class", NeuralOpsLinearAttnBackend.__name__)
         kv(
             "Uses Mamba Radix Cache Flag",
@@ -162,30 +169,50 @@ def main() -> int:
         kv("forward_extend Signature", str(fwd_extend_sig))
         kv("forward_decode Signature", str(fwd_decode_sig))
 
-        if not sglang_installed:
-            print("  [SKIPPED] SGLang backend requires pip install sglang (not installed)")
-            status_sglang = "SKIP: Package missing"
+        if sglang_installed:
+            reg_ok = bool(register_sglang())
+            can_register_sglang = reg_ok
+            can_exec_sglang = reg_ok
+            sglang_subcheck = reg_ok
+            pass_fail(
+                "SGLang Backend Live Registration",
+                reg_ok,
+                "Live SGLang registration successful" if reg_ok else "Registration failed",
+            )
+            status_sglang = "PASS" if reg_ok else "FAIL: Registration failed"
         else:
-            can_exec_sglang = True
-            status_sglang = "PASS"
+            sglang_contract_ok = hasattr(NeuralOpsLinearAttnBackend, "forward_extend") and hasattr(
+                NeuralOpsLinearAttnBackend, "forward_decode"
+            )
+            sglang_subcheck = sglang_contract_ok
+            pass_fail(
+                "SGLang Interface Contract Verification", sglang_contract_ok, "Backend signatures validated statically"
+            )
+            status_sglang = "SKIP: Package missing"
+
+        checks.append(sglang_subcheck)
     except Exception as exc:
         pass_fail("SGLang Backend Integration", False, str(exc))
         status_sglang = f"FAIL: {exc}"
+        checks.append(False)
 
-    compat_rows.append([
-        "SGLang",
-        "YES" if sglang_installed else "NO",
-        "YES" if has_sglang_module else "NO",
-        "YES" if can_register_sglang else "NO",
-        "YES" if can_exec_sglang else "NO",
-        status_sglang,
-    ])
+    compat_rows.append(
+        [
+            "SGLang",
+            "YES" if sglang_installed else "NO",
+            "YES" if has_sglang_module else "NO",
+            "YES" if can_register_sglang else "NO",
+            "YES" if can_exec_sglang else "NO",
+            status_sglang,
+        ]
+    )
 
     # =========================================================================
     # Backend 3: TensorRT-LLM (Python Plugin & C++ Builder)
     # =========================================================================
     section("Backend 3: TensorRT-LLM Plugin Builder")
-    trt_installed = is_package_installed("tensorrt_llm")
+    trt_missing = skip_if_missing("tensorrt_llm", "TensorRT-LLM package is not installed in current environment")
+    trt_installed = not trt_missing
     kv("TensorRT-LLM Package Installed", trt_installed)
 
     has_trt_module = False
@@ -198,35 +225,46 @@ def main() -> int:
 
         has_trt_module = True
         can_register_trt = True
-        pass_fail("TensorRT-LLM Integration Module Import", True)
         kv("Plugin Builder Class", TensorRTLLMPluginBuilder.__name__)
         kv("Plugin Spec Class", TRTPluginSpec.__name__)
         kv("Python Plugin Function", neuralops_attention.__name__)
 
+        trt_contract_ok = hasattr(TensorRTLLMPluginBuilder, "generate_cpp_plugin_source") and callable(
+            neuralops_attention
+        )
+        pass_fail("TensorRT-LLM Interface Contract Verification", trt_contract_ok, "Plugin builder contracts validated")
+
         builder = TensorRTLLMPluginBuilder()
         with tempfile.TemporaryDirectory() as tmp_trt_dir:
             generated_files = builder.generate_cpp_plugin_source(tmp_trt_dir)
-            pass_fail("TensorRT-LLM C++ Plugin Synthesis", bool(len(generated_files) >= 3))
+            synthesis_ok = bool(len(generated_files) >= 3)
+            pass_fail(
+                "TensorRT-LLM C++ Plugin Synthesis", synthesis_ok, f"{len(generated_files)} artifacts synthesized"
+            )
             kv("Synthesized C++ Artifacts", ", ".join(generated_files.keys()))
 
         if not trt_installed:
-            print("  [NOTE] TRT-LLM live runtime requires tensorrt_llm (C++ source generation validated)")
             status_trt = "PASS (offline synthesis)"
         else:
             can_exec_trt = True
             status_trt = "PASS"
+
+        checks.append(trt_contract_ok and synthesis_ok)
     except Exception as exc:
         pass_fail("TensorRT-LLM Integration", False, str(exc))
         status_trt = f"FAIL: {exc}"
+        checks.append(False)
 
-    compat_rows.append([
-        "TRT-LLM",
-        "YES" if trt_installed else "NO",
-        "YES" if has_trt_module else "NO",
-        "YES" if can_register_trt else "NO",
-        "YES" if can_exec_trt else "NO",
-        status_trt,
-    ])
+    compat_rows.append(
+        [
+            "TRT-LLM",
+            "YES" if trt_installed else "NO",
+            "YES" if has_trt_module else "NO",
+            "YES" if can_register_trt else "NO",
+            "YES" if can_exec_trt else "NO",
+            status_trt,
+        ]
+    )
 
     # =========================================================================
     # Serving Compatibility Matrix Table
@@ -235,12 +273,15 @@ def main() -> int:
     headers = ("Backend", "Package Installed", "NeuralOps Module", "Can Register", "Can Execute", "Status")
     table(compat_rows, headers=headers)
 
+    all_passed = bool(len(checks) >= 3 and all(checks))
     pass_fail(
         "Overall Example 15 Status",
-        True,
-        "Serving backends introspected and integration contracts validated offline",
+        all_passed,
+        "Serving backends introspected and integration contracts validated offline"
+        if all_passed
+        else "Serving contract failures detected",
     )
-    return 0
+    return 0 if all_passed else 1
 
 
 if __name__ == "__main__":

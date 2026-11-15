@@ -196,12 +196,12 @@ def main() -> int:
     )
 
     print()
-    if success:
-        pass_fail("Overall Example 27 Status", True, "Polymorphic Generation Cache Bridge verified")
-        return 0
-    else:
-        pass_fail("Overall Example 27 Status", False, "Cache bridge verification failed")
-        return 1
+    pass_fail(
+        "Overall Example 27 Status",
+        success,
+        "Polymorphic Generation Cache Bridge verified" if success else "Cache bridge verification failed",
+    )
+    return 0 if success else 1
 
 
 if __name__ == "__main__":

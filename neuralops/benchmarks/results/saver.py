@@ -113,7 +113,7 @@ def save_jsonl_index(result: BenchmarkResult, index_path: Path | str) -> Path:
             import fcntl
 
             fcntl.flock(fp.fileno(), fcntl.LOCK_EX)
-        except (OSError, ImportError, AttributeError):
+        except (OSError, ImportError, AttributeError):  # allowed-swallow: file locking fallback on platforms without fcntl
             pass
         try:
             fp.write(json.dumps(summary_entry) + "\n")
@@ -123,7 +123,7 @@ def save_jsonl_index(result: BenchmarkResult, index_path: Path | str) -> Path:
                 import fcntl
 
                 fcntl.flock(fp.fileno(), fcntl.LOCK_UN)
-            except (OSError, ImportError, AttributeError):
+            except (OSError, ImportError, AttributeError):  # allowed-swallow: file locking fallback on platforms without fcntl
                 pass
     return p
 
@@ -166,7 +166,7 @@ def save_csv_index(result: BenchmarkResult, csv_path: Path | str) -> Path:
             import fcntl
 
             fcntl.flock(fp.fileno(), fcntl.LOCK_EX)
-        except (OSError, ImportError, AttributeError):
+        except (OSError, ImportError, AttributeError):  # allowed-swallow: file locking fallback on platforms without fcntl
             pass
         try:
             writer = csv.DictWriter(fp, fieldnames=list(row.keys()))
@@ -179,7 +179,7 @@ def save_csv_index(result: BenchmarkResult, csv_path: Path | str) -> Path:
                 import fcntl
 
                 fcntl.flock(fp.fileno(), fcntl.LOCK_UN)
-            except (OSError, ImportError, AttributeError):
+            except (OSError, ImportError, AttributeError):  # allowed-swallow: file locking fallback on platforms without fcntl
                 pass
     return p
 
@@ -418,7 +418,7 @@ class MultiFormatSaver:
                 import fcntl
 
                 fcntl.flock(f_wal.fileno(), fcntl.LOCK_EX)
-            except (OSError, ImportError, AttributeError):
+            except (OSError, ImportError, AttributeError):  # allowed-swallow: file locking fallback on platforms without fcntl
                 pass
             try:
                 f_wal.write(line)
@@ -432,7 +432,7 @@ class MultiFormatSaver:
                     import fcntl
 
                     fcntl.flock(f_wal.fileno(), fcntl.LOCK_UN)
-                except (OSError, ImportError, AttributeError):
+                except (OSError, ImportError, AttributeError):  # allowed-swallow: file locking fallback on platforms without fcntl
                     pass
         return self.journal_path
 
@@ -477,7 +477,7 @@ class MultiFormatSaver:
                 import fcntl
 
                 fcntl.flock(fp_csv.fileno(), fcntl.LOCK_EX)
-            except (OSError, ImportError, AttributeError):
+            except (OSError, ImportError, AttributeError):  # allowed-swallow: file locking fallback on platforms without fcntl
                 pass
             try:
                 writer = csv.DictWriter(fp_csv, fieldnames=fieldnames, extrasaction="ignore")
@@ -490,7 +490,7 @@ class MultiFormatSaver:
                     import fcntl
 
                     fcntl.flock(fp_csv.fileno(), fcntl.LOCK_UN)
-                except (OSError, ImportError, AttributeError):
+                except (OSError, ImportError, AttributeError):  # allowed-swallow: file locking fallback on platforms without fcntl
                     pass
         return self.summary_csv_path
 

@@ -165,12 +165,12 @@ def main() -> int:
 
     success = run_demonstration(device, samples=args.samples, damping=args.damping, steps=args.steps)
     print()
-    if success:
-        pass_fail("Overall Example 31 Status", True, "All Fisher curvature and natural gradient damping steps passed")
-        return 0
-    else:
-        pass_fail("Overall Example 31 Status", False, "One or more Fisher damping verification steps failed")
-        return 1
+    pass_fail(
+        "Overall Example 31 Status",
+        success,
+        "All Fisher curvature and natural gradient damping steps passed" if success else "One or more Fisher damping verification steps failed",
+    )
+    return 0 if success else 1
 
 
 if __name__ == "__main__":

@@ -128,6 +128,15 @@ def run_demonstration(
     node_count = len(list(rewritten_gm.graph.nodes))
     kv("Rewritten Graph Node Count", node_count)
 
+    # Verify attention node replacement (e.g. fast_linear_attention_replacement is in the graph)
+    replaced_nodes = [
+        node for node in rewritten_gm.graph.nodes
+        if "fast_linear_attention_replacement" in str(getattr(node, "target", ""))
+        or "cosformer" in str(getattr(node, "target", ""))
+    ]
+    graph_rewritten = len(replaced_nodes) > 0 and node_count > 0
+    pass_fail("FX Attention Node Replacement", graph_rewritten, f"Found {len(replaced_nodes)} linear attention kernel nodes")
+
     # 4. Execute forward pass through rewritten GraphModule
     with torch.no_grad():
         rewritten_out = rewritten_gm(sample_input)
@@ -175,7 +184,7 @@ def run_demonstration(
     print()
     table(rows, headers=headers)
 
-    return bool(is_finite and shape_matches)
+    return bool(is_finite and shape_matches and graph_rewritten)
 
 
 def main() -> int:
@@ -200,12 +209,9 @@ def main() -> int:
     )
 
     print()
-    if success:
-        pass_fail("Overall Example 25 Status", True, "FX Graph Rewriter transformed model successfully")
-        return 0
-    else:
-        pass_fail("Overall Example 25 Status", False, "FX Graph Rewriting or verification failed")
-        return 1
+    details = "FX Graph Rewriter transformed model successfully" if success else "FX Graph Rewriting or verification failed"
+    pass_fail("Overall Example 25 Status", success, details)
+    return 0 if success else 1
 
 
 if __name__ == "__main__":

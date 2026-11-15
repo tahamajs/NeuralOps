@@ -11,13 +11,13 @@ Example 19: Spectral, Hessian, and Fisher Curvature Diagnostics.
 Subsystem Demonstrated:
     Mathematical loss landscape and spectral diagnostics for deep neural models:
     1. Hessian Eigenspectrum via Power Iteration with Deflation
-       - Computes top-3 eigenvalues using exact autograd Hessian-vector products (HVP)
-       - Characterizes local loss surface curvature (sharpness vs flatness)
+       - Computes dominant eigenvalues using exact autograd Hessian-vector products (HVP)
+       - Characterizes local loss surface curvature
     2. Fisher Information Matrix (FIM) / Hessian Trace via Hutchinson's Estimator
        - Samples Rademacher random probe vectors v in {-1, +1}^d
        - Estimates Tr(H) = E[v^T H v] without explicit matrix materialization
     3. Activation Covariance Eigenspectrum & Condition Number
-       - Computes sample activation covariance Sigma_X = (1/N) X^T X
+       - Computes sample activation covariance Sigma_X = (1/N) X^T X from model hidden states
        - Analyzes singular value decay, effective rank, and condition number
 
 Execution Environment:
@@ -29,10 +29,14 @@ What You Will Learn:
     1. How to compute Hessian-vector products using torch.autograd.grad(..., create_graph=True).
     2. How to extract dominant Hessian eigenvalues through power iteration with Gram-Schmidt deflation.
     3. How Hutchinson's trace estimator approximates matrix curvature in O(d) memory.
-    4. How activation covariance spectra inform optimal rank selection for SVD compression.
+    4. How activation covariance spectra inform optimal rank selection for compression.
 """
 
 from __future__ import annotations
+
+import os
+# Ensure MPS device fallbacks to CPU gracefully for torch.linalg.svdvals if required
+os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
 
 import math
 from pathlib import Path
@@ -80,8 +84,8 @@ def compute_top_eigenvalues(
     eigenvectors: list[torch.Tensor] = []
 
     for k in range(num_eigenvalues):
-        # Initialize random unit probe vector
-        v = torch.randn_like(param)
+        # Initialize probe vector using Rademacher signs
+        v = torch.randint(0, 2, param.shape, device=param.device).float() * 2.0 - 1.0
         # Deflate against previously computed eigenvectors
         for prev_v in eigenvectors:
             v = v - torch.sum(v * prev_v) * prev_v
@@ -134,13 +138,13 @@ def main() -> int:
 
     torch.manual_seed(42)
 
-    # 1. Setup Model and Loss
+    # 1. Setup Model and Loss with authentic inputs
     model = TinyClassifier().to(device)
     model.train()
     inputs = tiny_inputs()
     inputs = {k: v.to(device) for k, v in inputs.items()}
 
-    outputs = model(**inputs)
+    outputs = model(**inputs, output_hidden_states=True)
     logits = outputs.logits if hasattr(outputs, "logits") else outputs
     # Classification loss
     targets = torch.tensor([0, 1], device=device)
@@ -159,19 +163,24 @@ def main() -> int:
     top_k = min(3, target_param.numel())
     eigvals, _ = compute_top_eigenvalues(loss, target_param, num_eigenvalues=top_k, num_iters=10)
 
+    p_eig = bool(
+        len(eigvals) == top_k
+        and torch.isfinite(torch.tensor(eigvals)).all().item()
+        and eigvals[0] > 0.0
+    )
     pass_fail(
         "Top Hessian Eigenvalue Computation",
-        bool(len(eigvals) == top_k and torch.isfinite(torch.tensor(eigvals)).all().item()),
+        p_eig,
+        "Computed finite positive top eigenvalues via power iteration" if p_eig else "Eigenvalue calculation failed",
     )
 
     for i, ev in enumerate(eigvals, 1):
         kv(f"Hessian Eigenvalue lambda_{i}", f"{ev:.6f}")
-        interp = "Sharp loss curvature direction" if i == 1 else "Subdominant curvature mode"
         diagnostics_rows.append({
             "Diagnostic Metric": f"Hessian Eigenvalue lambda_{i}",
             "Value": f"{ev:.6f}",
-            "Interpretation": interp,
-            "Status": "PASS",
+            "Interpretation": "Leading curvature eigenvalue" if i == 1 else "Subdominant curvature mode",
+            "Status": "PASS" if math.isfinite(ev) else "FAIL",
         })
 
     # =========================================================================
@@ -179,27 +188,32 @@ def main() -> int:
     # =========================================================================
     section("Part 2: Hessian Trace via Hutchinson's Estimator")
     trace_est = hutchinson_trace_estimate(loss, target_param, num_samples=10)
-    pass_fail("Hutchinson Trace Estimation", bool(math.isfinite(trace_est)))
+    p_trace = bool(math.isfinite(trace_est) and trace_est > 0.0)
+    pass_fail(
+        "Hutchinson Trace Estimation",
+        p_trace,
+        "Computed positive finite Hessian trace via Hutchinson estimator" if p_trace else "Trace estimation failed",
+    )
     kv("Estimated Hessian Trace Tr(H)", f"{trace_est:.6f}")
 
-    curv_interp = "Moderate local curvature" if trace_est < 5.0 else "High local curvature"
     diagnostics_rows.append({
         "Diagnostic Metric": "Hutchinson Hessian Trace Tr(H)",
         "Value": f"{trace_est:.6f}",
-        "Interpretation": curv_interp,
-        "Status": "PASS",
+        "Interpretation": f"Empirical trace Tr(H)={trace_est:.4f}",
+        "Status": "PASS" if p_trace else "FAIL",
     })
 
     # =========================================================================
     # Part 3: Layer Activation Covariance Spectrum
     # =========================================================================
     section("Part 3: Activation Covariance Eigenspectrum")
-    # Synthetic intermediate activation matrix: N=128 tokens, D=32 channels
-    n_tokens, d_channels = 128, 32
-    acts = torch.randn(n_tokens, d_channels, device=device)
+    # Authentic hidden state activations from model forward pass: [batch_size * seq_len, hidden_dim]
+    acts = outputs.hidden_states[-1].reshape(-1, target_param.shape[1]).detach()
+    n_tokens, d_channels = acts.shape
     cov_x = (acts.T @ acts) / n_tokens
 
-    s_vals = torch.linalg.svdvals(cov_x)
+    # Transfer to CPU for SVD to ensure cross-device stability on MPS/CPU
+    s_vals = torch.linalg.svdvals(cov_x.cpu())
     top_s = s_vals[:5].tolist()
     cond_num = (s_vals[0] / (s_vals[-1] + 1e-12)).item()
 
@@ -208,7 +222,12 @@ def main() -> int:
     entropy = -torch.sum(p_norm * torch.log(p_norm + 1e-12)).item()
     eff_rank = math.exp(entropy)
 
-    pass_fail("Activation Covariance SVD", bool(len(s_vals) == d_channels))
+    p_svd = bool(len(s_vals) == d_channels and torch.isfinite(s_vals).all().item() and cond_num >= 1.0)
+    pass_fail(
+        "Activation Covariance SVD",
+        p_svd,
+        "Decomposed empirical activation covariance matrix" if p_svd else "SVD decomposition failed",
+    )
     kv("Top 3 Singular Values", ", ".join(f"{s:.4f}" for s in top_s[:3]))
     kv("Condition Number kappa", f"{cond_num:.2f}")
     kv("Effective Rank (Entropy)", f"{eff_rank:.2f} / {d_channels}")
@@ -216,14 +235,14 @@ def main() -> int:
     diagnostics_rows.append({
         "Diagnostic Metric": "Covariance Condition Number kappa",
         "Value": f"{cond_num:.2f}",
-        "Interpretation": "Well-conditioned activation subspace" if cond_num < 10.0 else "Ill-conditioned",
-        "Status": "PASS",
+        "Interpretation": f"Spectral condition kappa={cond_num:.2f}",
+        "Status": "PASS" if p_svd else "FAIL",
     })
     diagnostics_rows.append({
         "Diagnostic Metric": "Effective Rank (Entropy)",
         "Value": f"{eff_rank:.2f} / {d_channels}",
         "Interpretation": f"{(eff_rank / d_channels) * 100:.1f}% Dimensional utilization",
-        "Status": "PASS",
+        "Status": "PASS" if p_svd else "FAIL",
     })
 
     # =========================================================================
@@ -234,12 +253,15 @@ def main() -> int:
     rows = [[str(r[h]) for h in headers] for r in diagnostics_rows]
     table(rows, headers=headers)
 
+    all_passed = bool(p_eig and p_trace and p_svd)
     pass_fail(
         "Overall Example 19 Status",
-        True,
-        "Hessian power iteration, Hutchinson trace, and covariance eigenspectrum verified",
+        all_passed,
+        "Hessian power iteration, Hutchinson trace, and covariance eigenspectrum verified"
+        if all_passed
+        else "Spectral diagnostics sub-check failure detected",
     )
-    return 0
+    return 0 if all_passed else 1
 
 
 if __name__ == "__main__":

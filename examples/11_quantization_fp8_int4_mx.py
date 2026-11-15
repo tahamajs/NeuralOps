@@ -51,6 +51,7 @@ from examples._shared import (
     kv,
     pass_fail,
     section,
+    synthetic_tokens,
     table,
 )
 
@@ -72,8 +73,8 @@ def quantize_fp8_e4m3(
 ) -> tuple[torch.Tensor, float, float, bool]:
     """Quantize to FP8 E4M3 (per-tensor scale, max representable magnitude 448.0).
 
-    Uses native torch.float8_e4m3fn when available, or exact IEEE 754 E4M3
-    mantissa simulation fallback on older PyTorch builds.
+    Uses native torch.float8_e4m3fn when available on CUDA, or exact IEEE 754 E4M3
+    mantissa simulation fallback on CPU/older PyTorch builds.
 
     Returns:
         (dequantized_weight, sqnr_db, quant_error, is_supported)
@@ -105,7 +106,7 @@ def quantize_fp8_e4m3(
 
 def quantize_int4_groupwise(
     weight: torch.Tensor,
-    group_size: int = 128,
+    group_size: int = 32,
 ) -> tuple[torch.Tensor, float, float]:
     """Symmetric group-wise INT4 quantization (AWQ-style simulation):
 
@@ -146,7 +147,7 @@ def quantize_microscaling_mx(
     scale_mx = torch.pow(2.0, shared_exponent)
 
     w_scaled = w_blocks / scale_mx
-    if hasattr(torch, "float8_e4m3fn"):
+    if hasattr(torch, "float8_e4m3fn") and weight.is_cuda:
         w_fp8 = w_scaled.to(torch.float8_e4m3fn)
         w_recon = (w_fp8.to(torch.float32) * scale_mx).view(orig_shape)
     else:
@@ -164,7 +165,7 @@ def quantize_microscaling_mx(
 class QuantizedLinearWrapper(nn.Module):
     """Wrapper that applies INT4 quantize-dequantize on forward pass."""
 
-    def __init__(self, linear_layer: nn.Linear, group_size: int = 128) -> None:
+    def __init__(self, linear_layer: nn.Linear, group_size: int = 32) -> None:
         super().__init__()
         self.linear = linear_layer
         self.group_size = group_size
@@ -187,29 +188,29 @@ def main() -> int:
     kv("Target Device", device)
     kv("PyTorch Version", torch.__version__)
 
-    # Deterministic test tensor (128x128 matrix from tiny model)
-    torch.manual_seed(42)
-    m, n = 128, 128
-    weight = torch.randn(m, n, device="cpu")
+    # Extract real trained/initialized weights from TinyClassifier architecture
+    base_model = TinyClassifier().to("cpu")
+    weight = base_model.transformer.distilbert.transformer.layer[0].ffn.lin1.weight.detach().float()
+    m, n = weight.shape
+    kv("Weight Matrix Source", "TinyClassifier layer[0].ffn.lin1.weight")
     kv("Weight Matrix Dimensions", f"{m} x {n} ({weight.numel():,} parameters)")
     kv("FP32 Baseline Storage", f"{weight.numel() * 4:,} bytes")
     print()
 
     table_rows: list[list[str]] = []
-    all_sqnr_ok = True
 
     # =========================================================================
     # Format 1: FP8 E4M3
     # =========================================================================
     section("Format 1: FP8 E4M3 (IEEE 8-bit Floating Point)")
     w_fp8, sqnr_fp8, err_fp8, fp8_ok = quantize_fp8_e4m3(weight)
+    p_fp8 = bool(fp8_ok and sqnr_fp8 >= 20.0)
     if fp8_ok:
-        pass_fail("FP8 E4M3 Quantization", bool(sqnr_fp8 > 10.0))
+        pass_fail("FP8 E4M3 SQNR Threshold (>=20dB)", p_fp8, f"sqnr={sqnr_fp8:.2f} dB")
         kv("Effective Precision", "8 bits (1 sign, 4 exp, 3 mantissa)")
         kv("Compression Ratio", "4.0x vs FP32 (2.0x vs FP16)")
         kv("SQNR", f"{sqnr_fp8:.2f} dB")
         kv("Quantization Error (Frobenius)", f"{err_fp8:.4f}")
-        all_sqnr_ok = all_sqnr_ok and (sqnr_fp8 > 10.0)
         table_rows.append(["FP8 E4M3", f"{sqnr_fp8:.2f} dB", f"{err_fp8:.4f}", "per-tensor scale"])
     else:
         print("  [SKIPPED] FP8 E4M3 not supported on this PyTorch build")
@@ -219,26 +220,26 @@ def main() -> int:
     # Format 2: Group-Wise INT4 (AWQ-style simulation)
     # =========================================================================
     section("Format 2: Group-Wise INT4 (AWQ-style Simulation)")
-    w_int4, sqnr_int4, err_int4 = quantize_int4_groupwise(weight, group_size=128)
-    pass_fail("INT4 Group-Wise (G=128) Quantization", bool(sqnr_int4 > 10.0))
-    kv("Group Size", "128 elements per scale factor")
+    w_int4, sqnr_int4, err_int4 = quantize_int4_groupwise(weight, group_size=32)
+    p_int4 = bool(sqnr_int4 >= 15.0)
+    pass_fail("INT4 Group-Wise (G=32) SQNR Threshold (>=15dB)", p_int4, f"sqnr={sqnr_int4:.2f} dB")
+    kv("Group Size", "32 elements per scale factor")
     kv("Quantization Range", "[-8, 7] symmetric INT4")
     kv("SQNR", f"{sqnr_int4:.2f} dB")
     kv("Quantization Error (Frobenius)", f"{err_int4:.4f}")
-    all_sqnr_ok = all_sqnr_ok and (sqnr_int4 > 10.0)
-    table_rows.append(["INT4 groupwise", f"{sqnr_int4:.2f} dB", f"{err_int4:.4f}", "group=128"])
+    table_rows.append(["INT4 groupwise", f"{sqnr_int4:.2f} dB", f"{err_int4:.4f}", "group=32"])
 
     # =========================================================================
     # Format 3: Microscaling MX (OCP Standard Simulation)
     # =========================================================================
     section("Format 3: Microscaling Formats (MX) Standard (MXFP8)")
     w_mx, sqnr_mx, err_mx = quantize_microscaling_mx(weight, block_size=32)
-    pass_fail("Microscaling MXFP8 Quantization", bool(sqnr_mx > 10.0))
+    p_mx = bool(sqnr_mx >= 20.0)
+    pass_fail("Microscaling MXFP8 SQNR Threshold (>=20dB)", p_mx, f"sqnr={sqnr_mx:.2f} dB")
     kv("Block Size", "32 elements per shared power-of-two exponent")
     kv("Exponent Scale", "E8M0 shared exponent (scale = 2^k)")
     kv("SQNR", f"{sqnr_mx:.2f} dB")
     kv("Quantization Error (Frobenius)", f"{err_mx:.4f}")
-    all_sqnr_ok = all_sqnr_ok and (sqnr_mx > 10.0)
     table_rows.append(["MX (simulated)", f"{sqnr_mx:.2f} dB", f"{err_mx:.4f}", "block=32, E8M0"])
 
     # =========================================================================
@@ -256,7 +257,7 @@ def main() -> int:
     model = TinyClassifier().to(device)
     model.eval()
 
-    inputs = {"input_ids": torch.tensor([[1, 2, 3, 4], [2, 3, 4, 5]], device=device)}
+    inputs = synthetic_tokens(batch_size=2, seq_len=16, device=device)
     with torch.no_grad():
         ref_logits = model(**inputs).logits.clone()
 
@@ -272,22 +273,25 @@ def main() -> int:
         quant_logits = model(**inputs).logits
 
     max_diff = (ref_logits - quant_logits).abs().max().item()
-    is_finite = torch.isfinite(quant_logits).all().item()
+    is_finite = bool(torch.isfinite(quant_logits).all().item())
+    p_model_parity = bool(is_finite and max_diff < 0.1)
 
     kv("Reference Logits Shape", f"{tuple(ref_logits.shape)}")
     kv("Quantized Logits Shape", f"{tuple(quant_logits.shape)}")
     kv("Max Absolute Logits Diff", f"{max_diff:.8f}")
     kv("Logits Finiteness", is_finite)
 
-    pass_fail("Quantized Model Forward Parity", bool(is_finite and max_diff < 0.1))
+    pass_fail("Quantized Model Forward Parity", p_model_parity)
 
-    overall_ok = all_sqnr_ok and is_finite and (max_diff < 0.1)
+    all_passed = bool(p_fp8 and p_int4 and p_mx and p_model_parity)
     pass_fail(
         "Overall Example 11 Status",
-        overall_ok,
-        "All 3 quantization paradigms evaluated with SQNR fidelity and model parity",
+        all_passed,
+        "All 3 quantization paradigms evaluated with SQNR fidelity and model parity"
+        if all_passed
+        else "Quantization SQNR degradation or parity failure",
     )
-    return 0 if overall_ok else 1
+    return 0 if all_passed else 1
 
 
 if __name__ == "__main__":
