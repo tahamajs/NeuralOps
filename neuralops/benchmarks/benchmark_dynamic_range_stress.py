@@ -1,3 +1,6 @@
+
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
@@ -56,8 +59,8 @@ def run_dynamic_range_benchmark(
     from neuralops.core.triton_kernels.gla_scan import gla_scan
 
     gpu_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "CPU"
-    print(f"=== Dynamic Range Stress Test on {device} ({gpu_name}) ===")
-    print(f"Scales: {scales} | Kernels: {kernel_names} | Warmup: {warmup} | Repeat: {repeat}")
+    logger.info(f"=== Dynamic Range Stress Test on {device} ({gpu_name}) ===")
+    logger.info(f"Scales: {scales} | Kernels: {kernel_names} | Warmup: {warmup} | Repeat: {repeat}")
 
     torch.manual_seed(42)
     if device.type == "cuda":
@@ -71,7 +74,7 @@ def run_dynamic_range_benchmark(
     results = []
 
     for k_name in kernel_names:
-        print(f"\n--- Testing Kernel: {k_name} ---")
+        logger.info(f"\n--- Testing Kernel: {k_name} ---")
         for scale in scales:
             scale_str = f"1e{int(math.log10(scale)):+03d}" if scale != 1.0 else "1e+00"
 
@@ -135,12 +138,12 @@ def run_dynamic_range_benchmark(
                     "status": "PASS" if (not has_nan and not has_inf) else "FAIL",
                 }
                 results.append(row)
-                print(
+                logger.info(
                     f"  Scale {scale_str:<6} | Latency: {lat_ms:6.3f} ms | Min: {min_val:10.2e} | Max: {max_val:10.2e} | Norm: {norm_val:10.2e} | Stable: {row['status']}"
                 )
 
             except Exception as exc:
-                print(f"  Scale {scale_str:<6} | EXCEPTION: {exc}")
+                logger.info(f"  Scale {scale_str:<6} | EXCEPTION: {exc}")
                 results.append(
                     {
                         "kernel": k_name,
@@ -178,14 +181,14 @@ def run_dynamic_range_benchmark(
             writer.writeheader()
             for r in results:
                 writer.writerow(r)
-        print(f"\nSaved CSV to: {csv_path}")
+        logger.info(f"\nSaved CSV to: {csv_path}")
 
     if output_json:
         json_path = Path(output_json)
         json_path.parent.mkdir(parents=True, exist_ok=True)
         with open(json_path, mode="w", encoding="utf-8") as f:
             json.dump(results, f, indent=2)
-        print(f"Saved JSON to: {json_path}")
+        logger.info(f"Saved JSON to: {json_path}")
 
     if output_tex:
         tex_path = Path(output_tex)
@@ -235,7 +238,7 @@ def run_dynamic_range_benchmark(
         )
         with open(tex_path, mode="w", encoding="utf-8") as f:
             f.write("\n".join(tex) + "\n")
-        print(f"Saved LaTeX Table to: {tex_path}")
+        logger.info(f"Saved LaTeX Table to: {tex_path}")
 
     return results
 

@@ -9,6 +9,10 @@
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 import argparse
 import json
 import math
@@ -91,7 +95,7 @@ def main() -> int:
         )
     )
     payload = json.dumps(result, indent=2, default=str)
-    print(payload)
+    logger.info(payload)
     if args.output:
         with open(args.output, "w", encoding="utf-8") as handle:
             handle.write(payload + "\n")

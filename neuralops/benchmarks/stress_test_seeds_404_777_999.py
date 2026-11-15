@@ -1,3 +1,6 @@
+
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
@@ -54,12 +57,12 @@ def run_backward_stress_test(
     from neuralops.core.cuda_kernels.tt_contraction.tt_autograd import tt_contraction, tt_contraction_pytorch_ref
 
     gpu_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "CPU"
-    print(f"=== Multi-Seed Stress Test on Backward Passes (Seeds {seeds}) on {device} ({gpu_name}) ===")
+    logger.info(f"=== Multi-Seed Stress Test on Backward Passes (Seeds {seeds}) on {device} ({gpu_name}) ===")
 
     results = []
 
     for seed in seeds:
-        print(f"\n--- Testing Seed {seed} ---")
+        logger.info(f"\n--- Testing Seed {seed} ---")
         torch.manual_seed(seed)
         if device.type == "cuda":
             torch.cuda.manual_seed_all(seed)
@@ -100,11 +103,11 @@ def run_backward_stress_test(
                     "status": "PASS" if max_grad_ca < 1e-4 and not has_nan_ca and not has_inf_ca else "FAIL",
                 }
             )
-            print(
+            logger.info(
                 f"  cross_attention | Fwd Diff: {fwd_diff_ca:.2e} | Max Grad Diff: {max_grad_ca:.2e} | Zero-NaN: {not has_nan_ca}"
             )
         except Exception as exc:
-            print(f"  cross_attention | EXCEPTION: {exc}")
+            logger.info(f"  cross_attention | EXCEPTION: {exc}")
             results.append(
                 {
                     "kernel": "cross_attention",
@@ -150,11 +153,11 @@ def run_backward_stress_test(
                     "status": "PASS" if max_grad_tt < 1e-4 and not has_nan_tt and not has_inf_tt else "FAIL",
                 }
             )
-            print(
+            logger.info(
                 f"  tt_contraction  | Fwd Diff: {fwd_diff_tt:.2e} | Max Grad Diff: {max_grad_tt:.2e} | Zero-NaN: {not has_nan_tt}"
             )
         except Exception as exc:
-            print(f"  tt_contraction  | EXCEPTION: {exc}")
+            logger.info(f"  tt_contraction  | EXCEPTION: {exc}")
             results.append(
                 {
                     "kernel": "tt_contraction",
@@ -198,11 +201,11 @@ def run_backward_stress_test(
                     "status": "PASS" if max_grad_bd < 1e-4 and not has_nan_bd and not has_inf_bd else "FAIL",
                 }
             )
-            print(
+            logger.info(
                 f"  block_diag_gemm | Fwd Diff: {fwd_diff_bd:.2e} | Max Grad Diff: {max_grad_bd:.2e} | Zero-NaN: {not has_nan_bd}"
             )
         except Exception as exc:
-            print(f"  block_diag_gemm | EXCEPTION: {exc}")
+            logger.info(f"  block_diag_gemm | EXCEPTION: {exc}")
             results.append(
                 {
                     "kernel": "block_diag_gemm",
@@ -251,11 +254,11 @@ def run_backward_stress_test(
                     "status": "PASS" if max_grad_sm < 1e-4 and not has_nan_sm and not has_inf_sm else "FAIL",
                 }
             )
-            print(
+            logger.info(
                 f"  samba_moe       | Fwd Diff: {fwd_diff_sm:.2e} | Max Grad Diff: {max_grad_sm:.2e} | Zero-NaN: {not has_nan_sm}"
             )
         except Exception as exc:
-            print(f"  samba_moe       | EXCEPTION: {exc}")
+            logger.info(f"  samba_moe       | EXCEPTION: {exc}")
             results.append(
                 {
                     "kernel": "samba_moe",
@@ -277,14 +280,14 @@ def run_backward_stress_test(
             writer.writeheader()
             for r in results:
                 writer.writerow(r)
-        print(f"\nSaved CSV to: {csv_path}")
+        logger.info(f"\nSaved CSV to: {csv_path}")
 
     if output_json:
         json_path = Path(output_json)
         json_path.parent.mkdir(parents=True, exist_ok=True)
         with open(json_path, mode="w", encoding="utf-8") as f:
             json.dump(results, f, indent=2)
-        print(f"Saved JSON to: {json_path}")
+        logger.info(f"Saved JSON to: {json_path}")
 
     return results
 

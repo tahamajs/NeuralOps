@@ -1,3 +1,6 @@
+
+import logging
+logger = logging.getLogger(__name__)
 import warnings
 
 warnings.warn(
@@ -18,13 +21,13 @@ import torch.nn as nn
 from safetensors.torch import load_file
 from transformers.models.llama.modeling_llama import LlamaConfig, LlamaDecoderLayer
 
-print("================================================================================")
-print("  NeuralOps HEAVY LLM Layer Benchmark on Qwen2.5-7B (NVIDIA RTX 3090 - 24GB)")
-print("================================================================================")
+logger.info("================================================================================")
+logger.info("  NeuralOps HEAVY LLM Layer Benchmark on Qwen2.5-7B (NVIDIA RTX 3090 - 24GB)")
+logger.info("================================================================================")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 vram_total = torch.cuda.get_device_properties(device).total_memory / (1024**3)
-print("Target GPU: {} ({}) | Total VRAM: {:.2f} GB".format(device, torch.cuda.get_device_name(device), vram_total))
+logger.info("Target GPU: {} ({}) | Total VRAM: {:.2f} GB".format(device, torch.cuda.get_device_name(device), vram_total))
 
 model_path = os.path.expanduser("~/.cache/huggingface/hub/models--Qwen--Qwen2.5-7B-Instruct")
 with open(os.path.join(model_path, "config.json"), "r") as f:
@@ -42,21 +45,21 @@ llama_cfg = LlamaConfig(
     torch_dtype="float16",
 )
 
-print("\nModel Layer Architecture (Exact Qwen2.5-7B-Instruct Specifications):")
-print(" - Hidden Dimension (d_model): {}".format(llama_cfg.hidden_size))
-print(" - Intermediate (FFN) Dim:     {}".format(llama_cfg.intermediate_size))
-print(" - Query Heads:                {}".format(llama_cfg.num_attention_heads))
-print(" - KV Heads (GQA):             {}".format(llama_cfg.num_key_value_heads))
-print(" - Total 7B Model Parameters:  7.61 Billion")
+logger.info("\nModel Layer Architecture (Exact Qwen2.5-7B-Instruct Specifications):")
+logger.info(" - Hidden Dimension (d_model): {}".format(llama_cfg.hidden_size))
+logger.info(" - Intermediate (FFN) Dim:     {}".format(llama_cfg.intermediate_size))
+logger.info(" - Query Heads:                {}".format(llama_cfg.num_attention_heads))
+logger.info(" - KV Heads (GQA):             {}".format(llama_cfg.num_key_value_heads))
+logger.info(" - Total 7B Model Parameters:  7.61 Billion")
 
-print("\nDirectly initializing Qwen2.5-7B Transformer Layer in FP16 on RTX 3090 VRAM...")
+logger.info("\nDirectly initializing Qwen2.5-7B Transformer Layer in FP16 on RTX 3090 VRAM...")
 torch.cuda.empty_cache()
 t0 = time.perf_counter()
 layer = LlamaDecoderLayer(llama_cfg).to(torch.float16).to(device)
 layer.eval()
 
 # Load real weights from shard 1 for layer 0
-print("Loading real pretrained weights for Layer 0 from shard 1...")
+logger.info("Loading real pretrained weights for Layer 0 from shard 1...")
 shard1_path = os.path.join(model_path, "model-00001-of-00004.safetensors")
 shard1 = load_file(shard1_path, device=str(device))
 layer_state = layer.state_dict()
@@ -70,13 +73,13 @@ for k, v in shard1.items():
             loaded_params += 1
 del shard1
 torch.cuda.empty_cache()
-print("Loaded {} parameter tensors directly into GPU VRAM in {:.2f}s.".format(loaded_params, time.perf_counter() - t0))
+logger.info("Loaded {} parameter tensors directly into GPU VRAM in {:.2f}s.".format(loaded_params, time.perf_counter() - t0))
 
-print("\n" + "=" * 80)
-print("  Benchmarking Real Qwen2.5-7B Transformer Block Across Sequence Lengths")
-print("=" * 80)
-print("{:<10} | {:<20} | {:<22} | {:<15}".format("SeqLen", "Layer Latency", "Estimated 28L 7B Lat", "Allocated VRAM"))
-print("-" * 80)
+logger.info("\n" + "=" * 80)
+logger.info("  Benchmarking Real Qwen2.5-7B Transformer Block Across Sequence Lengths")
+logger.info("=" * 80)
+logger.info("{:<10} | {:<20} | {:<22} | {:<15}".format("SeqLen", "Layer Latency", "Estimated 28L 7B Lat", "Allocated VRAM"))
+logger.info("-" * 80)
 
 batch_size = 1
 seq_lens = [512, 1024, 2048, 4096, 8192, 16384]
@@ -100,7 +103,7 @@ for s in seq_lens:
     lat_full_model_ms = lat_layer_ms * 28.0
     mem_gb = torch.cuda.memory_allocated(device) / (1024**3)
 
-    print("{:<10} | {:<17.3f} ms | {:<19.2f} ms | {:.2f} GB".format(s, lat_layer_ms, lat_full_model_ms, mem_gb))
+    logger.info("{:<10} | {:<17.3f} ms | {:<19.2f} ms | {:.2f} GB".format(s, lat_layer_ms, lat_full_model_ms, mem_gb))
 
-print("=" * 80)
-print("REAL 7B TRANSFORMER BENCHMARK COMPLETED SUCCESSFULLY ON RTX 3090!")
+logger.info("=" * 80)
+logger.info("REAL 7B TRANSFORMER BENCHMARK COMPLETED SUCCESSFULLY ON RTX 3090!")

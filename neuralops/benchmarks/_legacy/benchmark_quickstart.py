@@ -21,6 +21,10 @@ Usage:
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 import warnings
 
 warnings.warn(
@@ -55,11 +59,11 @@ from neuralops.ops.cuda import cosformer_linear_attention, get_dispatch_stats
 
 
 def benchmark_attention(iterations: int = 20) -> int:
-    print("=" * 65)
-    print("  NeuralOps Benchmark Quickstart: Attention Kernel Execution")
-    print("=" * 65)
+    logger.info("=" * 65)
+    logger.info("  NeuralOps Benchmark Quickstart: Attention Kernel Execution")
+    logger.info("=" * 65)
     b, h, seq, d = 2, 4, 128, 32
-    print(f"Tensor Shape: B={b}, H={h}, L={seq}, D={d}")
+    logger.info(f"Tensor Shape: B={b}, H={h}, L={seq}, D={d}")
     q = torch.randn(b, h, seq, d)
     k = torch.randn(b, h, seq, d)
     v = torch.randn(b, h, seq, d)
@@ -76,22 +80,22 @@ def benchmark_attention(iterations: int = 20) -> int:
     latency_ms = (dt / iterations) * 1000.0
     throughput = (b * seq * iterations) / dt
 
-    print(f"Iterations       : {iterations}")
-    print(f"Mean Latency     : {latency_ms:.3f} ms")
-    print(f"Token Throughput : {throughput:.1f} tokens/s")
-    print(f"Dispatch Stats   : {get_dispatch_stats()}")
-    print("=" * 65)
+    logger.info(f"Iterations       : {iterations}")
+    logger.info(f"Mean Latency     : {latency_ms:.3f} ms")
+    logger.info(f"Token Throughput : {throughput:.1f} tokens/s")
+    logger.info(f"Dispatch Stats   : {get_dispatch_stats()}")
+    logger.info("=" * 65)
     return 0
 
 
 def benchmark_compressor() -> int:
-    print("=" * 65)
-    print("  NeuralOps Benchmark Quickstart: Compressor Zoo Registry")
-    print("=" * 65)
-    print(f"Total Registered Compressors: {len(COMPRESSOR_REGISTRY)}")
+    logger.info("=" * 65)
+    logger.info("  NeuralOps Benchmark Quickstart: Compressor Zoo Registry")
+    logger.info("=" * 65)
+    logger.info(f"Total Registered Compressors: {len(COMPRESSOR_REGISTRY)}")
     sample = list(COMPRESSOR_REGISTRY.keys())[:5]
-    print(f"Sample registered compressors: {', '.join(sample)}")
-    print("=" * 65)
+    logger.info(f"Sample registered compressors: {', '.join(sample)}")
+    logger.info("=" * 65)
     return 0
 
 

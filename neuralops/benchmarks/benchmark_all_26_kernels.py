@@ -1,3 +1,6 @@
+
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
@@ -58,7 +61,7 @@ def run_all_26_kernels(
         raise ValueError(f"Unsupported dtype '{dtype_str}'. Choose float16, float32, or bfloat16.") from exc
 
     gpu_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "CPU"
-    print(
+    logger.info(
         f"Running Direct Kernel Benchmark on: {device} ({gpu_name}) | Precision: {dtype_str} | Warmup: {warmup} | Reps: {repeat}"
     )
 
@@ -120,11 +123,11 @@ def run_all_26_kernels(
                 "status": status,
             }
             results.append(entry)
-            print(
+            logger.info(
                 f"  {name:36s} {shape_str:20s}: Tri={t_tri:6.3f}ms, PT={t_pt:6.3f}ms, Speedup={sp:5.2f}x, Diff={max_diff:.2e}"
             )
         except Exception as exc:
-            print(f"  {name:36s} {shape_str:20s}: ERROR - {exc}")
+            logger.info(f"  {name:36s} {shape_str:20s}: ERROR - {exc}")
             results.append(
                 {
                     "kernel": name,
@@ -588,7 +591,7 @@ def run_all_26_kernels(
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2)
-        print(f"\nSaved benchmark JSON results to {out_path}")
+        logger.info(f"\nSaved benchmark JSON results to {out_path}")
 
     if output_csv:
         csv_path = Path(output_csv)
@@ -600,10 +603,10 @@ def run_all_26_kernels(
             writer.writeheader()
             for r in results:
                 writer.writerow(r)
-        print(f"Saved benchmark CSV results to {csv_path}")
+        logger.info(f"Saved benchmark CSV results to {csv_path}")
 
     faster_count = sum(1 for r in results if r["speedup"] >= 1.0)
-    print(f"\nSummary: {faster_count}/{len(results)} configurations faster or equal to PyTorch reference")
+    logger.info(f"\nSummary: {faster_count}/{len(results)} configurations faster or equal to PyTorch reference")
     return results
 
 

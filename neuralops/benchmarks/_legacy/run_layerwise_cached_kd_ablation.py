@@ -613,15 +613,15 @@ def main():
     df.to_csv(args.out_csv, index=False)
     persist_to_sqlite(results, base_acc=round(base_acc, 2), base_ppl=round(base_ppl, 2), sqlite_path=args.ledger_db)
 
-    print("\n" + "=" * 115)
-    print(
+    logger.info("\n" + "=" * 115)
+    logger.info(
         f"ATTENTION SURGERY & 6-PILLAR KD COMPLETE MATRIX (Teacher Baseline: Acc={base_acc:.2f}%, PPL={base_ppl:.2f})"
     )
-    print("=" * 115)
-    print(
+    logger.info("=" * 115)
+    logger.info(
         f"{'Module':<24} | {'Zero-Shot Acc':<13} | {'Iso Acc (PPL)':<17} | {'Pol Acc (PPL)':<17} | {'Retention':<10} | {'Time'}"
     )
-    print("-" * 115)
+    logger.info("-" * 115)
     for r in results:
         mod = r.get("module", "")[:23]
         zs = f"{r.get('zero_shot_acc', 0.0):.1f}%"
@@ -629,8 +629,8 @@ def main():
         pol = f"{r.get('polished_acc', 0.0):.1f}% ({r.get('polished_ppl', 0.0):.2f})"
         ret = f"{r.get('retention_pct', 0.0):.1f}%"
         tt = f"{r.get('total_time_s', 0.0):.1f}s"
-        print(f"{mod:<24} | {zs:<13} | {iso:<17} | {pol:<17} | {ret:<10} | {tt}")
-    print("=" * 115)
+        logger.info(f"{mod:<24} | {zs:<13} | {iso:<17} | {pol:<17} | {ret:<10} | {tt}")
+    logger.info("=" * 115)
 
 
 if __name__ == "__main__":

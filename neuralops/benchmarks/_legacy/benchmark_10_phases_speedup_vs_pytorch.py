@@ -11,6 +11,10 @@ Hardware Benchmark Measuring Native CUDA Speedup vs PyTorch Reference on GPU.
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 import warnings
 
 warnings.warn(
@@ -50,7 +54,7 @@ def main():
     device = args.device
     results = []
 
-    print("Measuring CUDA vs PyTorch across 10 Phases...")
+    logger.info("Measuring CUDA vs PyTorch across 10 Phases...")
 
     # Phase 1: fused_rope
     try:
@@ -72,7 +76,7 @@ def main():
                 "status": "OK",
             }
         )
-        print(f"  [Phase 1] fused_rope: CUDA={cuda_ms:.4f}ms, PyTorch={py_ms:.4f}ms, Speedup={speedup:.2f}x")
+        logger.info(f"  [Phase 1] fused_rope: CUDA={cuda_ms:.4f}ms, PyTorch={py_ms:.4f}ms, Speedup={speedup:.2f}x")
     except Exception as e:
         results.append(
             {"phase": 1, "module": "fused_rope", "cuda_ms": 0.0, "pytorch_ms": 0.0, "speedup": 0.0, "status": str(e)}
@@ -98,7 +102,7 @@ def main():
                 "status": "OK",
             }
         )
-        print(f"  [Phase 2] sliding_window: CUDA={cuda_ms:.4f}ms, PyTorch={py_ms:.4f}ms, Speedup={speedup:.2f}x")
+        logger.info(f"  [Phase 2] sliding_window: CUDA={cuda_ms:.4f}ms, PyTorch={py_ms:.4f}ms, Speedup={speedup:.2f}x")
     except Exception as e:
         results.append(
             {
@@ -132,7 +136,7 @@ def main():
                 "status": "OK",
             }
         )
-        print(f"  [Phase 3] fms_scan: CUDA={cuda_ms:.4f}ms, PyTorch={py_ms:.4f}ms, Speedup={speedup:.2f}x")
+        logger.info(f"  [Phase 3] fms_scan: CUDA={cuda_ms:.4f}ms, PyTorch={py_ms:.4f}ms, Speedup={speedup:.2f}x")
     except Exception as e:
         results.append(
             {"phase": 3, "module": "fms_scan", "cuda_ms": 0.0, "pytorch_ms": 0.0, "speedup": 0.0, "status": str(e)}
@@ -163,7 +167,7 @@ def main():
                 "status": "OK",
             }
         )
-        print(f"  [Phase 7] gdn_scan: CUDA={cuda_ms:.4f}ms, PyTorch={py_ms:.4f}ms, Speedup={speedup:.2f}x")
+        logger.info(f"  [Phase 7] gdn_scan: CUDA={cuda_ms:.4f}ms, PyTorch={py_ms:.4f}ms, Speedup={speedup:.2f}x")
     except Exception as e:
         results.append(
             {"phase": 7, "module": "gdn_scan", "cuda_ms": 0.0, "pytorch_ms": 0.0, "speedup": 0.0, "status": str(e)}
@@ -190,7 +194,7 @@ def main():
                 "status": "OK",
             }
         )
-        print(f"  [Phase 9] gla_scan: CUDA={cuda_ms:.4f}ms, PyTorch={py_ms:.4f}ms, Speedup={speedup:.2f}x")
+        logger.info(f"  [Phase 9] gla_scan: CUDA={cuda_ms:.4f}ms, PyTorch={py_ms:.4f}ms, Speedup={speedup:.2f}x")
     except Exception as e:
         results.append(
             {"phase": 9, "module": "gla_scan", "cuda_ms": 0.0, "pytorch_ms": 0.0, "speedup": 0.0, "status": str(e)}
@@ -219,7 +223,7 @@ def main():
                 "status": "OK",
             }
         )
-        print(f"  [Phase 9] selective_scan: CUDA={cuda_ms:.4f}ms, PyTorch={py_ms:.4f}ms, Speedup={speedup:.2f}x")
+        logger.info(f"  [Phase 9] selective_scan: CUDA={cuda_ms:.4f}ms, PyTorch={py_ms:.4f}ms, Speedup={speedup:.2f}x")
     except Exception as e:
         results.append(
             {
@@ -238,7 +242,7 @@ def main():
         writer.writeheader()
         writer.writerows(results)
 
-    print(f"Speedup results saved to {args.output}")
+    logger.info(f"Speedup results saved to {args.output}")
 
 
 if __name__ == "__main__":

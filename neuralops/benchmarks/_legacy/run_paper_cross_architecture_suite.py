@@ -1,3 +1,6 @@
+
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
@@ -58,10 +61,10 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 
-print("=" * 115)
-print("=== CROSS-ARCHITECTURE EMPIRICAL BENCHMARK SUITE (DISTILBERT, ROBERTA, GPT-2, LLAMA) ===")
-print("Device: NVIDIA RTX 3090 24GB | Verification: Physical Execution with Zero Placeholders")
-print("=" * 115)
+logger.info("=" * 115)
+logger.info("=== CROSS-ARCHITECTURE EMPIRICAL BENCHMARK SUITE (DISTILBERT, ROBERTA, GPT-2, LLAMA) ===")
+logger.info("Device: NVIDIA RTX 3090 24GB | Verification: Physical Execution with Zero Placeholders")
+logger.info("=" * 115)
 
 # Representative candidate methods from canonical paper Table 1
 METHODS = [
@@ -122,12 +125,12 @@ for m_info in MODELS:
     s = m_info["seq_len"]
     total_tokens = b * s
 
-    print(f"\n>>> MODEL BACKBONE: {m_name} ({fam}) | Batch={b}, Seq={s} (Tokens={total_tokens:,}) <<<")
-    print("-" * 115)
-    print(
+    logger.info(f"\n>>> MODEL BACKBONE: {m_name} ({fam}) | Batch={b}, Seq={s} (Tokens={total_tokens:,}) <<<")
+    logger.info("-" * 115)
+    logger.info(
         f"| {'Method':<24} | {'Latency (ms)':<15} | {'Throughput (tok/s)':<20} | {'Peak VRAM (MB)':<15} | {'Status':<15} |"
     )
-    print("-" * 115)
+    logger.info("-" * 115)
 
     input_ids = torch.randint(100, 1000, (b, s), device=device)
 
@@ -154,7 +157,7 @@ for m_info in MODELS:
         tok_s = total_tokens / (base_lat / 1000.0)
         vram_mb = torch.cuda.max_memory_allocated() / (1024 * 1024)
 
-        print(
+        logger.info(
             f"| {'Dense Baseline':<24} | {base_lat:>11.2f} ms | {tok_s:>16.0f} t/s | {vram_mb:>11.1f} MB | {'SUCCESS':<15} |",
             flush=True,
         )
@@ -171,7 +174,7 @@ for m_info in MODELS:
         )
         del model
     except Exception as e:
-        print(f"| {'Dense Baseline':<24} | {'FAILED':<15} | {'-':<20} | {'-':<15} | {str(e)[:15]:<15} |", flush=True)
+        logger.info(f"| {'Dense Baseline':<24} | {'FAILED':<15} | {'-':<20} | {'-':<15} | {str(e)[:15]:<15} |", flush=True)
 
     # 2. Evaluate Candidates with Attention Surgery
     for meth_name, attn_key, _ in METHODS[1:]:
@@ -199,7 +202,7 @@ for m_info in MODELS:
             vram_mb = torch.cuda.max_memory_allocated() / (1024 * 1024)
             speedup = (base_lat / lat) if base_lat else 1.0
 
-            print(
+            logger.info(
                 f"| {meth_name:<24} | {lat:>11.2f} ms | {tok_s:>16.0f} t/s | {vram_mb:>11.1f} MB | {'SUCCESS':<15} |",
                 flush=True,
             )
@@ -216,9 +219,9 @@ for m_info in MODELS:
             )
             del model
         except Exception as e:
-            print(f"| {meth_name:<24} | {'FAILED':<15} | {'-':<20} | {'-':<15} | {str(e)[:15]:<15} |", flush=True)
+            logger.info(f"| {meth_name:<24} | {'FAILED':<15} | {'-':<20} | {'-':<15} | {str(e)[:15]:<15} |", flush=True)
 
-print("=" * 115)
+logger.info("=" * 115)
 
 # Save Results to CSV and LaTeX Table
 csv_out = "results/master_cross_architecture_empirical.csv"
@@ -228,7 +231,7 @@ with open(csv_out, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=list(results[0].keys()))
         writer.writeheader()
         writer.writerows(results)
-print(f"Saved Cross-Architecture CSV: {csv_out}")
+logger.info(f"Saved Cross-Architecture CSV: {csv_out}")
 
 tex_out = "academic/paper/tables/master_paper_cross_architecture.tex"
 os.makedirs("academic/paper/tables", exist_ok=True)
@@ -253,4 +256,4 @@ with open(tex_out, "w") as f:
             f"{r['Model']} & {r['Method']} & {r['Latency_ms']} & {int(r['Throughput_tok_s']):,} & {r['Peak_VRAM_MB']} & \\textbf{{{r['Speedup']}$\\times$}} \\\\\n"
         )
     f.write("\\bottomrule\n\\end{tabular}\n\\end{table*}\n")
-print(f"Saved Camera-Ready LaTeX Table: {tex_out}")
+logger.info(f"Saved Camera-Ready LaTeX Table: {tex_out}")

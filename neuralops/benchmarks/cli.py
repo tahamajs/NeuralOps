@@ -60,9 +60,9 @@ def print_cli_error(msg: str, hint: str | None = None, title: str = "Execution E
         )
         err_console.print(panel)
     else:
-        print(f"✗ Error: {msg}", file=sys.stderr)
+        logger.error(f"✗ Error: {msg}")
         if hint:
-            print(f"  Suggestion: {hint}", file=sys.stderr)
+            logger.error(f"  Suggestion: {hint}")
 
 
 def generate_completion_script(shell: str) -> str:
@@ -1202,7 +1202,7 @@ def handle_compare(args: argparse.Namespace) -> int:
         fail_code = 4
 
     res = compare_results(baseline, candidate, metric, max_regression)
-    print(json.dumps(res, indent=2))
+    logger.info(json.dumps(res, indent=2))
     return 0 if res.get("status") == "PASS" else fail_code
 
 
@@ -1217,7 +1217,7 @@ def handle_info(args: argparse.Namespace) -> int:
         bspec = BENCHMARK_REGISTRY.get(name) or BENCHMARK_REGISTRY.get(clean_name)
         if bspec:
             if getattr(args, "json", False):
-                print(
+                logger.info(
                     json.dumps(
                         {
                             "canonical_name": bspec.canonical_name,
@@ -1235,13 +1235,13 @@ def handle_info(args: argparse.Namespace) -> int:
                     )
                 )
             else:
-                print(f"Benchmark: {bspec.canonical_name}")
-                print(f"Category: {bspec.category}")
-                print(f"Target: {bspec.target_name}")
-                print(f"Requires CUDA: {bspec.requires_cuda}")
-                print(f"Requires Triton: {bspec.requires_triton}")
-                print(f"Supports Causal: {bspec.supports_causal}")
-                print(f"Default Timeout: {bspec.default_timeout_s}s")
+                logger.info(f"Benchmark: {bspec.canonical_name}")
+                logger.info(f"Category: {bspec.category}")
+                logger.info(f"Target: {bspec.target_name}")
+                logger.info(f"Requires CUDA: {bspec.requires_cuda}")
+                logger.info(f"Requires Triton: {bspec.requires_triton}")
+                logger.info(f"Supports Causal: {bspec.supports_causal}")
+                logger.info(f"Default Timeout: {bspec.default_timeout_s}s")
             return 0
 
         try:
@@ -1253,14 +1253,14 @@ def handle_info(args: argparse.Namespace) -> int:
 
                 spec = inspect_architecture(clean_name)
                 if getattr(args, "json", False):
-                    print(json.dumps(spec.to_dict(), indent=2))
+                    logger.info(json.dumps(spec.to_dict(), indent=2))
                 else:
-                    print(render_architecture_card(spec))
+                    logger.info(render_architecture_card(spec))
                 return 0
         except Exception:  # allowed-swallow: architecture card generation fallback
             pass
 
-        print(f"Error: Target '{name}' not found in registry.")
+        logger.info(f"Error: Target '{name}' not found in registry.")
         return 1
 
     from neuralops.cli.info import cmd_info
@@ -1328,17 +1328,17 @@ def handle_plan(args: argparse.Namespace) -> None:
         if total_runs > 500 and not getattr(args, "yes", False):
             console.print("[bold yellow]⚠️  Grid size exceeds 500 runs. Use --yes to confirm execution.[/]")
     else:
-        print("═════════════════════════════════════════════════════")
-        print("Benchmark Plan Summary:")
-        print(f"  Modules:  {mod_count}")
-        print(f"  Models:   {models_count}")
-        print(f"  Datasets: {datasets_count}")
-        print(f"  Ranks:    {ranks_count}")
-        print(f"  Total planned runs: {total_runs}")
-        print(f"  Estimated duration: ~{est_hours:.1f} hours on 1 GPU")
-        print("═════════════════════════════════════════════════════")
+        logger.info("═════════════════════════════════════════════════════")
+        logger.info("Benchmark Plan Summary:")
+        logger.info(f"  Modules:  {mod_count}")
+        logger.info(f"  Models:   {models_count}")
+        logger.info(f"  Datasets: {datasets_count}")
+        logger.info(f"  Ranks:    {ranks_count}")
+        logger.info(f"  Total planned runs: {total_runs}")
+        logger.info(f"  Estimated duration: ~{est_hours:.1f} hours on 1 GPU")
+        logger.info("═════════════════════════════════════════════════════")
         if total_runs > 500 and not args.yes:
-            print("⚠️  Grid size exceeds 500 runs. Use --yes to confirm.")
+            logger.info("⚠️  Grid size exceeds 500 runs. Use --yes to confirm.")
 
 
 def handle_verify(args: argparse.Namespace) -> None:
@@ -1377,7 +1377,7 @@ def handle_verify(args: argparse.Namespace) -> None:
             "cuda_kernels_count": cuda_count,
             "status": "PASS",
         }
-        print(json.dumps(payload, indent=2))
+        logger.info(json.dumps(payload, indent=2))
         return
 
     if HAS_RICH and console is not None:
@@ -1397,20 +1397,20 @@ def handle_verify(args: argparse.Namespace) -> None:
         table.add_row("CUDA Kernels", f"{cuda_count} unified native kernels")
         console.print(table)
     else:
-        print("System Environment Verification:")
-        print(f"  Platform:         {platform.platform()}")
-        print(f"  Python Version:   {platform.python_version()}")
-        print(f"  PyTorch Version:  {torch.__version__}")
-        print(f"  CUDA Available:   {cuda_avail}")
+        logger.info("System Environment Verification:")
+        logger.info(f"  Platform:         {platform.platform()}")
+        logger.info(f"  Python Version:   {platform.python_version()}")
+        logger.info(f"  PyTorch Version:  {torch.__version__}")
+        logger.info(f"  CUDA Available:   {cuda_avail}")
         if cuda_avail:
-            print(f"  Device Name:      {device_name}")
-            print(f"  Device Count:     {device_count}")
-        print(f"  MPS Available:    {torch.backends.mps.is_available()}")
-        print(f"  Triton Available: {HAS_TRITON}")
-        print(f"  Attention Reg:    {len(ATTENTION_REGISTRY)} modules (Canonical: 131)")
-        print(f"  Compressor Reg:   {len(COMPRESSOR_REGISTRY)} modules (Canonical: 72)")
-        print(f"  Triton Kernels:   {triton_count} unified kernels")
-        print(f"  CUDA Kernels:     {cuda_count} unified native kernels")
+            logger.info(f"  Device Name:      {device_name}")
+            logger.info(f"  Device Count:     {device_count}")
+        logger.info(f"  MPS Available:    {torch.backends.mps.is_available()}")
+        logger.info(f"  Triton Available: {HAS_TRITON}")
+        logger.info(f"  Attention Reg:    {len(ATTENTION_REGISTRY)} modules (Canonical: 131)")
+        logger.info(f"  Compressor Reg:   {len(COMPRESSOR_REGISTRY)} modules (Canonical: 72)")
+        logger.info(f"  Triton Kernels:   {triton_count} unified kernels")
+        logger.info(f"  CUDA Kernels:     {cuda_count} unified native kernels")
 
 
 def handle_results(args: argparse.Namespace) -> None:
@@ -1419,7 +1419,7 @@ def handle_results(args: argparse.Namespace) -> None:
     runner = Runner(output_dir=args.output_dir)
     df = runner.summary()
     if df.empty:
-        print(f"No results found in {args.output_dir}")
+        logger.info(f"No results found in {args.output_dir}")
         return
 
     fmt = getattr(args, "format", "table")
@@ -1435,9 +1435,9 @@ def handle_results(args: argparse.Namespace) -> None:
             highlight_best=True,
             mark_pareto=True,
         )
-        print(out)
+        logger.info(out)
     else:
-        print(df.to_string(index=False))
+        logger.info(df.to_string(index=False))
 
 
 def handle_matrix(args: argparse.Namespace) -> int:
@@ -1499,14 +1499,14 @@ def handle_matrix(args: argparse.Namespace) -> int:
     )
 
     if args.json:
-        print(json.dumps(result, indent=2))
+        logger.info(json.dumps(result, indent=2))
     else:
         if args.dry_run:
-            print(f"[✓] Benchmark Matrix Plan: {result['total_points']} grid points scheduled.")
+            logger.info(f"[✓] Benchmark Matrix Plan: {result['total_points']} grid points scheduled.")
         else:
-            print(f"[✓] Benchmark Matrix Completed: {result['passed_cells']}/{result['total_cells']} passed.")
+            logger.info(f"[✓] Benchmark Matrix Completed: {result['passed_cells']}/{result['total_cells']} passed.")
             if result.get("speedup_gate_failures", 0) > 0:
-                print(f"[!] Warning: {result['speedup_gate_failures']} speedup regression gate failure(s).")
+                logger.info(f"[!] Warning: {result['speedup_gate_failures']} speedup regression gate failure(s).")
     return 0
 
 
@@ -1549,23 +1549,23 @@ def handle_multiseed(args: argparse.Namespace) -> int:
     )
 
     if args.json:
-        print(json.dumps(result.to_dict(), indent=2))
+        logger.info(json.dumps(result.to_dict(), indent=2))
     elif args.latex:
-        print(result.to_latex_table())
+        logger.info(result.to_latex_table())
     else:
         if args.dry_run:
-            print(f"[✓] Multi-Seed Benchmark Plan: {len(modules)} module(s) across {len(result.config.seeds)} seed(s).")
+            logger.info(f"[✓] Multi-Seed Benchmark Plan: {len(modules)} module(s) across {len(result.config.seeds)} seed(s).")
         else:
-            print(f"[✓] Multi-Seed Benchmark Completed: {len(result.module_results)} module(s) evaluated across {len(result.config.seeds)} seed(s).")
+            logger.info(f"[✓] Multi-Seed Benchmark Completed: {len(result.module_results)} module(s) evaluated across {len(result.config.seeds)} seed(s).")
             for mod, res in result.module_results.items():
                 lat = res.metrics.get("latency_ms")
                 lat_str = lat.latex_formatted if lat else "N/A"
-                print(f"  - {mod}: Latency {lat_str}")
+                logger.info(f"  - {mod}: Latency {lat_str}")
                 if res.baseline_comparison:
                     p = res.baseline_comparison.get("p_value", 1.0)
                     d = res.baseline_comparison.get("cohens_d", 0.0)
                     sig = res.baseline_comparison.get("significant", False)
-                    print(f"    vs baseline: p-value={p:.4f} (sig={sig}), Cohen's d={d:+.2f}")
+                    logger.info(f"    vs baseline: p-value={p:.4f} (sig={sig}), Cohen's d={d:+.2f}")
     return 0
 
 
@@ -1727,7 +1727,7 @@ def handle_run(args: argparse.Namespace) -> None:
             output = getattr(args, "output", None)
             if output:
                 Path(output).write_text(json.dumps(result, indent=2), encoding="utf-8")
-            print(json.dumps(result, indent=2))
+            logger.info(json.dumps(result, indent=2))
             return
         if isinstance(requested_modules, str) and category in {"attention", "compressor", "cuda", "triton"}:
             names = [item.strip() for item in requested_modules.split(",") if item.strip()]
@@ -1846,7 +1846,7 @@ def handle_run(args: argparse.Namespace) -> None:
         mod_name = res.module.get("name") if isinstance(res.module, dict) else res.module
         mdl_name = res.model.get("name") if isinstance(res.model, dict) else res.model
         ds_name = res.dataset.get("name") if isinstance(res.dataset, dict) else res.dataset
-        print(f"{status_symbol} [{res.status.upper()}] {mod_name} on {mdl_name}/{ds_name}")
+        logger.info(f"{status_symbol} [{res.status.upper()}] {mod_name} on {mdl_name}/{ds_name}")
 
 
 def handle_export(args: argparse.Namespace) -> None:
@@ -1854,13 +1854,13 @@ def handle_export(args: argparse.Namespace) -> None:
 
     import neuralops
 
-    print(f"Loading base model '{args.model}'...")
+    logger.info(f"Loading base model '{args.model}'...")
     model = AutoModel.from_pretrained(args.model)
     if args.attn:
-        print(f"Applying attention replacement: '{args.attn}' (rank={args.rank})...")
+        logger.info(f"Applying attention replacement: '{args.attn}' (rank={args.rank})...")
         model = neuralops.replace_attention(model, attention=args.attn, rank=args.rank)
     if args.comp:
-        print(f"Applying model compression: '{args.comp}' (rank={args.rank})...")
+        logger.info(f"Applying model compression: '{args.comp}' (rank={args.rank})...")
         model = neuralops.compress(model, method=args.comp, rank=args.rank)
 
     from neuralops.export.exporter import export_model
@@ -1874,7 +1874,7 @@ def handle_export(args: argparse.Namespace) -> None:
         compression_method=args.comp,
         rank=args.rank,
     )
-    print(f"[+] Successfully exported model to {out}")
+    logger.info(f"[+] Successfully exported model to {out}")
 
 
 def handle_search(args: argparse.Namespace) -> int:
@@ -1885,10 +1885,10 @@ def handle_search(args: argparse.Namespace) -> int:
 
     from neuralops.compression_engine.svd.auto_svd import AutoSVDCompressor, solve_optimal_rank_allocation
 
-    print(f"Loading model '{args.model}' for AutoSVD Pareto rank search...")
+    logger.info(f"Loading model '{args.model}' for AutoSVD Pareto rank search...")
     model = AutoModel.from_pretrained(args.model)
 
-    print(
+    logger.info(
         f"Solving optimal rank allocation for target_param_ratio={args.target_param_ratio} (min_rank={args.min_rank})..."
     )
     ranks, stats = solve_optimal_rank_allocation(
@@ -1898,27 +1898,27 @@ def handle_search(args: argparse.Namespace) -> int:
         max_rank=args.max_rank,
     )
 
-    print("\n═════════════════════════════════════════════════════")
-    print(f"AutoSVD Pareto Allocation Results for {args.model}:")
-    print(f"  Original Params:   {stats.get('original_params', 0):,}")
-    print(f"  Compressed Params: {stats.get('compressed_params', 0):,}")
-    print(f"  Compression Ratio: {stats.get('compression_ratio', 1.0):.2f}x")
-    print(f"  Param Savings:     {stats.get('param_savings_pct', 0.0):.1f}%")
-    print(f"  Optimized Layers:  {stats.get('num_layers_optimized', 0)}")
-    print("─────────────────────────────────────────────────────")
+    logger.info("\n═════════════════════════════════════════════════════")
+    logger.info(f"AutoSVD Pareto Allocation Results for {args.model}:")
+    logger.info(f"  Original Params:   {stats.get('original_params', 0):,}")
+    logger.info(f"  Compressed Params: {stats.get('compressed_params', 0):,}")
+    logger.info(f"  Compression Ratio: {stats.get('compression_ratio', 1.0):.2f}x")
+    logger.info(f"  Param Savings:     {stats.get('param_savings_pct', 0.0):.1f}%")
+    logger.info(f"  Optimized Layers:  {stats.get('num_layers_optimized', 0)}")
+    logger.info("─────────────────────────────────────────────────────")
     for name, r in list(ranks.items())[:10]:
-        print(f"  {name:40s} -> rank {r}")
+        logger.info(f"  {name:40s} -> rank {r}")
     if len(ranks) > 10:
-        print(f"  ... and {len(ranks) - 10} more layers.")
-    print("═════════════════════════════════════════════════════\n")
+        logger.info(f"  ... and {len(ranks) - 10} more layers.")
+    logger.info("═════════════════════════════════════════════════════\n")
 
     if args.output_json:
         with open(args.output_json, "w") as f:
             json.dump({"allocated_ranks": ranks, "stats": stats}, f, indent=2)
-        print(f"[+] Saved allocated ranks JSON to {args.output_json}")
+        logger.info(f"[+] Saved allocated ranks JSON to {args.output_json}")
 
     if args.save_compressed:
-        print(f"Applying compression and saving model to {args.save_compressed}...")
+        logger.info(f"Applying compression and saving model to {args.save_compressed}...")
         compressor = AutoSVDCompressor(
             model,
             target_param_ratio=args.target_param_ratio,
@@ -1927,7 +1927,7 @@ def handle_search(args: argparse.Namespace) -> int:
         )
         c_model, _ = compressor.compress()
         c_model.save_pretrained(args.save_compressed)
-        print(f"[+] Compressed model successfully saved to {args.save_compressed}")
+        logger.info(f"[+] Compressed model successfully saved to {args.save_compressed}")
 
     return 0
 
@@ -1961,7 +1961,7 @@ def handle_generate(args: argparse.Namespace) -> int:
 
     from neuralops.inference.speculative_decoding import SelfSpeculativeDecoder
 
-    print(f"Loading generative model '{args.model}'...")
+    logger.info(f"Loading generative model '{args.model}'...")
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -1969,8 +1969,8 @@ def handle_generate(args: argparse.Namespace) -> int:
     model = AutoModelForCausalLM.from_pretrained(args.model).to(device)
 
     input_ids = tokenizer.encode(args.prompt, return_tensors="pt").to(device)
-    print(f'Prompt: "{args.prompt}"')
-    print(f"Generating {args.max_new_tokens} tokens (speculative={args.speculative}, draft_k={args.draft_k})...\n")
+    logger.info(f'Prompt: "{args.prompt}"')
+    logger.info(f"Generating {args.max_new_tokens} tokens (speculative={args.speculative}, draft_k={args.draft_k})...\n")
 
     decoder = SelfSpeculativeDecoder(
         target_model=model,
@@ -1987,17 +1987,17 @@ def handle_generate(args: argparse.Namespace) -> int:
     elapsed = time.time() - t0
     gen_text = tokenizer.decode(out_ids[0], skip_special_tokens=True)
 
-    print("═════════════════════════════════════════════════════")
-    print("Generated Text:")
-    print(f'"{gen_text}"')
-    print("─────────────────────────────────────────────────────")
-    print(f"Tokens Generated:      {stats.total_tokens_generated}")
-    print(f"Target Model Passes:   {stats.total_target_forward_passes}")
-    print(f"Draft Acceptance Rate: {stats.acceptance_rate * 100:.1f}%")
-    print(f"Mean Accepted / Step:  {stats.mean_accepted_tokens_per_step:.2f}")
-    print(f"Throughput:            {stats.tokens_per_sec:.1f} tokens/s")
-    print(f"Speculative Speedup:   {stats.speedup_over_standard:.2f}x")
-    print("═════════════════════════════════════════════════════\n")
+    logger.info("═════════════════════════════════════════════════════")
+    logger.info("Generated Text:")
+    logger.info(f'"{gen_text}"')
+    logger.info("─────────────────────────────────────────────────────")
+    logger.info(f"Tokens Generated:      {stats.total_tokens_generated}")
+    logger.info(f"Target Model Passes:   {stats.total_target_forward_passes}")
+    logger.info(f"Draft Acceptance Rate: {stats.acceptance_rate * 100:.1f}%")
+    logger.info(f"Mean Accepted / Step:  {stats.mean_accepted_tokens_per_step:.2f}")
+    logger.info(f"Throughput:            {stats.tokens_per_sec:.1f} tokens/s")
+    logger.info(f"Speculative Speedup:   {stats.speedup_over_standard:.2f}x")
+    logger.info("═════════════════════════════════════════════════════\n")
     return 0
 
 
@@ -2005,7 +2005,7 @@ def handle_niah(args: argparse.Namespace) -> int:
     """Runs Needle-In-A-Haystack retrieval evaluation and produces a 2D passkey heatmap."""
     from neuralops.evaluation.niah_passkey import NeedleInAHaystackEvaluator, plot_niah_heatmap
 
-    print(f"Loading model '{args.model}' for Needle-In-A-Haystack Passkey neuralops.evaluation...")
+    logger.info(f"Loading model '{args.model}' for Needle-In-A-Haystack Passkey neuralops.evaluation...")
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -2024,10 +2024,10 @@ def handle_niah(args: argparse.Namespace) -> int:
         device=device,
     )
 
-    print(f"Running NIAH benchmark across lengths={ctx_lengths} and depths={depths}...")
+    logger.info(f"Running NIAH benchmark across lengths={ctx_lengths} and depths={depths}...")
     matrix = evaluator.evaluate()
 
-    print(f"Generating 2D heatmap -> '{args.output_plot}'...")
+    logger.info(f"Generating 2D heatmap -> '{args.output_plot}'...")
     fig = plot_niah_heatmap(
         matrix,
         context_lengths=ctx_lengths,
@@ -2035,7 +2035,7 @@ def handle_niah(args: argparse.Namespace) -> int:
         save_path=args.output_plot,
         model_name=args.model,
     )
-    print(f"[+] NIAH Passkey heatmap saved to '{args.output_plot}'\n")
+    logger.info(f"[+] NIAH Passkey heatmap saved to '{args.output_plot}'\n")
     return 0
 
 
@@ -2043,7 +2043,7 @@ def handle_benchmark_fused(args: argparse.Namespace) -> int:
     """Benchmarks fused @triton.jit kernels against PyTorch eager baselines."""
     import torch
 
-    print(
+    logger.info(
         f"Benchmarking Fused Triton Kernels (kernel={args.kernel}, B={args.batch_size}, L={args.seq_len}, D={args.dim})..."
     )
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -2066,7 +2066,7 @@ def handle_benchmark_fused(args: argparse.Namespace) -> int:
         if device == "cuda":
             torch.cuda.synchronize()
         dur = (time.time() - t0) / iters * 1000
-        print(f"  [W4A16 Dequant-GEMM]:  {dur:.2f} ms / forward pass")
+        logger.info(f"  [W4A16 Dequant-GEMM]:  {dur:.2f} ms / forward pass")
 
     if args.kernel in ("state_update", "all"):
         from neuralops.core.triton_kernels.state_update import fused_recurrent_linear_step
@@ -2087,9 +2087,9 @@ def handle_benchmark_fused(args: argparse.Namespace) -> int:
         if device == "cuda":
             torch.cuda.synchronize()
         dur = (time.time() - t0) / iters * 1000
-        print(f"  [Fused O(1) Linear Step]: {dur:.3f} ms / step")
+        logger.info(f"  [Fused O(1) Linear Step]: {dur:.3f} ms / step")
 
-    print("[+] Fused kernel benchmark completed successfully.\n")
+    logger.info("[+] Fused kernel benchmark completed successfully.\n")
     return 0
 
 
@@ -2122,7 +2122,7 @@ def handle_monitor(args: argparse.Namespace) -> int:
             )
         )
     else:
-        print(f"[*] Starting NeuralOps Studio & Telemetry Monitor at http://{host}:{port}/")
+        logger.info(f"[*] Starting NeuralOps Studio & Telemetry Monitor at http://{host}:{port}/")
     try:
         from neuralops.ui.server import create_app
         import uvicorn
@@ -2156,10 +2156,10 @@ def handle_distill(args: argparse.Namespace) -> int:
             )
         )
     else:
-        print("═════════════════════════════════════════════════════")
-        print(f"Distillation: Teacher={args.teacher} -> Student={args.student}")
-        print(f"Divergence: {args.divergence} | Temp={args.temperature} | Alpha={args.alpha}")
-        print("═════════════════════════════════════════════════════")
+        logger.info("═════════════════════════════════════════════════════")
+        logger.info(f"Distillation: Teacher={args.teacher} -> Student={args.student}")
+        logger.info(f"Divergence: {args.divergence} | Temp={args.temperature} | Alpha={args.alpha}")
+        logger.info("═════════════════════════════════════════════════════")
 
     import torch
     from transformers import AutoModelForSequenceClassification, AutoTokenizer
@@ -2167,11 +2167,11 @@ def handle_distill(args: argparse.Namespace) -> int:
     from neuralops.trainer.distillation.multi_level_kd import LogitDistillationLoss
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"[*] Loading teacher model '{args.teacher}' on {device}...")
+    logger.info(f"[*] Loading teacher model '{args.teacher}' on {device}...")
     teacher = AutoModelForSequenceClassification.from_pretrained(args.teacher).to(device)
     teacher.eval()
 
-    print(f"[*] Loading student model '{args.student}' on {device}...")
+    logger.info(f"[*] Loading student model '{args.student}' on {device}...")
     student = AutoModelForSequenceClassification.from_pretrained(args.student).to(device)
     student.train()
 
@@ -2182,7 +2182,7 @@ def handle_distill(args: argparse.Namespace) -> int:
 
     optimizer = torch.optim.AdamW(student.parameters(), lr=args.lr)
 
-    print(f"[*] Running distillation optimization ({args.divergence})...")
+    logger.info(f"[*] Running distillation optimization ({args.divergence})...")
     dummy_input = torch.randint(0, 1000, (args.batch_size, 128), device=device)
     dummy_labels = torch.randint(0, 2, (args.batch_size,), device=device)
 
@@ -2200,17 +2200,17 @@ def handle_distill(args: argparse.Namespace) -> int:
         optimizer.step()
         total_loss += loss.item()
         if step % 2 == 0:
-            print(f"  Step {step:2d}/10 | KD Loss: {loss.item():.4f}")
+            logger.info(f"  Step {step:2d}/10 | KD Loss: {loss.item():.4f}")
 
     avg_loss = total_loss / 10.0
-    print(f"[✓] Distillation loop complete. Final Loss: {avg_loss:.4f}")
+    logger.info(f"[✓] Distillation loop complete. Final Loss: {avg_loss:.4f}")
 
     if args.output_dir:
         import os
 
         os.makedirs(args.output_dir, exist_ok=True)
         student.save_pretrained(args.output_dir)
-        print(f"[✓] Distilled student weights saved to '{args.output_dir}'")
+        logger.info(f"[✓] Distilled student weights saved to '{args.output_dir}'")
     return 0
 
 
@@ -2232,7 +2232,7 @@ def handle_recipe(args: argparse.Namespace) -> int:
     """Dispatches declarative recipe pipeline commands."""
     action = getattr(args, "recipe_action", None)
     if not action:
-        print("Usage: nops recipe {plan,execute,validate,diff,evidence} ...")
+        logger.info("Usage: nops recipe {plan,execute,validate,diff,evidence} ...")
         return 1
 
     from neuralops.recipe.loader import load_recipe
@@ -2242,10 +2242,10 @@ def handle_recipe(args: argparse.Namespace) -> int:
 
         rec = load_recipe(args.file)
         plan = plan_recipe(rec)
-        print(f"Recipe '{rec.metadata.name}' v{rec.metadata.version}: {len(plan.stages)} stage(s) planned.")
+        logger.info(f"Recipe '{rec.metadata.name}' v{rec.metadata.version}: {len(plan.stages)} stage(s) planned.")
         for idx, stage in enumerate(plan.stages):
             mutations = stage.contract.declares_mutations if stage.contract else []
-            print(f"  [{idx}] {stage.id} ({stage.operation_type}@{stage.version}, mutates={mutations})")
+            logger.info(f"  [{idx}] {stage.id} ({stage.operation_type}@{stage.version}, mutates={mutations})")
         return 0
     elif action == "execute":
         from neuralops.pipeline_transform.executor import execute_plan
@@ -2257,11 +2257,11 @@ def handle_recipe(args: argparse.Namespace) -> int:
         device = getattr(args, "device", "auto")
         stop_on_error = getattr(args, "stop_on_error", True)
         res = execute_plan(plan, device=device, stop_on_error=stop_on_error)
-        print(
+        logger.info(
             f"Transformation status: {res.status.value} (Stages: {len(res.stages)}, Elapsed: {res.total_time_seconds:.2f}s)"
         )
         if hasattr(res, "evidence") and res.evidence is not None:
-            print("\n" + render_report(res.evidence))
+            logger.info("\n" + render_report(res.evidence))
         return 0 if res.status.value == "SUCCESS" else 1
     elif action == "validate":
         from neuralops.validation.static import validate_recipe_static
@@ -2269,31 +2269,31 @@ def handle_recipe(args: argparse.Namespace) -> int:
         rec = load_recipe(args.file)
         try:
             warnings = validate_recipe_static(rec)
-            print(f"✓ Recipe '{rec.metadata.name}' is valid (all 15 static well-formedness rules passed).")
+            logger.info(f"✓ Recipe '{rec.metadata.name}' is valid (all 15 static well-formedness rules passed).")
             if warnings:
-                print(f"  Warnings ({len(warnings)}):")
+                logger.info(f"  Warnings ({len(warnings)}):")
                 for w in warnings:
-                    print(f"   - {w}")
+                    logger.info(f"   - {w}")
             return 0
         except Exception as e:
-            print(f"✗ Recipe validation failed: {e}")
+            logger.info(f"✗ Recipe validation failed: {e}")
             return 1
     elif action == "diff":
         rec1 = load_recipe(args.file1)
         rec2 = load_recipe(args.file2)
-        print(f"Structural Diff: '{rec1.metadata.name}' vs '{rec2.metadata.name}'")
-        print(f"  Operations: {len(rec1.operations)} -> {len(rec2.operations)}")
+        logger.info(f"Structural Diff: '{rec1.metadata.name}' vs '{rec2.metadata.name}'")
+        logger.info(f"  Operations: {len(rec1.operations)} -> {len(rec2.operations)}")
         op_types1 = [o.type for o in rec1.operations]
         op_types2 = [o.type for o in rec2.operations]
-        print(f"  Stages in recipe 1: {op_types1}")
-        print(f"  Stages in recipe 2: {op_types2}")
+        logger.info(f"  Stages in recipe 1: {op_types1}")
+        logger.info(f"  Stages in recipe 2: {op_types2}")
         return 0
     elif action == "evidence":
         from neuralops.reporting.evidence import load_evidence
         from neuralops.reporting.report import render_report
 
         ev = load_evidence(args.file)
-        print(render_report(ev))
+        logger.info(render_report(ev))
         return 0
     elif action == "benchmark":
         import json
@@ -2309,7 +2309,7 @@ def handle_recipe(args: argparse.Namespace) -> int:
         if parallel_flag:
             ctx = DistributedContext()
             parallel_bench = DataParallelBenchmark(ctx)
-            print(
+            logger.info(
                 f"DataParallelBenchmark enabled: world_size={parallel_bench.world_size}, is_distributed={parallel_bench.context.is_distributed()}"
             )
 
@@ -2329,10 +2329,10 @@ def handle_recipe(args: argparse.Namespace) -> int:
             seq_len=seq_len,
             parallel_benchmark=parallel_bench,
         )
-        print(
+        logger.info(
             f"Recipe Benchmark '{results['recipe_name']}' completed (device={results['device']}, speedup={results['comparison']['speedup']:.2f}x):"
         )
-        print(json.dumps(results, indent=2))
+        logger.info(json.dumps(results, indent=2))
         return 0
     return 0
 
@@ -2345,9 +2345,9 @@ def handle_evidence(args: argparse.Namespace) -> int:
         from neuralops.reporting.report import render_report
 
         ev = load_evidence(args.file)
-        print(render_report(ev))
+        logger.info(render_report(ev))
         return 0
-    print("Usage: nops evidence show <evidence.json>")
+    logger.info("Usage: nops evidence show <evidence.json>")
     return 1
 
 
@@ -2358,9 +2358,9 @@ def handle_ops(args: argparse.Namespace) -> int:
         from neuralops.operations.registry import list_operations
 
         ops = list_operations()
-        print(f"Registered Operations ({len(ops)}):")
+        logger.info(f"Registered Operations ({len(ops)}):")
         for op in ops:
-            print(f"  - {op}")
+            logger.info(f"  - {op}")
         return 0
     return 0
 
@@ -2372,13 +2372,13 @@ def handle_compat(args: argparse.Namespace) -> int:
         from neuralops.export.runtime_compat import check_compatibility
 
         rep = check_compatibility(args.path)
-        print(f"Serving Runtime Compatibility for '{rep.export_path}':")
+        logger.info(f"Serving Runtime Compatibility for '{rep.export_path}':")
         for eng, status in rep.summary.items():
             st_str = f"[{status}]"
             msg = rep.results[eng].message
-            print(f"  {eng:<14} {st_str:<16} {msg}")
+            logger.info(f"  {eng:<14} {st_str:<16} {msg}")
         return 0
-    print("Usage: nops compat check <path>")
+    logger.info("Usage: nops compat check <path>")
     return 1
 
 
@@ -2407,25 +2407,25 @@ def _dispatch(args: argparse.Namespace) -> int:
 
         spec = inspect_architecture(args.name)
         if getattr(args, "json", False):
-            print(json.dumps(spec.to_dict(), indent=2))
+            logger.info(json.dumps(spec.to_dict(), indent=2))
         elif getattr(args, "code_only", False):
-            print(f"# === Quickstart: {spec.name} ({spec.category}) ===")
-            print(spec.quickstart_code.get("pytorch_direct", ""))
-            print("\n# === Model Surgery & Micro-Healing ===")
-            print(spec.quickstart_code.get("surgical_transplant", ""))
+            logger.info(f"# === Quickstart: {spec.name} ({spec.category}) ===")
+            logger.info(spec.quickstart_code.get("pytorch_direct", ""))
+            logger.info("\n# === Model Surgery & Micro-Healing ===")
+            logger.info(spec.quickstart_code.get("surgical_transplant", ""))
         else:
-            print(render_architecture_card(spec))
+            logger.info(render_architecture_card(spec))
             if getattr(args, "roofline", False):
                 from neuralops.core.roofline import profile_roofline, render_roofline_terminal
 
-                print("\n" + "=" * 74)
-                print(f"  🔬 LIVE HARDWARE ROOFLINE ANALYSIS: {spec.name.upper()}")
-                print("=" * 74)
+                logger.info("\n" + "=" * 74)
+                logger.info(f"  🔬 LIVE HARDWARE ROOFLINE ANALYSIS: {spec.name.upper()}")
+                logger.info("=" * 74)
                 try:
                     rep = profile_roofline(module_or_name=spec.name, batch_size=2, seq_len=1024)
-                    print(render_roofline_terminal(rep))
+                    logger.info(render_roofline_terminal(rep))
                 except Exception as e_roof:
-                    print(f"[-] Roofline profiling skipped or failed: {e_roof}")
+                    logger.info(f"[-] Roofline profiling skipped or failed: {e_roof}")
         return 0
     elif args.subcommand == "list":
         return handle_list(args)
@@ -2471,7 +2471,7 @@ def _dispatch(args: argparse.Namespace) -> int:
             return handle_multiseed(args)
         elif action in ("run", None):
             if action is None and getattr(args, "benchmark_subcommand", None) is None and getattr(args, "action", None) is None:
-                print("Usage: neuralops benchmark {run,plan,list,info,compare,resume,matrix,multiseed} [options]")
+                logger.info("Usage: neuralops benchmark {run,plan,list,info,compare,resume,matrix,multiseed} [options]")
                 return 0
             handle_run(args)
             return 0
@@ -2530,7 +2530,7 @@ def _dispatch(args: argparse.Namespace) -> int:
             raise ValueError("--heal-steps and --heal-lr must be positive finite values")
 
         device = "cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu")
-        print(f"[+] Loading model '{args.model}' for attention transplantation...")
+        logger.info(f"[+] Loading model '{args.model}' for attention transplantation...")
         model = AutoModel.from_pretrained(args.model).to(device)
         teacher = None
         tokenizer = AutoTokenizer.from_pretrained(args.reference_model or args.model)
@@ -2552,7 +2552,7 @@ def _dispatch(args: argparse.Namespace) -> int:
             calibration_inputs = {
                 key: value.to(device) for key, value in encoded.items() if isinstance(value, torch.Tensor)
             }
-        print(f"[+] Transplanting attention '{args.attention}' (rank={args.rank}, calibrate={args.calibrate})...")
+        logger.info(f"[+] Transplanting attention '{args.attention}' (rank={args.rank}, calibrate={args.calibrate})...")
         try:
             transplanted = transplant_attention(model, args.attention, rank=args.rank)
         except Exception as e_trans:
@@ -2575,7 +2575,7 @@ def _dispatch(args: argparse.Namespace) -> int:
             transplanted = calibrate_attention_subspace(teacher, transplanted, calibration_inputs)
 
         if getattr(args, "heal", False):
-            print(f"[+] Running layerwise subspace micro-healing (steps={args.heal_steps}, lr={args.heal_lr})...")
+            logger.info(f"[+] Running layerwise subspace micro-healing (steps={args.heal_steps}, lr={args.heal_lr})...")
             from neuralops.core._attention_surgery import heal_replaced_model
 
             heal_stats = heal_replaced_model(
@@ -2586,23 +2586,23 @@ def _dispatch(args: argparse.Namespace) -> int:
                 lr=args.heal_lr,
                 also_ridge_init=True,
             )
-            print(
+            logger.info(
                 f"[✓] Micro-healing completed: Initial MSE={heal_stats['initial_mse']:.4f} -> Final MSE={heal_stats['final_mse']:.4f}"
             )
 
         from neuralops.models.surgical_io import save_surgical_checkpoint
 
-        print(f"[+] Saving surgical model checkpoint to '{args.output_dir}'...")
+        logger.info(f"[+] Saving surgical model checkpoint to '{args.output_dir}'...")
         save_surgical_checkpoint(transplanted, args.output_dir)
         tokenizer.save_pretrained(args.output_dir)
-        print(f"[✓] Transplantation complete. Surgical checkpoint saved to '{args.output_dir}'.")
+        logger.info(f"[✓] Transplantation complete. Surgical checkpoint saved to '{args.output_dir}'.")
         return 0
     elif args.subcommand == "roofline":
         import json
 
         from neuralops.core.roofline import profile_roofline, render_roofline_terminal
 
-        print(f"[+] Profiling Hardware Roofline for '{args.module}' (seq_len={args.seq_len}, dtype={args.dtype})...")
+        logger.info(f"[+] Profiling Hardware Roofline for '{args.module}' (seq_len={args.seq_len}, dtype={args.dtype})...")
         report = profile_roofline(
             module_or_name=args.module,
             batch_size=args.batch_size,
@@ -2613,15 +2613,15 @@ def _dispatch(args: argparse.Namespace) -> int:
             device=args.device,
         )
         if getattr(args, "json", False):
-            print(json.dumps(report.to_dict(), indent=2))
+            logger.info(json.dumps(report.to_dict(), indent=2))
         else:
-            print(render_roofline_terminal(report))
+            logger.info(render_roofline_terminal(report))
 
         if getattr(args, "latex", False):
             from neuralops.core.paper_export import export_benchmark_table
 
-            print("\n[+] LaTeX Booktabs Table Snippet:")
-            print(export_benchmark_table([report.to_dict()], format="latex"))
+            logger.info("\n[+] LaTeX Booktabs Table Snippet:")
+            logger.info(export_benchmark_table([report.to_dict()], format="latex"))
         return 0
     elif args.subcommand == "compose":
         from neuralops import compose_attention
@@ -2635,15 +2635,15 @@ def _dispatch(args: argparse.Namespace) -> int:
             embed_dim=args.embed_dim,
             num_heads=args.num_heads,
         )
-        print("[+] Composable Attention Architecture:")
-        print(attn.summary())
+        logger.info("[+] Composable Attention Architecture:")
+        logger.info(attn.summary())
         return 0
     elif args.subcommand in ("surgery-recipe", "recipe"):
         from neuralops.cli.surgery_cmd import handle_surgery_command
 
         return handle_surgery_command(args)
     elif args.subcommand == "recommend":
-        print(
+        logger.info(
             f"[+] Querying NeuralOps Architecture Advisor (VRAM: {args.vram_gb}GB, Context: {args.context_len}, Task: {args.task})..."
         )
         if args.context_len >= 8192 or args.vram_gb < 6.0:
@@ -2655,13 +2655,13 @@ def _dispatch(args: argparse.Namespace) -> int:
         else:
             rec_attn = "svd_linear_attention (Subquadratic bottleneck attention)"
             rec_comp = "Direct SVD with closed-form Ridge alignment"
-        print("═══════════════════════════════════════════════════════════════════")
-        print("  RECOMMENDED NEURALOPS ARCHITECTURE RECIPE:")
-        print(f"  • Attention:   {rec_attn}")
-        print(f"  • Compressor:  {rec_comp}")
-        print("  • Treat this as a candidate configuration, not a measured speed or memory guarantee.")
-        print("  • Benchmark on the target model, shapes, dtype, and hardware before selecting it.")
-        print("═══════════════════════════════════════════════════════════════════")
+        logger.info("═══════════════════════════════════════════════════════════════════")
+        logger.info("  RECOMMENDED NEURALOPS ARCHITECTURE RECIPE:")
+        logger.info(f"  • Attention:   {rec_attn}")
+        logger.info(f"  • Compressor:  {rec_comp}")
+        logger.info("  • Treat this as a candidate configuration, not a measured speed or memory guarantee.")
+        logger.info("  • Benchmark on the target model, shapes, dtype, and hardware before selecting it.")
+        logger.info("═══════════════════════════════════════════════════════════════════")
         return 0
     elif args.subcommand == "calibrate":
         import torch
@@ -2690,7 +2690,7 @@ def _dispatch(args: argparse.Namespace) -> int:
             metadata={"calibration_reference": reference_id},
         )
         tokenizer.save_pretrained(args.output_dir)
-        print(f"[✓] Ridge calibration used the supplied text; checkpoint saved to {args.output_dir!r}.")
+        logger.info(f"[✓] Ridge calibration used the supplied text; checkpoint saved to {args.output_dir!r}.")
         return 0
     elif args.subcommand in ("train",):
         return handle_train(args)
@@ -2711,21 +2711,21 @@ def _dispatch(args: argparse.Namespace) -> int:
 
         from neuralops.core.extensibility import validate_module_contract
 
-        print(f"[+] Running 6-Point Contract Validation on '{args.name}'...")
+        logger.info(f"[+] Running 6-Point Contract Validation on '{args.name}'...")
         res = validate_module_contract(args.name)
         status = "[✓] ALL CONTRACTS PASSED (6/6)" if res["all_passed"] else "[✗] CONTRACT VALIDATION FAILED"
-        print(f"{status}: {res['passed_count']}/{res['total_checks']} checks satisfied.")
-        print(json.dumps(res, indent=2))
+        logger.info(f"{status}: {res['passed_count']}/{res['total_checks']} checks satisfied.")
+        logger.info(json.dumps(res, indent=2))
         return 0 if res["all_passed"] else 1
     elif args.subcommand == "scaffold":
         from neuralops.core.extensibility import scaffold_module
 
-        print(f"[+] Scaffolding {args.category} module '{args.name}' (family: {args.family})...")
+        logger.info(f"[+] Scaffolding {args.category} module '{args.name}' (family: {args.family})...")
         code = scaffold_module(args.name, category=args.category, family=args.family, output_file=args.output)
         if args.output:
-            print(f"[✓] Scaffold written to '{args.output}'.")
+            logger.info(f"[✓] Scaffold written to '{args.output}'.")
         else:
-            print(code)
+            logger.info(code)
         return 0
     elif args.subcommand in ("results", "ledger"):
         import json
@@ -2737,20 +2737,20 @@ def _dispatch(args: argparse.Namespace) -> int:
         if getattr(args, "dossier", None):
             dossier = ledger.get_module_dossier(args.dossier)
             if not dossier:
-                print(f"[-] No dossier found for module '{args.dossier}'.")
+                logger.info(f"[-] No dossier found for module '{args.dossier}'.")
                 return 1
-            print(json.dumps(dossier, indent=2, ensure_ascii=False))
+            logger.info(json.dumps(dossier, indent=2, ensure_ascii=False))
             return 0
 
         if getattr(args, "diff", None):
             diff_res = ledger.compare_versions(args.diff, rev_a=args.rev_a, rev_b=args.rev_b)
-            print(json.dumps(diff_res, indent=2, ensure_ascii=False))
+            logger.info(json.dumps(diff_res, indent=2, ensure_ascii=False))
             return 0
 
         if getattr(args, "sync", False):
-            print("[+] Syncing Results Ledger...")
+            logger.info("[+] Syncing Results Ledger...")
             ledger.rewrite_jsonl_from_sqlite()
-            print("[✓] Master ledger rewritten and synchronized.")
+            logger.info("[✓] Master ledger rewritten and synchronized.")
             return 0
 
         if getattr(args, "delete", False):
@@ -2763,12 +2763,12 @@ def _dispatch(args: argparse.Namespace) -> int:
                 hard_delete=args.hard,
             )
             mode_str = "hard purged" if args.hard else "soft deleted"
-            print(f"[✓] Successfully {mode_str} {count} record(s).")
+            logger.info(f"[✓] Successfully {mode_str} {count} record(s).")
             return 0
 
         if getattr(args, "add", False):
             if not args.module:
-                print("[-] --module is required when using --add.")
+                logger.info("[-] --module is required when using --add.")
                 return 1
             metrics = json.loads(args.metrics) if args.metrics else {}
             setup = json.loads(args.setup) if args.setup else {}
@@ -2789,7 +2789,7 @@ def _dispatch(args: argparse.Namespace) -> int:
                 ),
                 mode=args.mode,
             )
-            print(f"[✓] Record stored: {rec.record_id} (Rev {rec.revision}, Status: {rec.status})")
+            logger.info(f"[✓] Record stored: {rec.record_id} (Rev {rec.revision}, Status: {rec.status})")
             return 0
 
         records = ledger.query(
@@ -2813,9 +2813,9 @@ def _dispatch(args: argparse.Namespace) -> int:
                 y_metric=args.y_metric,
                 output_path=args.out,
             )
-            print(plot_res["ascii"])
+            logger.info(plot_res["ascii"])
             if plot_res.get("svg_path"):
-                print(f"[✓] Vector chart saved to '{plot_res['svg_path']}'.")
+                logger.info(f"[✓] Vector chart saved to '{plot_res['svg_path']}'.")
             return 0
 
         fmt = "markdown" if args.format == "table" else args.format
@@ -2823,9 +2823,9 @@ def _dispatch(args: argparse.Namespace) -> int:
         if args.out:
             with open(args.out, "w", encoding="utf-8") as f:
                 f.write(output_str)
-            print(f"[✓] Table exported to '{args.out}'.")
+            logger.info(f"[✓] Table exported to '{args.out}'.")
         else:
-            print(output_str)
+            logger.info(output_str)
         return 0
     elif args.subcommand in ("distill",):
         return handle_distill(args)

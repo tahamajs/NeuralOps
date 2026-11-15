@@ -16,6 +16,10 @@ as an artificial speedup.
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 import argparse
 import json
 import math
@@ -159,7 +163,7 @@ def main() -> None:
             row = run_module(name, sequence, args.device)
             row["wall_time_s"] = round(time.time() - started, 3)
             rows.append(row)
-            print(json.dumps(row, sort_keys=True), flush=True)
+            logger.info(json.dumps(row, sort_keys=True), flush=True)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps({"targets": targets, "rows": rows}, indent=2) + "\n")
 

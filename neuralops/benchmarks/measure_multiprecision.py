@@ -1,3 +1,6 @@
+
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
@@ -64,8 +67,8 @@ def measure_benchmark(
     from neuralops.core.triton_kernels.gla_scan import gla_scan
 
     gpu_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "CPU"
-    print(f"Executing Multi-Precision Cross-Validation Benchmark on {device} ({gpu_name})")
-    print(f"Precisions: {[p[0] for p in precisions_list]} | Warmup: {warmup} | Repeat: {repeat}")
+    logger.info(f"Executing Multi-Precision Cross-Validation Benchmark on {device} ({gpu_name})")
+    logger.info(f"Precisions: {[p[0] for p in precisions_list]} | Warmup: {warmup} | Repeat: {repeat}")
 
     torch.manual_seed(42)
     if device.type == "cuda":
@@ -134,7 +137,7 @@ def measure_benchmark(
             continue
 
         norm_ref = torch.linalg.norm(y_ref.float()).item()
-        print(f"\nBenchmarking Kernel: {k_name}")
+        logger.info(f"\nBenchmarking Kernel: {k_name}")
 
         for prec_name, dtype, is_fp8 in precisions_list:
             try:
@@ -242,12 +245,12 @@ def measure_benchmark(
                     "zero_nan": zero_nan,
                 }
                 results_table.append(row)
-                print(
+                logger.info(
                     f"  {prec_name:<10} | Latency: {latency_ms:6.3f} ms | Throughput: {tflops:6.2f} TFLOPS | Rel Error: {rel_error:10.4e} | Zero-NaN: {zero_nan}"
                 )
 
             except Exception as exc:
-                print(f"  {prec_name:<10} | EXCEPTION: {exc}")
+                logger.info(f"  {prec_name:<10} | EXCEPTION: {exc}")
                 results_table.append(
                     {
                         "kernel": k_name,
@@ -269,14 +272,14 @@ def measure_benchmark(
             writer.writeheader()
             for r in results_table:
                 writer.writerow(r)
-        print(f"\nSaved CSV to: {csv_path}")
+        logger.info(f"\nSaved CSV to: {csv_path}")
 
     if output_json:
         json_path = Path(output_json)
         json_path.parent.mkdir(parents=True, exist_ok=True)
         with open(json_path, mode="w", encoding="utf-8") as f:
             json.dump(results_table, f, indent=2)
-        print(f"Saved JSON to: {json_path}")
+        logger.info(f"Saved JSON to: {json_path}")
 
     if output_tex:
         tex_path = Path(output_tex)
@@ -325,7 +328,7 @@ def measure_benchmark(
         )
         with open(tex_path, mode="w", encoding="utf-8") as f:
             f.write("\n".join(tex_content) + "\n")
-        print(f"Saved LaTeX Table to: {tex_path}")
+        logger.info(f"Saved LaTeX Table to: {tex_path}")
 
     return results_table
 

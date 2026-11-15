@@ -9,6 +9,10 @@
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 import argparse
 import json
 from pathlib import Path
@@ -67,7 +71,7 @@ def main() -> int:
     parser.add_argument("--max-regression", type=float, required=True)
     args = parser.parse_args()
     result = compare_results(args.baseline, args.candidate, args.metric, args.max_regression)
-    print(json.dumps(result, indent=2))
+    logger.info(json.dumps(result, indent=2))
     if result["status"] != "PASS":
         raise SystemExit(1)
     return 0

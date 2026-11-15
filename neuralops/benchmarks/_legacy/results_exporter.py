@@ -18,6 +18,10 @@ Persists empirical benchmark metrics to:
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 import warnings
 
 warnings.warn(
@@ -304,9 +308,9 @@ def main() -> int:
     parser.add_argument("--from-jsonl", type=Path, default=None, help="Import records from JSONL file")
     args = parser.parse_args()
 
-    print("=" * 70)
-    print("  NeuralOps Phase 7: Structured Results Persistence Engine")
-    print("=" * 70)
+    logger.info("=" * 70)
+    logger.info("  NeuralOps Phase 7: Structured Results Persistence Engine")
+    logger.info("=" * 70)
 
     if args.from_jsonl and args.from_jsonl.exists():
         records = []
@@ -358,11 +362,11 @@ def main() -> int:
         paths = export_benchmark_results(sample_records, device="mps")
 
     for k, p in paths.items():
-        print(f"  [OK] {k:<10}: {p}")
+        logger.info(f"  [OK] {k:<10}: {p}")
 
-    print("=" * 70)
-    print("[OK] Phase 7 Results Exporter verified: All formats atomically written.")
-    print("=" * 70)
+    logger.info("=" * 70)
+    logger.info("[OK] Phase 7 Results Exporter verified: All formats atomically written.")
+    logger.info("=" * 70)
     return 0
 
 

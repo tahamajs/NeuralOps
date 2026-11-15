@@ -11,6 +11,10 @@ End-to-End Surgical Attention Transplant and Micro-Healing on Qwen2.5-7B-Instruc
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 import warnings
 
 warnings.warn(
@@ -41,7 +45,7 @@ def print_gpu_memory(label: str = "") -> None:
         allocated = torch.cuda.memory_allocated() / (1024**3)
         reserved = torch.cuda.memory_reserved() / (1024**3)
         max_allocated = torch.cuda.max_memory_allocated() / (1024**3)
-        print(
+        logger.info(
             f"[{label}] VRAM Allocated: {allocated:.2f} GB | Reserved: {reserved:.2f} GB | Peak: {max_allocated:.2f} GB"
         )
         try:
@@ -51,7 +55,7 @@ def print_gpu_memory(label: str = "") -> None:
                 text=True,
                 check=False,
             )
-            print(f"[{label}] nvidia-smi: {res.stdout.strip()}")
+            logger.info(f"[{label}] nvidia-smi: {res.stdout.strip()}")
         except Exception:  # allowed-swallow: nvidia-smi inspection fallback
             pass
 
@@ -84,10 +88,10 @@ def main() -> None:
     if args.device.startswith("cuda") and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested, but torch.cuda.is_available() is False.")
     device = torch.device(args.device)
-    print("=== NeuralOps Surgery: Qwen2.5-7B-Instruct Transplant & Heal ===")
-    print(f"Model Path: {model_path}")
-    print(f"Device: {device}")
-    print(f"Target Layer: {args.target_layer} | Attention: {args.target_attention}")
+    logger.info("=== NeuralOps Surgery: Qwen2.5-7B-Instruct Transplant & Heal ===")
+    logger.info(f"Model Path: {model_path}")
+    logger.info(f"Device: {device}")
+    logger.info(f"Target Layer: {args.target_layer} | Attention: {args.target_attention}")
     print_gpu_memory("Initial")
 
     # 0. PyTorch < 2.0 Compatibility Shim for Transformers / Accelerate / BFloat16 CUDA ops
@@ -146,7 +150,7 @@ def main() -> None:
     torch.log_sigmoid = _compat_logsigmoid
 
     # 1. Load Tokenizer & Model
-    print("\n[1/6] Loading model and tokenizer in bfloat16...")
+    logger.info("\n[1/6] Loading model and tokenizer in bfloat16...")
     t0 = time.time()
     tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
     if tokenizer.pad_token is None:
@@ -161,7 +165,7 @@ def main() -> None:
             low_cpu_mem_usage=True,
         )
     except Exception as e:
-        print(f"device_map={{'': 0}} failed ({e}), loading with direct CUDA default tensor allocation...")
+        logger.info(f"device_map={{'': 0}} failed ({e}), loading with direct CUDA default tensor allocation...")
         if torch.cuda.is_available():
             torch.set_default_tensor_type(torch.cuda.BFloat16Tensor)
         try:
@@ -176,12 +180,12 @@ def main() -> None:
                 torch.set_default_tensor_type(torch.FloatTensor)
 
     model.eval()
-    print(f"Model loaded successfully in {time.time() - t0:.2f}s.")
+    logger.info(f"Model loaded successfully in {time.time() - t0:.2f}s.")
     print_gpu_memory("After Model Load")
 
     # 2. Baseline Qualitative Generation
     prompt = "What is the capital of France?"
-    print(f"\n[2/6] Baseline generation before surgery (Prompt: '{prompt}')...")
+    logger.info(f"\n[2/6] Baseline generation before surgery (Prompt: '{prompt}')...")
     inputs = tokenizer(prompt, return_tensors="pt").to(device)
     with torch.no_grad():
         out_tokens = model.generate(
@@ -191,10 +195,10 @@ def main() -> None:
             pad_token_id=tokenizer.pad_token_id,
         )
     pred_text_before = tokenizer.decode(out_tokens[0][inputs.input_ids.shape[1] :], skip_special_tokens=True).strip()
-    print(f"Generated text (Before): '{pred_text_before}'")
+    logger.info(f"Generated text (Before): '{pred_text_before}'")
 
     # 3. Cache layer 14 attention activations using calibration tokens
-    print("\n[3/6] Generating synthetic calibration batch (16 sequences, length 128)...")
+    logger.info("\n[3/6] Generating synthetic calibration batch (16 sequences, length 128)...")
     calib_input_ids = torch.randint(100, 2000, (16, 128), device=device)
     target_layer_idx = args.target_layer
 
@@ -226,21 +230,21 @@ def main() -> None:
     attn_target = cached_attn_out[0]
     with torch.no_grad():
         attn_in = model.model.layers[target_layer_idx].input_layernorm(H_in)
-    print(f"Captured teacher attention input shape: {tuple(attn_in.shape)}, output shape: {tuple(attn_target.shape)}")
+    logger.info(f"Captured teacher attention input shape: {tuple(attn_in.shape)}, output shape: {tuple(attn_target.shape)}")
 
     # 4. In-Place Transplant Surgery
-    print(f"\n[4/6] Surgically transplanting layer {target_layer_idx} to '{args.target_attention}'...")
+    logger.info(f"\n[4/6] Surgically transplanting layer {target_layer_idx} to '{args.target_attention}'...")
     model = replace_attention(
         model,
         attention=args.target_attention,
         layers=[target_layer_idx],
         copy_weights=True,
     )
-    print("Transplant completed successfully!")
+    logger.info("Transplant completed successfully!")
     print_gpu_memory("After Transplant")
 
     # 5. Micro-Healing
-    print(f"\n[5/6] Running layerwise micro-healing for {args.heal_steps} steps...")
+    logger.info(f"\n[5/6] Running layerwise micro-healing for {args.heal_steps} steps...")
     student_attn = model.model.layers[target_layer_idx].self_attn
 
     trainable_params = [p for p in student_attn.parameters() if p.numel() > 0]
@@ -266,7 +270,7 @@ def main() -> None:
             .item()
         )
 
-    print(f"Initial Alignment -> MSE: {init_mse:.6f} | Cosine Similarity: {init_cos:.4f}")
+    logger.info(f"Initial Alignment -> MSE: {init_mse:.6f} | Cosine Similarity: {init_cos:.4f}")
 
     optimizer = torch.optim.AdamW(trainable_params, lr=1e-4, weight_decay=1e-5)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max(1, args.heal_steps))
@@ -302,7 +306,7 @@ def main() -> None:
             best_loss = cur_loss_val
             best_state = {k: v.clone() for k, v in student_attn.state_dict().items()}
 
-        print(
+        logger.info(
             f"Step {step+1:02d}/{args.heal_steps:02d} | "
             f"Total Loss: {loss.item():.6f} | "
             f"MSE: {loss_fro.item():.6f} | "
@@ -336,11 +340,11 @@ def main() -> None:
         "initial_cosine_sim": init_cos,
         "final_cosine_sim": final_cos,
     }
-    print(f"Healing complete! Initial MSE: {init_mse:.6f} -> Final MSE: {final_mse:.6f}")
-    print(f"Initial Cosine: {init_cos:.4f} -> Final Cosine: {final_cos:.4f}")
+    logger.info(f"Healing complete! Initial MSE: {init_mse:.6f} -> Final MSE: {final_mse:.6f}")
+    logger.info(f"Initial Cosine: {init_cos:.4f} -> Final Cosine: {final_cos:.4f}")
 
     # 6. Post-Surgery Generation
-    print(f"\n[6/6] Qualitative generation after surgery (Prompt: '{prompt}')...")
+    logger.info(f"\n[6/6] Qualitative generation after surgery (Prompt: '{prompt}')...")
     model = wrap_model_for_generation(model)
     with torch.no_grad():
         out_tokens_after = model.generate(
@@ -352,16 +356,16 @@ def main() -> None:
     pred_text_after = tokenizer.decode(
         out_tokens_after[0][inputs.input_ids.shape[1] :], skip_special_tokens=True
     ).strip()
-    print(f"Generated text (After Surgery & Healing): '{pred_text_after}'")
+    logger.info(f"Generated text (After Surgery & Healing): '{pred_text_after}'")
     print_gpu_memory("Final")
 
-    print("\n=== TRANSPLANT & HEALING VALIDATION SUMMARY ===")
-    print("Model: Qwen2.5-7B-Instruct")
-    print(f"Transplanted Layer: {target_layer_idx} ({args.target_attention})")
-    print(f"Before Text: {pred_text_before}")
-    print(f"After Text:  {pred_text_after}")
-    print(f"Initial MSE: {heal_stats.get('initial_mse'):.6f} | Final MSE: {heal_stats.get('final_mse'):.6f}")
-    print("ALL CHECKS PASSED: Surgery + Healing successfully validated on 7B model!")
+    logger.info("\n=== TRANSPLANT & HEALING VALIDATION SUMMARY ===")
+    logger.info("Model: Qwen2.5-7B-Instruct")
+    logger.info(f"Transplanted Layer: {target_layer_idx} ({args.target_attention})")
+    logger.info(f"Before Text: {pred_text_before}")
+    logger.info(f"After Text:  {pred_text_after}")
+    logger.info(f"Initial MSE: {heal_stats.get('initial_mse'):.6f} | Final MSE: {heal_stats.get('final_mse'):.6f}")
+    logger.info("ALL CHECKS PASSED: Surgery + Healing successfully validated on 7B model!")
 
 
 if __name__ == "__main__":

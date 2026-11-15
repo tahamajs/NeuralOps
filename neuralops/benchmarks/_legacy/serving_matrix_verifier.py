@@ -22,6 +22,10 @@ Audits and stress-tests all 9 serving frameworks:
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 import warnings
 
 warnings.warn(
@@ -280,20 +284,20 @@ def main() -> int:
 
     if args.ci:
         for r in results:
-            print(
+            logger.info(
                 f"[{r['status']}] {r['backend']:<26} | mean={r['latency_ms']}ms p95={r['p95_ms']}ms mem={r['mem_delta_mb']}MB"
             )
     else:
-        print("=" * 85)
-        print("  NeuralOps Phase 8: Serving Frameworks & Serialization Verification Engine")
-        print("=" * 85)
-        print(f"{'Backend':<30} | {'Category':<22} | {'Status':<18} | {'p50 (ms)':<10} | {'p95 (ms)'}")
-        print("-" * 85)
+        logger.info("=" * 85)
+        logger.info("  NeuralOps Phase 8: Serving Frameworks & Serialization Verification Engine")
+        logger.info("=" * 85)
+        logger.info(f"{'Backend':<30} | {'Category':<22} | {'Status':<18} | {'p50 (ms)':<10} | {'p95 (ms)'}")
+        logger.info("-" * 85)
         for r in results:
-            print(f"{r['backend']:<30} | {r['category']:<22} | {r['status']:<18} | {r['p50_ms']:<10} | {r['p95_ms']}")
-        print("=" * 85)
-        print(f"✓ All {len(results)}/{len(results)} Serving & Export Backends Fully Verified.")
-        print("=" * 85)
+            logger.info(f"{r['backend']:<30} | {r['category']:<22} | {r['status']:<18} | {r['p50_ms']:<10} | {r['p95_ms']}")
+        logger.info("=" * 85)
+        logger.info(f"✓ All {len(results)}/{len(results)} Serving & Export Backends Fully Verified.")
+        logger.info("=" * 85)
     return 0
 
 

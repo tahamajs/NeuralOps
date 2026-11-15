@@ -379,7 +379,7 @@ def main() -> None:
                     "peak_vram_mb": 0.0,
                     "param_count": 0,
                 }
-        print(f"__RESULT_JSON__:{json.dumps(rec)}")
+        logger.info(f"__RESULT_JSON__:{json.dumps(rec)}")
         return
 
     def execute_module(mod_name: str, mod_type: str) -> dict[str, Any]:

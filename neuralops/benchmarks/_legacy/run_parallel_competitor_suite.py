@@ -1,3 +1,6 @@
+
+import logging
+logger = logging.getLogger(__name__)
 #!/usr/bin/env python3
 import warnings
 
@@ -60,7 +63,7 @@ def persist_competitor_record(rec: dict, sqlite_path: Path, csv_path: Path):
         conn.commit()
         conn.close()
     except Exception as e:
-        print(f"Warning persisting competitor to SQLite: {e}", flush=True)
+        logger.info(f"Warning persisting competitor to SQLite: {e}", flush=True)
 
     try:
         csv_path.parent.mkdir(parents=True, exist_ok=True)
@@ -80,7 +83,7 @@ def persist_competitor_record(rec: dict, sqlite_path: Path, csv_path: Path):
                 }
             )
     except Exception as e:
-        print(f"Warning persisting competitor to CSV: {e}", flush=True)
+        logger.info(f"Warning persisting competitor to CSV: {e}", flush=True)
 
 
 def main():
@@ -88,7 +91,7 @@ def main():
     sqlite_path = (repo_root / "results" / "master_ledger.sqlite").resolve()
     csv_path = (repo_root / "results" / "csv" / "competitor_benchmarks.csv").resolve()
 
-    print(f"=== Starting Competitor Benchmark Suite on {device} ===", flush=True)
+    logger.info(f"=== Starting Competitor Benchmark Suite on {device} ===", flush=True)
 
     modules_to_test = [
         ("deepspeed_zero3", "neuralops.benchmarks.competitors.bench_deepspeed_zero3_overhead"),
@@ -104,7 +107,7 @@ def main():
     ]
 
     for name, mod_path in modules_to_test:
-        print(f"Running competitor benchmark: {name}...", flush=True)
+        logger.info(f"Running competitor benchmark: {name}...", flush=True)
         try:
             mod = __import__(mod_path, fromlist=["run_benchmark"])
             if hasattr(mod, "run_benchmark"):
@@ -153,7 +156,7 @@ def main():
             persist_competitor_record(rec, sqlite_path, csv_path)
             tp = rec.get("throughput", 0.0)
             lat = rec.get("latency_ms", 0.0)
-            print(f"  -> [{name}] PASS: Throughput={tp:.2f}, Latency={lat:.3f}ms", flush=True)
+            logger.info(f"  -> [{name}] PASS: Throughput={tp:.2f}, Latency={lat:.3f}ms", flush=True)
         except Exception as e:
             rec = {
                 "benchmark_name": name,
@@ -164,9 +167,9 @@ def main():
                 "status": f"ERROR: {e}",
             }
             persist_competitor_record(rec, sqlite_path, csv_path)
-            print(f"  -> [{name}] ERROR: {e}", flush=True)
+            logger.info(f"  -> [{name}] ERROR: {e}", flush=True)
 
-    print("=== Competitor Benchmark Suite Completed Successfully! ===", flush=True)
+    logger.info("=== Competitor Benchmark Suite Completed Successfully! ===", flush=True)
 
 
 if __name__ == "__main__":

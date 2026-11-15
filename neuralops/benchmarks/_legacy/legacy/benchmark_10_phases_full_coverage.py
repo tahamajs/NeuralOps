@@ -12,6 +12,10 @@ Tests forward passes and numerical integrity across representative kernels in ea
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 import warnings
 
 warnings.warn(
@@ -153,4 +157,4 @@ if __name__ == "__main__":
         w = csv.writer(f)
         w.writerow(["phase", "kernel", "latency_ms", "status"])
         w.writerows(res)
-    print("Done. Results saved to:", args.output)
+    logger.info("Done. Results saved to:", args.output)

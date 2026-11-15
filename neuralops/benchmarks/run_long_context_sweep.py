@@ -13,6 +13,10 @@ Evaluation harness benchmarking compression and attention modules on long-sequen
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 import argparse
 import csv
 import json
@@ -324,21 +328,21 @@ def main():
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    print("=" * 80)
-    print("LONG-CONTEXT SWEEP: BYTE-LEVEL IMDB (4096 TOKENS)")
-    print(f"Model Path:      {args.model_path}")
-    print(f"Dataset Dir:     {args.dataset_dir}")
-    print(f"Sequence Length: {args.seq_len}")
-    print(f"Batch Size:      {args.batch_size}")
-    print(f"Modules:         {len(args.modules)} modules")
-    print(f"Max Samples:     {args.max_eval_samples}")
-    print("=" * 80)
+    logger.info("=" * 80)
+    logger.info("LONG-CONTEXT SWEEP: BYTE-LEVEL IMDB (4096 TOKENS)")
+    logger.info(f"Model Path:      {args.model_path}")
+    logger.info(f"Dataset Dir:     {args.dataset_dir}")
+    logger.info(f"Sequence Length: {args.seq_len}")
+    logger.info(f"Batch Size:      {args.batch_size}")
+    logger.info(f"Modules:         {len(args.modules)} modules")
+    logger.info(f"Max Samples:     {args.max_eval_samples}")
+    logger.info("=" * 80)
 
     if args.dry_run:
-        print("\n[DRY RUN] Planned evaluation sequence:")
+        logger.info("\n[DRY RUN] Planned evaluation sequence:")
         for idx, mod in enumerate(args.modules, 1):
-            print(f"  {idx:2d}. Module: {mod:<25} | Rank: {args.rank} | Output: {args.output_dir}/{mod}/result.json")
-        print("\n[DRY RUN COMPLETE] No hardware sweeps executed.")
+            logger.info(f"  {idx:2d}. Module: {mod:<25} | Rank: {args.rank} | Output: {args.output_dir}/{mod}/result.json")
+        logger.info("\n[DRY RUN COMPLETE] No hardware sweeps executed.")
         return
 
     out_dir = Path(args.output_dir)
@@ -473,7 +477,7 @@ def main():
             for r in results:
                 writer.writerow(r)
 
-    print(f"\n[DONE] Long-context sweep finished. Results: {summary_csv}")
+    logger.info(f"\n[DONE] Long-context sweep finished. Results: {summary_csv}")
 
 
 if __name__ == "__main__":

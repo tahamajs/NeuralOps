@@ -16,6 +16,10 @@ Orchestrates, categorizes, and formats all empirical benchmark data:
 
 from __future__ import annotations
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 import warnings
 
 warnings.warn(
@@ -327,9 +331,9 @@ def generate_markdown_dashboard(
 
 
 def main() -> int:
-    print("=" * 70)
-    print("  Organizing & Consolidating NeuralOps Benchmark Suite")
-    print("=" * 70)
+    logger.info("=" * 70)
+    logger.info("  Organizing & Consolidating NeuralOps Benchmark Suite")
+    logger.info("=" * 70)
 
     dirs = ensure_directories()
     raw_csv = RESULTS_DIR / "benchmarks_latest.csv"
@@ -339,23 +343,23 @@ def main() -> int:
     triton_records = load_triton_records(triton_csv)
     serving_records = get_serving_records()
 
-    print(f"Loaded {len(attentions)} attention records.")
-    print(f"Loaded {len(compressors)} compressor records.")
-    print(f"Loaded {len(triton_records)} Triton kernel records.")
-    print(f"Loaded {len(serving_records)} serving framework records.")
+    logger.info(f"Loaded {len(attentions)} attention records.")
+    logger.info(f"Loaded {len(compressors)} compressor records.")
+    logger.info(f"Loaded {len(triton_records)} Triton kernel records.")
+    logger.info(f"Loaded {len(serving_records)} serving framework records.")
 
-    print("\nExporting organized CSV tables...")
+    logger.info("\nExporting organized CSV tables...")
     export_clean_csvs(dirs, attentions, compressors, triton_records, serving_records)
 
-    print("Generating publication-grade LaTeX tables...")
+    logger.info("Generating publication-grade LaTeX tables...")
     generate_latex_tables(dirs, attentions, compressors, triton_records, serving_records)
 
-    print("Generating executive markdown dashboard...")
+    logger.info("Generating executive markdown dashboard...")
     generate_markdown_dashboard(dirs, attentions, compressors, triton_records, serving_records)
 
-    print("\n" + "=" * 70)
-    print("✓ Benchmark consolidation and organization completed successfully!")
-    print("=" * 70)
+    logger.info("\n" + "=" * 70)
+    logger.info("✓ Benchmark consolidation and organization completed successfully!")
+    logger.info("=" * 70)
     return 0
 
 
