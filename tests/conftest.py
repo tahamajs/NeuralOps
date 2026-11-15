@@ -416,6 +416,7 @@ def pytest_collection_modifyitems(config, items):
                 "test_triton_sample",
                 "test_timing_correct",
                 "test_cli_cuda_visible_devices",
+                "test_channel_shuffle",
                 "test_shared_fixtures",
             )
         ) or ("test_notebook_structure_and_syntax" in item_name or "test_notebook_smoke" in item_name)
