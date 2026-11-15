@@ -410,6 +410,8 @@ def pytest_collection_modifyitems(config, items):
                 "test_flush_l2_dynamic",
                 "test_memory_fragmentation",
                 "test_cuda_ops_no_fake",
+                "test_block_diag_gemm",
+                "test_admm",
                 "test_v2_migration",
                 "test_triton_ops_all_kernels",
                 "test_triton_sample",
