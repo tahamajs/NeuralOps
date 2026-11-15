@@ -1,27 +1,14 @@
-#!/usr/bin/env python3
-# Copyright (c) 2024-2026, Taha Majlesi
-#
-# This source code is licensed under the MIT license found in the
-# LICENSE file in the root directory of this source tree.
-# For a list of all contributors, visit:
-#   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""
-Forwarder delegating to canonical neuralops.benchmarks.benchmark_all_26_comprehensive.
+"""Deprecation forwarding shim for benchmark_all_triton_comprehensive."""
 
-CLI Equivalent:
-    neuralops benchmark --all-triton
-    neuralops run --all-triton
-"""
+from __future__ import annotations
 
-import sys
-from pathlib import Path
+import warnings
 
-# Ensure repository root is on sys.path when executed directly
-_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+warnings.warn(
+    "neuralops.benchmarks.legacy_scripts.benchmark_all_triton_comprehensive is deprecated and has been moved to "
+    "neuralops.benchmarks._legacy.benchmark_all_triton_comprehensive. Please update your imports.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
-from neuralops.benchmarks.benchmark_all_26_comprehensive import main
-
-if __name__ == "__main__":
-    sys.exit(main())
+from neuralops.benchmarks._legacy.benchmark_all_triton_comprehensive import *  # noqa: F403, F401

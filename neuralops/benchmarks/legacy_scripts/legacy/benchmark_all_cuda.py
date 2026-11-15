@@ -1,19 +1,14 @@
-#!/usr/bin/env python3
-# Copyright (c) 2024-2026, Taha Majlesi
-#
-# This source code is licensed under the MIT license found in the
-# LICENSE file in the root directory of this source tree.
-# For a list of all contributors, visit:
-#   https://github.com/tahamajs/NeuralOps/graphs/contributors
-"""Deprecated entry point. Use `python3 -m neuralops.benchmarks.cli run --category cuda` instead."""
+"""Deprecation forwarding shim for legacy/benchmark_all_cuda."""
 
 from __future__ import annotations
 
-import sys
+import warnings
 
-print(
-    "[NOTICE] This script was removed in October 2026. "
-    "The unified benchmark runner is: python3 -m neuralops.benchmarks.cli run --category cuda",
-    file=sys.stderr,
+warnings.warn(
+    "neuralops.benchmarks.legacy_scripts.legacy.benchmark_all_cuda is deprecated and has been moved to "
+    "neuralops.benchmarks._legacy.legacy.benchmark_all_cuda. Please update your imports.",
+    DeprecationWarning,
+    stacklevel=2,
 )
-sys.exit(0)
+
+from neuralops.benchmarks._legacy.legacy.benchmark_all_cuda import *  # noqa: F403, F401

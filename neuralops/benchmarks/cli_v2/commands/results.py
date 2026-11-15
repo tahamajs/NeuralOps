@@ -1,8 +1,11 @@
 """Results subcommand for CLI v2."""
 
+from __future__ import annotations
+
 import argparse
+import json
 import os
-import sys
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 
@@ -30,4 +33,25 @@ def handle_results(args: argparse.Namespace) -> int:
 
     out_dir = getattr(args, "output_dir", "results")
     print(f"Results output directory: {out_dir}")
+
+    fmt = getattr(args, "format", "table")
+    dir_path = Path(out_dir)
+
+    records: List[Dict[str, Any]] = []
+    if dir_path.is_dir():
+        for file in sorted(dir_path.glob("*.json")):
+            try:
+                content = json.loads(file.read_text(encoding="utf-8"))
+                if isinstance(content, dict):
+                    records.append(content)
+            except Exception:  # allowed-swallow: corrupted or non-json files ignored during scanning
+                pass
+
+    if fmt == "json":
+        print(json.dumps({"results_dir": str(out_dir), "record_count": len(records), "records": records}, indent=2))
+    elif getattr(args, "list", False):
+        print(f"Found {len(records)} benchmark records in {out_dir}")
+        for r in records[:10]:
+            print(f"  - {r.get('name', 'unnamed')}: status={r.get('status', 'unknown')}")
+
     return 0

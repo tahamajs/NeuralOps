@@ -7,11 +7,11 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Root entry point for the serving-engine comparison benchmark."""
 
+from __future__ import annotations
+
 import warnings
 
 warnings.warn("Deprecated. Use neuralops benchmark instead.", DeprecationWarning, stacklevel=2)
-
-from __future__ import annotations
 
 import sys
 from pathlib import Path
