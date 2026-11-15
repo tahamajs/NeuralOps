@@ -34,7 +34,10 @@ class QwenConfigProxy:
         return getattr(self.source, name)
 
 
-class QwenIncompatibleError(RuntimeError):
+from neuralops.core.exceptions import NeuralOpsError
+
+
+class QwenIncompatibleError(NeuralOpsError, RuntimeError):
     """Raised when a module has no truthful Qwen execution path."""
 
     reason = "qwen_incompatible"
