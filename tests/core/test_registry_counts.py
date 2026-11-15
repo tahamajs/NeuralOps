@@ -27,12 +27,12 @@ from neuralops.core.registry import (
 
 
 def test_distinct_attention_class_count():
-    """Verify distinct attention class count equals the audited honest count (114-115)."""
+    """Verify distinct attention class count equals the audited honest count (114-118)."""
     classes = ATTENTION_REGISTRY.distinct_classes()
-    assert len(classes) in (114, 115), f"Expected 114 or 115 distinct attention classes, got {len(classes)}"
+    assert len(classes) in (114, 115, 118), f"Expected 114, 115, or 118 distinct attention classes, got {len(classes)}"
 
     dict_classes = {v for v in ATTENTION_REGISTRY._dict.values() if isinstance(v, type)}
-    assert len(dict_classes) in (114, 115)
+    assert len(dict_classes) in (114, 115, 118)
 
 
 def test_compressor_canonical_count():

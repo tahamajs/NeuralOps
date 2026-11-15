@@ -31,9 +31,7 @@ def test_position_embeddings_are_applied_by_replacement_attention(monkeypatch) -
         return q + 1, k + 2
 
     monkeypatch.setattr(_attention_wrapper, "apply_rotary_pos_emb", rotary)
-    layer = _attention_wrapper.ReplaceAttention(
-        hidden_size=8, num_heads=2, dropout=0.0, is_decoder=False
-    ).eval()
+    layer = _attention_wrapper.ReplaceAttention(hidden_size=8, num_heads=2, dropout=0.0, is_decoder=False).eval()
     hidden = torch.randn(1, 3, 8)
     cos = torch.ones(1, 3, 4)
     sin = torch.zeros_like(cos)
@@ -53,9 +51,7 @@ def test_callable_kernel_map_is_accepted_and_used() -> None:
         calls.append(tuple(value.shape))
         return torch.relu(value)
 
-    layer = ComposableAttention(
-        embed_dim=8, num_heads=2, kernel_map=feature_map, mask="none", dropout=0.0
-    )
+    layer = ComposableAttention(embed_dim=8, num_heads=2, kernel_map=feature_map, mask="none", dropout=0.0)
     result = layer(torch.randn(1, 4, 8))
 
     assert result.shape == (1, 4, 8)
@@ -66,12 +62,8 @@ def test_callable_kernel_map_is_accepted_and_used() -> None:
 @pytest.mark.parametrize("mask", ["none", "sliding_window(2)"])
 def test_registered_string_feature_map_affects_dense_and_sliding_paths(mask: str) -> None:
     torch.manual_seed(7)
-    identity = ComposableAttention(
-        embed_dim=8, num_heads=2, kernel_map="softmax", mask=mask, dropout=0.0
-    ).eval()
-    relu = ComposableAttention(
-        embed_dim=8, num_heads=2, kernel_map="relu", mask=mask, dropout=0.0
-    ).eval()
+    identity = ComposableAttention(embed_dim=8, num_heads=2, kernel_map="softmax", mask=mask, dropout=0.0).eval()
+    relu = ComposableAttention(embed_dim=8, num_heads=2, kernel_map="relu", mask=mask, dropout=0.0).eval()
     relu.load_state_dict(identity.state_dict())
     hidden = torch.randn(2, 5, 8) - 0.8
 
@@ -163,11 +155,6 @@ def test_decode_benchmark_refuses_to_fabricate_cpu_latency() -> None:
 
 
 def test_core_package_does_not_eagerly_import_triton_kernels() -> None:
-    code = (
-        "import sys, neuralops.core; "
-        "assert 'neuralops.core.triton_kernels' not in sys.modules"
-    )
-    completed = subprocess.run(
-        [sys.executable, "-c", code], capture_output=True, text=True, check=False
-    )
+    code = "import sys, neuralops.core; assert 'neuralops.core.triton_kernels' not in sys.modules"
+    completed = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=False)
     assert completed.returncode == 0, completed.stderr
