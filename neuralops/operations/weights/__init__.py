@@ -9,11 +9,11 @@
 Weight Compression, Quantization, and Pruning Operations.
 """
 
-from neuralops.operations.weights.compress import WeightsCompressOperation
 from neuralops.operations.weights.decompose import WeightsDecomposeOperation
 from neuralops.operations.weights.prune import WeightsPruneOperation
 from neuralops.operations.weights.quantize import WeightsQuantizeOperation
 from neuralops.operations.weights.svd_aasvd import WeightsCompressAASVDOperation
+from neuralops.operations.weights.compress import WeightsCompressOperation
 
 __all__ = [
     "WeightsCompressAASVDOperation",
