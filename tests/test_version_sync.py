@@ -18,8 +18,8 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 
 
 def test_all_version_sources_agree() -> None:
-    """Verify that all metadata files agree on the canonical version 2.1.0."""
-    canonical_version = "2.1.0"
+    """Verify that all metadata files agree on the canonical version 2.4.0."""
+    canonical_version = "2.4.0"
 
     # 1. pyproject.toml
     pyproject_text = (ROOT_DIR / "pyproject.toml").read_text(encoding="utf-8")
@@ -55,8 +55,8 @@ def test_all_version_sources_agree() -> None:
     # 5. SECURITY.md
     security_text = (ROOT_DIR / "SECURITY.md").read_text(encoding="utf-8")
     assert (
-        re.search(r"\|\s*\*\*2\.1\.x\*\*\s*\|\s*:white_check_mark:\s*Active\s*\|", security_text) is not None
-    ), "SECURITY.md does not mark 2.1.x as Active"
+        re.search(r"\|\s*\*\*2\.4\.x\*\*\s*\|\s*:white_check_mark:\s*Active\s*\|", security_text) is not None
+    ), "SECURITY.md does not mark 2.4.x as Active"
 
     # 6. README.md
     readme_text = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
@@ -82,9 +82,9 @@ def test_sync_version_check_passes() -> None:
 
 
 def test_security_md_supports_current_major() -> None:
-    """Verify SECURITY.md support table has 2.1.x active and links to NeuralOps repo."""
+    """Verify SECURITY.md support table has 2.4.x active and links to NeuralOps repo."""
     security_text = (ROOT_DIR / "SECURITY.md").read_text(encoding="utf-8")
-    assert "| **2.1.x** | :white_check_mark: Active |" in security_text, "2.1.x not marked as active in SECURITY.md"
+    assert "| **2.4.x** | :white_check_mark: Active |" in security_text, "2.4.x not marked as active in SECURITY.md"
     assert "SVD_linear_Attention" not in security_text, "Stale SVD_linear_Attention link remains in SECURITY.md"
     assert (
         "github.com/tahamajs/NeuralOps/security/advisories/new" in security_text

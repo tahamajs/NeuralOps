@@ -4,7 +4,7 @@ NeuralOps registers **exactly 82 canonical model compression engines** unified u
 
 All compression engines implement calibrated low-rank matrix decomposition, structured pruning, integer/floating-point quantization, tensor networks, rotational transforms, or dynamic KV-cache compression to drastically reduce VRAM footprints and accelerate inference while preserving model accuracy.
 
-[![Release](https://img.shields.io/badge/release-v2.1.0-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v2.1.0)
+[![Release](https://img.shields.io/badge/release-v2.4.0-blue.svg)](https://github.com/tahamajs/NeuralOps/releases/tag/v2.4.0)
 [![Hugging Face](https://img.shields.io/badge/%F0%9F%A4%97%20Benchmark%20Ledger-Hooshaai%2Fneuralops--results-ffcc00)](https://huggingface.co/datasets/Hooshaai/neuralops-results)
 [![Hardware Verified](https://img.shields.io/badge/Hardware%20Verified-RTX%203090%20(SM%208.6)-76B900?logo=nvidia&logoColor=white)](https://huggingface.co/datasets/Hooshaai/neuralops-results)
 

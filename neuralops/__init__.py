@@ -19,7 +19,10 @@ _logger = _logging.getLogger(__name__)
 
 if "pkg_resources" not in _sys.modules:
     try:
-        import pkg_resources as _pkg_resources  # noqa: F401
+        import warnings as _warnings
+        with _warnings.catch_warnings():
+            _warnings.filterwarnings("ignore", category=UserWarning, message=".*pkg_resources is deprecated.*")
+            import pkg_resources as _pkg_resources  # noqa: F401
     except ImportError:
         try:
             from typing import Any as _Any
