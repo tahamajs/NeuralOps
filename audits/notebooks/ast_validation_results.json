@@ -1,0 +1,472 @@
+{
+  "00_master_neuralops_complete_system_walkthrough.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  },
+  "01_attention_surgery_and_lora.ipynb": {
+    "valid_json": true,
+    "cell_count": 37,
+    "syntax_errors": []
+  },
+  "01_quickstart_surgery_and_healing.ipynb": {
+    "valid_json": true,
+    "cell_count": 37,
+    "syntax_errors": []
+  },
+  "02_roofline_and_triton_kernels.ipynb": {
+    "valid_json": true,
+    "cell_count": 37,
+    "syntax_errors": []
+  },
+  "02_unified_training.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  },
+  "03_custom_plugins_and_extensibility.ipynb": {
+    "valid_json": true,
+    "cell_count": 37,
+    "syntax_errors": []
+  },
+  "04_end_to_end_3level_benchmarking.ipynb": {
+    "valid_json": true,
+    "cell_count": 37,
+    "syntax_errors": []
+  },
+  "05_master_108_cuda_and_26_triton_kernels_benchmark.ipynb": {
+    "valid_json": true,
+    "cell_count": 35,
+    "syntax_errors": []
+  },
+  "05_paper_empirical_results_master.ipynb": {
+    "valid_json": true,
+    "cell_count": 42,
+    "syntax_errors": []
+  },
+  "06_master_all_131_attention_mechanisms_interactive.ipynb": {
+    "valid_json": true,
+    "cell_count": 36,
+    "syntax_errors": []
+  },
+  "07_master_all_72_compression_engines_quant_and_svd.ipynb": {
+    "valid_json": true,
+    "cell_count": 37,
+    "syntax_errors": []
+  },
+  "08_six_pillar_distillation_and_surgical_recovery.ipynb": {
+    "valid_json": true,
+    "cell_count": 43,
+    "syntax_errors": []
+  },
+  "09_production_serving_paged_cache_and_speculative_decoding.ipynb": {
+    "valid_json": true,
+    "cell_count": 40,
+    "syntax_errors": []
+  },
+  "10_long_context_extrapolation_32k.ipynb": {
+    "valid_json": true,
+    "cell_count": 36,
+    "syntax_errors": []
+  },
+  "11_cuda_vs_triton_vs_pytorch_matrix.ipynb": {
+    "valid_json": true,
+    "cell_count": 36,
+    "syntax_errors": []
+  },
+  "12_svd_whitening_spectral_allocation.ipynb": {
+    "valid_json": true,
+    "cell_count": 40,
+    "syntax_errors": []
+  },
+  "13_quantization_pareto_fp8_int4_kmeans.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  },
+  "14_structured_pruning_token_shedding.ipynb": {
+    "valid_json": true,
+    "cell_count": 35,
+    "syntax_errors": []
+  },
+  "15_downstream_glue_lra_evaluation.ipynb": {
+    "valid_json": true,
+    "cell_count": 37,
+    "syntax_errors": []
+  },
+  "16_roofline_ada_rtx4070_saturation.ipynb": {
+    "valid_json": true,
+    "cell_count": 36,
+    "syntax_errors": []
+  },
+  "17_speculative_paged_kv_throughput.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  },
+  "18_cross_seed_statistical_variance.ipynb": {
+    "valid_json": true,
+    "cell_count": 37,
+    "syntax_errors": []
+  },
+  "19_publication_figures_latex_generator.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  },
+  "20_production_serving_vllm_sglang_trtllm_integrations.ipynb": {
+    "valid_json": true,
+    "cell_count": 42,
+    "syntax_errors": []
+  },
+  "21_model_export_onnx_safetensors_surgery_manifest.ipynb": {
+    "valid_json": true,
+    "cell_count": 42,
+    "syntax_errors": []
+  },
+  "22_distributed_tensor_and_context_parallelism.ipynb": {
+    "valid_json": true,
+    "cell_count": 40,
+    "syntax_errors": []
+  },
+  "23_spectral_diagnostics_and_hessian_analysis.ipynb": {
+    "valid_json": true,
+    "cell_count": 42,
+    "syntax_errors": []
+  },
+  "24_advanced_optimizers_muon_stiefel_and_ttt_training.ipynb": {
+    "valid_json": true,
+    "cell_count": 42,
+    "syntax_errors": []
+  },
+  "25_long_context_niah_cka_similarity_and_eval_harness.ipynb": {
+    "valid_json": true,
+    "cell_count": 42,
+    "syntax_errors": []
+  },
+  "26_linear_recurrent_associative_scans.ipynb": {
+    "valid_json": true,
+    "cell_count": 40,
+    "syntax_errors": []
+  },
+  "27_kronecker_delta_attention_deep_dive.ipynb": {
+    "valid_json": true,
+    "cell_count": 36,
+    "syntax_errors": []
+  },
+  "28_multi_head_latent_attention_deepseek_mla.ipynb": {
+    "valid_json": true,
+    "cell_count": 35,
+    "syntax_errors": []
+  },
+  "29_state_space_attention_hybrids.ipynb": {
+    "valid_json": true,
+    "cell_count": 35,
+    "syntax_errors": []
+  },
+  "30_differential_attention_noise_cancellation.ipynb": {
+    "valid_json": true,
+    "cell_count": 35,
+    "syntax_errors": []
+  },
+  "31_chunkwise_parallel_attention_kernels.ipynb": {
+    "valid_json": true,
+    "cell_count": 35,
+    "syntax_errors": []
+  },
+  "32_sparse_sinkhorn_and_routing_attentions.ipynb": {
+    "valid_json": true,
+    "cell_count": 35,
+    "syntax_errors": []
+  },
+  "33_outlier_aware_smoothquant_pipeline.ipynb": {
+    "valid_json": true,
+    "cell_count": 40,
+    "syntax_errors": []
+  },
+  "34_microscaling_fp4_and_mx_formats.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  },
+  "35_admm_structured_2_4_sparsity.ipynb": {
+    "valid_json": true,
+    "cell_count": 36,
+    "syntax_errors": []
+  },
+  "36_activation_covariance_and_fisher_pruning.ipynb": {
+    "valid_json": true,
+    "cell_count": 40,
+    "syntax_errors": []
+  },
+  "37_cross_layer_matrix_factorization_svd.ipynb": {
+    "valid_json": true,
+    "cell_count": 36,
+    "syntax_errors": []
+  },
+  "38_weight_ternarization_and_1bit_architectures.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  },
+  "39_dynamic_token_shedding_and_early_exit.ipynb": {
+    "valid_json": true,
+    "cell_count": 36,
+    "syntax_errors": []
+  },
+  "40_cuda_cpp_warp_shuffle_and_shared_memory.ipynb": {
+    "valid_json": true,
+    "cell_count": 35,
+    "syntax_errors": []
+  },
+  "41_triton_2d_tiling_without_block_pointers.ipynb": {
+    "valid_json": true,
+    "cell_count": 35,
+    "syntax_errors": []
+  },
+  "42_huawei_ascend_npu_cann_adaptation.ipynb": {
+    "valid_json": true,
+    "cell_count": 35,
+    "syntax_errors": []
+  },
+  "43_amd_rocm_hip_cross_compilation.ipynb": {
+    "valid_json": true,
+    "cell_count": 35,
+    "syntax_errors": []
+  },
+  "44_tensorrt_engine_building_and_plugins.ipynb": {
+    "valid_json": true,
+    "cell_count": 35,
+    "syntax_errors": []
+  },
+  "45_register_pressure_and_occupancy_tuning.ipynb": {
+    "valid_json": true,
+    "cell_count": 37,
+    "syntax_errors": []
+  },
+  "46_gluon_experimental_dialect_kernels.ipynb": {
+    "valid_json": true,
+    "cell_count": 37,
+    "syntax_errors": []
+  },
+  "47_warmup_stable_decay_wsd_scheduler.ipynb": {
+    "valid_json": true,
+    "cell_count": 36,
+    "syntax_errors": []
+  },
+  "48_multi_dataset_ingestion_and_flame_packing.ipynb": {
+    "valid_json": true,
+    "cell_count": 36,
+    "syntax_errors": []
+  },
+  "49_ring_and_zigzag_context_parallelism.ipynb": {
+    "valid_json": true,
+    "cell_count": 40,
+    "syntax_errors": []
+  },
+  "50_activation_checkpointing_strategies.ipynb": {
+    "valid_json": true,
+    "cell_count": 42,
+    "syntax_errors": []
+  },
+  "51_cross_model_representation_alignment.ipynb": {
+    "valid_json": true,
+    "cell_count": 42,
+    "syntax_errors": []
+  },
+  "52_mixture_of_attentions_routing.ipynb": {
+    "valid_json": true,
+    "cell_count": 40,
+    "syntax_errors": []
+  },
+  "53_knowledge_distillation_ablation_matrix.ipynb": {
+    "valid_json": true,
+    "cell_count": 40,
+    "syntax_errors": []
+  },
+  "54_kv_cache_compression_and_eviction_policies.ipynb": {
+    "valid_json": true,
+    "cell_count": 36,
+    "syntax_errors": []
+  },
+  "55_speculative_decoding_target_draft_synergy.ipynb": {
+    "valid_json": true,
+    "cell_count": 36,
+    "syntax_errors": []
+  },
+  "56_vllm_sglang_custom_op_integration.ipynb": {
+    "valid_json": true,
+    "cell_count": 37,
+    "syntax_errors": []
+  },
+  "57_numerical_precision_and_nan_inf_stress_tests.ipynb": {
+    "valid_json": true,
+    "cell_count": 37,
+    "syntax_errors": []
+  },
+  "58_synthetic_stress_testing_and_chaos_engineering.ipynb": {
+    "valid_json": true,
+    "cell_count": 37,
+    "syntax_errors": []
+  },
+  "59_reproducible_artifact_generation_and_latex_sync.ipynb": {
+    "valid_json": true,
+    "cell_count": 36,
+    "syntax_errors": []
+  },
+  "60_end_to_end_industrial_llm_transformation.ipynb": {
+    "valid_json": true,
+    "cell_count": 36,
+    "syntax_errors": []
+  },
+  "61_universal_surgery_director_and_ten_laws.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  },
+  "62_deepseek_mla_dual_stream_latent_surgery.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  },
+  "63_fx_graph_rewriter_and_inductor_compiler.ipynb": {
+    "valid_json": true,
+    "cell_count": 44,
+    "syntax_errors": []
+  },
+  "64_zero_oom_streaming_distillation_and_shadow_twin.ipynb": {
+    "valid_json": true,
+    "cell_count": 40,
+    "syntax_errors": []
+  },
+  "65_huggingface_polymorphic_generation_cache_bridge.ipynb": {
+    "valid_json": true,
+    "cell_count": 39,
+    "syntax_errors": []
+  },
+  "66_smart_gpu_trainer_and_automax_vram.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  },
+  "67_dora_healing_and_directional_adaptation.ipynb": {
+    "valid_json": true,
+    "cell_count": 43,
+    "syntax_errors": []
+  },
+  "68_ttt_online_test_time_training_adaptation.ipynb": {
+    "valid_json": true,
+    "cell_count": 39,
+    "syntax_errors": []
+  },
+  "69_fisher_micro_steps_and_natural_gradient_damping.ipynb": {
+    "valid_json": true,
+    "cell_count": 41,
+    "syntax_errors": []
+  },
+  "70_preference_alignment_simpo_orpo_and_dynamic_routing_rl.ipynb": {
+    "valid_json": true,
+    "cell_count": 39,
+    "syntax_errors": []
+  },
+  "71_triton_26_hardware_kernels_comprehensive_benchmark.ipynb": {
+    "valid_json": true,
+    "cell_count": 39,
+    "syntax_errors": []
+  },
+  "72_llm_memory_bandwidth_and_l2_cache_saturation.ipynb": {
+    "valid_json": true,
+    "cell_count": 39,
+    "syntax_errors": []
+  },
+  "73_multiprecision_numerical_validation_fp8_bf16_fp32.ipynb": {
+    "valid_json": true,
+    "cell_count": 40,
+    "syntax_errors": []
+  },
+  "74_dynamic_range_stress_testing_and_nan_inf_resilience.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  },
+  "75_long_horizon_extrapolation_32k_and_kv_complexity.ipynb": {
+    "valid_json": true,
+    "cell_count": 39,
+    "syntax_errors": []
+  },
+  "76_pipeline_transform_master_planner_and_transactional_rollback.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  },
+  "77_numerical_guardrails_static_validation_and_safety_gates.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  },
+  "78_experiment_logging_telemetry_tracker_and_results_saver.ipynb": {
+    "valid_json": true,
+    "cell_count": 39,
+    "syntax_errors": []
+  },
+  "79_comprehensive_evaluation_harness_niah_passkey_and_ab_testing.ipynb": {
+    "valid_json": true,
+    "cell_count": 39,
+    "syntax_errors": []
+  },
+  "80_neuralops_cli_ecosystem_and_automated_evidence_reporting.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  },
+  "81_autonomous_circuit_breaker_fsm_and_runtime_resilience.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  },
+  "82_distributed_fsdp2_distillation_and_megatron_hooks.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  },
+  "83_fla_flash_linear_attention_bidirectional_bridge.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  },
+  "84_canonical_recipe_declarative_schema_and_versioning.ipynb": {
+    "valid_json": true,
+    "cell_count": 40,
+    "syntax_errors": []
+  },
+  "85_speculative_decoding_engine_and_paged_state_fusion.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  },
+  "86_cuda_graph_decode_runner_and_zero_overhead_inference.ipynb": {
+    "valid_json": true,
+    "cell_count": 39,
+    "syntax_errors": []
+  },
+  "87_universal_model_export_safetensors_and_gguf_container.ipynb": {
+    "valid_json": true,
+    "cell_count": 43,
+    "syntax_errors": []
+  },
+  "88_hybrid_attention_architectures_and_multi_branch_fusion.ipynb": {
+    "valid_json": true,
+    "cell_count": 40,
+    "syntax_errors": []
+  },
+  "89_flame_multi_dataset_ingestion_and_zero_pad_varlen_packing.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  },
+  "90_layerwise_spectral_decay_and_pareto_sweeper_analysis.ipynb": {
+    "valid_json": true,
+    "cell_count": 38,
+    "syntax_errors": []
+  }
+}

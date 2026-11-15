@@ -1,0 +1,77 @@
+{
+  "system": "NeuralOps Notebooks Remediation Suite",
+  "total_notebooks": 94,
+  "total_agents": 10,
+  "agents": {
+    "NBA-1": {
+      "title": "Core System Walkthroughs & Architecture Foundations (00-05)",
+      "status": "pending",
+      "branch": "notebooks/NBA-1",
+      "worktree": "../Project_NBA_1",
+      "notebooks_count": 9
+    },
+    "NBA-2": {
+      "title": "Attention Zoo & Subquadratic Operators (06, 10-11, 26-32)",
+      "status": "pending",
+      "branch": "notebooks/NBA-2",
+      "worktree": "../Project_NBA_2",
+      "notebooks_count": 10
+    },
+    "NBA-3": {
+      "title": "Model Compression, SVD, Quantization & Pruning (07, 12-14, 33-39)",
+      "status": "pending",
+      "branch": "notebooks/NBA-3",
+      "worktree": "../Project_NBA_3",
+      "notebooks_count": 11
+    },
+    "NBA-4": {
+      "title": "Production Serving: vLLM, SGLang, TRT-LLM & Speculative Fusion (09, 17, 20, 44, 54-56, 85-86)",
+      "status": "pending",
+      "branch": "notebooks/NBA-4",
+      "worktree": "../Project_NBA_4",
+      "notebooks_count": 9
+    },
+    "NBA-5": {
+      "title": "Hugging Face Export, SafeTensors, GGUF & Hub Upload (21, 65, 87)",
+      "status": "pending",
+      "branch": "notebooks/NBA-5",
+      "worktree": "../Project_NBA_5",
+      "notebooks_count": 3
+    },
+    "NBA-6": {
+      "title": "Distributed Parallelism, FSDP2, WSD Schedulers & Optimizers (18, 22-24, 47-50, 66-70, 82)",
+      "status": "pending",
+      "branch": "notebooks/NBA-6",
+      "worktree": "../Project_NBA_6",
+      "notebooks_count": 14
+    },
+    "NBA-7": {
+      "title": "Hardware Kernels, Triton JIT, Roofline Analysis & Multi-Arch (16, 40-43, 45-46, 63, 71-74)",
+      "status": "pending",
+      "branch": "notebooks/NBA-7",
+      "worktree": "../Project_NBA_7",
+      "notebooks_count": 12
+    },
+    "NBA-8": {
+      "title": "Evaluation Harness, NIAH, Diagnostics & Production Pipelines (08, 15, 19, 25, 51-53, 57-62, 64, 75-81, 83-84, 88-90)",
+      "status": "pending",
+      "branch": "notebooks/NBA-8",
+      "worktree": "../Project_NBA_8",
+      "notebooks_count": 26
+    },
+    "NBA-9": {
+      "title": "Notebook Test Automation & Headless CI Validator",
+      "status": "pending",
+      "branch": "notebooks/NBA-9",
+      "worktree": "../Project_NBA_9",
+      "notebooks_count": 0
+    },
+    "NBA-10": {
+      "title": "Master Notebook Catalog & Documentation Alignment",
+      "status": "pending",
+      "branch": "notebooks/NBA-10",
+      "worktree": "../Project_NBA_10",
+      "notebooks_count": 0
+    }
+  }
+}

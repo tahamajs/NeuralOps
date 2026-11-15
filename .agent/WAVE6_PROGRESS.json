@@ -1,0 +1,192 @@
+{
+  "wave": 6,
+  "started_at": "2026-11-15T00:00:00Z",
+  "last_updated": "2026-11-15T02:25:00Z",
+  "phase": 1,
+  "agents": {
+    "W6-1": {
+      "status": "pending",
+      "branch": "wave6/W6-1",
+      "worktree": null
+    },
+    "W6-2": {
+      "status": "pending",
+      "branch": "wave6/W6-2",
+      "worktree": null
+    },
+    "W6-3": {
+      "status": "pending",
+      "branch": "wave6/W6-3",
+      "worktree": null
+    },
+    "W6-4": {
+      "status": "pending",
+      "branch": "wave6/W6-4",
+      "worktree": null
+    },
+    "W6-5": {
+      "status": "pending",
+      "branch": "wave6/W6-5",
+      "worktree": null
+    },
+    "W6-6": {
+      "status": "pending",
+      "branch": "wave6/W6-6",
+      "worktree": null
+    },
+    "W6-7": {
+      "status": "pending",
+      "branch": "wave6/W6-7",
+      "worktree": null
+    },
+    "W6-8": {
+      "status": "pending",
+      "branch": "wave6/W6-8",
+      "worktree": null
+    },
+    "W6-9": {
+      "status": "pending",
+      "branch": "wave6/W6-9",
+      "worktree": null
+    },
+    "W6-10": {
+      "status": "pending",
+      "branch": "wave6/W6-10",
+      "worktree": null
+    },
+    "W6-11": {
+      "status": "pending",
+      "branch": "wave6/W6-11",
+      "worktree": null
+    },
+    "W6-12": {
+      "status": "pending",
+      "branch": "wave6/W6-12",
+      "worktree": null
+    },
+    "W6-13": {
+      "status": "pending",
+      "branch": "wave6/W6-13",
+      "worktree": null
+    },
+    "W6-14": {
+      "status": "pending",
+      "branch": "wave6/W6-14",
+      "worktree": null
+    },
+    "W6-15": {
+      "status": "pending",
+      "branch": "wave6/W6-15",
+      "worktree": null
+    },
+    "W6-16": {
+      "status": "pending",
+      "branch": "wave6/W6-16",
+      "worktree": null
+    },
+    "W6-17": {
+      "status": "pending",
+      "branch": "wave6/W6-17",
+      "worktree": null
+    },
+    "W6-18": {
+      "status": "pending",
+      "branch": "wave6/W6-18",
+      "worktree": null
+    },
+    "W6-19": {
+      "status": "pending",
+      "branch": "wave6/W6-19",
+      "worktree": null
+    },
+    "W6-20": {
+      "status": "pending",
+      "branch": "wave6/W6-20",
+      "worktree": null
+    },
+    "W6-21": {
+      "status": "pending",
+      "phase": 3,
+      "assigned_examples": [
+        "21_full_model_surgery.py",
+        "22_surgery_baseline_report.py"
+      ],
+      "branch": "wave6/W6-21",
+      "tests": [
+        "tests/examples/test_21.py",
+        "tests/examples/test_22.py"
+      ]
+    },
+    "W6-22": {
+      "status": "pending",
+      "phase": 3,
+      "assigned_examples": [
+        "23_universal_surgery_director_ten_laws.py",
+        "24_deepseek_mla_surgery_and_healing.py"
+      ],
+      "branch": "wave6/W6-22",
+      "tests": [
+        "tests/examples/test_23.py",
+        "tests/examples/test_24.py"
+      ]
+    },
+    "W6-23": {
+      "status": "pending",
+      "phase": 3,
+      "assigned_examples": [
+        "25_fx_graph_rewriter_compiler.py",
+        "26_streaming_shadow_twin_distillation.py"
+      ],
+      "branch": "wave6/W6-23",
+      "tests": [
+        "tests/examples/test_25.py",
+        "tests/examples/test_26.py"
+      ]
+    },
+    "W6-24": {
+      "status": "pending",
+      "phase": 3,
+      "assigned_examples": [
+        "27_huggingface_polymorphic_cache_bridge.py",
+        "28_smart_trainer_automax_vram.py"
+      ],
+      "branch": "wave6/W6-24",
+      "tests": [
+        "tests/examples/test_27.py",
+        "tests/examples/test_28.py"
+      ]
+    },
+    "W6-25": {
+      "status": "pending",
+      "phase": 3,
+      "assigned_examples": [
+        "29_dora_healing_directional_adaptation.py",
+        "30_ttt_online_test_time_training.py",
+        "31_fisher_damping_natural_gradient.py"
+      ],
+      "branch": "wave6/W6-25",
+      "tests": [
+        "tests/examples/test_29.py",
+        "tests/examples/test_30.py",
+        "tests/examples/test_31.py"
+      ]
+    },
+    "W6-26": {
+      "status": "pending",
+      "phase": 3,
+      "assigned_examples": [
+        "32_simpo_orpo_preference_alignment.py",
+        "33_triton_26_hardware_kernels.py",
+        "34_circuit_breaker_runtime_resilience.py",
+        "35_cuda_graph_decode_runner.py"
+      ],
+      "branch": "wave6/W6-26",
+      "tests": [
+        "tests/examples/test_32.py",
+        "tests/examples/test_33.py",
+        "tests/examples/test_34.py",
+        "tests/examples/test_35.py"
+      ]
+    }
+  }
+}
