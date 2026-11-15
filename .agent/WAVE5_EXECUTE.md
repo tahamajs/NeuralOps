@@ -1,5 +1,13 @@
 # NEURALOPS WAVE 5 — INTEGRATION, VERIFICATION, AND RELEASE (20 AGENTS)
 
+> **ALL AGENTS: READ FIRST** — Before reading anything else, every subagent in this
+> wave MUST read `.agent/PROJECT_MASTER_TRUTH.md` completely. It is the single source
+> of truth covering project identity, architecture, all hard rules, Git discipline,
+> cross-file remediation mandate, and current project state. Then read `AGENTS.md`.
+> Only then proceed to your agent-specific spec.
+
+---
+
 **Document version:** 1.0
 **Effective date:** 2026-11-15
 **Mission owner:** Human coordinator
