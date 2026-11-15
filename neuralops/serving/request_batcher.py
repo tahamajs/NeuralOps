@@ -782,10 +782,88 @@ def _call_model(model: nn.Module, input_ids: torch.Tensor, **optional_kwargs: An
     return model(input_ids, **accepted)
 
 
+def generate_sequential(
+    model: nn.Module,
+    prompts: List[torch.Tensor | List[int] | str],
+    max_new_tokens: int = 16,
+    device: Optional[Union[str, torch.device]] = None,
+    **kwargs: Any,
+) -> List[torch.Tensor]:
+    """
+    Sequentially generates autoregressive completions for a list of prompt tensors.
+    Guarantees strict token isolation across sequences with zero slot cross-talk.
+    """
+    try:
+        dev = device if device is not None else next(model.parameters()).device
+    except (StopIteration, AttributeError):
+        dev = torch.device("cpu")
+    results: List[torch.Tensor] = []
+    model.eval()
+
+    with torch.no_grad():
+        for p in prompts:
+            if isinstance(p, list):
+                curr = torch.tensor([p], dtype=torch.long, device=dev)
+            elif isinstance(p, torch.Tensor):
+                curr = p.to(dev)
+                if curr.ndim == 1:
+                    curr = curr.unsqueeze(0)
+            else:
+                curr = torch.tensor([[ord(c) for c in str(p)]], dtype=torch.long, device=dev)
+
+            for _ in range(max_new_tokens):
+                out = _call_model(model, curr, use_cache=False)
+                logits = getattr(out, "logits", out[0] if isinstance(out, (tuple, list)) else out)
+                next_tok = torch.argmax(logits[:, -1, :], dim=-1, keepdim=True)
+                curr = torch.cat([curr, next_tok], dim=-1)
+            results.append(curr)
+
+    return results
+
+
+def streaming_generate(
+    model: nn.Module,
+    input_ids: torch.Tensor | List[int],
+    max_new_tokens: int = 16,
+    eos_token_id: Optional[int] = None,
+    device: Optional[Union[str, torch.device]] = None,
+    **kwargs: Any,
+) -> Iterator[int]:
+    """
+    Streaming token generator yielding one token at a time and terminating on eos_token_id.
+    """
+    try:
+        dev = device if device is not None else next(model.parameters()).device
+    except (StopIteration, AttributeError):
+        dev = torch.device("cpu")
+    model.eval()
+
+    if isinstance(input_ids, list):
+        curr = torch.tensor([input_ids], dtype=torch.long, device=dev)
+    elif isinstance(input_ids, torch.Tensor):
+        curr = input_ids.to(dev)
+        if curr.ndim == 1:
+            curr = curr.unsqueeze(0)
+    else:
+        curr = torch.tensor([[input_ids]], dtype=torch.long, device=dev)
+
+    with torch.no_grad():
+        for _ in range(max_new_tokens):
+            out = _call_model(model, curr, use_cache=False)
+            logits = getattr(out, "logits", out[0] if isinstance(out, (tuple, list)) else out)
+            next_token = int(torch.argmax(logits[:, -1, :], dim=-1).item())
+            yield next_token
+            if eos_token_id is not None and next_token == eos_token_id:
+                break
+            curr = torch.cat([curr, torch.tensor([[next_token]], dtype=torch.long, device=dev)], dim=-1)
+
+
 __all__ = [
     "TGIRequest",
     "TGIRequestSlot",
     "TGIRequestBatch",
     "TGIStreamingIterator",
     "TGIServingAdapter",
+    "generate_sequential",
+    "streaming_generate",
 ]

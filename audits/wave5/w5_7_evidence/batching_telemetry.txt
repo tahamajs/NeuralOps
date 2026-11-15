@@ -1,0 +1,21 @@
+=== TGIServingAdapter Continuous Batching Telemetry ===
+{
+  "total_requests": 3,
+  "active_requests": 0,
+  "active_slots": 0,
+  "free_slots": 2,
+  "max_batch_size": 2,
+  "queued_requests": 0,
+  "completed_requests": 3,
+  "total_tokens_generated": 7,
+  "avg_latency_ms": 1.73,
+  "avg_tokens_per_sec": 577.01,
+  "device": "cpu"
+}
+
+Slot Eviction & Isolation:
+  Total Requests: 3
+  Completed Requests: 3
+  Tokens Generated: 7
+  Active Slots Remaining: 0
+  Continuous batching lifecycle passed with 100% isolation ✓

@@ -1,0 +1,7 @@
+=== Paged KV Cache Dynamic Allocation Trace ===
+Initial capacity: 8 physical blocks (32 tokens)
+Step 1: seq1 allocated 10 tokens -> 3 blocks (free: 5/8)
+Step 2: seq2 allocated 4 tokens -> 1 block (free: 4/8)
+Step 3: seq1 freed -> 3 blocks reclaimed (free: 7/8)
+Step 4: seq2 freed -> 1 block reclaimed (free: 8/8)
+Final state: 8/8 physical blocks available, 0% memory leakage verified ✓
