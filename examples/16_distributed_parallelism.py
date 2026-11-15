@@ -322,12 +322,14 @@ def main() -> int:
     seq_len = input_ids.shape[1]
     kv("Sequence Length", f"{seq_len} tokens (split into 2 chunks of {seq_len // 2})")
     kv("Max Absolute Difference", f"{diff_cp:.2e}")
-    summary_records.append({
-        "Paradigm": "Context Parallelism (Ring)",
-        "Partition Dimension": "Sequence (dim 1)",
-        "Max Absolute Diff": f"{diff_cp:.2e}",
-        "Parity Status": "PASS" if p_cp else "FAIL",
-    })
+    summary_records.append(
+        {
+            "Paradigm": "Context Parallelism (Ring)",
+            "Partition Dimension": "Sequence (dim 1)",
+            "Max Absolute Diff": f"{diff_cp:.2e}",
+            "Parity Status": "PASS" if p_cp else "FAIL",
+        }
+    )
 
     # =========================================================================
     # Paradigm 2: Tensor Parallelism (Megatron Column-Row MLP)
@@ -348,14 +350,19 @@ def main() -> int:
     y_dense_tp, y_tp, diff_tp = simulate_tensor_parallel_mlp(x_in, w1_dense, w2_dense)
     p_tp = diff_tp < 1e-4
     assert_parity(y_dense_tp, y_tp, atol=1e-4, label="Tensor Parallelism Numerical Parity")
-    kv("Linear Weight Shapes", f"W1: {w1_dense.shape[0]}x{w1_dense.shape[1]}, W2: {w2_dense.shape[0]}x{w2_dense.shape[1]}")
+    kv(
+        "Linear Weight Shapes",
+        f"W1: {w1_dense.shape[0]}x{w1_dense.shape[1]}, W2: {w2_dense.shape[0]}x{w2_dense.shape[1]}",
+    )
     kv("Max Absolute Difference", f"{diff_tp:.2e}")
-    summary_records.append({
-        "Paradigm": "Tensor Parallelism (Megatron)",
-        "Partition Dimension": "Hidden / Channels (dim 0/1)",
-        "Max Absolute Diff": f"{diff_tp:.2e}",
-        "Parity Status": "PASS" if p_tp else "FAIL",
-    })
+    summary_records.append(
+        {
+            "Paradigm": "Tensor Parallelism (Megatron)",
+            "Partition Dimension": "Hidden / Channels (dim 0/1)",
+            "Max Absolute Diff": f"{diff_tp:.2e}",
+            "Parity Status": "PASS" if p_tp else "FAIL",
+        }
+    )
 
     # =========================================================================
     # Paradigm 3: Layer / Pipeline Parallelism
@@ -367,12 +374,14 @@ def main() -> int:
     kv("Model Architecture", "TinyClassifier (Dynamic Transformer Blocks)")
     kv("Pipeline Partition", "Dynamic Stage 0 -> Stage 1 Pipeline Boundary")
     kv("Max Absolute Difference", f"{diff_lp:.2e}")
-    summary_records.append({
-        "Paradigm": "Layer / Pipeline Parallelism",
-        "Partition Dimension": "Layers / Depth (Stages 0/1)",
-        "Max Absolute Diff": f"{diff_lp:.2e}",
-        "Parity Status": "PASS" if p_lp else "FAIL",
-    })
+    summary_records.append(
+        {
+            "Paradigm": "Layer / Pipeline Parallelism",
+            "Partition Dimension": "Layers / Depth (Stages 0/1)",
+            "Max Absolute Diff": f"{diff_lp:.2e}",
+            "Parity Status": "PASS" if p_lp else "FAIL",
+        }
+    )
 
     # =========================================================================
     # Paradigm 4: Multi-GPU / Single-Process CPU Emulation
@@ -381,12 +390,14 @@ def main() -> int:
     p_dist, dist_mode, diff_dist = simulate_multi_gpu_or_emulation(model, input_ids)
     kv("Execution Mode", dist_mode)
     kv("Max Absolute Difference", f"{diff_dist:.2e}")
-    summary_records.append({
-        "Paradigm": "Multi-GPU / CPU Emulation",
-        "Partition Dimension": "Data / FSDP2 Shards",
-        "Max Absolute Diff": f"{diff_dist:.2e}",
-        "Parity Status": "PASS" if p_dist else "FAIL",
-    })
+    summary_records.append(
+        {
+            "Paradigm": "Multi-GPU / CPU Emulation",
+            "Partition Dimension": "Data / FSDP2 Shards",
+            "Max Absolute Diff": f"{diff_dist:.2e}",
+            "Parity Status": "PASS" if p_dist else "FAIL",
+        }
+    )
 
     # =========================================================================
     # Summary Table

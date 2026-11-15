@@ -70,9 +70,13 @@ def run_distillation_workflow(device: str) -> bool:
     """Execute 3-step multi-level distillation training with WSD scheduling using library components."""
     section("Part 1: Initializing Teacher, Student, and Distillation Components")
 
-    teacher = TinyClassifier(seed=42).to(device)
-    student = TinyClassifier(seed=99).to(device)
+    teacher = TinyClassifier(seed=42)
+    student = TinyClassifier(seed=99)
+    # Inject cosformer on CPU before moving to accelerator for fast graph initialization
     neuralops.replace_attention(student, attention="cosformer", copy_weights=False)
+
+    teacher = teacher.to(device)
+    student = student.to(device)
     student.train()
 
     kv("Teacher Architecture", "Dense DistilBERT (2 layers, full quadratic attention)")
@@ -123,14 +127,7 @@ def run_distillation_workflow(device: str) -> bool:
         p5_gram = loss_gram_fn(s_hidden, t_hidden)
         p6_cos = loss_cos_fn(s_hidden, t_hidden)
 
-        total_loss = (
-            0.4 * p1_logit
-            + 0.2 * p2_mse
-            + 0.1 * p3_attn
-            + 0.1 * p4_cka
-            + 0.1 * p5_gram
-            + 0.1 * p6_cos
-        )
+        total_loss = 0.4 * p1_logit + 0.2 * p2_mse + 0.1 * p3_attn + 0.1 * p4_cka + 0.1 * p5_gram + 0.1 * p6_cos
 
         total_loss.backward()
         optimizer.step()
@@ -150,17 +147,19 @@ def run_distillation_workflow(device: str) -> bool:
 
         pillar_values_all.append([p1_val, p2_val, p3_val, p4_val, p5_val, p6_val])
 
-        table_rows.append([
-            f"Step {step}",
-            f"{current_lr:.6f}",
-            f"{p1_val:.4f}",
-            f"{p2_val:.4f}",
-            f"{p3_val:.4f}",
-            f"{p4_val:.4f}",
-            f"{p5_val:.4f}",
-            f"{p6_val:.4f}",
-            f"{loss_val:.4f}",
-        ])
+        table_rows.append(
+            [
+                f"Step {step}",
+                f"{current_lr:.6f}",
+                f"{p1_val:.4f}",
+                f"{p2_val:.4f}",
+                f"{p3_val:.4f}",
+                f"{p4_val:.4f}",
+                f"{p5_val:.4f}",
+                f"{p6_val:.4f}",
+                f"{loss_val:.4f}",
+            ]
+        )
 
     print_benchmark_table(
         table_rows,
@@ -171,10 +170,7 @@ def run_distillation_workflow(device: str) -> bool:
     pass_fail("Multi-Level Loss Finiteness", all_finite, f"Loss trajectory: {[round(l, 4) for l in losses_history]}")
 
     # Check non-zero real computation across all pillars
-    nonzero_counts = sum(
-        1 for col in range(6)
-        if any(step_vals[col] > 1e-6 for step_vals in pillar_values_all)
-    )
+    nonzero_counts = sum(1 for col in range(6) if any(step_vals[col] > 1e-6 for step_vals in pillar_values_all))
     p_pillars = bool(nonzero_counts == 6)
     pass_fail(
         "Pillar Real Value Verification",
@@ -197,7 +193,9 @@ def run_distillation_workflow(device: str) -> bool:
     batch = next(iter(toy_dataloader(num_batches=1, batch_size=2, seq_len=16, device=device)))
     step_dict = trainer.training_step(batch)
     trainer_loss = step_dict.get("total_loss")
-    p_trainer = bool(isinstance(trainer_loss, torch.Tensor) and torch.isfinite(trainer_loss).item() and trainer_loss.item() > 0)
+    p_trainer = bool(
+        isinstance(trainer_loss, torch.Tensor) and torch.isfinite(trainer_loss).item() and trainer_loss.item() > 0
+    )
     pass_fail(
         "MultiLevelKDTrainer Step",
         p_trainer,
@@ -223,7 +221,9 @@ def main() -> int:
     pass_fail(
         "Overall Example 04 Status",
         success,
-        "All library distillation pillars and trainer checks passed" if success else "One or more distillation checks failed",
+        "All library distillation pillars and trainer checks passed"
+        if success
+        else "One or more distillation checks failed",
     )
     return 0 if success else 1
 

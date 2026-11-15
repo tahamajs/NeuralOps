@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 import warnings
 
 warnings.warn(
@@ -11,4 +12,8 @@ warnings.warn(
     stacklevel=2,
 )
 
-from neuralops.benchmarks._legacy.gpu_master_suite import *  # noqa: F403, F401
+import neuralops.benchmarks._legacy.gpu_master_suite as _impl
+
+# Forward everything and alias module so monkeypatching reflects directly on implementation
+globals().update({k: getattr(_impl, k) for k in dir(_impl)})
+sys.modules[__name__] = _impl

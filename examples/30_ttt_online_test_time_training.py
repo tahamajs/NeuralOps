@@ -52,7 +52,9 @@ from neuralops.trainer.regimes.ttt_online import TTTOnlineAdapter
 def resolve_device(requested: str) -> torch.device:
     """Resolve compute device with strict zero-fake fallback policy."""
     if requested.startswith("cuda") and not torch.cuda.is_available():
-        raise RuntimeError(f"CUDA was explicitly requested ('{requested}') but is unavailable; refusing silent CPU fallback.")
+        raise RuntimeError(
+            f"CUDA was explicitly requested ('{requested}') but is unavailable; refusing silent CPU fallback."
+        )
     if requested == "auto":
         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
     return torch.device(requested)

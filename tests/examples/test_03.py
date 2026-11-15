@@ -53,4 +53,3 @@ def test_03_lora_merge_numerical_parity():
         out_merged = model(**inputs).logits
 
     assert torch.allclose(out_merged, out_unmerged, atol=1e-4)
-

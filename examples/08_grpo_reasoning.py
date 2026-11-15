@@ -52,12 +52,11 @@ from examples._shared import (
 )
 
 
-def compute_group_advantages(rewards: list[float], eps: float = 1e-6) -> torch.Tensor:
+def compute_group_advantages(rewards: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
     """Compute group-relative advantages: A_i = (r_i - mean(r)) / (std(r) + eps)."""
-    r_tensor = torch.tensor(rewards, dtype=torch.float32)
-    mean_r = r_tensor.mean()
-    std_r = r_tensor.std(unbiased=False)
-    advantages = (r_tensor - mean_r) / (std_r + eps)
+    mean_r = rewards.mean()
+    std_r = rewards.std(unbiased=False)
+    advantages = (rewards - mean_r) / (std_r + eps)
     return advantages
 
 
@@ -99,8 +98,8 @@ def run_grpo_simulation(device: str) -> bool:
     format_rewards = [reward_format(resp) for resp in candidate_responses]
     length_rewards = [reward_conciseness(resp, target_length=30) for resp in candidate_responses]
 
-    adv_format = compute_group_advantages(format_rewards)
-    adv_length = compute_group_advantages(length_rewards)
+    adv_format = compute_group_advantages(torch.tensor(format_rewards, dtype=torch.float32))
+    adv_length = compute_group_advantages(torch.tensor(length_rewards, dtype=torch.float32))
 
     table_rows: list[list[str]] = []
     for idx in range(k_samples):
@@ -128,23 +127,40 @@ def run_grpo_simulation(device: str) -> bool:
     inputs = {k: v.to(device) for k, v in tiny_inputs(batch_size=k_samples).items()}
 
     optimizer.zero_grad()
+    target_actions = torch.ones(k_samples, dtype=torch.long, device=device)
+
+    # Reference model baseline to compute authentic policy ratio pi_theta / pi_ref
+    with torch.no_grad():
+        ref_outputs = model(**inputs)
+        ref_log_probs = F.log_softmax(ref_outputs.logits, dim=-1)
+        ref_action_log_probs = ref_log_probs.gather(1, target_actions.unsqueeze(1)).squeeze(1)
+
     outputs = model(**inputs)
     logits = outputs.logits  # (K, num_classes)
 
     # Log-probabilities of selected policy actions
     log_probs = F.log_softmax(logits, dim=-1)
-    target_actions = torch.ones(k_samples, dtype=torch.long, device=device)
     action_log_probs = log_probs.gather(1, target_actions.unsqueeze(1)).squeeze(1)
 
-    # Surrogate GRPO objective: - mean(A_i * log_prob_i)
+    # Dynamic policy ratio: r_t(theta) = exp(log_pi(a) - log_pi_ref(a))
+    policy_ratio = torch.exp(action_log_probs - ref_action_log_probs)
+
+    # Surrogate GRPO objective with clipped advantage weighting: - mean(min(r_t * A, clip(r_t, 1-eps, 1+eps) * A))
     adv_weights = adv_format.to(device)
-    surrogate_loss = - (adv_weights * action_log_probs).mean()
+    clip_eps = 0.2
+    clipped_ratio = torch.clamp(policy_ratio, 1.0 - clip_eps, 1.0 + clip_eps)
+    surrogate_loss = - torch.min(policy_ratio * adv_weights, clipped_ratio * adv_weights).mean()
 
     surrogate_loss.backward()
     optimizer.step()
 
     loss_finite = bool(torch.isfinite(surrogate_loss).item())
-    pass_fail("GRPO Policy Gradient Convergence", loss_finite, f"surrogate_loss={surrogate_loss.item():.4f}")
+    ratio_valid = bool(torch.isfinite(policy_ratio).all().item() and (policy_ratio > 0).all().item())
+    pass_fail(
+        "GRPO Policy Ratio & Gradient Convergence",
+        loss_finite and ratio_valid,
+        f"surrogate_loss={surrogate_loss.item():.4f}, mean_ratio={policy_ratio.mean().item():.3f}",
+    )
 
     # Part 4: TRL / HF Commentary
     section("Part 4: Enterprise Integration Commentary")
@@ -159,7 +175,7 @@ def run_grpo_simulation(device: str) -> bool:
     else:
         kv("Official TRL Package", "Optional -- NeuralOps provides self-contained native GRPO without third-party dependencies.")
 
-    return bool(format_adv_mean and length_adv_mean and loss_finite)
+    return bool(format_adv_mean and length_adv_mean and loss_finite and ratio_valid)
 
 
 def main() -> int:
@@ -172,12 +188,14 @@ def main() -> int:
 
     success = run_grpo_simulation(backend)
     print()
-    if success:
-        pass_fail("Overall Example 08 Status", True, "All GRPO advantage and policy gradient steps verified")
-        return 0
-    else:
-        pass_fail("Overall Example 08 Status", False, "One or more GRPO verification checks failed")
-        return 1
+    pass_fail(
+        "Overall Example 08 Status",
+        success,
+        "All GRPO advantage and policy gradient steps verified"
+        if success
+        else "One or more GRPO verification checks failed",
+    )
+    return 0 if success else 1
 
 
 if __name__ == "__main__":

@@ -100,6 +100,23 @@ def run_demonstration(
     kv_reduction_pct = mla_bridge.get_kv_compression_ratio(uncompressed_kv_dim=4096) * 100.0
     recurrent_telemetry = mla_bridge.get_recurrent_state_memory_summary(bytes_per_elem=4)
 
+    # Validate production MLA dimension compression (512 vs 4096 dims -> 87.5% reduction)
+    production_bridge = DeepSeekMLASurgeryBridge(
+        latent_kv_dim=512,
+        decoupled_rope_dim=64,
+        q_latent_dim=512,
+        num_heads=16,
+        head_dim=64,
+        hidden_dim=512,
+    )
+    prod_kv_reduction = production_bridge.get_kv_compression_ratio(uncompressed_kv_dim=4096)
+    ratio_matches = abs(prod_kv_reduction - 0.875) < 1e-4
+    pass_fail(
+        "MLA Latent Compression Ratio (512 vs 4096 dims)",
+        ratio_matches,
+        f"{prod_kv_reduction * 100.0:.2f}% (expected 87.50%)",
+    )
+
     kv("Standard MHA KV Cache", "8192 bytes/token")
     kv("DeepSeek MLA KV Cache", f"{mla_cache_bytes} bytes/token")
     kv("Theoretical Cache Reduction", f"{compression_pct:.2f}%")
@@ -112,6 +129,19 @@ def run_demonstration(
     # 3. Create synthetic input tensors for chunk prefill
     torch.manual_seed(42)
     x = torch.randn(batch_size, seq_len, hidden_dim, device=device)
+
+    # Validate compressed KV projection shapes
+    c_kv_prefill = mla_bridge.kv_latent_proj(x)
+    k_rope_prefill = mla_bridge.k_rope_proj(x)
+    kv_shapes_ok = (
+        tuple(c_kv_prefill.shape) == (batch_size, seq_len, latent_kv_dim)
+        and tuple(k_rope_prefill.shape) == (batch_size, seq_len, decoupled_rope_dim)
+    )
+    pass_fail(
+        "Compressed KV Cache Tensor Shapes",
+        kv_shapes_ok,
+        f"c_kv: {tuple(c_kv_prefill.shape)}, k_rope: {tuple(k_rope_prefill.shape)}",
+    )
 
     # Execute chunk prefill via unified forward dispatcher
     prefill_out, (state_c, state_r) = mla_bridge(x, chunk_size=16)
@@ -166,7 +196,15 @@ def run_demonstration(
     print()
     table(rows, headers=headers)
 
-    all_passed = bool(prefill_finite and prefill_shape_match and step_finite and step_shape_match and grads_ok)
+    all_passed = bool(
+        ratio_matches
+        and kv_shapes_ok
+        and prefill_finite
+        and prefill_shape_match
+        and step_finite
+        and step_shape_match
+        and grads_ok
+    )
     return all_passed
 
 
@@ -185,19 +223,22 @@ def main() -> int:
     kv("PyTorch Version", torch.__version__)
     print()
 
-    success = run_demonstration(
-        device=device,
-        batch_size=args.batch_size,
-        seq_len=args.seq_len,
+    success = bool(
+        run_demonstration(
+            device=device,
+            batch_size=args.batch_size,
+            seq_len=args.seq_len,
+        )
     )
 
     print()
-    if success:
-        pass_fail("Overall Example 24 Status", True, "DeepSeek MLA dual-stream prefill & decode verified")
-        return 0
-    else:
-        pass_fail("Overall Example 24 Status", False, "MLA verification or numerical check failed")
-        return 1
+    status_msg = (
+        "DeepSeek MLA dual-stream prefill & decode verified"
+        if success
+        else "MLA verification or numerical check failed"
+    )
+    pass_fail("Overall Example 24 Status", success, status_msg)
+    return 0 if success else 1
 
 
 if __name__ == "__main__":

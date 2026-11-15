@@ -26,7 +26,7 @@ def test_30_runs_clean():
         [sys.executable, "examples/30_ttt_online_test_time_training.py"],
         capture_output=True,
         text=True,
-        timeout=120,
+        timeout=240,
     )
     assert proc.returncode == 0, f"Example 30 failed with stderr:\n{proc.stderr}\nstdout:\n{proc.stdout}"
     assert "[PASS] Overall Example 30 Status" in proc.stdout

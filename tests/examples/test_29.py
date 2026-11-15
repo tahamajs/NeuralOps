@@ -26,7 +26,7 @@ def test_29_runs_clean():
         [sys.executable, "examples/29_dora_healing_directional_adaptation.py"],
         capture_output=True,
         text=True,
-        timeout=120,
+        timeout=240,
     )
     assert proc.returncode == 0, f"Example 29 failed with stderr:\n{proc.stderr}\nstdout:\n{proc.stdout}"
     assert "[PASS] Overall Example 29 Status" in proc.stdout

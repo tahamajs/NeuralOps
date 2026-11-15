@@ -311,8 +311,48 @@ def save_all_formats(
         DeprecationWarning,
         stacklevel=2,
     )
-    saver = MultiFormatSaver(output_dir)
-    return saver.save(result)
+    out_dir = Path(output_dir)
+    json_path = compute_result_path(result, base_dir=out_dir)
+    md_path = json_path.with_suffix(".md")
+
+    save_json(result, json_path)
+    save_markdown_summary(result, md_path)
+
+    jsonl_path = out_dir / "results.jsonl"
+    save_jsonl_index(result, jsonl_path)
+
+    csv_path = out_dir / "results.csv"
+    save_csv_index(result, csv_path)
+
+    saved: Dict[str, Path] = {
+        "json": json_path,
+        "markdown": md_path,
+        "jsonl": jsonl_path,
+        "csv": csv_path,
+    }
+
+    parquet_saved = False
+    parquet_path = out_dir / "results.parquet"
+    try:
+        save_parquet_index(result, parquet_path)
+        parquet_saved = parquet_path.exists()
+    except Exception as exc:
+        if require_parquet:
+            raise RuntimeError(f"Parquet export failed: {exc}") from exc
+        LOG.warning("Optional Parquet index export failed (%s); omitting from saved artifacts.", exc)
+
+    if parquet_saved:
+        saved["parquet"] = parquet_path
+
+    # Record saved paths into result artifact metadata
+    if hasattr(result, "artifacts") and result.artifacts is not None:
+        result.artifacts.json_file = str(
+            json_path.relative_to(out_dir) if json_path.is_relative_to(out_dir) else json_path
+        )
+
+    multi_saved = MultiFormatSaver(output_dir).save(result)
+    saved.update(multi_saved)
+    return saved
 
 
 _SQLITE_LOCK = threading.Lock()

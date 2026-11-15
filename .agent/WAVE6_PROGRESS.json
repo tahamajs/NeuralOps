@@ -54,19 +54,22 @@
       "tests_passed": 4
     },
     "W6-10": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave6/W6-10",
-      "worktree": null
+      "worktree": null,
+      "tests_passed": 1
     },
     "W6-11": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave6/W6-11",
-      "worktree": null
+      "worktree": null,
+      "tests_passed": 5
     },
     "W6-12": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave6/W6-12",
-      "worktree": null
+      "worktree": null,
+      "tests_passed": 4
     },
     "W6-13": {
       "status": "pending",
@@ -110,7 +113,7 @@
       "worktree": null
     },
     "W6-21": {
-      "status": "pending",
+      "status": "complete",
       "phase": 3,
       "assigned_examples": [
         "21_full_model_surgery.py",
@@ -120,10 +123,11 @@
       "tests": [
         "tests/examples/test_21.py",
         "tests/examples/test_22.py"
-      ]
+      ],
+      "tests_passed": 2
     },
     "W6-22": {
-      "status": "pending",
+      "status": "complete",
       "phase": 3,
       "assigned_examples": [
         "23_universal_surgery_director_ten_laws.py",
@@ -133,10 +137,11 @@
       "tests": [
         "tests/examples/test_23.py",
         "tests/examples/test_24.py"
-      ]
+      ],
+      "tests_passed": 6
     },
     "W6-23": {
-      "status": "pending",
+      "status": "complete",
       "phase": 3,
       "assigned_examples": [
         "25_fx_graph_rewriter_compiler.py",
@@ -146,7 +151,8 @@
       "tests": [
         "tests/examples/test_25.py",
         "tests/examples/test_26.py"
-      ]
+      ],
+      "tests_passed": 4
     },
     "W6-24": {
       "status": "pending",
@@ -162,7 +168,7 @@
       ]
     },
     "W6-25": {
-      "status": "pending",
+      "status": "complete",
       "phase": 3,
       "assigned_examples": [
         "29_dora_healing_directional_adaptation.py",
@@ -174,7 +180,8 @@
         "tests/examples/test_29.py",
         "tests/examples/test_30.py",
         "tests/examples/test_31.py"
-      ]
+      ],
+      "tests_passed": 6
     },
     "W6-26": {
       "status": "pending",

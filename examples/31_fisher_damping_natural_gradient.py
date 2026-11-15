@@ -59,7 +59,9 @@ from neuralops.trainer.regimes.fisher_micro import (
 def resolve_device(requested: str) -> torch.device:
     """Resolve compute device with strict zero-fake fallback policy."""
     if requested.startswith("cuda") and not torch.cuda.is_available():
-        raise RuntimeError(f"CUDA was explicitly requested ('{requested}') but is unavailable; refusing silent CPU fallback.")
+        raise RuntimeError(
+            f"CUDA was explicitly requested ('{requested}') but is unavailable; refusing silent CPU fallback."
+        )
     if requested == "auto":
         return torch.device("cuda" if torch.cuda.is_available() else "cpu")
     return torch.device(requested)
@@ -86,7 +88,11 @@ def run_demonstration(device: torch.device, samples: int = 32, damping: float = 
     )
     fisher_computed = len(fisher_diag) > 0
     total_fisher_elements = sum(t.numel() for t in fisher_diag.values())
-    pass_fail("Empirical Fisher Computation", fisher_computed, f"Estimated diagonal for {len(fisher_diag)} parameter tensors ({total_fisher_elements} elements)")
+    pass_fail(
+        "Empirical Fisher Computation",
+        fisher_computed,
+        f"Estimated diagonal for {len(fisher_diag)} parameter tensors ({total_fisher_elements} elements)",
+    )
 
     # Inspect curvature distribution
     all_fisher_vals = torch.cat([t.flatten().cpu() for t in fisher_diag.values()])
@@ -168,7 +174,9 @@ def main() -> int:
     pass_fail(
         "Overall Example 31 Status",
         success,
-        "All Fisher curvature and natural gradient damping steps passed" if success else "One or more Fisher damping verification steps failed",
+        "All Fisher curvature and natural gradient damping steps passed"
+        if success
+        else "One or more Fisher damping verification steps failed",
     )
     return 0 if success else 1
 

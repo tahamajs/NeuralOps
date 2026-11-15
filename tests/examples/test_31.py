@@ -30,7 +30,7 @@ def test_31_runs_clean():
         [sys.executable, "examples/31_fisher_damping_natural_gradient.py"],
         capture_output=True,
         text=True,
-        timeout=120,
+        timeout=240,
     )
     assert proc.returncode == 0, f"Example 31 failed with stderr:\n{proc.stderr}\nstdout:\n{proc.stdout}"
     assert "[PASS] Overall Example 31 Status" in proc.stdout

@@ -77,7 +77,7 @@ def run_demonstration(device: torch.device) -> bool:
     # 1. Inspect kernel catalog
     catalog = getattr(notr, "TRITON_KERNEL_CATALOG", [])
     has_triton = getattr(notr, "HAS_TRITON", False) and device.type == "cuda"
-    pass_fail("Kernel Catalog Loaded", len(catalog) > 0, f"Catalog size: {len(catalog)} operators read dynamically from registry")
+    pass_fail("Kernel Catalog Loaded", bool(len(catalog) > 0), f"Catalog size: {len(catalog)} operators read dynamically from registry")
 
     # 2. Execute and benchmark 10 representative kernel operators
     results: list[tuple[str, str, float, bool]] = []
@@ -201,14 +201,15 @@ def main() -> int:
     kv("Catalog Operator Count", len(getattr(notr, "TRITON_KERNEL_CATALOG", [])))
     print()
 
-    success = run_demonstration(device)
+    success = bool(run_demonstration(device))
     print()
-    if success:
-        pass_fail("Overall Example 33 Status", True, "All Triton hardware operators and fallbacks verified")
-        return 0
-    else:
-        pass_fail("Overall Example 33 Status", False, "One or more kernel operator verifications failed")
-        return 1
+    status_msg = (
+        "All Triton hardware operators and fallbacks verified"
+        if success
+        else "One or more kernel operator verifications failed"
+    )
+    pass_fail("Overall Example 33 Status", success, status_msg)
+    return 0 if success else 1
 
 
 if __name__ == "__main__":

@@ -114,12 +114,14 @@ def run_demonstration(device: torch.device, cooldown_ms: float = 25.0) -> bool:
     time.sleep((cooldown_ms + 10.0) / 1000.0)
     # Check recovery step 1
     state_after_sleep1 = cb.fsm.check_recovery()
-    pass_fail("Auto-Recovery Step 1 (TRIPPED -> DEGRADED)", state_after_sleep1 == CircuitState.DEGRADED, f"State: {state_after_sleep1.value}")
+    recovery1_ok = state_after_sleep1 == CircuitState.DEGRADED
+    pass_fail("Auto-Recovery Step 1 (TRIPPED -> DEGRADED)", recovery1_ok, f"State: {state_after_sleep1.value}")
 
     time.sleep((cooldown_ms + 10.0) / 1000.0)
     # Check recovery step 2
     state_after_sleep2 = cb.fsm.check_recovery()
-    pass_fail("Auto-Recovery Step 2 (DEGRADED -> NORMAL)", state_after_sleep2 == CircuitState.NORMAL, f"State: {state_after_sleep2.value}")
+    recovery2_ok = state_after_sleep2 == CircuitState.NORMAL
+    pass_fail("Auto-Recovery Step 2 (DEGRADED -> NORMAL)", recovery2_ok, f"State: {state_after_sleep2.value}")
 
     # Verify return to full Level 1 health
     out5 = cb.execute(level1_healthy, level2_healthy, level3_reference, x)
@@ -139,7 +141,7 @@ def run_demonstration(device: torch.device, cooldown_ms: float = 25.0) -> bool:
     print()
     table(summary_rows, headers=["Resilience Metric", "Observed Value"])
 
-    return bool(t1_valid and t2_valid and t3_valid and t4_valid and recovered_valid)
+    return bool(t1_valid and t2_valid and t3_valid and t4_valid and recovery1_ok and recovery2_ok and recovered_valid)
 
 
 def main() -> int:
@@ -155,14 +157,15 @@ def main() -> int:
     kv("Cooldown Window (ms)", args.cooldown_ms)
     print()
 
-    success = run_demonstration(device, cooldown_ms=args.cooldown_ms)
+    success = bool(run_demonstration(device, cooldown_ms=args.cooldown_ms))
     print()
-    if success:
-        pass_fail("Overall Example 34 Status", True, "All circuit breaker transitions and recoveries verified")
-        return 0
-    else:
-        pass_fail("Overall Example 34 Status", False, "One or more circuit breaker verifications failed")
-        return 1
+    status_msg = (
+        "All circuit breaker transitions and recoveries verified"
+        if success
+        else "One or more circuit breaker verifications failed"
+    )
+    pass_fail("Overall Example 34 Status", success, status_msg)
+    return 0 if success else 1
 
 
 if __name__ == "__main__":
