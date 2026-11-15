@@ -16,7 +16,7 @@ click==8.5.1
     # via huggingface-hub
 cloudpickle==3.1.2
     # via joblib
-datasets==5.1.0
+datasets==5.2.0
     # via neuralops (pyproject.toml)
 dill==0.4.1
     # via
