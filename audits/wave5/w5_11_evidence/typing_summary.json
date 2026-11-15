@@ -1,0 +1,51 @@
+{
+  "strict_core_errors": 948,
+  "full_repo_errors": 897,
+  "strict_v2_cli_status": "PASS (0 errors across 11 files)",
+  "top_strict_categories": {
+    "arg-type": 252,
+    "operator": 123,
+    "assignment": 119,
+    "no-any-return": 88,
+    "index": 79,
+    "union-attr": 76,
+    "no-untyped-def": 37,
+    "type-arg": 34,
+    "no-untyped-call": 33,
+    "return-value": 17
+  },
+  "top_full_categories": {
+    "dict-item": 334,
+    "assignment": 114,
+    "operator": 106,
+    "arg-type": 105,
+    "union-attr": 88,
+    "index": 40,
+    "return-value": 19,
+    "attr-defined": 19,
+    "unused-ignore": 18,
+    "var-annotated": 15
+  },
+  "top_offending_files": {
+    "neuralops/models/surgery.py": 113,
+    "neuralops/surgery/scanner.py": 58,
+    "neuralops/core/peft/loha.py": 45,
+    "neuralops/core/low_rank/svd_linear.py": 44,
+    "neuralops/core/peft/lora.py": 39,
+    "neuralops/core/peft/lokr.py": 39,
+    "neuralops/surgery/director.py": 38,
+    "neuralops/surgery/streaming_distill.py": 36,
+    "neuralops/models/modeling.py": 34,
+    "neuralops/surgery/fx_surgery.py": 32,
+    "neuralops/api.py": 32,
+    "neuralops/core/peft/simple_lora.py": 31,
+    "neuralops/surgery/mla_surgery.py": 27,
+    "neuralops/core/_attention_injectors.py": 20,
+    "neuralops/core/architecture.py": 19
+  },
+  "strict_v2_status": "PASS (0 errors across 18 files in config_v2, results_v2, cli_v2)",
+  "remediated_files": [
+    "neuralops/benchmarks/config_v2/loader.py (exported ConfigValidationError in __all__)",
+    "neuralops/benchmarks/results_v2/ledger.py (annotated untyped pyarrow calls with type ignore)"
+  ]
+}

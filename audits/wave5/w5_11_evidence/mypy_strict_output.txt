@@ -1,0 +1,5 @@
+Success: no issues found in 18 source files
+
+--- Attempted run with future uncreated module suites_v2 ---
+mypy: error: Cannot read file 'neuralops/benchmarks/suites_v2': No such file or directory
+Found 1 error in 1 file (errors prevented further checking)
