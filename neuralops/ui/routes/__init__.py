@@ -16,6 +16,7 @@ from neuralops.ui.routes.dashboard import router as dashboard_router
 from neuralops.ui.routes.doctor import router as doctor_router
 from neuralops.ui.routes.models_notebooks import router as models_notebooks_router
 from neuralops.ui.routes.partials import router as partials_router
+from neuralops.ui.routes.telemetry import router as telemetry_router
 
 __all__ = [
     "api_router",
@@ -26,4 +27,5 @@ __all__ = [
     "doctor_router",
     "models_notebooks_router",
     "partials_router",
+    "telemetry_router",
 ]

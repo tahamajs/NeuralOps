@@ -30,6 +30,7 @@ from neuralops.ui.routes import (
     doctor_router,
     models_notebooks_router,
     partials_router,
+    telemetry_router,
 )
 
 logger = logging.getLogger("NeuralOpsWebUI")
@@ -166,5 +167,6 @@ def create_app(auth_credentials: tuple[str, str] | None = None) -> FastAPI:
     app.include_router(doctor_router)
     app.include_router(partials_router)
     app.include_router(api_router)
+    app.include_router(telemetry_router)
 
     return app
