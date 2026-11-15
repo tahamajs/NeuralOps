@@ -1,0 +1,22 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.3, pytest-8.0.0, pluggy-1.6.0 -- /Library/Frameworks/Python.framework/Versions/3.14/bin/python3
+cachedir: .pytest_cache
+rootdir: /Users/tahamajs/dev/Project_W7_11
+configfile: pyproject.toml
+plugins: anyio-4.12.1, Faker-40.31.0, timeout-2.4.0, cov-4.1.0, django-4.8.0, xdist-3.5.0, sugar-0.9.7
+collecting ... collected 12 items
+
+tests/ops/test_kernel_fallbacks.py::TestLowRankModularization::test_submodules_importability PASSED [  8%]
+tests/ops/test_kernel_fallbacks.py::TestLowRankModularization::test_facade_symbol_parity PASSED [ 16%]
+tests/ops/test_kernel_fallbacks.py::TestKernelFallbacksAndParity::test_low_rank_forward_cpu_fallback PASSED [ 25%]
+tests/ops/test_kernel_fallbacks.py::TestKernelFallbacksAndParity::test_fused_svd_gemm_cpu_fallback PASSED [ 33%]
+tests/ops/test_kernel_fallbacks.py::TestKernelFallbacksAndParity::test_direct_svd_compression_fallback PASSED [ 41%]
+tests/ops/test_kernel_fallbacks.py::TestKernelFallbacksAndParity::test_hnc_nullspace_step_fallback PASSED [ 50%]
+tests/ops/test_kernel_fallbacks.py::TestKernelFallbacksAndParity::test_strided_tt_contraction_fallback PASSED [ 58%]
+tests/ops/test_kernel_fallbacks.py::TestKernelFallbacksAndParity::test_fused_kronecker_matmul_fallback PASSED [ 66%]
+tests/ops/test_kernel_fallbacks.py::TestKernelFallbacksAndParity::test_int4_lut_dequant_fallback PASSED [ 75%]
+tests/ops/test_kernel_fallbacks.py::TestKernelFallbacksAndParity::test_force_kernel_backend_fallback_telemetry PASSED [ 83%]
+tests/ops/test_kernel_fallbacks.py::TestGovernanceAndInvariants::test_zero_hardcoded_device_in_ops PASSED [ 91%]
+tests/ops/test_kernel_fallbacks.py::TestGovernanceAndInvariants::test_file_size_limits_compliance PASSED [100%]
+
+============================== 12 passed in 0.16s ==============================

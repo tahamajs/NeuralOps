@@ -1,4 +1,3 @@
-from neuralops.ops.triton._low_rank.structured import _fused_hnc_nullspace_spectral_step_fwd_kernel
 #!/usr/bin/env python3
 # Copyright (c) 2024-2026, Taha Majlesi
 #
@@ -11,7 +10,6 @@ Modularized Low-Rank Submodule
 """
 
 from __future__ import annotations
-from neuralops.ops.triton._low_rank.structured import _fused_hnc_nullspace_spectral_step_fwd_kernel, fused_svd_gemm_triton
 
 import logging
 import math
@@ -31,7 +29,7 @@ from neuralops.ops.triton._types import (
     tl,
     triton,
 )
-from neuralops.ops.triton._low_rank.structured import fused_svd_gemm_triton
+from neuralops.ops.triton._low_rank.structured import _fused_hnc_nullspace_spectral_step_fwd_kernel, fused_svd_gemm_triton
 
 def fused_hnc_nullspace_step_pytorch(
     w: torch.Tensor,

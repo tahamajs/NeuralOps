@@ -30,7 +30,6 @@ from neuralops.ops.triton._types import (
     triton,
 )
 
-
 if HAS_TRITON and tl is not None:
 
     @triton.autotune(
@@ -90,7 +89,6 @@ if HAS_TRITON and tl is not None:
 
 else:
     _direct_svd_reconstruct_kernel = None
-
 
 
 def direct_svd_compress(
