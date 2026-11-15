@@ -1,0 +1,7 @@
+.agent/ORCHESTRATOR_WAVE3.md
+audits/wave5/w5_2_evidence/wave3_branches.txt
+audits/wave5/w5_2_evidence/wave3_files.txt
+audits/wave5/w5_2_evidence/wave3_commits.txt
+docs/audit/WAVE3_CLASSIFICATION_2026-10-31.md
+     123 .agent/ORCHESTRATOR_WAVE3.md
+ORCHESTRATOR_WAVE3.md found (non-empty)

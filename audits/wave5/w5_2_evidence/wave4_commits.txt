@@ -1,0 +1,73 @@
+ac31e8fa26 chore(wave4): update WAVE4_PROGRESS.json before merge
+758417702a fix(wave4/W4-C2): format core tests according to ruff formatting rules
+4ac0404cd5 fix(wave4/W4-L2): implement and verify 43 sparse and approximate attention modules
+1cbb7ba79b fix(wave4/W4-B2): harden benchmarks core, kd, and storage with comprehensive test suites
+a17ac31737 fix(wave4/W4-C2): export all sliding window symbols and verify triton kernel compatibility shims
+04df946ac5 fix(wave4/W4-R1): make wave4_verify script resilient with local venv
+6aa1fc3016 docs(wave4/W4-R1): log cross-domain bugs
+a28ac120f8 fix(wave4/W4-L3): implement and audit 23 standard layer modules with comprehensive tests
+6654825c3d fix(wave4/W4-C2): add unit tests for general framework utilities
+0b7bf56b03 fix(wave4/W4-C2): add unit tests for exceptions hierarchy and error messages
+121f99ce2c fix(wave4/W4-C2): achieve bit-exact HuggingFace math parity and partial rotary support in rope.py
+148da36630 fix(wave4/W4-B3): adapters and persistence remediation
+c276b98c7a fix(wave4/W4-C2): update attention class count contract and add architecture tests
+f3c98198c7 docs(wave4/W4-T2): log cross-domain findings for core lora and evaluation metrics
+a85909f16e fix(wave4/W4-O1): record cross-path findings in W4-O1_CROSS.md
+8f4c8fef32 fix(wave4/W4-E1): use synthetic model in multi-gpu pipeline parallel tests
+320f2e1b8d fix(wave4/W4-T2): numerically stable losses and per-sample PolyLoss formula
+53c35e13a3 test(wave4/W4-C2): add unit tests for ResultRecord schema and serialization
+f2968afea0 fix(wave4/W4-L4): implement and audit specialized attention layers and model facades
+8e0937535e fix(wave4/W4-O1): add parity regression and governance invariant test suites for triton kernels
+e65e274ddc test(wave4/W4-C2): add unit tests verifying real roofline metric calculations
+267466b837 fix(wave4/W4-O1): enforce bounds checking in quantization, pruning, and ttt kernels
+511212301b fix(wave4/W4-O1): enforce bounds masking and reference fallback in scan and ssm kernels
+79b3d36f66 fix(wave4/W4-O1): enforce bounds masking and safe exception handling in triton attention kernels
+83ac075e6d fix(wave4/W4-R1): finalize release documentation and master audit artifacts
+156769a728 fix(wave4/W4-T2): robust shape validation and multiclass MCC in metrics
+9795ae034f docs(wave4/W4-C1): add comprehensive audit report for compression engines
+a9f341dabb test(wave4/W4-C2): add comprehensive contract tests for module extensibility
+b1eff59c04 fix(wave4/W4-R1): audit packaging configuration and add verified benchmark configs
+e72536c61e test(wave4/W4-C1): add comprehensive matrix verification suite for owned compressors
+c0b222f285 fix(wave4/W4-B1): audit benchmark suites and remediate fake implementations
+f9b6048dcd fix(wave4/W4-C1): check weight attribute in CoopQQuantizer module filtering
+0e23a8b882 test(wave4/W4-O2): add comprehensive verification suite for 30 remaining CUDA kernels
+2ee25d7bbc fix(wave4/W4-O2): add head dimension bounds guards for fixed stack arrays
+aeea0e1001 fix(wave4/W4-O2): fix ADMM pruning return type and eliminate silent exception swallows
+56b1243861 fix(wave4/W4-O2): resolve submodule shadowing, mapping typo, and routing attention export
+a881badc20 fix(wave4/W4-C2): enhance paper_export and shims to support ResultRecord dataclasses
+2947024101 fix(wave4/W4-C1): check weight attribute in CRCompressor module filtering
+e95b0d86f7 fix(wave4/W4-E1): add verification tests for FastAPI serving endpoints and SSE streaming
+a64feef223 fix(wave4/W4-R1): audit documentation claims against canonical registries
+84c1829db3 fix(wave4/W4-I1): quarantine 58 legacy benchmark scripts to _legacy with deprecation shims
+dcde0cc3d5 test(wave4/W4-U2): add comprehensive tests for all owned CLI commands
+64f7a612d1 fix(wave4/W4-U2): enhance utils with retries, dedup filters, and public re-exports
+bcd7a1d7e9 fix(wave4/W4-U2): harden SQLiteMasterLedger context manager and SQL injection safety
+86a32a0083 fix(wave4/W4-U2): replace bare exception in surgery_cmd and add weights_only to torch.load
+608f4349ff fix(wave4/W4-E1): verify exporter formats and add warning-safe torchscript export
+5d0056f2e0 fix(wave4/W4-C2): make inspect_architecture resilient to unknown modules
+978c40516f fix(wave4/W4-R1): add runnable examples for quickstart, surgery, compression, hub, and serving
+f45766ea8e fix(wave4/W4-C1): preserve FP16 and BF16 in UniQLinear reconstruction and forward
+bf53e0db63 fix(wave4/W4-T2): support rank/r alias and configurable block_size in QLoRA
+c66b8c237e test(wave4/W4-L1): add comprehensive test suite for linear and ssm attention family
+1554dcf3c7 fix(wave4/W4-L1): implement modern linear attention and state space layers
+1c4eaf1101 fix(wave4/W4-L1): add top-level backward-compatible aliases for linear and ssm layers
+dd3e42e846 fix(wave4/W4-U1): evaluation real niah and ruler, ui json endpoints and port conflict handling
+365cfbe49c docs(wave4/W4-A1): record cross-domain bug in _COMPRESSOR_FILE_MAP for randomized_svd_compressor
+eed953033d fix(wave4/W4-E1): validate models and add mathematical speedup and acceptance rate verification
+b057b54194 fix(wave4/W4-C1): handle FP16 and BF16 dtypes in ToMoELinear router
+531f8a0b23 fix(wave4/W4-A1): compose calibration in transplant_attention and add multi-attention tests
+a0c7fff043 fix(wave4/W4-T2): enhance DoRA weight merge reversibility and magnitude handling
+d3dc7b4e0c fix(wave4/W4-T1): audit distillation and optimizers with 6 pillars and tests
+3834ead03a fix(wave4/W4-E1): add block_table method and verify paged kv cache lifecycle and cow
+b30d96e022 fix(wave4/W4-T2): ensure bitwise merge/unmerge and strict contract conformance in LoRA
+4b9b076a2f fix(wave4/W4-R1): add CI/CD pipelines, pre-commit config, Makefile, and coveragerc
+555e43b6d1 test(wave4/W4-A1): add tests for compress API with 3 compressor types
+53802a1c21 fix(wave4/W4-I1): decompose benchmarks cli into cli_v2 with utils and deprecation shim
+35251e3e89 fix(wave4/W4-E1): require CUDA for fla_is_available and add fail-closed require_fla
+dec2a38562 fix(wave4/W4-A1): handle Path in BenchmarkRunConfig.from_yaml and test defaults
+bf2352c38d fix(wave4/W4-R1): reorganize tests hierarchy and add shared fixtures
+83857fc17d fix(wave4/W4-T3): fix WSD step derivation, get_scheduler decay_type, and align with CosineAnnealingLR
+df4b70bb40 fix(wave4/W4-E1): use synthetic model in pipeline parallel tests to avoid network calls
+e424f79f50 fix(wave4/W4-T3): audit and fix callbacks with HF hooks and accurate SVD stats
+4dd682072b fix(wave4/W4-L4): enforce dim_proj registration and annotate exceptions in adapters
+Wave 2 master report present
