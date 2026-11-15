@@ -1,0 +1,150 @@
+b67e84f1e0 fix(svd): add safe QR factorization for MPS devices and update SVDLinear parameter initialization
+b2a4297c06 docs(wave5): solidify all 20 W5 agent specs with explicit git setup, progress tracking, and complete protocol
+1d9fe987e2 Add mandatory pre-read instructions to all Wave 5 agent specifications
+07feddf20e Refactor code for improved readability and consistency across examples
+e1714d3bcb fix(wave6/W6-5): honest rewrite and dynamic status for examples 05 & 06
+91d6f47a1e fix(benchmarks/security): dynamic device resolution and security linting
+f280171475 chore(wave6): mark W6-6 complete with 6 passing tests
+12d732bb7d feat(wave6): incorporate completed example remediations from parallel subagents
+933d0280eb fix(wave6/W6-9): dynamic pass status and strict manifold invariants for Example 14
+f0588dfe3c Add comprehensive tests for various examples in the NeuralOps project
+a249f8cac8 chore: remove deprecated examples for knowledge distillation and NIAH evaluation
+f759e2290f fix(wave6/W6-3): remediate examples 01 and 02 with honest verification
+d9441e40b2 feat(wave6): complete Phase 1 foundation hardening and baseline audit
+b4b5915b5d docs: synchronize README.md with v2.4.0 release and canonical census
+06bfb71fba feat: Add Wave 6 progress tracking and audit scripts
+fe911fd5c4 merge: Phase 5 benchmark adapters & persistence (W4-B3)
+a681210fad merge: Phase 5 benchmark core & storage (W4-B2)
+501a18bf18 merge: Phase 5 benchmark suites (W4-B1)
+40100497ce merge: Phase 4 CLI utils & results saver (W4-U2)
+cf45465dec merge: Phase 4 evaluation & UI (W4-U1)
+5363c71436 merge: Phase 4 export & inference (W4-E1)
+6ee274b464 merge: Phase 3 core systems (W4-C2)
+3a69105c9f merge: Phase 3 API facade & config (W4-A1)
+0e13c3236d merge: Phase 3 trainer callbacks (W4-T3)
+9b4b2ebce1 merge: Phase 3 trainer methods (W4-T2)
+1eb8363747 merge: Phase 3 distillation & optimizers (W4-T1)
+9119f58992 merge: Phase 2 compression (W4-C1)
+ffe4409f25 merge: Phase 2 cuda ops (W4-O2)
+e58303b860 merge: Phase 2 triton ops (W4-O1)
+ffff33e6c3 merge: Phase 2 specialized layers (W4-L4)
+0ddf139878 merge: Phase 2 standard layers (W4-L3)
+8f0bf22de5 merge: Phase 2 sparse layers (W4-L2)
+97be0bbc66 merge: Phase 2 linear layers (W4-L1)
+59bc2f9938 merge: Phase 1 CLI decomposition (W4-I1)
+45eced6e32 merge: Phase 1 infrastructure (W4-R1)
+ac31e8fa26 chore(wave4): update WAVE4_PROGRESS.json before merge
+758417702a fix(wave4/W4-C2): format core tests according to ruff formatting rules
+4ac0404cd5 fix(wave4/W4-L2): implement and verify 43 sparse and approximate attention modules
+1cbb7ba79b fix(wave4/W4-B2): harden benchmarks core, kd, and storage with comprehensive test suites
+a17ac31737 fix(wave4/W4-C2): export all sliding window symbols and verify triton kernel compatibility shims
+04df946ac5 fix(wave4/W4-R1): make wave4_verify script resilient with local venv
+6aa1fc3016 docs(wave4/W4-R1): log cross-domain bugs
+a28ac120f8 fix(wave4/W4-L3): implement and audit 23 standard layer modules with comprehensive tests
+d16182a93f fix(surgery): default replace_attention target to cosformer in attention_replace shim
+6654825c3d fix(wave4/W4-C2): add unit tests for general framework utilities
+0b7bf56b03 fix(wave4/W4-C2): add unit tests for exceptions hierarchy and error messages
+121f99ce2c fix(wave4/W4-C2): achieve bit-exact HuggingFace math parity and partial rotary support in rope.py
+148da36630 fix(wave4/W4-B3): adapters and persistence remediation
+c276b98c7a fix(wave4/W4-C2): update attention class count contract and add architecture tests
+f3c98198c7 docs(wave4/W4-T2): log cross-domain findings for core lora and evaluation metrics
+a85909f16e fix(wave4/W4-O1): record cross-path findings in W4-O1_CROSS.md
+8f4c8fef32 fix(wave4/W4-E1): use synthetic model in multi-gpu pipeline parallel tests
+320f2e1b8d fix(wave4/W4-T2): numerically stable losses and per-sample PolyLoss formula
+53c35e13a3 test(wave4/W4-C2): add unit tests for ResultRecord schema and serialization
+f2968afea0 fix(wave4/W4-L4): implement and audit specialized attention layers and model facades
+8e0937535e fix(wave4/W4-O1): add parity regression and governance invariant test suites for triton kernels
+e65e274ddc test(wave4/W4-C2): add unit tests verifying real roofline metric calculations
+267466b837 fix(wave4/W4-O1): enforce bounds checking in quantization, pruning, and ttt kernels
+511212301b fix(wave4/W4-O1): enforce bounds masking and reference fallback in scan and ssm kernels
+79b3d36f66 fix(wave4/W4-O1): enforce bounds masking and safe exception handling in triton attention kernels
+83ac075e6d fix(wave4/W4-R1): finalize release documentation and master audit artifacts
+156769a728 fix(wave4/W4-T2): robust shape validation and multiclass MCC in metrics
+9795ae034f docs(wave4/W4-C1): add comprehensive audit report for compression engines
+a9f341dabb test(wave4/W4-C2): add comprehensive contract tests for module extensibility
+b1eff59c04 fix(wave4/W4-R1): audit packaging configuration and add verified benchmark configs
+e72536c61e test(wave4/W4-C1): add comprehensive matrix verification suite for owned compressors
+c0b222f285 fix(wave4/W4-B1): audit benchmark suites and remediate fake implementations
+f9b6048dcd fix(wave4/W4-C1): check weight attribute in CoopQQuantizer module filtering
+0e23a8b882 test(wave4/W4-O2): add comprehensive verification suite for 30 remaining CUDA kernels
+2ee25d7bbc fix(wave4/W4-O2): add head dimension bounds guards for fixed stack arrays
+aeea0e1001 fix(wave4/W4-O2): fix ADMM pruning return type and eliminate silent exception swallows
+56b1243861 fix(wave4/W4-O2): resolve submodule shadowing, mapping typo, and routing attention export
+a881badc20 fix(wave4/W4-C2): enhance paper_export and shims to support ResultRecord dataclasses
+2947024101 fix(wave4/W4-C1): check weight attribute in CRCompressor module filtering
+e95b0d86f7 fix(wave4/W4-E1): add verification tests for FastAPI serving endpoints and SSE streaming
+a64feef223 fix(wave4/W4-R1): audit documentation claims against canonical registries
+84c1829db3 fix(wave4/W4-I1): quarantine 58 legacy benchmark scripts to _legacy with deprecation shims
+dcde0cc3d5 test(wave4/W4-U2): add comprehensive tests for all owned CLI commands
+64f7a612d1 fix(wave4/W4-U2): enhance utils with retries, dedup filters, and public re-exports
+bcd7a1d7e9 fix(wave4/W4-U2): harden SQLiteMasterLedger context manager and SQL injection safety
+86a32a0083 fix(wave4/W4-U2): replace bare exception in surgery_cmd and add weights_only to torch.load
+608f4349ff fix(wave4/W4-E1): verify exporter formats and add warning-safe torchscript export
+5d0056f2e0 fix(wave4/W4-C2): make inspect_architecture resilient to unknown modules
+978c40516f fix(wave4/W4-R1): add runnable examples for quickstart, surgery, compression, hub, and serving
+f45766ea8e fix(wave4/W4-C1): preserve FP16 and BF16 in UniQLinear reconstruction and forward
+bf53e0db63 fix(wave4/W4-T2): support rank/r alias and configurable block_size in QLoRA
+c66b8c237e test(wave4/W4-L1): add comprehensive test suite for linear and ssm attention family
+1554dcf3c7 fix(wave4/W4-L1): implement modern linear attention and state space layers
+1c4eaf1101 fix(wave4/W4-L1): add top-level backward-compatible aliases for linear and ssm layers
+dd3e42e846 fix(wave4/W4-U1): evaluation real niah and ruler, ui json endpoints and port conflict handling
+365cfbe49c docs(wave4/W4-A1): record cross-domain bug in _COMPRESSOR_FILE_MAP for randomized_svd_compressor
+eed953033d fix(wave4/W4-E1): validate models and add mathematical speedup and acceptance rate verification
+b057b54194 fix(wave4/W4-C1): handle FP16 and BF16 dtypes in ToMoELinear router
+531f8a0b23 fix(wave4/W4-A1): compose calibration in transplant_attention and add multi-attention tests
+a0c7fff043 fix(wave4/W4-T2): enhance DoRA weight merge reversibility and magnitude handling
+d3dc7b4e0c fix(wave4/W4-T1): audit distillation and optimizers with 6 pillars and tests
+3834ead03a fix(wave4/W4-E1): add block_table method and verify paged kv cache lifecycle and cow
+b30d96e022 fix(wave4/W4-T2): ensure bitwise merge/unmerge and strict contract conformance in LoRA
+4b9b076a2f fix(wave4/W4-R1): add CI/CD pipelines, pre-commit config, Makefile, and coveragerc
+555e43b6d1 test(wave4/W4-A1): add tests for compress API with 3 compressor types
+53802a1c21 fix(wave4/W4-I1): decompose benchmarks cli into cli_v2 with utils and deprecation shim
+35251e3e89 fix(wave4/W4-E1): require CUDA for fla_is_available and add fail-closed require_fla
+dec2a38562 fix(wave4/W4-A1): handle Path in BenchmarkRunConfig.from_yaml and test defaults
+bf2352c38d fix(wave4/W4-R1): reorganize tests hierarchy and add shared fixtures
+83857fc17d fix(wave4/W4-T3): fix WSD step derivation, get_scheduler decay_type, and align with CosineAnnealingLR
+df4b70bb40 fix(wave4/W4-E1): use synthetic model in pipeline parallel tests to avoid network calls
+e424f79f50 fix(wave4/W4-T3): audit and fix callbacks with HF hooks and accurate SVD stats
+4dd682072b fix(wave4/W4-L4): enforce dim_proj registration and annotate exceptions in adapters
+b21c41f4cb merge: incorporate final fixes from benchmarks remediation into main
+a485ff3893 fix(models): improve kwargs inspection, cache counting, and GLAHFModel alias
+18c92e1937 fix(surgery): remove weights_only=False fallback for CVE safety
+b7b57b02a3 merge: benchmarks remediation final audits and compat into main
+ea5ce21106 chore(benchmarks): finalize benchmark audits and backward-compat exports
+92c4bdf70b test(benchmarks): consolidate multi_seed and registry_lazy test suites
+c6f6383e2a fix(compression): export KMeansQuantizer alias in kmeans_quantize.py
+2f06070f5b chore: add verify_wave_final script
+1c3fa75ba9 tests(models): restore canonical models test suite
+1393c55c41 fix(benchmarks): annotate intentional exception swallows with allowed-swallow reasons
+73232ed60c docs(audits): complete 20-agent wave2 non-benchmark audit master report and hardware tests
+933967c1ce fix(benchmarks): add allowed-swallow annotations in hardware telemetry
+15e4dc9a03 fix(benchmarks): add allowed-swallow and remove torch.cuda.amp in runner
+9fc7dfb0be fix(benchmarks): add allowed-swallow in benchmark_quickstart
+a16316daf1 fix(benchmarks): add allowed-swallow annotations and migrate distill_engine to torch.amp
+f5fb32c8dc fix(benchmarks): add allowed-swallow annotations in registry and run_quality_sweep
+2d9b9c7658 fix(benchmarks): add allowed-swallow annotations in orchestrator
+6e852b4100 fix(benchmarks): add allowed-swallow annotations in matrix and ops_runner
+231c28ce25 fix(benchmarks): delegate save_all_formats to MultiFormatSaver
+e567d59955 fix(benchmarks): add allowed-swallow annotations in cli and executor
+bd412509aa fix(benchmarks): add allowed-swallow comment on lazy load ModuleNotFoundError
+0f8fcdb4d8 fix(benchmarks): add missing torch import in triton_leaderboard.py
+c6b0b5f9cb fix(benchmarks): migrate ablation script to torch.amp and define MetricNotFoundError
+af81514025 fix(benchmarks): migrate run_direct_sst2_gpu_kd to torch.amp
+3175928457 fix(benchmarks): migrate gpu_stress_heavy_trainer to torch.amp and add wave2 b2 audit
+0ab279c467 fix(benchmarks): remove all torch.cuda.amp fallbacks in favor of torch.amp per Rule 2.1
+4a58a94f9d docs(benchmarks): remove cuda:0 references in README files
+ddb9414d02 fix(benchmarks): remove redundant self.validate_device in config __post_init__
+6ab531a64a fix(benchmarks): remove last occurrences of cuda:0 in benchmark runners
+4f16d3cdcf fix(surgery/benchmarks): implement authentic export_tensorrt_engine and remove cuda:0
+ab451f3fc7 fix(benchmarks): remove cuda:0 default in triton leaderboard
+f1e60d2907 fix(benchmarks): remove cuda:0 defaults in delta healing benchmark
+ca7e0f9613 fix(benchmarks): remove cuda:0 default in qwen_7b_transplant
+a67af5c4a8 fix(surgery/benchmarks): synchronize progressive layer discarding and configure mypy follow_imports
+fd9b1703f6 fix(cli_v2): add generic type argument to subparsers action
+2b7ce8c296 fix(benchmarks): remove cuda:0 and torch.cuda.amp across remaining benchmark scripts
+36afc2b70a fix(benchmarks): remove hardcoded cuda:0 in bandwidth and eval bridge
+b2ccbb59e7 fix(layers/surgery): align DeepSeek MLA bridge test state attributes and import nn
+a72c091d9b fix(layers/benchmarks): update specialized attention tests, surgery tests, and device fallbacks
+0bb873f730 tests: add surgery and surgical_io wave2 regression tests and audit report
+80955473e4 fix(benchmarks): remove hardcoded cuda:0 defaults per Rule 10
+918f9fb9b5 fix(surgery): prevent premature activation discarding in progressive distillation
