@@ -918,7 +918,7 @@ if HAS_TRITON:
         acc_latent_norm = acc_latent / safe_l_i
 
         u_ptrs = u_v_ptr + offs_r[:, None] * stride_ur + offs_dv[None, :] * stride_ud
-        u_v_tile = tl.load(u_ptrs).to(tl.float32)
+        u_v_tile = tl.load(u_ptrs, mask=(offs_r[:, None] < R) & (offs_dv[None, :] < D_V), other=0.0).to(tl.float32)
 
         o_tile = tl.dot(
             acc_latent_norm.to(q_latent_ptr.dtype.element_ty),
@@ -1088,7 +1088,9 @@ if HAS_TRITON and tl is not None:
 
             valid = 1.0
             if HAS_MASK:
-                valid = tl.load(Mask_ptr + pid_b * stride_mb + t * stride_ml).to(tl.float32)
+                valid = tl.load(
+                    Mask_ptr + pid_b * stride_mb + t * stride_ml, mask=(pid_b < B_size) & (t < L_size), other=1.0
+                ).to(tl.float32)
 
             k_t = k_t * valid
             v_t = v_t * valid

@@ -56,19 +56,20 @@ if HAS_TRITON and triton is not None and tl is not None:
         """Adaptive sparse attention kernel for a single (batch, head) slice."""
         m_idx = tl.program_id(0)
         d_offs = tl.arange(0, D)
+        mask_d = d_offs < D
 
-        q = tl.load(Q_ptr + m_idx * stride_qm + d_offs * stride_qd).to(tl.float32)
-        thresh = tl.load(Threshold_ptr + m_idx).to(tl.float32)
+        q = tl.load(Q_ptr + m_idx * stride_qm + d_offs * stride_qd, mask=mask_d, other=0.0).to(tl.float32)
+        thresh = tl.load(Threshold_ptr + m_idx, mask=m_idx < L_q, other=0.0).to(tl.float32)
 
         # First pass: find max score among elements above threshold
         max_score = -1e9
         for n in range(L_kv):
-            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd).to(tl.float32)
+            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
             dot = tl.sum(q * k) * scale
 
             valid = 1.0
             if Mask_ptr is not None:
-                valid = tl.load(Mask_ptr + n).to(tl.float32)
+                valid = tl.load(Mask_ptr + n, mask=n < L_kv, other=0.0).to(tl.float32)
 
             if (dot < thresh) or (valid <= 0.0):
                 dot = -1e4
@@ -80,19 +81,19 @@ if HAS_TRITON and triton is not None and tl is not None:
         acc = tl.zeros((D,), dtype=tl.float32)
         sum_exp = 0.0
         for n in range(L_kv):
-            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd).to(tl.float32)
+            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
             dot = tl.sum(q * k) * scale
 
             valid = 1.0
             if Mask_ptr is not None:
-                valid = tl.load(Mask_ptr + n).to(tl.float32)
+                valid = tl.load(Mask_ptr + n, mask=n < L_kv, other=0.0).to(tl.float32)
 
             if (dot < thresh) or (valid <= 0.0):
                 dot = -1e4
 
             p = tl.math.exp2(1.44269504 * (dot - max_score))
             sum_exp += p
-            v = tl.load(V_ptr + n * stride_vn + d_offs * stride_vd).to(tl.float32)
+            v = tl.load(V_ptr + n * stride_vn + d_offs * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
             acc += p * v
 
         if sum_exp > 0.0:
@@ -100,7 +101,7 @@ if HAS_TRITON and triton is not None and tl is not None:
         else:
             out = tl.zeros((D,), dtype=tl.float32)
 
-        tl.store(Out_ptr + m_idx * stride_om + d_offs * stride_od, out)
+        tl.store(Out_ptr + m_idx * stride_om + d_offs * stride_od, out, mask=mask_d)
 
     @triton.autotune(
         configs=[
@@ -132,18 +133,19 @@ if HAS_TRITON and triton is not None and tl is not None:
     ):
         m_idx = tl.program_id(0)
         d_offs = tl.arange(0, D)
+        mask_d = d_offs < D
 
-        q = tl.load(Q_ptr + m_idx * stride_qm + d_offs * stride_qd).to(tl.float32)
-        thresh = tl.load(Threshold_ptr + m_idx).to(tl.float32)
+        q = tl.load(Q_ptr + m_idx * stride_qm + d_offs * stride_qd, mask=mask_d, other=0.0).to(tl.float32)
+        thresh = tl.load(Threshold_ptr + m_idx, mask=m_idx < L_q, other=0.0).to(tl.float32)
 
         max_score = -1e9
         for n in range(L_kv):
-            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd).to(tl.float32)
+            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
             dot = tl.sum(q * k) * scale
 
             valid = 1.0
             if Mask_ptr is not None:
-                valid = tl.load(Mask_ptr + n).to(tl.float32)
+                valid = tl.load(Mask_ptr + n, mask=n < L_kv, other=0.0).to(tl.float32)
 
             if (dot < thresh) or (valid <= 0.0):
                 dot = -1e4
@@ -154,19 +156,19 @@ if HAS_TRITON and triton is not None and tl is not None:
         acc = tl.zeros((D,), dtype=tl.float32)
         sum_exp = 0.0
         for n in range(L_kv):
-            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd).to(tl.float32)
+            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
             dot = tl.sum(q * k) * scale
 
             valid = 1.0
             if Mask_ptr is not None:
-                valid = tl.load(Mask_ptr + n).to(tl.float32)
+                valid = tl.load(Mask_ptr + n, mask=n < L_kv, other=0.0).to(tl.float32)
 
             if (dot < thresh) or (valid <= 0.0):
                 dot = -1e4
 
             p = tl.math.exp2(1.44269504 * (dot - max_score))
             sum_exp += p
-            v = tl.load(V_ptr + n * stride_vn + d_offs * stride_vd).to(tl.float32)
+            v = tl.load(V_ptr + n * stride_vn + d_offs * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
             acc += p * v
 
         if sum_exp > 0.0:
@@ -174,7 +176,7 @@ if HAS_TRITON and triton is not None and tl is not None:
         else:
             out = tl.zeros((D,), dtype=tl.float32)
 
-        tl.store(Out_ptr + m_idx * stride_om + d_offs * stride_od, out)
+        tl.store(Out_ptr + m_idx * stride_om + d_offs * stride_od, out, mask=mask_d)
 
 
 def _adaptive_sparse_attention_pytorch(
