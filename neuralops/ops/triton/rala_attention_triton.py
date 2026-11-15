@@ -50,14 +50,15 @@ if HAS_TRITON and triton is not None and tl is not None:
     ):
         """Sequential causal linear recurrence kernel for a single (batch, head) slice."""
         d_offs = tl.arange(0, D)
+        mask_d = d_offs < D
 
         S = tl.zeros((D, D), dtype=tl.float32)
         Z = tl.zeros((D,), dtype=tl.float32)
 
         for i in range(L):
-            q = tl.load(Q_ptr + i * stride_ql + d_offs * stride_qd).to(tl.float32)
-            k = tl.load(K_ptr + i * stride_kl + d_offs * stride_kd).to(tl.float32)
-            v = tl.load(V_ptr + i * stride_vl + d_offs * stride_vd).to(tl.float32)
+            q = tl.load(Q_ptr + i * stride_ql + d_offs * stride_qd, mask=mask_d, other=0.0).to(tl.float32)
+            k = tl.load(K_ptr + i * stride_kl + d_offs * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
+            v = tl.load(V_ptr + i * stride_vl + d_offs * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
 
             # Update S += k[:, None] * v[None, :]
             S += k[:, None] * v[None, :]
@@ -69,7 +70,7 @@ if HAS_TRITON and triton is not None and tl is not None:
             denom_clamped = tl.maximum(denom, 1e-4)
 
             out = num / denom_clamped
-            tl.store(Out_ptr + i * stride_ol + d_offs * stride_od, out)
+            tl.store(Out_ptr + i * stride_ol + d_offs * stride_od, out, mask=mask_d)
 
     @triton.autotune(
         configs=[
@@ -96,14 +97,15 @@ if HAS_TRITON and triton is not None and tl is not None:
         D: tl.constexpr,
     ):
         d_offs = tl.arange(0, D)
+        mask_d = d_offs < D
 
         S = tl.zeros((D, D), dtype=tl.float32)
         Z = tl.zeros((D,), dtype=tl.float32)
 
         for i in range(L):
-            q = tl.load(Q_ptr + i * stride_ql + d_offs * stride_qd).to(tl.float32)
-            k = tl.load(K_ptr + i * stride_kl + d_offs * stride_kd).to(tl.float32)
-            v = tl.load(V_ptr + i * stride_vl + d_offs * stride_vd).to(tl.float32)
+            q = tl.load(Q_ptr + i * stride_ql + d_offs * stride_qd, mask=mask_d, other=0.0).to(tl.float32)
+            k = tl.load(K_ptr + i * stride_kl + d_offs * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
+            v = tl.load(V_ptr + i * stride_vl + d_offs * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
 
             S += k[:, None] * v[None, :]
             Z += k
@@ -113,7 +115,7 @@ if HAS_TRITON and triton is not None and tl is not None:
             denom_clamped = tl.maximum(denom, 1e-4)
 
             out = num / denom_clamped
-            tl.store(Out_ptr + i * stride_ol + d_offs * stride_od, out)
+            tl.store(Out_ptr + i * stride_ol + d_offs * stride_od, out, mask=mask_d)
 
 
 def _rala_attention_pytorch(

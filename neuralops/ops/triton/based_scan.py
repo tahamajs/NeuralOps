@@ -201,5 +201,6 @@ def based_taylor_scan(
         )
         return out
     except Exception as e:
+        # allowed-swallow: Triton runtime failure falls back to PyTorch reference
         logger.debug("based_taylor_scan Triton launch failed, falling back to PyTorch: %s", e)
         return based_taylor_scan_pytorch(q, k, v, scale=scale)

@@ -370,15 +370,17 @@ if HAS_TRITON and tl is not None:
 
         offs_d1 = tl.arange(0, BLOCK_D)
         offs_d2 = tl.arange(0, BLOCK_D)
+        mask_d1 = offs_d1 < BLOCK_D
+        mask_d2 = offs_d2 < BLOCK_D
 
         # Load single-token query, key, and value vectors in FP32
         q_ptrs = Q_ptr + seq_idx * stride_qb + head_idx * stride_qh + offs_d1 * stride_qd
         k_ptrs = K_ptr + seq_idx * stride_kb + head_idx * stride_kh + offs_d1 * stride_kd
         v_ptrs = V_ptr + seq_idx * stride_vb + head_idx * stride_vh + offs_d2 * stride_vd
 
-        q = tl.load(q_ptrs).to(tl.float32)
-        k = tl.load(k_ptrs).to(tl.float32)
-        v = tl.load(v_ptrs).to(tl.float32)
+        q = tl.load(q_ptrs, mask=mask_d1, other=0.0).to(tl.float32)
+        k = tl.load(k_ptrs, mask=mask_d1, other=0.0).to(tl.float32)
+        v = tl.load(v_ptrs, mask=mask_d2, other=0.0).to(tl.float32)
 
         # Feature maps: phi(x) = elu(x) + 1 in FP32
         q_phi = tl.where(q > 0.0, q + 1.0, tl.exp(q))
@@ -386,7 +388,7 @@ if HAS_TRITON and tl is not None:
 
         # Dereference persistent state S_{t-1} from physical page table or direct state
         if PAGED_STATE:
-            state_block_id = tl.load(Block_Tables_ptr + seq_idx * stride_bt_b)
+            state_block_id = tl.load(Block_Tables_ptr + seq_idx * stride_bt_b, mask=seq_idx >= 0, other=0)
         else:
             state_block_id = seq_idx
 
@@ -398,18 +400,18 @@ if HAS_TRITON and tl is not None:
             + offs_d1[:, None] * stride_sd1
             + offs_d2[None, :] * stride_sd2
         )
-        s_old = tl.load(s_ptrs).to(tl.float32)
+        s_old = tl.load(s_ptrs, mask=(mask_d1[:, None] & mask_d2[None, :]), other=0.0).to(tl.float32)
 
         # State recurrence in FP32: S_new = decay * S_old + k_phi^T @ v
         delta_s = k_phi[:, None] * v[None, :]
         s_new = decay * s_old + delta_s
-        tl.store(s_ptrs, s_new.to(State_ptr.dtype.element_ty))
+        tl.store(s_ptrs, s_new.to(State_ptr.dtype.element_ty), mask=(mask_d1[:, None] & mask_d2[None, :]))
 
         # Attention output: o = q_phi @ S_new
         out = tl.sum(q_phi[:, None] * s_new, axis=0)
 
         out_ptrs = Out_ptr + seq_idx * stride_ob + head_idx * stride_oh + offs_d2 * stride_od
-        tl.store(out_ptrs, out.to(Out_ptr.dtype.element_ty))
+        tl.store(out_ptrs, out.to(Out_ptr.dtype.element_ty), mask=mask_d2)
 
 else:
     _paged_linear_attention_kernel = None

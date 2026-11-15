@@ -57,8 +57,9 @@ if HAS_TRITON and triton is not None and tl is not None:
         """Triton kernel computing attention within a cluster for a single batch/head."""
         m_idx = tl.program_id(0)
         d_offs = tl.arange(0, D)
+        mask_d = d_offs < D
 
-        q = tl.load(Q_ptr + m_idx * stride_qm + d_offs * stride_qd).to(tl.float32)
+        q = tl.load(Q_ptr + m_idx * stride_qm + d_offs * stride_qd, mask=mask_d, other=0.0).to(tl.float32)
 
         # Online softmax pass: numerically stable single-pass across cluster keys
         m_prev = -1e9
@@ -68,9 +69,11 @@ if HAS_TRITON and triton is not None and tl is not None:
         for n in range(M_k):
             valid = 1.0
             if Mask_ptr is not None:
-                valid = tl.load(Mask_ptr + m_idx * stride_mm + n * stride_mn).to(tl.float32)
+                valid = tl.load(
+                    Mask_ptr + m_idx * stride_mm + n * stride_mn, mask=(m_idx < M_q) & (n < M_k), other=0.0
+                ).to(tl.float32)
 
-            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd).to(tl.float32)
+            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
             dot = tl.sum(q * k) * scale
             if valid <= 0.0:
                 dot = -1e4
@@ -81,13 +84,13 @@ if HAS_TRITON and triton is not None and tl is not None:
             l_prev = l_prev * alpha + p
             acc = acc * alpha
 
-            v = tl.load(V_ptr + n * stride_vn + d_offs * stride_vd).to(tl.float32)
+            v = tl.load(V_ptr + n * stride_vn + d_offs * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
             acc += p * v
             m_prev = m_curr
 
         out = acc / tl.maximum(l_prev, 1e-6)
 
-        tl.store(Out_ptr + m_idx * stride_om + d_offs * stride_od, out)
+        tl.store(Out_ptr + m_idx * stride_om + d_offs * stride_od, out, mask=mask_d)
 
     @triton.autotune(
         configs=[
@@ -120,8 +123,9 @@ if HAS_TRITON and triton is not None and tl is not None:
     ):
         m_idx = tl.program_id(0)
         d_offs = tl.arange(0, D)
+        mask_d = d_offs < D
 
-        q = tl.load(Q_ptr + m_idx * stride_qm + d_offs * stride_qd).to(tl.float32)
+        q = tl.load(Q_ptr + m_idx * stride_qm + d_offs * stride_qd, mask=mask_d, other=0.0).to(tl.float32)
 
         # Online softmax pass: numerically stable single-pass across cluster keys
         m_prev = -1e9
@@ -131,9 +135,11 @@ if HAS_TRITON and triton is not None and tl is not None:
         for n in range(M_k):
             valid = 1.0
             if Mask_ptr is not None:
-                valid = tl.load(Mask_ptr + m_idx * stride_mm + n * stride_mn).to(tl.float32)
+                valid = tl.load(
+                    Mask_ptr + m_idx * stride_mm + n * stride_mn, mask=(m_idx < M_q) & (n < M_k), other=0.0
+                ).to(tl.float32)
 
-            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd).to(tl.float32)
+            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
             dot = tl.sum(q * k) * scale
             if valid <= 0.0:
                 dot = -1e4
@@ -144,13 +150,13 @@ if HAS_TRITON and triton is not None and tl is not None:
             l_prev = l_prev * alpha + p
             acc = acc * alpha
 
-            v = tl.load(V_ptr + n * stride_vn + d_offs * stride_vd).to(tl.float32)
+            v = tl.load(V_ptr + n * stride_vn + d_offs * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
             acc += p * v
             m_prev = m_curr
 
         out = acc / tl.maximum(l_prev, 1e-6)
 
-        tl.store(Out_ptr + m_idx * stride_om + d_offs * stride_od, out)
+        tl.store(Out_ptr + m_idx * stride_om + d_offs * stride_od, out, mask=mask_d)
 
 
 def _kmeans_assign(feat: torch.Tensor, K: int, n_iters: int = 3) -> torch.Tensor:

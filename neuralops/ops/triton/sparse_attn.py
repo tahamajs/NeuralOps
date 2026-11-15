@@ -13,6 +13,7 @@ Evaluates arbitrary 2D block-sparse attention masks with configurable tiling and
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Any
 
@@ -20,6 +21,8 @@ import torch
 import torch.nn.functional as F
 
 from neuralops.ops.triton._types import HAS_TRITON, check_triton_suitability, sparse_attn_pytorch_fallback
+
+logger = logging.getLogger(__name__)
 
 if HAS_TRITON:
     import triton
@@ -83,7 +86,12 @@ if HAS_TRITON:
             if IS_CAUSAL:
                 process_block = process_block and (k_blk_idx <= q_blk_idx)
             if HAS_MASK:
-                mask_val = tl.load(mask_base + q_blk_idx * stride_mq + k_blk_idx * stride_mk)
+                mask_val = tl.load(
+                    mask_base + q_blk_idx * stride_mq + k_blk_idx * stride_mk,
+                    mask=(q_blk_idx < (N_Q + BLOCK_SIZE - 1) // BLOCK_SIZE)
+                    & (k_blk_idx < (N_K + BLOCK_SIZE - 1) // BLOCK_SIZE),
+                    other=0,
+                )
                 process_block = process_block and (mask_val != 0)
 
             if process_block:
@@ -211,7 +219,12 @@ if HAS_TRITON and tl is not None:
             if IS_CAUSAL:
                 process_block = process_block and (k_blk_idx <= q_blk_idx)
             if HAS_MASK:
-                mask_val = tl.load(mask_base + q_blk_idx * stride_mq + k_blk_idx * stride_mk)
+                mask_val = tl.load(
+                    mask_base + q_blk_idx * stride_mq + k_blk_idx * stride_mk,
+                    mask=(q_blk_idx < (N_Q + BLOCK_SIZE - 1) // BLOCK_SIZE)
+                    & (k_blk_idx < (N_K + BLOCK_SIZE - 1) // BLOCK_SIZE),
+                    other=0,
+                )
                 process_block = process_block and (mask_val != 0)
 
             if process_block:
@@ -248,7 +261,12 @@ if HAS_TRITON and tl is not None:
             if IS_CAUSAL:
                 process_block = process_block and (k_blk_idx <= q_blk_idx)
             if HAS_MASK:
-                mask_val = tl.load(mask_base + q_blk_idx * stride_mq + k_blk_idx * stride_mk)
+                mask_val = tl.load(
+                    mask_base + q_blk_idx * stride_mq + k_blk_idx * stride_mk,
+                    mask=(q_blk_idx < (N_Q + BLOCK_SIZE - 1) // BLOCK_SIZE)
+                    & (k_blk_idx < (N_K + BLOCK_SIZE - 1) // BLOCK_SIZE),
+                    other=0,
+                )
                 process_block = process_block and (mask_val != 0)
 
             if process_block:
@@ -929,8 +947,9 @@ def fused_expert_choice_scatter_gather_triton(
 
             topk_vals, topk_indices = moe_topk_routing_fused(gate_scores, top_k_experts)
             return topk_vals, topk_indices, gate_scores
-        except Exception:
-            pass
+        except Exception as e:
+            # allowed-swallow: CUDA kernel failed, fallback to PyTorch reference
+            logger.debug("moe_topk_routing_fused failed, using PyTorch: %s", e)
     return fused_expert_choice_scatter_gather_pytorch(x_flat, gate_scores, top_k_experts)
 
 

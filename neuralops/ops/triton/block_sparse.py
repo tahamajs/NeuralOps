@@ -319,7 +319,7 @@ if HAS_TRITON and tl is not None:
                 + q_block_id * stride_ab_q
                 + active_idx * stride_ab_k
             )
-            kv_block_id = tl.load(active_block_ptr)
+            kv_block_id = tl.load(active_block_ptr, mask=(pid_m * BLOCK_M < L), other=-1)
 
             if kv_block_id >= 0:
                 offs_n = kv_block_id * BLOCK_SIZE + tl.arange(0, BLOCK_N)

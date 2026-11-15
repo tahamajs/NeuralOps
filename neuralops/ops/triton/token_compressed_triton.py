@@ -54,13 +54,14 @@ if HAS_TRITON and triton is not None and tl is not None:
         """Attention kernel computing query to compressed KV attention for a single (batch, head) slice."""
         m_idx = tl.program_id(0)
         d_offs = tl.arange(0, D)
+        mask_d = d_offs < D
 
-        q = tl.load(Q_ptr + m_idx * stride_qm + d_offs * stride_qd).to(tl.float32)
+        q = tl.load(Q_ptr + m_idx * stride_qm + d_offs * stride_qd, mask=mask_d, other=0.0).to(tl.float32)
 
         # First pass: find max score
         max_score = -1e9
         for n in range(L_proj):
-            k = tl.load(K_comp_ptr + n * stride_kn + d_offs * stride_kd).to(tl.float32)
+            k = tl.load(K_comp_ptr + n * stride_kn + d_offs * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
             dot = tl.sum(q * k) * scale
             if dot > max_score:
                 max_score = dot
@@ -69,11 +70,11 @@ if HAS_TRITON and triton is not None and tl is not None:
         acc = tl.zeros((D,), dtype=tl.float32)
         sum_exp = 0.0
         for n in range(L_proj):
-            k = tl.load(K_comp_ptr + n * stride_kn + d_offs * stride_kd).to(tl.float32)
+            k = tl.load(K_comp_ptr + n * stride_kn + d_offs * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
             dot = tl.sum(q * k) * scale
             p = tl.math.exp2(1.44269504 * (dot - max_score))
             sum_exp += p
-            v = tl.load(V_comp_ptr + n * stride_vn + d_offs * stride_vd).to(tl.float32)
+            v = tl.load(V_comp_ptr + n * stride_vn + d_offs * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
             acc += p * v
 
         if sum_exp > 0.0:
@@ -81,7 +82,7 @@ if HAS_TRITON and triton is not None and tl is not None:
         else:
             out = tl.zeros((D,), dtype=tl.float32)
 
-        tl.store(Out_ptr + m_idx * stride_om + d_offs * stride_od, out)
+        tl.store(Out_ptr + m_idx * stride_om + d_offs * stride_od, out, mask=mask_d)
 
     @triton.autotune(
         configs=[
@@ -111,12 +112,13 @@ if HAS_TRITON and triton is not None and tl is not None:
     ):
         m_idx = tl.program_id(0)
         d_offs = tl.arange(0, D)
+        mask_d = d_offs < D
 
-        q = tl.load(Q_ptr + m_idx * stride_qm + d_offs * stride_qd).to(tl.float32)
+        q = tl.load(Q_ptr + m_idx * stride_qm + d_offs * stride_qd, mask=mask_d, other=0.0).to(tl.float32)
 
         max_score = -1e9
         for n in range(L_proj):
-            k = tl.load(K_comp_ptr + n * stride_kn + d_offs * stride_kd).to(tl.float32)
+            k = tl.load(K_comp_ptr + n * stride_kn + d_offs * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
             dot = tl.sum(q * k) * scale
             if dot > max_score:
                 max_score = dot
@@ -124,11 +126,11 @@ if HAS_TRITON and triton is not None and tl is not None:
         acc = tl.zeros((D,), dtype=tl.float32)
         sum_exp = 0.0
         for n in range(L_proj):
-            k = tl.load(K_comp_ptr + n * stride_kn + d_offs * stride_kd).to(tl.float32)
+            k = tl.load(K_comp_ptr + n * stride_kn + d_offs * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
             dot = tl.sum(q * k) * scale
             p = tl.math.exp2(1.44269504 * (dot - max_score))
             sum_exp += p
-            v = tl.load(V_comp_ptr + n * stride_vn + d_offs * stride_vd).to(tl.float32)
+            v = tl.load(V_comp_ptr + n * stride_vn + d_offs * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
             acc += p * v
 
         if sum_exp > 0.0:
@@ -136,7 +138,7 @@ if HAS_TRITON and triton is not None and tl is not None:
         else:
             out = tl.zeros((D,), dtype=tl.float32)
 
-        tl.store(Out_ptr + m_idx * stride_om + d_offs * stride_od, out)
+        tl.store(Out_ptr + m_idx * stride_om + d_offs * stride_od, out, mask=mask_d)
 
 
 def _token_compressed_attention_pytorch(
@@ -149,17 +151,19 @@ def _token_compressed_attention_pytorch(
 ) -> torch.Tensor:
     """Pure PyTorch reference implementation of token-compressed attention."""
     B, H, L, D = q.shape
-    L_proj = min(num_projected_tokens, L)
+    L_k = k.shape[2]
+    L_v = v.shape[2]
+    L_proj = min(num_projected_tokens, L_k)
     dtype = q.dtype
 
     if scale is None:
         scale = 1.0 / math.sqrt(int(D))
 
     # Adaptive pooling compression along sequence dimension
-    k_comp = F.adaptive_avg_pool1d(k.permute(0, 1, 3, 2).reshape(B * H, D, L), L_proj)
+    k_comp = F.adaptive_avg_pool1d(k.permute(0, 1, 3, 2).reshape(B * H, D, L_k), L_proj)
     k_comp = k_comp.reshape(B, H, D, L_proj).permute(0, 1, 3, 2).contiguous()
 
-    v_comp = F.adaptive_avg_pool1d(v.permute(0, 1, 3, 2).reshape(B * H, D, L), L_proj)
+    v_comp = F.adaptive_avg_pool1d(v.permute(0, 1, 3, 2).reshape(B * H, D, L_v), L_proj)
     v_comp = v_comp.reshape(B, H, D, L_proj).permute(0, 1, 3, 2).contiguous()
 
     scores = torch.matmul(q.float(), k_comp.float().transpose(-2, -1).contiguous()) * scale

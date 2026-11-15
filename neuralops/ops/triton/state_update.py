@@ -69,28 +69,35 @@ if HAS_TRITON:
         d_id = tl.program_id(1)
 
         offs_n = tl.arange(0, N_SZ)
+        mask_n = offs_n < N_SZ
 
         a_ptrs = A_ptr + d_id * stride_ad + offs_n * stride_an
-        a_vec = tl.load(a_ptrs)
+        a_vec = tl.load(a_ptrs, mask=mask_n, other=0.0)
 
-        d_val = tl.load(D_ptr + d_id) if HAS_D else 0.0
+        d_val = tl.load(D_ptr + d_id, mask=d_id < _D_SZ, other=0.0) if HAS_D else 0.0
 
         if HAS_INIT_STATE:
             s_in_ptrs = State_in_ptr + b_id * stride_sb + d_id * stride_sd + offs_n * stride_sn
-            h = tl.load(s_in_ptrs).to(tl.float32)
+            h = tl.load(s_in_ptrs, mask=mask_n, other=0.0).to(tl.float32)
         else:
             h = tl.zeros((N_SZ,), dtype=tl.float32)
 
         for t in range(L_SZ):
-            u_val = tl.load(U_ptr + b_id * stride_ub + t * stride_ul + d_id * stride_ud).to(tl.float32)
-            delta_val = tl.load(Delta_ptr + b_id * stride_deltab + t * stride_deltal + d_id * stride_deltad).to(
-                tl.float32
-            )
+            u_val = tl.load(
+                U_ptr + b_id * stride_ub + t * stride_ul + d_id * stride_ud,
+                mask=(b_id < _B_SZ) & (d_id < _D_SZ),
+                other=0.0,
+            ).to(tl.float32)
+            delta_val = tl.load(
+                Delta_ptr + b_id * stride_deltab + t * stride_deltal + d_id * stride_deltad,
+                mask=(b_id < _B_SZ) & (d_id < _D_SZ),
+                other=0.0,
+            ).to(tl.float32)
 
             b_ptrs = B_ptr + b_id * stride_bb + t * stride_bl + offs_n * stride_bn
             c_ptrs = C_ptr + b_id * stride_cb + t * stride_cl + offs_n * stride_cn
-            b_vec = tl.load(b_ptrs).to(tl.float32)
-            c_vec = tl.load(c_ptrs).to(tl.float32)
+            b_vec = tl.load(b_ptrs, mask=mask_n, other=0.0).to(tl.float32)
+            c_vec = tl.load(c_ptrs, mask=mask_n, other=0.0).to(tl.float32)
 
             dA = tl.math.exp2(1.44269504 * (delta_val * a_vec))
             dB = delta_val * b_vec
@@ -100,10 +107,10 @@ if HAS_TRITON:
             y_val = tl.sum(h * c_vec) + (d_val * u_val if HAS_D else 0.0)
 
             y_ptr = Out_ptr + b_id * stride_yb + t * stride_yl + d_id * stride_yd
-            tl.store(y_ptr, y_val.to(Out_ptr.dtype.element_ty))
+            tl.store(y_ptr, y_val.to(Out_ptr.dtype.element_ty), mask=(b_id < _B_SZ) & (d_id < _D_SZ))
 
         s_out_ptrs = State_out_ptr + b_id * stride_sb + d_id * stride_sd + offs_n * stride_sn
-        tl.store(s_out_ptrs, h.to(State_out_ptr.dtype.element_ty))
+        tl.store(s_out_ptrs, h.to(State_out_ptr.dtype.element_ty), mask=mask_n)
 
 
 class _TritonStateUpdateAutogradFunction(torch.autograd.Function):
@@ -328,14 +335,16 @@ if HAS_TRITON:
 
         offs_k = tl.arange(0, Dk)
         offs_v = tl.arange(0, Dv)
+        mask_k = offs_k < Dk
+        mask_v = offs_v < Dv
 
         q_ptrs = Q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_k * stride_qd
         k_ptrs = K_ptr + pid_b * stride_kb + pid_h * stride_kh + offs_k * stride_kd
         v_ptrs = V_ptr + pid_b * stride_vb + pid_h * stride_vh + offs_v * stride_vd
 
-        q = tl.load(q_ptrs).to(tl.float32)
-        k = tl.load(k_ptrs).to(tl.float32)
-        v = tl.load(v_ptrs).to(tl.float32)
+        q = tl.load(q_ptrs, mask=mask_k, other=0.0).to(tl.float32)
+        k = tl.load(k_ptrs, mask=mask_k, other=0.0).to(tl.float32)
+        v = tl.load(v_ptrs, mask=mask_v, other=0.0).to(tl.float32)
 
         kv_ptrs = (
             KV_ptr
@@ -344,22 +353,22 @@ if HAS_TRITON:
             + offs_k[:, None] * stride_kvk
             + offs_v[None, :] * stride_kvv
         )
-        kv = tl.load(kv_ptrs).to(tl.float32)
+        kv = tl.load(kv_ptrs, mask=(mask_k[:, None] & mask_v[None, :]), other=0.0).to(tl.float32)
 
         kv_new = kv + k[:, None] * v[None, :]
-        tl.store(kv_ptrs, kv_new.to(KV_ptr.dtype.element_ty))
+        tl.store(kv_ptrs, kv_new.to(KV_ptr.dtype.element_ty), mask=(mask_k[:, None] & mask_v[None, :]))
 
         z_ptrs = Z_ptr + pid_b * stride_zb + pid_h * stride_zh + offs_k * stride_zk
-        z = tl.load(z_ptrs).to(tl.float32)
+        z = tl.load(z_ptrs, mask=mask_k, other=0.0).to(tl.float32)
         z_new = z + k
-        tl.store(z_ptrs, z_new.to(Z_ptr.dtype.element_ty))
+        tl.store(z_ptrs, z_new.to(Z_ptr.dtype.element_ty), mask=mask_k)
 
         num = tl.sum(q[:, None] * kv_new, axis=0)
         denom = tl.sum(q * z_new) + eps
         out = num / denom
 
         out_ptrs = Out_ptr + pid_b * stride_ob + pid_h * stride_oh + offs_v * stride_ov
-        tl.store(out_ptrs, out.to(Out_ptr.dtype.element_ty))
+        tl.store(out_ptrs, out.to(Out_ptr.dtype.element_ty), mask=mask_v)
 
     @triton.jit
     def _triton_recurrent_gla_step_kernel(
@@ -400,16 +409,28 @@ if HAS_TRITON:
 
         offs_k = tl.arange(0, Dk)
         offs_v = tl.arange(0, Dv)
+        mask_k = offs_k < Dk
+        mask_v = offs_v < Dv
 
-        q = tl.load(Q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_k * stride_qd).to(tl.float32)
-        k = tl.load(K_ptr + pid_b * stride_kb + pid_h * stride_kh + offs_k * stride_kd).to(tl.float32)
-        v = tl.load(V_ptr + pid_b * stride_vb + pid_h * stride_vh + offs_v * stride_vd).to(tl.float32)
+        q = tl.load(Q_ptr + pid_b * stride_qb + pid_h * stride_qh + offs_k * stride_qd, mask=mask_k, other=0.0).to(
+            tl.float32
+        )
+        k = tl.load(K_ptr + pid_b * stride_kb + pid_h * stride_kh + offs_k * stride_kd, mask=mask_k, other=0.0).to(
+            tl.float32
+        )
+        v = tl.load(V_ptr + pid_b * stride_vb + pid_h * stride_vh + offs_v * stride_vd, mask=mask_v, other=0.0).to(
+            tl.float32
+        )
 
         if IS_VECTOR_GATE:
-            gk = tl.load(Gk_ptr + pid_b * stride_gkb + pid_h * stride_gkh + offs_k * stride_gkd).to(tl.float32)
+            gk = tl.load(
+                Gk_ptr + pid_b * stride_gkb + pid_h * stride_gkh + offs_k * stride_gkd, mask=mask_k, other=0.0
+            ).to(tl.float32)
             decay = tl.math.exp2(1.44269504 * (gk))
         else:
-            g = tl.load(Gk_ptr + pid_b * stride_gkb + pid_h * stride_gkh).to(tl.float32)
+            g = tl.load(Gk_ptr + pid_b * stride_gkb + pid_h * stride_gkh, mask=(pid_b < B) & (pid_h < H), other=0.0).to(
+                tl.float32
+            )
             decay = tl.math.exp2(1.44269504 * (g))
 
         kv_ptrs = (
@@ -419,16 +440,20 @@ if HAS_TRITON:
             + offs_k[:, None] * stride_kvk
             + offs_v[None, :] * stride_kvv
         )
-        kv = tl.load(kv_ptrs).to(tl.float32)
+        kv = tl.load(kv_ptrs, mask=(mask_k[:, None] & mask_v[None, :]), other=0.0).to(tl.float32)
 
         if IS_VECTOR_GATE:
             kv_new = decay[:, None] * kv + k[:, None] * v[None, :]
         else:
             kv_new = decay * kv + k[:, None] * v[None, :]
-        tl.store(kv_ptrs, kv_new.to(KV_ptr.dtype.element_ty))
+        tl.store(kv_ptrs, kv_new.to(KV_ptr.dtype.element_ty), mask=(mask_k[:, None] & mask_v[None, :]))
 
         out = tl.sum(q[:, None] * kv_new, axis=0) * scale
-        tl.store(Out_ptr + pid_b * stride_ob + pid_h * stride_oh + offs_v * stride_ov, out.to(Out_ptr.dtype.element_ty))
+        tl.store(
+            Out_ptr + pid_b * stride_ob + pid_h * stride_oh + offs_v * stride_ov,
+            out.to(Out_ptr.dtype.element_ty),
+            mask=mask_v,
+        )
 
 
 def fused_recurrent_linear_step(

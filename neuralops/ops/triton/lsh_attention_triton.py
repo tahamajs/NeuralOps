@@ -57,25 +57,26 @@ if HAS_TRITON and triton is not None and tl is not None:
         """Triton kernel computing bucketed LSH attention for a single batch/head."""
         m_idx = tl.program_id(0)
         d_offs = tl.arange(0, D)
+        mask_d = d_offs < D
 
-        q = tl.load(Q_ptr + m_idx * stride_qm + d_offs * stride_qd).to(tl.float32)
-        b_q = tl.load(Bucket_q_ptr + m_idx).to(tl.int64)
+        q = tl.load(Q_ptr + m_idx * stride_qm + d_offs * stride_qd, mask=mask_d, other=0.0).to(tl.float32)
+        b_q = tl.load(Bucket_q_ptr + m_idx, mask=m_idx < M_q, other=-1).to(tl.int64)
 
         max_score = -1e9
         sum_exp = 0.0
 
         # First pass: find max score among matching bucket keys (bitwise XOR matching)
         for n in range(N_k):
-            b_k = tl.load(Bucket_k_ptr + n).to(tl.int64)
+            b_k = tl.load(Bucket_k_ptr + n, mask=n < N_k, other=-2).to(tl.int64)
             # Bitwise matching: identical bucket codes have 0 difference under XOR
             diff = b_q ^ b_k
             match = diff == 0
 
             valid = 1.0
             if Mask_ptr is not None:
-                valid = tl.load(Mask_ptr + n).to(tl.float32)
+                valid = tl.load(Mask_ptr + n, mask=n < N_k, other=0.0).to(tl.float32)
 
-            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd).to(tl.float32)
+            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
             dot = tl.sum(q * k) * scale
 
             if (match == 0) or (valid <= 0.0):
@@ -87,15 +88,15 @@ if HAS_TRITON and triton is not None and tl is not None:
         # Second pass: compute softmax weights and accumulate values
         acc = tl.zeros((D,), dtype=tl.float32)
         for n in range(N_k):
-            b_k = tl.load(Bucket_k_ptr + n).to(tl.int64)
+            b_k = tl.load(Bucket_k_ptr + n, mask=n < N_k, other=-2).to(tl.int64)
             diff = b_q ^ b_k
             match = diff == 0
 
             valid = 1.0
             if Mask_ptr is not None:
-                valid = tl.load(Mask_ptr + n).to(tl.float32)
+                valid = tl.load(Mask_ptr + n, mask=n < N_k, other=0.0).to(tl.float32)
 
-            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd).to(tl.float32)
+            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
             dot = tl.sum(q * k) * scale
 
             if (match == 0) or (valid <= 0.0):
@@ -103,7 +104,7 @@ if HAS_TRITON and triton is not None and tl is not None:
 
             p = tl.math.exp2(1.44269504 * (dot - max_score))
             sum_exp += p
-            v = tl.load(V_ptr + n * stride_vn + d_offs * stride_vd).to(tl.float32)
+            v = tl.load(V_ptr + n * stride_vn + d_offs * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
             acc += p * v
 
         if sum_exp > 0.0:
@@ -111,7 +112,7 @@ if HAS_TRITON and triton is not None and tl is not None:
         else:
             out = tl.zeros((D,), dtype=tl.float32)
 
-        tl.store(Out_ptr + m_idx * stride_om + d_offs * stride_od, out)
+        tl.store(Out_ptr + m_idx * stride_om + d_offs * stride_od, out, mask=mask_d)
 
     @triton.autotune(
         configs=[
@@ -144,23 +145,24 @@ if HAS_TRITON and triton is not None and tl is not None:
     ):
         m_idx = tl.program_id(0)
         d_offs = tl.arange(0, D)
+        mask_d = d_offs < D
 
-        q = tl.load(Q_ptr + m_idx * stride_qm + d_offs * stride_qd).to(tl.float32)
-        b_q = tl.load(Bucket_q_ptr + m_idx).to(tl.int64)
+        q = tl.load(Q_ptr + m_idx * stride_qm + d_offs * stride_qd, mask=mask_d, other=0.0).to(tl.float32)
+        b_q = tl.load(Bucket_q_ptr + m_idx, mask=m_idx < M_q, other=-1).to(tl.int64)
 
         max_score = -1e9
         sum_exp = 0.0
 
         for n in range(N_k):
-            b_k = tl.load(Bucket_k_ptr + n).to(tl.int64)
+            b_k = tl.load(Bucket_k_ptr + n, mask=n < N_k, other=-2).to(tl.int64)
             diff = b_q ^ b_k
             match = diff == 0
 
             valid = 1.0
             if Mask_ptr is not None:
-                valid = tl.load(Mask_ptr + n).to(tl.float32)
+                valid = tl.load(Mask_ptr + n, mask=n < N_k, other=0.0).to(tl.float32)
 
-            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd).to(tl.float32)
+            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
             dot = tl.sum(q * k) * scale
 
             if (match == 0) or (valid <= 0.0):
@@ -171,15 +173,15 @@ if HAS_TRITON and triton is not None and tl is not None:
 
         acc = tl.zeros((D,), dtype=tl.float32)
         for n in range(N_k):
-            b_k = tl.load(Bucket_k_ptr + n).to(tl.int64)
+            b_k = tl.load(Bucket_k_ptr + n, mask=n < N_k, other=-2).to(tl.int64)
             diff = b_q ^ b_k
             match = diff == 0
 
             valid = 1.0
             if Mask_ptr is not None:
-                valid = tl.load(Mask_ptr + n).to(tl.float32)
+                valid = tl.load(Mask_ptr + n, mask=n < N_k, other=0.0).to(tl.float32)
 
-            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd).to(tl.float32)
+            k = tl.load(K_ptr + n * stride_kn + d_offs * stride_kd, mask=mask_d, other=0.0).to(tl.float32)
             dot = tl.sum(q * k) * scale
 
             if (match == 0) or (valid <= 0.0):
@@ -187,7 +189,7 @@ if HAS_TRITON and triton is not None and tl is not None:
 
             p = tl.math.exp2(1.44269504 * (dot - max_score))
             sum_exp += p
-            v = tl.load(V_ptr + n * stride_vn + d_offs * stride_vd).to(tl.float32)
+            v = tl.load(V_ptr + n * stride_vn + d_offs * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
             acc += p * v
 
         if sum_exp > 0.0:
@@ -195,7 +197,7 @@ if HAS_TRITON and triton is not None and tl is not None:
         else:
             out = tl.zeros((D,), dtype=tl.float32)
 
-        tl.store(Out_ptr + m_idx * stride_om + d_offs * stride_od, out)
+        tl.store(Out_ptr + m_idx * stride_om + d_offs * stride_od, out, mask=mask_d)
 
 
 def _compute_lsh_buckets(vectors: torch.Tensor, proj: torch.Tensor, num_buckets: int) -> torch.Tensor:
@@ -205,8 +207,9 @@ def _compute_lsh_buckets(vectors: torch.Tensor, proj: torch.Tensor, num_buckets:
             from neuralops.ops.triton.sparse_attn import fused_lsh_hash_and_bin_triton
 
             return fused_lsh_hash_and_bin_triton(vectors, proj, num_buckets)
-        except Exception:
-            pass
+        except Exception as e:
+            # allowed-swallow: fallback to PyTorch random hyperplane projection
+            logger.debug("fused_lsh_hash_and_bin_triton failed, using PyTorch fallback: %s", e)
 
     norm = F.normalize(vectors.float(), p=2, dim=-1)
     dots = torch.matmul(norm, proj.float())

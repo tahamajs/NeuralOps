@@ -161,7 +161,58 @@ def rwkv6_scan(
         return rwkv6_scan_pytorch(r, k, v, w, u)
 
     try:
-        return rwkv6_scan_pytorch(r, k, v, w, u)
+        B, H, T, D = r.shape
+        BLOCK_D = triton.next_power_of_2(D)
+        out = torch.empty_like(r)
+        grid = (B, H)
+
+        # Ensure tensors are contiguous and broadcasted if needed
+        r_c = r.contiguous()
+        k_c = k.contiguous()
+        v_c = v.contiguous()
+        w_c = w.contiguous()
+        u_c = u.contiguous()
+
+        stride_uh = u_c.stride(0) if u_c.dim() >= 2 else 0
+        stride_ud = u_c.stride(-1)
+
+        _fused_rwkv6_scan_fwd_kernel[grid](
+            r_c,
+            k_c,
+            v_c,
+            w_c,
+            u_c,
+            out,
+            B,
+            H,
+            T,
+            D,
+            r_c.stride(0),
+            r_c.stride(1),
+            r_c.stride(2),
+            r_c.stride(3),
+            k_c.stride(0),
+            k_c.stride(1),
+            k_c.stride(2),
+            k_c.stride(3),
+            v_c.stride(0),
+            v_c.stride(1),
+            v_c.stride(2),
+            v_c.stride(3),
+            w_c.stride(0),
+            w_c.stride(1),
+            w_c.stride(2),
+            w_c.stride(3),
+            stride_uh,
+            stride_ud,
+            out.stride(0),
+            out.stride(1),
+            out.stride(2),
+            out.stride(3),
+            BLOCK_D=BLOCK_D,
+        )
+        return out
     except Exception as e:
+        # allowed-swallow: Triton runtime failure falls back to PyTorch reference
         logger.info("rwkv6_scan Triton launch failed, falling back to PyTorch: %s", e)
         return rwkv6_scan_pytorch(r, k, v, w, u)

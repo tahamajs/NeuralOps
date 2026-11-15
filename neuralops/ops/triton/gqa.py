@@ -372,7 +372,7 @@ if HAS_TRITON:
 
         hw_val = 1.0
         if HAS_HEAD_WEIGHTS:
-            hw_val = tl.load(HeadWeights_ptr + h_q * stride_hw).to(tl.float32)
+            hw_val = tl.load(HeadWeights_ptr + h_q * stride_hw, mask=h_q < H_Q, other=1.0).to(tl.float32)
 
         end_n = N_K
         if IS_CAUSAL:

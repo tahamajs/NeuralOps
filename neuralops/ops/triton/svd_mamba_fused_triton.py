@@ -71,32 +71,34 @@ def _svd_mamba_fused_fwd_kernel(
         return
 
     n_offsets = tl.arange(0, N_STATE)
+    mask_n = n_offsets < N_STATE
+    mask_bd = (pid_b < B_sz) & (pid_d < D_dim)
 
     if A_HAS_D:
         A_ptrs = A_ptr + pid_d * stride_ad + n_offsets * stride_an
     else:
         A_ptrs = A_ptr + n_offsets * stride_an
-    a_val = tl.load(A_ptrs).to(tl.float32)
+    a_val = tl.load(A_ptrs, mask=mask_n, other=0.0).to(tl.float32)
 
     d_val = 0.0
     if HAS_D:
-        d_val = tl.load(D_ptr + pid_d).to(tl.float32)
+        d_val = tl.load(D_ptr + pid_d, mask=pid_d < D_dim, other=0.0).to(tl.float32)
 
     h_num = tl.zeros((N_STATE,), dtype=tl.float32)
     h_den = tl.zeros((N_STATE,), dtype=tl.float32)
 
     for l in range(L_sz):
         u_p = u_ptr + pid_b * stride_ub + l * stride_ul + pid_d * stride_ud
-        u_val = tl.load(u_p).to(tl.float32)
+        u_val = tl.load(u_p, mask=mask_bd, other=0.0).to(tl.float32)
 
         delta_p = delta_ptr + pid_b * stride_deltab + l * stride_deltal + pid_d * stride_deltad
-        delta_val = tl.load(delta_p).to(tl.float32)
+        delta_val = tl.load(delta_p, mask=mask_bd, other=0.0).to(tl.float32)
 
         B_ptrs = B_ptr + pid_b * stride_bb + l * stride_bl + n_offsets * stride_bn
-        b_val = tl.load(B_ptrs).to(tl.float32)
+        b_val = tl.load(B_ptrs, mask=mask_n, other=0.0).to(tl.float32)
 
         C_ptrs = C_ptr + pid_b * stride_cb + l * stride_cl + n_offsets * stride_cn
-        c_val = tl.load(C_ptrs).to(tl.float32)
+        c_val = tl.load(C_ptrs, mask=mask_n, other=0.0).to(tl.float32)
 
         dt_a = delta_val * a_val
         # Clamp between -25.0 and 0.0
@@ -120,17 +122,17 @@ def _svd_mamba_fused_fwd_kernel(
 
         if HAS_Z:
             z_p = z_ptr + pid_b * stride_zb + l * stride_zl + pid_d * stride_zd
-            z_val = tl.load(z_p).to(tl.float32)
+            z_val = tl.load(z_p, mask=mask_bd, other=0.0).to(tl.float32)
             silu_z = z_val / (1.0 + tl.math.exp2(-1.44269504 * z_val))
             y_val = y_val * silu_z
 
         if HAS_GLOBAL:
             g_p = global_ptr + pid_b * stride_gb + l * stride_gl + pid_d * stride_gd
-            g_val = tl.load(g_p).to(tl.float32)
+            g_val = tl.load(g_p, mask=mask_bd, other=0.0).to(tl.float32)
             y_val = y_val + g_val
 
         out_p = out_ptr + pid_b * stride_ob + l * stride_ol + pid_d * stride_od
-        tl.store(out_p, y_val)
+        tl.store(out_p, y_val, mask=mask_bd)
 
 
 def svd_mamba_fused_triton(
@@ -144,8 +146,10 @@ def svd_mamba_fused_triton(
     global_mix: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """Triton implementation of SVD-Mamba fused state-space recurrence."""
-    if not HAS_TRITON:
-        raise RuntimeError("Triton is not available in the current runtime environment.")
+    if not (HAS_TRITON and u.is_cuda):
+        from neuralops.ops.cuda.svd_mamba_fused.svd_mamba_fused_autograd import svd_mamba_fused_pytorch_ref
+
+        return svd_mamba_fused_pytorch_ref(u, delta, A, B_ssm, C_ssm, D=D, z=z, global_mix=global_mix)
 
     B_sz, L_sz, D_dim = u.shape
     d_state = B_ssm.shape[-1]

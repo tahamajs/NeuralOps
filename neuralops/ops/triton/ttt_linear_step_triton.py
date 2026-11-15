@@ -108,7 +108,7 @@ if HAS_TRITON and triton is not None and tl is not None:
             q_t = tl.load(q_ptrs, mask=mask_d1, other=0.0).to(tl.float32)
             k_t = tl.load(k_ptrs, mask=mask_d1, other=0.0).to(tl.float32)
             v_t = tl.load(v_ptrs, mask=mask_d2, other=0.0).to(tl.float32)
-            eta_t = tl.load(e_ptr).to(tl.float32)
+            eta_t = tl.load(e_ptr, mask=t < N, other=0.0).to(tl.float32)
 
             # pred_v = k_t @ S (dimension 1 x BLOCK_D)
             # k_t is [BLOCK_D], S is [BLOCK_D, BLOCK_D] -> k_t[:, None] * S summed over axis 0

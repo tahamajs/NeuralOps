@@ -258,7 +258,10 @@ def chela_slay_wide_triton(
     return out
 
 
+chela_slay_wide_forward = chela_slay_wide_triton
+
 __all__ = [
     "chela_slay_wide_triton",
+    "chela_slay_wide_forward",
     "_chela_slay_wide_pytorch_ref",
 ]

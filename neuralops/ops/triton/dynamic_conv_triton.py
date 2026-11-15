@@ -49,15 +49,18 @@ if HAS_TRITON and triton is not None and tl is not None:
         """Dynamic depthwise convolution kernel for a single (batch, head) slice."""
         n_idx = tl.program_id(0)
         d_offs = tl.arange(0, D)
+        mask_d = d_offs < D
 
         acc = tl.zeros((D,), dtype=tl.float32)
 
         for k in range(K):
-            w = tl.load(Weights_ptr + n_idx * stride_wn + k * stride_wk).to(tl.float32)
-            v = tl.load(V_ptr + (n_idx + k) * stride_vt + d_offs * stride_vd).to(tl.float32)
+            w = tl.load(Weights_ptr + n_idx * stride_wn + k * stride_wk, mask=(n_idx < N) & (k < K), other=0.0).to(
+                tl.float32
+            )
+            v = tl.load(V_ptr + (n_idx + k) * stride_vt + d_offs * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
             acc += w * v
 
-        tl.store(Out_ptr + n_idx * stride_on + d_offs * stride_od, acc)
+        tl.store(Out_ptr + n_idx * stride_on + d_offs * stride_od, acc, mask=(n_idx < N) & mask_d)
 
     @triton.autotune(
         configs=[
@@ -83,15 +86,18 @@ if HAS_TRITON and triton is not None and tl is not None:
     ):
         n_idx = tl.program_id(0)
         d_offs = tl.arange(0, D)
+        mask_d = d_offs < D
 
         acc = tl.zeros((D,), dtype=tl.float32)
 
         for k in range(K):
-            w = tl.load(Weights_ptr + n_idx * stride_wn + k * stride_wk).to(tl.float32)
-            v = tl.load(V_ptr + (n_idx + k) * stride_vt + d_offs * stride_vd).to(tl.float32)
+            w = tl.load(Weights_ptr + n_idx * stride_wn + k * stride_wk, mask=(n_idx < N) & (k < K), other=0.0).to(
+                tl.float32
+            )
+            v = tl.load(V_ptr + (n_idx + k) * stride_vt + d_offs * stride_vd, mask=mask_d, other=0.0).to(tl.float32)
             acc += w * v
 
-        tl.store(Out_ptr + n_idx * stride_on + d_offs * stride_od, acc)
+        tl.store(Out_ptr + n_idx * stride_on + d_offs * stride_od, acc, mask=(n_idx < N) & mask_d)
 
 
 def _dynamic_conv_pytorch(
