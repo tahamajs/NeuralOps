@@ -1,0 +1,20 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.14.3, pytest-8.0.0, pluggy-1.6.0 -- /Users/tahamajs/.local/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/tahamajs/dev/Project
+configfile: pyproject.toml
+plugins: anyio-4.12.1, Faker-40.31.0, timeout-2.4.0, cov-4.1.0, django-4.8.0, xdist-3.5.0, sugar-0.9.7
+collecting ... collected 10 items
+
+tests/operations/test_adaptation.py::test_lora_operation_all_linear_layers PASSED [ 10%]
+tests/operations/test_adaptation.py::test_lora_operation_selective_targets PASSED [ 20%]
+tests/operations/test_adaptation.py::test_lora_operation_invalid_config PASSED [ 30%]
+tests/operations/test_adaptation.py::test_heal_operation_dora_injection_and_collapse PASSED [ 40%]
+tests/operations/test_adaptation.py::test_heal_operation_without_collapse PASSED [ 50%]
+tests/operations/test_adaptation.py::test_heal_operation_with_calibration_dataloader PASSED [ 60%]
+tests/operations/test_adaptation.py::test_heal_operation_modes PASSED    [ 70%]
+tests/operations/test_adaptation.py::test_distill_operation_success PASSED [ 80%]
+tests/operations/test_adaptation.py::test_distill_operation_teacher_fallback PASSED [ 90%]
+tests/operations/test_adaptation.py::test_distill_operation_missing_teacher PASSED [100%]
+
+============================= 10 passed in 26.18s ==============================
