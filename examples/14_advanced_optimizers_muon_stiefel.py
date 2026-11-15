@@ -111,11 +111,13 @@ def main() -> int:
 
         current_loss = loss.item()
         muon_losses.append(current_loss)
-        muon_table_rows.append({
-            "Step": f"Step {step}",
-            "Loss": f"{current_loss:.4f}",
-            "Frobenius Distance": f"{torch.norm(w_param - w_target, p='fro').item():.4f}",
-        })
+        muon_table_rows.append(
+            {
+                "Step": f"Step {step}",
+                "Loss": f"{current_loss:.4f}",
+                "Frobenius Distance": f"{torch.norm(w_param - w_target, p='fro').item():.4f}",
+            }
+        )
 
     headers_muon = ["Step", "Loss", "Frobenius Distance"]
     rows_muon = [[str(r[h]) for h in headers_muon] for r in muon_table_rows]
@@ -178,12 +180,14 @@ def main() -> int:
         max_ortho_err = max(max_ortho_err, ortho_err)
 
         current_obj = torch.trace(u_stiefel.T @ m_pref).item()
-        stiefel_table_rows.append({
-            "Step": f"Step {step}",
-            "Objective": f"{current_obj:.4f}",
-            "Orthogonality Error": f"{ortho_err:.2e}",
-            "Manifold Preserved": "YES" if ortho_err < 1e-5 else "NO",
-        })
+        stiefel_table_rows.append(
+            {
+                "Step": f"Step {step}",
+                "Objective": f"{current_obj:.4f}",
+                "Orthogonality Error": f"{ortho_err:.2e}",
+                "Manifold Preserved": "YES" if ortho_err < 1e-5 else "NO",
+            }
+        )
 
     headers_stiefel = ["Step", "Objective", "Orthogonality Error", "Manifold Preserved"]
     rows_stiefel = [[str(r[h]) for h in headers_stiefel] for r in stiefel_table_rows]
@@ -196,13 +200,7 @@ def main() -> int:
         f"Max error across 5 steps: {max_ortho_err:.2e}",
     )
 
-    all_passed = bool(
-        p_muon_ortho
-        and p_loss_decreased
-        and p_init_stiefel
-        and p_stiefel_tangent
-        and p_stiefel_step
-    )
+    all_passed = bool(p_muon_ortho and p_loss_decreased and p_init_stiefel and p_stiefel_tangent and p_stiefel_step)
     pass_fail(
         "Overall Example 14 Status",
         all_passed,

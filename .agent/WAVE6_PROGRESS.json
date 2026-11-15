@@ -48,9 +48,10 @@
       "worktree": null
     },
     "W6-9": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave6/W6-9",
-      "worktree": null
+      "worktree": null,
+      "tests_passed": 4
     },
     "W6-10": {
       "status": "pending",
