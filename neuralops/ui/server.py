@@ -10,11 +10,13 @@
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -29,6 +31,8 @@ from neuralops.ui.routes import (
     models_notebooks_router,
     partials_router,
 )
+
+logger = logging.getLogger("NeuralOpsWebUI")
 
 
 def create_app(auth_credentials: tuple[str, str] | None = None) -> FastAPI:
@@ -63,6 +67,65 @@ def create_app(auth_credentials: tuple[str, str] | None = None) -> FastAPI:
         allow_headers=["*"],
     )
 
+    # Content negotiation middleware for JSON API callers
+    @app.middleware("http")
+    async def content_negotiation_middleware(request: Request, call_next: Any) -> Response:
+        accept = request.headers.get("accept", "")
+        format_param = request.query_params.get("format", "")
+        path = request.url.path
+
+        if "application/json" in accept or format_param == "json":
+            if path in ("/", ""):
+                from neuralops.ui.queries.ledger import get_doctor_status, get_recent_runs
+
+                try:
+                    status = get_doctor_status()
+                except Exception as e:
+                    logger.debug("Doctor query fallback: %s", e)
+                    status = {"version": neuralops.__version__}
+                try:
+                    recent_runs = get_recent_runs(limit=10)
+                except Exception as e:
+                    logger.debug("Recent runs query fallback: %s", e)
+                    recent_runs = []
+                return JSONResponse(
+                    {
+                        "status": "ok",
+                        "version": neuralops.__version__,
+                        "doctor": status,
+                        "recent_runs": recent_runs,
+                    }
+                )
+            if path == "/benchmarks":
+                from neuralops.ui.queries.ledger import get_results
+
+                try:
+                    page = int(request.query_params.get("page", 1))
+                    page_size = int(request.query_params.get("page_size", 50))
+                    offset = max(0, (page - 1) * page_size)
+                    filters = {}
+                    if request.query_params.get("module_name"):
+                        filters["module_name"] = request.query_params.get("module_name", "").strip()
+                    if request.query_params.get("status"):
+                        filters["status"] = request.query_params.get("status", "").strip()
+                    if request.query_params.get("family"):
+                        filters["family"] = request.query_params.get("family", "").strip()
+                    rows, total = get_results(filters=filters, limit=page_size, offset=offset)
+                except Exception as e:
+                    logger.debug("Benchmarks query fallback: %s", e)
+                    rows, total, page, page_size = [], 0, 1, 50
+                return JSONResponse(
+                    {
+                        "status": "ok",
+                        "total": total,
+                        "page": page,
+                        "page_size": page_size,
+                        "results": rows,
+                    }
+                )
+
+        return await call_next(request)
+
     package_root = Path(__file__).resolve().parent
     templates_dir = package_root / "templates"
     static_dir = package_root / "static"
@@ -80,6 +143,19 @@ def create_app(auth_credentials: tuple[str, str] | None = None) -> FastAPI:
     async def health_check() -> dict[str, Any]:
         """Health check endpoint returning system status and package version."""
         return {"status": "ok", "version": neuralops.__version__}
+
+    # Core benchmark runs endpoint
+    @app.get("/runs")
+    async def runs_endpoint(limit: int = 50) -> dict[str, Any]:
+        """Runs endpoint returning recent benchmark runs as JSON."""
+        from neuralops.ui.queries.ledger import get_recent_runs
+
+        try:
+            runs = get_recent_runs(limit=limit)
+        except Exception as e:
+            logger.debug("Failed to query recent runs: %s", e)
+            runs = []
+        return {"status": "ok", "total": len(runs), "runs": runs}
 
     # Mount page routers
     app.include_router(dashboard_router)

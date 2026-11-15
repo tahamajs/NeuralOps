@@ -9,6 +9,10 @@
 """Smoke tests verifying that the installed CLI entry point connects to create_app."""
 
 import importlib
+import warnings
+
+warnings.filterwarnings("ignore", message=".*httpx.*")
+
 from starlette.testclient import TestClient
 
 from neuralops.ui import create_app, cmd_ui, build_ui_parser

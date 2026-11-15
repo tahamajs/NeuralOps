@@ -13,9 +13,15 @@ Minimal, publication-grade web dashboard and interactive exploration interface.
 
 from __future__ import annotations
 
-__all__ = ["build_ui_parser", "cmd_ui", "create_app"]
+__all__ = [
+    "build_ui_parser",
+    "cmd_ui",
+    "create_app",
+    "is_port_in_use",
+    "find_available_port",
+]
 
-from neuralops.ui.cli import build_ui_parser, cmd_ui
+from neuralops.ui.cli import build_ui_parser, cmd_ui, find_available_port, is_port_in_use
 
 
 def __getattr__(name: str):
