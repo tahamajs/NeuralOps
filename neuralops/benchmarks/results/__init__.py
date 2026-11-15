@@ -17,6 +17,7 @@ from typing import Any
 from .schema import normalize_legacy_result_dict
 
 __all__ = [
+    "BenchmarkStatus",
     "BenchmarkResult",
     "RunMetadata",
     "ModuleMetadata",
@@ -72,6 +73,7 @@ _LAZY_RESULTS_MAP: dict[str, tuple[str, str]] = {
     "ArtifactPaths": ("neuralops.benchmarks.results.schema", "ArtifactPaths"),
     "BaselineComparison": ("neuralops.benchmarks.results.schema", "BaselineComparison"),
     "BenchmarkResult": ("neuralops.benchmarks.results.schema", "BenchmarkResult"),
+    "BenchmarkStatus": ("neuralops.benchmarks.results.schema", "BenchmarkStatus"),
     "DatasetMetadata": ("neuralops.benchmarks.results.schema", "DatasetMetadata"),
     "EnvironmentMetadata": ("neuralops.benchmarks.results.schema", "EnvironmentMetadata"),
     "HardwareUsage": ("neuralops.benchmarks.results.schema", "HardwareUsage"),

@@ -33,6 +33,7 @@ from neuralops.benchmarks.core.model_loader import (
     load_model_and_tokenizer,
 )
 from neuralops.benchmarks.result import DatasetMetadata, ModelMetadata
+from neuralops.benchmarks.results.schema import BenchmarkResult, BenchmarkStatus
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +95,7 @@ class PerplexityAdapter:
                 max_length=self.max_length,
                 split="validation",
             )
-        except Exception:
+        except Exception:  # allowed-swallow: validation split fallback to test
             eval_split = "test"
             tokenized_eval = load_dataset_by_name(
                 self.dataset_name,
@@ -182,3 +183,54 @@ class PerplexityAdapter:
             self.model = None
         self.eval_loader = None
         self.tokenizer = None
+
+    def execute(self) -> BenchmarkResult:
+        """Run perplexity benchmark lifecycle and return canonical BenchmarkResult."""
+        import traceback
+        import uuid
+
+        run_id = str(uuid.uuid4())
+        try:
+            report = self.run()
+            eval_metrics = report.get("eval_metrics", {})
+            metrics = dict(eval_metrics)
+            if "latency" in report and isinstance(report["latency"], dict):
+                metrics.update(report["latency"])
+            if "peak_memory_mb" in report:
+                metrics["peak_memory_mb"] = float(report["peak_memory_mb"])
+
+            return BenchmarkResult(
+                run_id=run_id,
+                module={"name": self.module_name, "type": self.module_type},
+                model={"name": self.model_name},
+                dataset={"name": self.dataset_name},
+                status=str(BenchmarkStatus.SUCCESS.value),
+                metrics=metrics,
+                metadata={
+                    "benchmark_name": self.dataset_name,
+                    "device": str(self.device),
+                    "dtype": str(self.dtype),
+                    "seed": self.seed,
+                    "batch_size": self.batch_size,
+                    "max_length": self.max_length,
+                },
+            )
+        except Exception as e:
+            return BenchmarkResult(
+                run_id=run_id,
+                module={"name": self.module_name, "type": self.module_type},
+                model={"name": self.model_name},
+                dataset={"name": self.dataset_name},
+                status=str(BenchmarkStatus.FAILED.value),
+                error=traceback.format_exc(),
+                metadata={
+                    "benchmark_name": self.dataset_name,
+                    "device": str(self.device),
+                    "dtype": str(self.dtype),
+                    "seed": self.seed,
+                    "batch_size": self.batch_size,
+                    "max_length": self.max_length,
+                },
+            )
+        finally:
+            self.cleanup()

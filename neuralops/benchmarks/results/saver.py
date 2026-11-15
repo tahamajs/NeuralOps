@@ -109,7 +109,22 @@ def save_jsonl_index(result: BenchmarkResult, index_path: Path | str) -> Path:
         "checksum": getattr(result, "checksum", ""),
     }
     with open(p, "a", encoding="utf-8") as fp:
-        fp.write(json.dumps(summary_entry) + "\n")
+        try:
+            import fcntl
+
+            fcntl.flock(fp.fileno(), fcntl.LOCK_EX)
+        except (OSError, ImportError, AttributeError):
+            pass
+        try:
+            fp.write(json.dumps(summary_entry) + "\n")
+            fp.flush()
+        finally:
+            try:
+                import fcntl
+
+                fcntl.flock(fp.fileno(), fcntl.LOCK_UN)
+            except (OSError, ImportError, AttributeError):
+                pass
     return p
 
 
@@ -147,10 +162,25 @@ def save_csv_index(result: BenchmarkResult, csv_path: Path | str) -> Path:
     }
 
     with open(p, "a", newline="", encoding="utf-8") as fp:
-        writer = csv.DictWriter(fp, fieldnames=list(row.keys()))
-        if write_header:
-            writer.writeheader()
-        writer.writerow(row)
+        try:
+            import fcntl
+
+            fcntl.flock(fp.fileno(), fcntl.LOCK_EX)
+        except (OSError, ImportError, AttributeError):
+            pass
+        try:
+            writer = csv.DictWriter(fp, fieldnames=list(row.keys()))
+            if write_header:
+                writer.writeheader()
+            writer.writerow(row)
+            fp.flush()
+        finally:
+            try:
+                import fcntl
+
+                fcntl.flock(fp.fileno(), fcntl.LOCK_UN)
+            except (OSError, ImportError, AttributeError):
+                pass
     return p
 
 
@@ -195,8 +225,8 @@ def save_markdown_summary(result: BenchmarkResult, md_path: Path | str) -> Path:
 | **Model** | `{mdl_name}` |
 | **Dataset** | `{ds_name}` |
 | **Rank** | `{rk}` |
-| **Training Type** | `{getattr(result, 'training_type', 'finetune')}` |
-| **Batch Size** | `{result.config.get('batch_size', 32)}` |
+| **Training Type** | `{getattr(result, "training_type", "finetune")}` |
+| **Batch Size** | `{result.config.get("batch_size", 32)}` |
 
 | Metric | Value |
 |---|---|
@@ -211,7 +241,7 @@ def save_markdown_summary(result: BenchmarkResult, md_path: Path | str) -> Path:
 | **Peak VRAM** | {vram} MB |
 
 ```bash
-{result.reproducibility.reproduction_command or f'python -m neuralops.benchmarks run --module {mod_name} --model {mdl_name} --dataset {ds_name} --rank {rk}'}
+{result.reproducibility.reproduction_command or f"python -m neuralops.benchmarks run --module {mod_name} --model {mdl_name} --dataset {ds_name} --rank {rk}"}
 ```
 """
     with open(p, "w", encoding="utf-8") as fp:
@@ -281,48 +311,8 @@ def save_all_formats(
         DeprecationWarning,
         stacklevel=2,
     )
-    out_dir = Path(output_dir)
-    json_path = compute_result_path(result, base_dir=out_dir)
-    md_path = json_path.with_suffix(".md")
-
-    save_json(result, json_path)
-    save_markdown_summary(result, md_path)
-
-    jsonl_path = out_dir / "results.jsonl"
-    save_jsonl_index(result, jsonl_path)
-
-    csv_path = out_dir / "results.csv"
-    save_csv_index(result, csv_path)
-
-    saved: Dict[str, Path] = {
-        "json": json_path,
-        "markdown": md_path,
-        "jsonl": jsonl_path,
-        "csv": csv_path,
-    }
-
-    parquet_saved = False
-    parquet_path = out_dir / "results.parquet"
-    try:
-        save_parquet_index(result, parquet_path)
-        parquet_saved = parquet_path.exists()
-    except Exception as exc:
-        if require_parquet:
-            raise RuntimeError(f"Parquet export failed: {exc}") from exc
-        LOG.warning("Optional Parquet index export failed (%s); omitting from saved artifacts.", exc)
-
-    if parquet_saved:
-        saved["parquet"] = parquet_path
-
-    # Record saved paths into result artifact metadata
-    if hasattr(result, "artifacts") and result.artifacts is not None:
-        result.artifacts.json_file = str(
-            json_path.relative_to(out_dir) if json_path.is_relative_to(out_dir) else json_path
-        )
-
-    multi_saved = MultiFormatSaver(output_dir).save(result)
-    saved.update(multi_saved)
-    return saved
+    saver = MultiFormatSaver(output_dir)
+    return saver.save(result)
 
 
 _SQLITE_LOCK = threading.Lock()
@@ -424,12 +414,26 @@ class MultiFormatSaver:
         }
         line = json.dumps(journal_entry, default=str) + "\n"
         with open(self.journal_path, "a", encoding="utf-8") as f_wal:
-            f_wal.write(line)
-            f_wal.flush()
             try:
-                os.fsync(f_wal.fileno())
-            except OSError:  # allowed-swallow: fsync unsupported on filesystem
+                import fcntl
+
+                fcntl.flock(f_wal.fileno(), fcntl.LOCK_EX)
+            except (OSError, ImportError, AttributeError):
                 pass
+            try:
+                f_wal.write(line)
+                f_wal.flush()
+                try:
+                    os.fsync(f_wal.fileno())
+                except OSError:  # allowed-swallow: fsync unsupported on filesystem
+                    pass
+            finally:
+                try:
+                    import fcntl
+
+                    fcntl.flock(f_wal.fileno(), fcntl.LOCK_UN)
+                except (OSError, ImportError, AttributeError):
+                    pass
         return self.journal_path
 
     def _save_csv(self, result: BenchmarkResult) -> Path:
@@ -463,16 +467,31 @@ class MultiFormatSaver:
                 for k in csv_row.keys():
                     if k not in fieldnames:
                         fieldnames.append(k)
-            except Exception:
+            except Exception:  # allowed-swallow: corrupted or unreadable existing csv header fallback
                 fieldnames = list(csv_row.keys())
         else:
             fieldnames = list(csv_row.keys())
 
         with open(self.summary_csv_path, "a", newline="", encoding="utf-8") as fp_csv:
-            writer = csv.DictWriter(fp_csv, fieldnames=fieldnames, extrasaction="ignore")
-            if write_header:
-                writer.writeheader()
-            writer.writerow(csv_row)
+            try:
+                import fcntl
+
+                fcntl.flock(fp_csv.fileno(), fcntl.LOCK_EX)
+            except (OSError, ImportError, AttributeError):
+                pass
+            try:
+                writer = csv.DictWriter(fp_csv, fieldnames=fieldnames, extrasaction="ignore")
+                if write_header:
+                    writer.writeheader()
+                writer.writerow(csv_row)
+                fp_csv.flush()
+            finally:
+                try:
+                    import fcntl
+
+                    fcntl.flock(fp_csv.fileno(), fcntl.LOCK_UN)
+                except (OSError, ImportError, AttributeError):
+                    pass
         return self.summary_csv_path
 
     def _save_sqlite(self, result: BenchmarkResult) -> Path:

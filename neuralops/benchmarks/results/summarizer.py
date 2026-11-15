@@ -35,16 +35,20 @@ class SummaryGenerator:
 
     def _load_all_records(self) -> List[Dict[str, Any]]:
         records = []
-        if self.jsonl_file.exists():
-            with open(self.jsonl_file, "r", encoding="utf-8") as fp:
-                for line_num, line in enumerate(fp, 1):
-                    line = line.strip()
-                    if line:
-                        try:
-                            records.append(json.loads(line))
-                        except Exception as e:
-                            LOG.warning("Could not read results.jsonl line %d: %s", line_num, e)
-                            continue
+        paths_to_try = [self.jsonl_file, self.output_dir / ".journal.jsonl"]
+        for p in paths_to_try:
+            if p.exists():
+                with open(p, "r", encoding="utf-8") as fp:
+                    for line_num, line in enumerate(fp, 1):
+                        line = line.strip()
+                        if line:
+                            try:
+                                records.append(json.loads(line))
+                            except Exception as e:
+                                LOG.warning("Could not parse JSON record at %s:%d: %s", p, line_num, e)
+                                continue
+                if records:
+                    break
         return records
 
     def generate_all(self) -> Dict[str, Path]:

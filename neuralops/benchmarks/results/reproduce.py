@@ -64,7 +64,7 @@ echo "Expected PyTorch: {env.torch_version}"
 echo "=========================================================="
 
 export CUBLAS_WORKSPACE_CONFIG=:4096:8
-export PYTHONHASHSEED={result.config.get('seed', 42)}
+export PYTHONHASHSEED={result.config.get("seed", 42)}
 
 echo "Executing benchmark reproduction..."
 {cmd}
