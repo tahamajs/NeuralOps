@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# File size compliant with AGENTS.md §6.3: Specialized dispatch tables and device branches
 # Copyright (c) 2024-2026, Taha Majlesi
 #
 # This source code is licensed under the MIT license found in the
@@ -43,6 +44,8 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from neuralops.core.device import get_current_device
 
 logger = logging.getLogger(__name__)
 
@@ -459,7 +462,7 @@ class HessianNullSpaceSVDContinuation:
         self.anneal_sigma = anneal_sigma
         self.use_whitening = bool(kwargs.get("use_whitening", True))
         self.truncate_activations = bool(kwargs.get("truncate_activations", True))
-        self.device = torch.device(device or ("cuda:0" if torch.cuda.is_available() else "cpu"))
+        self.device = get_current_device(device)
 
     @staticmethod
     def truncation_aware_whitening(
