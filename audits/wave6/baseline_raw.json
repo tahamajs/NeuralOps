@@ -1,0 +1,368 @@
+{
+  "01_attention_surgery.py": {
+    "example_num": 1,
+    "exit_code": 0,
+    "elapsed_seconds": 18.42,
+    "error_snippet": "",
+    "randn_lines": [],
+    "pass_fail_true_lines": [
+      155
+    ],
+    "silent_skip_lines": [],
+    "inline_pillars": [],
+    "fragile_paths": []
+  },
+  "02_model_compression.py": {
+    "example_num": 2,
+    "exit_code": 1,
+    "elapsed_seconds": 7.59,
+    "error_snippet": "47, in toy_dataloader\n    input_ids = torch.randint(0, vocab_size, (batch_size, seq_len), generator=generator, device=device)\nRuntimeError: Expected a 'mps' device type for generator but found 'cpu'",
+    "randn_lines": [],
+    "pass_fail_true_lines": [
+      168
+    ],
+    "silent_skip_lines": [],
+    "inline_pillars": [],
+    "fragile_paths": []
+  },
+  "03_lora_finetuning.py": {
+    "example_num": 3,
+    "exit_code": 0,
+    "elapsed_seconds": 8.22,
+    "error_snippet": "",
+    "randn_lines": [],
+    "pass_fail_true_lines": [
+      171
+    ],
+    "silent_skip_lines": [],
+    "inline_pillars": [],
+    "fragile_paths": []
+  },
+  "04_knowledge_distillation.py": {
+    "example_num": 4,
+    "exit_code": 1,
+    "elapsed_seconds": 18.32,
+    "error_snippet": "47, in toy_dataloader\n    input_ids = torch.randint(0, vocab_size, (batch_size, seq_len), generator=generator, device=device)\nRuntimeError: Expected a 'mps' device type for generator but found 'cpu'",
+    "randn_lines": [
+      182,
+      187,
+      182,
+      187
+    ],
+    "pass_fail_true_lines": [
+      259,
+      264,
+      266,
+      282
+    ],
+    "silent_skip_lines": [],
+    "inline_pillars": [
+      [
+        76,
+        "pillar1_logit_kl"
+      ],
+      [
+        83,
+        "pillar2_hidden_cosine"
+      ],
+      [
+        89,
+        "pillar3_attention_js"
+      ],
+      [
+        100,
+        "pillar4_gradient_alignment"
+      ],
+      [
+        124,
+        "pillar5_fisher_curvature"
+      ],
+      [
+        134,
+        "pillar6_activation_covariance"
+      ]
+    ],
+    "fragile_paths": [
+      195,
+      200
+    ]
+  },
+  "05_fla_style_benchmarking.py": {
+    "example_num": 5,
+    "exit_code": 0,
+    "elapsed_seconds": 15.23,
+    "error_snippet": "",
+    "randn_lines": [],
+    "pass_fail_true_lines": [
+      187,
+      193,
+      209
+    ],
+    "silent_skip_lines": [],
+    "inline_pillars": [],
+    "fragile_paths": []
+  },
+  "06_export_and_push.py": {
+    "example_num": 6,
+    "exit_code": 0,
+    "elapsed_seconds": 14.13,
+    "error_snippet": "",
+    "randn_lines": [],
+    "pass_fail_true_lines": [
+      225
+    ],
+    "silent_skip_lines": [],
+    "inline_pillars": [],
+    "fragile_paths": []
+  },
+  "07_custom_attention.py": {
+    "example_num": 7,
+    "exit_code": 0,
+    "elapsed_seconds": 13.64,
+    "error_snippet": "",
+    "randn_lines": [
+      166
+    ],
+    "pass_fail_true_lines": [
+      250
+    ],
+    "silent_skip_lines": [],
+    "inline_pillars": [],
+    "fragile_paths": []
+  },
+  "08_grpo_reasoning.py": {
+    "example_num": 8,
+    "exit_code": 0,
+    "elapsed_seconds": 15.77,
+    "error_snippet": "",
+    "randn_lines": [],
+    "pass_fail_true_lines": [
+      176
+    ],
+    "silent_skip_lines": [],
+    "inline_pillars": [],
+    "fragile_paths": []
+  },
+  "09_multi_stage_model_surgery.py": {
+    "example_num": 9,
+    "exit_code": 0,
+    "elapsed_seconds": 12.83,
+    "error_snippet": "",
+    "randn_lines": [],
+    "pass_fail_true_lines": [
+      206
+    ],
+    "silent_skip_lines": [],
+    "inline_pillars": [],
+    "fragile_paths": []
+  },
+  "10_advanced_compression_zoo.py": {
+    "example_num": 10,
+    "exit_code": 0,
+    "elapsed_seconds": 6.4,
+    "error_snippet": "",
+    "randn_lines": [
+      221,
+      226
+    ],
+    "pass_fail_true_lines": [
+      326
+    ],
+    "silent_skip_lines": [],
+    "inline_pillars": [],
+    "fragile_paths": []
+  },
+  "11_quantization_fp8_int4_mx.py": {
+    "example_num": 11,
+    "exit_code": 0,
+    "elapsed_seconds": 5.49,
+    "error_snippet": "",
+    "randn_lines": [
+      193
+    ],
+    "pass_fail_true_lines": [],
+    "silent_skip_lines": [],
+    "inline_pillars": [],
+    "fragile_paths": []
+  },
+  "12_structured_pruning_and_token_shedding.py": {
+    "example_num": 12,
+    "exit_code": 0,
+    "elapsed_seconds": 4.43,
+    "error_snippet": "",
+    "randn_lines": [
+      182,
+      211,
+      239,
+      242
+    ],
+    "pass_fail_true_lines": [
+      269
+    ],
+    "silent_skip_lines": [],
+    "inline_pillars": [],
+    "fragile_paths": []
+  },
+  "13_six_pillar_knowledge_distillation.py": {
+    "example_num": 13,
+    "exit_code": 0,
+    "elapsed_seconds": 8.88,
+    "error_snippet": "",
+    "randn_lines": [
+      138
+    ],
+    "pass_fail_true_lines": [],
+    "silent_skip_lines": [],
+    "inline_pillars": [
+      [
+        65,
+        "loss_pillar1_logit_kl"
+      ],
+      [
+        72,
+        "loss_pillar2_hidden_cosine"
+      ],
+      [
+        78,
+        "loss_pillar3_attention_js"
+      ],
+      [
+        89,
+        "loss_pillar4_grad_alignment"
+      ],
+      [
+        102,
+        "loss_pillar5_fisher_curvature"
+      ],
+      [
+        108,
+        "loss_pillar6_covariance_matching"
+      ]
+    ],
+    "fragile_paths": []
+  },
+  "14_advanced_optimizers_muon_stiefel.py": {
+    "example_num": 14,
+    "exit_code": 0,
+    "elapsed_seconds": 6.26,
+    "error_snippet": "",
+    "randn_lines": [
+      79,
+      98,
+      145,
+      97,
+      137
+    ],
+    "pass_fail_true_lines": [
+      185
+    ],
+    "silent_skip_lines": [],
+    "inline_pillars": [],
+    "fragile_paths": []
+  },
+  "15_serving_vllm_sglang_trtllm.py": {
+    "example_num": 15,
+    "exit_code": 0,
+    "elapsed_seconds": 4.61,
+    "error_snippet": "",
+    "randn_lines": [],
+    "pass_fail_true_lines": [
+      238,
+      105,
+      153,
+      201
+    ],
+    "silent_skip_lines": [],
+    "inline_pillars": [],
+    "fragile_paths": []
+  },
+  "16_distributed_parallelism.py": {
+    "example_num": 16,
+    "exit_code": 0,
+    "elapsed_seconds": 4.57,
+    "error_snippet": "",
+    "randn_lines": [
+      206,
+      207,
+      208,
+      226,
+      227,
+      228
+    ],
+    "pass_fail_true_lines": [
+      270
+    ],
+    "silent_skip_lines": [],
+    "inline_pillars": [],
+    "fragile_paths": [
+      174,
+      179
+    ]
+  },
+  "17_recipe_dsl_and_snapshot_rollback.py": {
+    "example_num": 17,
+    "exit_code": 1,
+    "elapsed_seconds": 6.56,
+    "error_snippet": "ahamajs/dev/Project/examples/17_recipe_dsl_and_snapshot_rollback.py\", line 133, in main\n    plan = plan_recipe(recipe, model=model)\nTypeError: plan_recipe() got an unexpected keyword argument 'model'",
+    "randn_lines": [],
+    "pass_fail_true_lines": [
+      119,
+      210
+    ],
+    "silent_skip_lines": [],
+    "inline_pillars": [],
+    "fragile_paths": []
+  },
+  "18_three_level_kernel_dispatch.py": {
+    "example_num": 18,
+    "exit_code": 0,
+    "elapsed_seconds": 4.73,
+    "error_snippet": "",
+    "randn_lines": [
+      73,
+      74,
+      75
+    ],
+    "pass_fail_true_lines": [
+      179,
+      147,
+      92,
+      120
+    ],
+    "silent_skip_lines": [],
+    "inline_pillars": [],
+    "fragile_paths": []
+  },
+  "19_spectral_and_hessian_diagnostics.py": {
+    "example_num": 19,
+    "exit_code": 1,
+    "elapsed_seconds": 5.06,
+    "error_snippet": "0682e2cb. As a temporary fix, you can set the environment variable `PYTORCH_ENABLE_MPS_FALLBACK=1` to use the CPU as a fallback for this op. WARNING: this will be slower than running natively on MPS.",
+    "randn_lines": [
+      199,
+      84
+    ],
+    "pass_fail_true_lines": [
+      237
+    ],
+    "silent_skip_lines": [],
+    "inline_pillars": [],
+    "fragile_paths": []
+  },
+  "20_long_context_niah_eval.py": {
+    "example_num": 20,
+    "exit_code": 0,
+    "elapsed_seconds": 5.12,
+    "error_snippet": "",
+    "randn_lines": [
+      107,
+      74
+    ],
+    "pass_fail_true_lines": [
+      207
+    ],
+    "silent_skip_lines": [],
+    "inline_pillars": [],
+    "fragile_paths": []
+  }
+}
