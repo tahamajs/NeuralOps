@@ -1,0 +1,16 @@
+    2855 neuralops/benchmarks/cli.py
+total 48
+drwxr-xr-x@ 9 tahamajs  staff   288 Nov 15 03:41 .
+drwxr-xr-x@ 7 tahamajs  staff   224 Nov 15 03:41 ..
+-rw-r--r--@ 1 tahamajs  staff   782 Nov 15 03:41 __init__.py
+drwxr-xr-x@ 8 tahamajs  staff   256 Nov 15 03:46 __pycache__
+-rw-r--r--@ 1 tahamajs  staff  3403 Nov 15 03:41 benchmark.py
+-rw-r--r--@ 1 tahamajs  staff   901 Nov 15 01:49 doctor.py
+-rw-r--r--@ 1 tahamajs  staff  3765 Nov 15 03:41 plan.py
+-rw-r--r--@ 1 tahamajs  staff  2289 Nov 15 03:41 results.py
+-rw-r--r--@ 1 tahamajs  staff   972 Nov 15 01:49 ui.py
+MISSING: cli_v2/commands/run.py
+MISSING: cli_v2/commands/list.py
+MISSING: cli_v2/commands/sweep.py
+PRESENT: cli_v2/commands/doctor.py
+MISSING: cli_v2/commands/compare.py
