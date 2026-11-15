@@ -1,7 +1,7 @@
 ============================= test session starts ==============================
 platform darwin -- Python 3.14.3, pytest-8.0.0, pluggy-1.6.0 -- /Users/tahamajs/.local/bin/python
 cachedir: .pytest_cache
-rootdir: /Users/tahamajs/dev/Project
+rootdir: /Users/tahamajs/dev/Project_W7_3
 configfile: pyproject.toml
 plugins: anyio-4.12.1, Faker-40.31.0, timeout-2.4.0, cov-4.1.0, django-4.8.0, xdist-3.5.0, sugar-0.9.7
 collecting ... collected 10 items
@@ -17,4 +17,4 @@ tests/operations/test_adaptation.py::test_distill_operation_success PASSED [ 80%
 tests/operations/test_adaptation.py::test_distill_operation_teacher_fallback PASSED [ 90%]
 tests/operations/test_adaptation.py::test_distill_operation_missing_teacher PASSED [100%]
 
-============================= 10 passed in 26.18s ==============================
+============================== 10 passed in 8.91s ==============================
