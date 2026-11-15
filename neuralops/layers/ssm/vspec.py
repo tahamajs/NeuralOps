@@ -26,9 +26,11 @@ from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.attention_utils import apply_rotary_pos_emb
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import _cfg_get
+from neuralops.core.exceptions import IncompatibleArchitectureError
 from neuralops.core.registry import ATTENTION_REGISTRY
 from neuralops.core.utils.gqa import repeat_kv
 from neuralops.core.utils.rope import _rotate_half
+from neuralops.surgery.director import CrossAttentionLinearBridge
 from neuralops.utils.model_family import ModelAdapter
 
 logger = logging.getLogger(__name__)
@@ -478,6 +480,8 @@ class VSpecAttention(BaseAttention):
         self.use_sdpa = kwargs.get("use_sdpa", _cfg_get(config, "use_sdpa", True))
         self.rotary_emb = getattr(src_attn, "rotary_emb", None)
 
+        self.cross_attn_bridge: CrossAttentionLinearBridge | None = None
+
         if src_attn is not None:
             self.copy_weights(src_attn)
 
@@ -706,8 +710,65 @@ class VSpecAttention(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor | None] | torch.Tensor:
-        if encoder_hidden_states is not None or kwargs.get("encoder_hidden_states") is not None:
-            raise NotImplementedError("Cross-attention is not implemented for VSpecAttention")
+        """Forward pass for VSpecAttention supporting self- and cross-attention.
+
+        Args:
+            hidden_states: Query token activations of shape (batch_size, seq_len, hidden_size).
+            attention_mask: Optional attention mask for self-attention.
+            head_mask: Optional mask over attention heads.
+            encoder_hidden_states: Optional cross-sequence conditioning representations.
+            encoder_attention_mask: Optional mask for cross-attention encoder states.
+            past_key_value: Optional cached states for incremental generation.
+            output_attentions: Whether to output attention weights.
+            output_hidden_states: Whether to output all hidden states.
+            return_dict: Whether to return a dict or tuple.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Tuple of (output_tensor, attention_weights) or output_tensor.
+
+        Raises:
+            IncompatibleArchitectureError: If cross-attention conditioning invariants are violated.
+        """
+        enc_states = encoder_hidden_states if encoder_hidden_states is not None else kwargs.get("encoder_hidden_states")
+        if enc_states is not None:
+            if not isinstance(enc_states, torch.Tensor):
+                raise IncompatibleArchitectureError(
+                    f"encoder_hidden_states must be a torch.Tensor, got {type(enc_states).__name__}"
+                )
+            if enc_states.dim() != 3:
+                raise IncompatibleArchitectureError(
+                    f"encoder_hidden_states must have 3 dimensions (B, L_enc, D), got shape {enc_states.shape}"
+                )
+            if self.cross_attn_bridge is None:
+                self.cross_attn_bridge = CrossAttentionLinearBridge(
+                    head_dim=self.head_dim,
+                    persistent_cache=True,
+                ).to(device=hidden_states.device, dtype=hidden_states.dtype)
+
+            B, N, D = hidden_states.shape
+            enc_mask = (
+                encoder_attention_mask
+                if encoder_attention_mask is not None
+                else kwargs.get("encoder_attention_mask")
+            )
+            # Route through cross_attn_bridge
+            Q = self.Pq(hidden_states, None)
+            K_enc = enc_states
+            V_enc = enc_states
+            cross_out = self.cross_attn_bridge(
+                Q,
+                k=K_enc,
+                v=V_enc,
+                encoder_hidden_states=enc_states,
+                attention_mask=enc_mask,
+            )
+            if cross_out.shape[-1] != D:
+                cross_out = F.pad(cross_out, (0, D - cross_out.shape[-1])) if cross_out.shape[-1] < D else cross_out[..., :D]
+            if self.is_nested_encoder:
+                return (cross_out, None)
+            return (cross_out, None)
 
         B, N, D = hidden_states.shape
         device = hidden_states.device

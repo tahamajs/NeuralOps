@@ -20,7 +20,9 @@ import torch.nn.functional as F
 
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import _cfg_get
+from neuralops.core.exceptions import IncompatibleArchitectureError
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.surgery.director import CrossAttentionLinearBridge
 
 from .samba_m3 import SAMBAM3Block
 
@@ -204,6 +206,7 @@ class SambaMoEBlock(BaseAttention):
         self.aux_loss: torch.Tensor = torch.tensor(0.0)
         self._is_nested_encoder: bool = False
         self.is_nested_encoder: bool = False
+        self.cross_attn_bridge: CrossAttentionLinearBridge | None = None
 
         if pretrained_attn is not None:
             self.copy_weights(pretrained_attn)
@@ -273,8 +276,96 @@ class SambaMoEBlock(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, torch.Tensor | None] | torch.Tensor:
-        if encoder_hidden_states is not None:
-            raise NotImplementedError("SambaMoEBlock does not support cross-attention")
+        """Forward pass for SambaMoEBlock supporting self-attention and cross-attention bridge.
+
+        Args:
+            hidden_states: Input activations of shape (batch_size, seq_len, d_model).
+            attention_mask: Optional self-attention mask.
+            head_mask: Optional attention head mask.
+            encoder_hidden_states: Optional cross-sequence conditioning representations.
+            encoder_attention_mask: Optional mask for cross-attention encoder states.
+            past_key_value: Optional past key/value/SSM states for autoregressive generation.
+            output_attentions: Whether to output attention weights.
+            output_hidden_states: Whether to output hidden states.
+            return_dict: Whether to return a dict or tuple.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Tuple of (output, past_state) or (output, past_state, attn_weights) or (output, None).
+
+        Raises:
+            IncompatibleArchitectureError: If cross-attention conditioning invariants are violated.
+        """
+        enc_states = encoder_hidden_states if encoder_hidden_states is not None else kwargs.get("encoder_hidden_states")
+        if enc_states is not None:
+            if not isinstance(enc_states, torch.Tensor):
+                raise IncompatibleArchitectureError(
+                    f"encoder_hidden_states must be a torch.Tensor, got {type(enc_states).__name__}"
+                )
+            if enc_states.dim() != 3:
+                raise IncompatibleArchitectureError(
+                    f"encoder_hidden_states must have 3 dimensions (B, L_enc, D), got shape {enc_states.shape}"
+                )
+            if self.cross_attn_bridge is None:
+                self.cross_attn_bridge = CrossAttentionLinearBridge(
+                    head_dim=self.d_model,
+                    persistent_cache=True,
+                ).to(device=hidden_states.device, dtype=hidden_states.dtype)
+
+            enc_mask = (
+                encoder_attention_mask
+                if encoder_attention_mask is not None
+                else kwargs.get("encoder_attention_mask")
+            )
+            cross_out = self.cross_attn_bridge(
+                hidden_states,
+                k=enc_states,
+                v=enc_states,
+                encoder_hidden_states=enc_states,
+                attention_mask=enc_mask,
+            )
+            # Route cross representation through MoE feedforward layer
+            router_in = getattr(self.moe, "d_model", self.d_model)
+            if hasattr(self.moe, "router") and hasattr(self.moe.router, "in_features"):
+                router_in = self.moe.router.in_features
+
+            if cross_out.shape[-1] != router_in:
+                x_moe = (
+                    F.pad(cross_out, (0, router_in - cross_out.shape[-1]))
+                    if cross_out.shape[-1] < router_in
+                    else cross_out[..., :router_in]
+                )
+            else:
+                x_moe = cross_out
+
+            moe_out, _ = self.moe(x_moe)
+            self.aux_loss = getattr(self.moe, "aux_loss", torch.tensor(0.0, device=hidden_states.device))
+
+            target_dtype = hidden_states.dtype
+            x = cross_out.to(target_dtype)
+            moe_out = moe_out.to(target_dtype)
+
+            if self.is_nested_encoder:
+                out = x + moe_out
+            else:
+                norm_dtype = self.norm.weight.dtype if self.norm.weight is not None else target_dtype
+                out = self.norm((x + moe_out).to(norm_dtype)).to(target_dtype)
+
+            if out.shape[-1] != hidden_states.shape[-1]:
+                out = (
+                    F.pad(out, (0, hidden_states.shape[-1] - out.shape[-1]))
+                    if out.shape[-1] < hidden_states.shape[-1]
+                    else out[..., : hidden_states.shape[-1]]
+                )
+
+            if self.is_decoder:
+                if output_attentions:
+                    return out.to(target_dtype), None, None
+                else:
+                    return out.to(target_dtype), None
+            else:
+                return (out.to(target_dtype), None)
 
         is_dec = self.is_decoder or kwargs.get("is_decoder", False) or kwargs.get("is_causal", False)
         kwargs_swa = dict(kwargs)

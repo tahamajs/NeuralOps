@@ -22,7 +22,9 @@ import torch.nn.functional as F
 from neuralops.core.attention_mask import get_token_valid_mask
 from neuralops.core.base import BaseAttention
 from neuralops.core.common import _cfg_get
+from neuralops.core.exceptions import IncompatibleArchitectureError
 from neuralops.core.registry import ATTENTION_REGISTRY
+from neuralops.surgery.director import CrossAttentionLinearBridge
 
 try:
     from neuralops.ops.cuda.selective_scan.selective_scan_autograd import (
@@ -159,6 +161,7 @@ class SelectiveSSM(BaseAttention):
             self.bidirectional = False
 
         self.triton_kwargs = {}
+        self.cross_attn_bridge: CrossAttentionLinearBridge | None = None
         self._reset_parameters()
 
         source_attn = kwargs.get("source_attn") or kwargs.get("old_attn")
@@ -528,8 +531,66 @@ class SelectiveSSM(BaseAttention):
         *args: Any,
         **kwargs: Any,
     ) -> tuple[torch.Tensor, Any]:
-        if encoder_hidden_states is not None:
-            raise NotImplementedError("SelectiveSSM does not support cross-attention.")
+        """Forward pass for SelectiveSSM supporting self-recurrence and cross-attention bridge.
+
+        Args:
+            hidden_states: Input activations of shape (batch_size, seq_len, d_model).
+            attention_mask: Optional self-attention mask.
+            head_mask: Unused head mask for compatibility.
+            encoder_hidden_states: Optional cross-sequence conditioning representations.
+            encoder_attention_mask: Optional mask for cross-attention encoder states.
+            past_state: Optional past recurrent/convolutional SSM state.
+            past_key_value: Alias for past_state.
+            output_attentions: Whether to output attention weights.
+            output_hidden_states: Whether to output hidden states.
+            return_dict: Whether to return a dict or tuple.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Tuple of (output, present_state) or (output, present_state, attn_weights).
+
+        Raises:
+            IncompatibleArchitectureError: If cross-attention conditioning invariants are violated.
+        """
+        enc_states = encoder_hidden_states if encoder_hidden_states is not None else kwargs.get("encoder_hidden_states")
+        if enc_states is not None:
+            if not isinstance(enc_states, torch.Tensor):
+                raise IncompatibleArchitectureError(
+                    f"encoder_hidden_states must be a torch.Tensor, got {type(enc_states).__name__}"
+                )
+            if enc_states.dim() != 3:
+                raise IncompatibleArchitectureError(
+                    f"encoder_hidden_states must have 3 dimensions (B, L_enc, D), got shape {enc_states.shape}"
+                )
+            if self.cross_attn_bridge is None:
+                self.cross_attn_bridge = CrossAttentionLinearBridge(
+                    head_dim=self.d_model,
+                    persistent_cache=True,
+                ).to(device=hidden_states.device, dtype=hidden_states.dtype)
+
+            enc_mask = (
+                encoder_attention_mask
+                if encoder_attention_mask is not None
+                else kwargs.get("encoder_attention_mask")
+            )
+            cross_out = self.cross_attn_bridge(
+                hidden_states,
+                k=enc_states,
+                v=enc_states,
+                encoder_hidden_states=enc_states,
+                attention_mask=enc_mask,
+            )
+            if cross_out.shape[-1] != self.d_model:
+                cross_out = (
+                    F.pad(cross_out, (0, self.d_model - cross_out.shape[-1]))
+                    if cross_out.shape[-1] < self.d_model
+                    else cross_out[..., : self.d_model]
+                )
+            _out_attn = bool(output_attentions or kwargs.get("output_attentions", False))
+            if _out_attn:
+                return (cross_out, None, None)
+            return (cross_out, None)
 
         if past_state is None and past_key_value is not None:
             past_state = past_key_value
