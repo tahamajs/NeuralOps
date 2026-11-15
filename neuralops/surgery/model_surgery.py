@@ -120,11 +120,8 @@ class ModelSurgery:
                 **kwargs,
             )
         except Exception as e:
-            logger.warning("AutoModel.from_pretrained failed (%s); trying torch.load fallback", e)
-            try:
-                model = torch.load(model_name_or_path, map_location="cpu", weights_only=True)
-            except Exception:
-                model = torch.load(model_name_or_path, map_location="cpu", weights_only=False)
+            logger.warning("AutoModel.from_pretrained failed (%s); trying torch.load fallback with weights_only=True", e)
+            model = torch.load(model_name_or_path, map_location="cpu", weights_only=True)
 
         return cls(model=model)
 

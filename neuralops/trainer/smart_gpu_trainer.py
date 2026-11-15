@@ -348,7 +348,7 @@ class AutoMaxGPUTrainer(BaseTrainer):
     def train_epoch(
         self,
         train_loader: DataLoader,
-        scaler: torch.cuda.amp.GradScaler | None,
+        scaler: torch.amp.GradScaler | None,
     ) -> float:
         """Executes a single training epoch with double-buffered prefetching and OOM auto-recovery."""
         self.model.train()
@@ -429,7 +429,7 @@ class AutoMaxGPUTrainer(BaseTrainer):
     def train(self) -> dict[str, Any]:
         """Execute full training across epochs."""
         scaler = (
-            torch.cuda.amp.GradScaler(enabled=(self.use_amp and self.amp_dtype == torch.float16))
+            torch.amp.GradScaler("cuda", enabled=(self.use_amp and self.amp_dtype == torch.float16))
             if self.device.type == "cuda"
             else None
         )

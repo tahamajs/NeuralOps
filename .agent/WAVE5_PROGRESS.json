@@ -1,6 +1,7 @@
 {
   "wave": 5,
   "started_at": "2026-11-15T02:15:00Z",
+<<<<<<< wave5/W5-18
   "last_updated": "2026-11-15T11:08:13Z",
   "phase": 1,
   "agents": {
@@ -8,10 +9,21 @@
       "status": "pending",
       "branch": "wave5/W5-1",
       "worktree": null
+=======
+  "last_updated": "2026-11-15T11:42:23Z",
+  "phase": 5,
+  "agents": {
+    "W5-1": {
+      "status": "complete",
+      "branch": "wave5/W5-1",
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+>>>>>>> local
     },
     "W5-2": {
       "status": "complete",
       "branch": "wave5/W5-2",
+<<<<<<< wave5/W5-18
       "worktree": null
     },
     "W5-3": {
@@ -23,10 +35,27 @@
       "status": "pending",
       "branch": "wave5/W5-4",
       "worktree": null
+=======
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+    },
+    "W5-3": {
+      "status": "complete",
+      "branch": "wave5/W5-3",
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+    },
+    "W5-4": {
+      "status": "complete",
+      "branch": "wave5/W5-4",
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+>>>>>>> local
     },
     "W5-5": {
       "status": "complete",
       "branch": "wave5/W5-5",
+<<<<<<< wave5/W5-18
       "worktree": null
     },
     "W5-6": {
@@ -68,20 +97,84 @@
       "status": "pending",
       "branch": "wave5/W5-13",
       "worktree": null
+=======
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+    },
+    "W5-6": {
+      "status": "complete",
+      "branch": "wave5/W5-6",
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+    },
+    "W5-7": {
+      "status": "complete",
+      "branch": "wave5/W5-7",
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+    },
+    "W5-8": {
+      "status": "complete",
+      "branch": "wave5/W5-8",
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+    },
+    "W5-9": {
+      "status": "complete",
+      "branch": "wave5/W5-9",
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+    },
+    "W5-10": {
+      "status": "complete",
+      "branch": "wave5/W5-10",
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+    },
+    "W5-11": {
+      "status": "complete",
+      "branch": "wave5/W5-11",
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+    },
+    "W5-12": {
+      "status": "complete",
+      "branch": "wave5/W5-12",
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+    },
+    "W5-13": {
+      "status": "complete",
+      "branch": "wave5/W5-13",
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+>>>>>>> local
     },
     "W5-14": {
       "status": "complete",
       "branch": "wave5/W5-14",
+<<<<<<< wave5/W5-18
       "worktree": null
     },
     "W5-15": {
       "status": "pending",
       "branch": "wave5/W5-15",
       "worktree": null
+=======
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+    },
+    "W5-15": {
+      "status": "complete",
+      "branch": "wave5/W5-15",
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+>>>>>>> local
     },
     "W5-16": {
       "status": "complete",
       "branch": "wave5/W5-16",
+<<<<<<< wave5/W5-18
       "worktree": null
     },
     "W5-17": {
@@ -103,6 +196,34 @@
       "status": "pending",
       "branch": "wave5/W5-20",
       "worktree": null
+=======
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+    },
+    "W5-17": {
+      "status": "complete",
+      "branch": "wave5/W5-17",
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+    },
+    "W5-18": {
+      "status": "complete",
+      "branch": "wave5/W5-18",
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+    },
+    "W5-19": {
+      "status": "complete",
+      "branch": "wave5/W5-19",
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+    },
+    "W5-20": {
+      "status": "complete",
+      "branch": "wave5/W5-20",
+      "worktree": null,
+      "completed_at": "2026-11-15T11:41:28Z"
+>>>>>>> local
     }
   }
 }

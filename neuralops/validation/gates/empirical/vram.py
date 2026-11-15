@@ -74,7 +74,8 @@ class VRAMGate(Gate):
         threshold_mb = ctx.get("max_vram_mb", self.max_vram_mb)
 
         try:
-            device = torch.device("cuda:0")
+            device_str = ctx.get("device") or ("cuda" if torch.cuda.is_available() else "cpu")
+            device = torch.device(device_str)
             active_model = active_model.to(device)
             active_model.eval()
 

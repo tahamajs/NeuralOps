@@ -179,7 +179,7 @@ def train_model(
         if (device.type == "cuda" and torch.cuda.is_bf16_supported())
         else (torch.float16 if device.type == "cuda" else torch.float32)
     )
-    scaler = torch.cuda.amp.GradScaler(enabled=(use_amp and device.type == "cuda" and amp_dtype == torch.float16))
+    scaler = torch.amp.GradScaler("cuda", enabled=(use_amp and device.type == "cuda" and amp_dtype == torch.float16))
 
     optimizer_kwargs = {
         "lr": getattr(config, "learning_rate", 2e-5),

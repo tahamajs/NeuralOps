@@ -89,7 +89,7 @@ class CustomLoopTrainer(BaseTrainer):
         self,
         train_loader: DataLoader,
         optimizer: torch.optim.Optimizer,
-        scaler: torch.cuda.amp.GradScaler | None,
+        scaler: torch.amp.GradScaler | None,
         gradient_accumulation_steps: int = 1,
         max_grad_norm: float = 1.0,
         amp_dtype: torch.dtype = torch.float32,

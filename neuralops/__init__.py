@@ -509,7 +509,7 @@ def _patch_torch_compat():
                                 kwargs["dtype"] = dtype
                             if cache_enabled is not None:
                                 kwargs["cache_enabled"] = cache_enabled
-                            return torch.cuda.amp.autocast(**kwargs)
+                            return torch.cuda.amp.autocast(**kwargs)  # allowed: fallback compat shim
                         elif hasattr(torch, "cpu") and hasattr(torch.cpu, "amp") and hasattr(torch.cpu.amp, "autocast"):
                             kwargs = {"enabled": enabled}
                             if dtype is not None:
@@ -517,7 +517,7 @@ def _patch_torch_compat():
                             return torch.cpu.amp.autocast(**kwargs)
                         return contextlib.nullcontext()
 
-                    GradScaler = getattr(torch.cuda.amp, "GradScaler", None)
+                    GradScaler = getattr(torch.cuda.amp, "GradScaler", None)  # allowed: fallback compat shim
 
                 torch.amp = _AmpCompat
 
