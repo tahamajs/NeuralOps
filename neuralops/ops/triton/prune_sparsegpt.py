@@ -49,7 +49,7 @@ if HAS_TRITON and triton is not None and tl is not None:
         offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
         mask = offs_n < N
 
-        thresh = tl.load(Threshold_ptr + pid_m).to(tl.float32)
+        thresh = tl.load(Threshold_ptr + pid_m, mask=pid_m < M, other=0.0).to(tl.float32)
         inv_2h = tl.load(Inv_2h_ptr + offs_n, mask=mask, other=1.0).to(tl.float32)
 
         w_ptrs = W_ptr + pid_m * stride_wm + offs_n * stride_wn
@@ -90,7 +90,7 @@ if HAS_TRITON and triton is not None and tl is not None:
         offs_n = pid_n * BLOCK_N + tl.arange(0, BLOCK_N)
         mask = offs_n < N
 
-        thresh = tl.load(Threshold_ptr + pid_m).to(tl.float32)
+        thresh = tl.load(Threshold_ptr + pid_m, mask=pid_m < M, other=0.0).to(tl.float32)
         inv_2h = tl.load(Inv_2h_ptr + offs_n, mask=mask, other=1.0).to(tl.float32)
 
         w_ptrs = W_ptr + pid_m * stride_wm + offs_n * stride_wn

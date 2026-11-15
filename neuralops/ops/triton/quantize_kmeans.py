@@ -48,7 +48,7 @@ if HAS_TRITON and triton is not None and tl is not None:
         best_c = tl.zeros((BLOCK_SIZE,), dtype=tl.float32)
 
         for k in range(K):
-            c = tl.load(Centroid_ptr + k).to(tl.float32)
+            c = tl.load(Centroid_ptr + k, mask=k < K, other=0.0).to(tl.float32)
             dist = tl.abs(w - c)
             better = dist < best_dist
             best_dist = tl.where(better, dist, best_dist)
@@ -82,7 +82,7 @@ if HAS_TRITON and triton is not None and tl is not None:
         best_c = tl.zeros((BLOCK_SIZE,), dtype=tl.float32)
 
         for k in range(K):
-            c = tl.load(Centroid_ptr + k).to(tl.float32)
+            c = tl.load(Centroid_ptr + k, mask=k < K, other=0.0).to(tl.float32)
             dist = tl.abs(w - c)
             better = dist < best_dist
             best_dist = tl.where(better, dist, best_dist)
