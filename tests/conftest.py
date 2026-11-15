@@ -411,6 +411,7 @@ def pytest_collection_modifyitems(config, items):
                 "test_memory_fragmentation",
                 "test_cuda_ops_no_fake",
                 "test_bitonic_topk",
+                "test_aegis_gate_norm",
                 "test_v2_migration",
                 "test_triton_ops_all_kernels",
                 "test_triton_sample",
