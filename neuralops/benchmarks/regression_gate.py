@@ -24,7 +24,10 @@ def _load(path: Path) -> dict[str, Any]:
     return data
 
 
-class MetricNotFoundError(KeyError, ValueError):
+from neuralops.core.exceptions import NeuralOpsError
+
+
+class MetricNotFoundError(NeuralOpsError, KeyError, ValueError):
     """Raised when metric is not found in baseline or candidate."""
 
 

@@ -1,34 +1,10 @@
 {
   "wave": 7,
   "started_at": "2026-11-15T20:00:00Z",
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-  "last_updated": "2026-11-15T17:21:57Z",
-=======
-  "last_updated": "2026-11-15T20:00:00Z",
->>>>>>> wave7/W7-3
-=======
-  "last_updated": "2026-11-15T17:20:54Z",
->>>>>>> wave7/W7-5
-=======
-  "last_updated": "2026-11-15T17:04:06Z",
->>>>>>> wave7/W7-6
-=======
-  "last_updated": "2026-11-15T17:21:49Z",
->>>>>>> wave7/W7-7
-=======
-  "last_updated": "2026-11-15T17:12:49Z",
->>>>>>> wave7/W7-12
-=======
-  "last_updated": "2026-11-15T17:15:19Z",
->>>>>>> wave7/W7-15
+  "last_updated": "2026-11-15T17:51:59Z",
   "agents": {
     "W7-1": {
-      "status": "complete",
+      "status": "pending",
       "branch": "wave7/W7-1",
       "worktree": null
     },
@@ -38,7 +14,7 @@
       "worktree": null
     },
     "W7-3": {
-      "status": "complete",
+      "status": "pending",
       "branch": "wave7/W7-3",
       "worktree": null
     },
@@ -48,25 +24,17 @@
       "worktree": null
     },
     "W7-5": {
-      "status": "complete",
+      "status": "pending",
       "branch": "wave7/W7-5",
       "worktree": null
     },
     "W7-6": {
-      "status": "complete",
+      "status": "pending",
       "branch": "wave7/W7-6",
       "worktree": null
     },
     "W7-7": {
-<<<<<<< HEAD
-<<<<<<< HEAD
-      "status": "complete",
-=======
       "status": "pending",
->>>>>>> wave7/W7-3
-=======
-      "status": "complete",
->>>>>>> wave7/W7-7
       "branch": "wave7/W7-7",
       "worktree": null
     },
@@ -81,7 +49,7 @@
       "worktree": null
     },
     "W7-10": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave7/W7-10",
       "worktree": null
     },
@@ -91,7 +59,7 @@
       "worktree": null
     },
     "W7-12": {
-      "status": "complete",
+      "status": "pending",
       "branch": "wave7/W7-12",
       "worktree": null
     },

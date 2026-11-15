@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from typing import Optional
 
+from neuralops.core.exceptions import NeuralOpsError
+
 # Error Codes per NRL v1.0.0 Specification Section 12
 E_PARSE_JSON_SYNTAX = "E_PARSE_JSON_SYNTAX"
 E_PARSE_YAML_SYNTAX = "E_PARSE_YAML_SYNTAX"
@@ -30,7 +32,7 @@ E_LANG_VERSION_TOO_NEW = "E_LANG_VERSION_TOO_NEW"
 E_LANG_VERSION_TOO_OLD = "E_LANG_VERSION_TOO_OLD"
 
 
-class RecipeError(Exception):
+class RecipeError(NeuralOpsError):
     """Base exception for all recipe parsing, schema, and validation errors."""
 
     def __init__(self, message: str, error_code: str, path: Optional[str] = None):

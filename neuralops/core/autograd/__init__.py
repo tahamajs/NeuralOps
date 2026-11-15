@@ -12,7 +12,12 @@ NeuralOps Autograd Core Modules.
 from __future__ import annotations
 
 from neuralops.core.autograd.flash_attention import FlashAttentionFunction
+from neuralops.core.autograd.hvp import compute_hvp, verify_autograd_graph_cleanliness
 
-__all__ = ["FlashAttentionFunction"]
+__all__ = [
+    "FlashAttentionFunction",
+    "compute_hvp",
+    "verify_autograd_graph_cleanliness",
+]
 
-from neuralops.core.autograd import flash_attention, fused_backward
+from neuralops.core.autograd import flash_attention, fused_backward, hvp

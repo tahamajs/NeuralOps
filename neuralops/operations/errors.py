@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from typing import Optional
 
+from neuralops.core.exceptions import NeuralOpsError
+
 E_REGISTRY_UNKNOWN_OP = "E_REGISTRY_UNKNOWN_OP"
 E_REGISTRY_UNKNOWN_VERSION = "E_REGISTRY_UNKNOWN_VERSION"
 E_REGISTRY_DUPLICATE = "E_REGISTRY_DUPLICATE"
@@ -27,7 +29,7 @@ E_SCHEMA_WRONG_TYPE = "E_SCHEMA_WRONG_TYPE"
 E_OP_VERSION_DEPRECATED = "E_OP_VERSION_DEPRECATED"
 
 
-class OperationError(Exception):
+class OperationError(NeuralOpsError):
     """Base exception for all operation and registry failures."""
 
     def __init__(self, message: str, error_code: str, operation_name: Optional[str] = None):
