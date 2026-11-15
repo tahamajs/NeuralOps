@@ -140,11 +140,19 @@ def apply_backbone_surgery_hooks(
     return hooked_names
 
 
-def replace_attention(*args: Any, **kwargs: Any) -> Any:
-    """Drop-in replace attention layers in any PyTorch / HuggingFace model."""
+def replace_attention(
+    model: Any,
+    attention: str = "cosformer",
+    *args: Any,
+    **kwargs: Any,
+) -> Any:
+    """Drop-in replace attention layers in any PyTorch / HuggingFace model.
+    
+    Defaults to 'cosformer' when called without an explicit target attention name.
+    """
     from neuralops.api import replace_attention as _ra
 
-    return _ra(*args, **kwargs)
+    return _ra(model, attention, *args, **kwargs)
 
 __all__ = [
     "PROJ_REGEX_PATTERNS",
