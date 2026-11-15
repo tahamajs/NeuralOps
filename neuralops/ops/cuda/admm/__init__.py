@@ -23,7 +23,8 @@ def admm_pruner_compress(
 ) -> torch.Tensor:
     """ADMM 2:4 structured pruning using CUDA C++ kernel."""
     if W.dim() != 2 or dim != 1 or (W.shape[1] % 4 != 0):
-        return apply_24_structured_mask(W, dim=dim)
+        res = apply_24_structured_mask(W, dim=dim)
+        return res[0] if isinstance(res, tuple) else res
 
     W_fp32 = W.contiguous().to(torch.float32)
     out = ADMM24Function.apply(W_fp32)

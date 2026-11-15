@@ -119,6 +119,7 @@ torch::Tensor routed_attention_forward(
     int H = q.size(1);
     int L = q.size(2);
     int D = q.size(3);
+    TORCH_CHECK(D <= 256, "Head dimension D must be <= 256, got ", D);
 
     auto out = torch::empty_like(q);
 

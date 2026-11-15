@@ -61,7 +61,8 @@ class ADMM24Function(Function):
         # Level 3 PyTorch reference fallback
         from neuralops.core.pruning_utils import apply_24_structured_mask
 
-        return apply_24_structured_mask(W, dim=1)
+        res = apply_24_structured_mask(W, dim=1)
+        return res[0] if isinstance(res, tuple) else res
 
     @staticmethod
     def backward(ctx, grad_output: torch.Tensor):

@@ -186,6 +186,7 @@ torch::Tensor cross_attention_forward_cuda(
     int H = q.size(1);
     int L_q = q.size(2);
     int D = q.size(3);
+    TORCH_CHECK(D <= 512, "Head dimension D must be <= 512, got ", D);
     int L_kv = k.size(2);
 
     auto out = torch::empty({B, H, L_q, D}, q.options());

@@ -300,7 +300,7 @@ _KERNEL_SYMBOL_MAP: dict[str, tuple[str, str]] = {
     "chela_slay": ["chela_slay", "chela_slay_attention_forward"],
     "chela_slay_attention_forward": ["chela_slay", "chela_slay_attention_forward"],
     "chela_slay_wide": ["chela_slay_wide", "chela_slay_wide_attention_forward"],
-    "chela_slay_wide_attention_forward": ["chela_slay", "chela_slay_wide_attention_forward"],
+    "chela_slay_wide_attention_forward": ["chela_slay_wide", "chela_slay_wide_attention_forward"],
     "direct_svd": ["direct_svd", "direct_svd_compress"],
     "direct_svd_compress": ["direct_svd", "direct_svd_compress"],
     "dynamic_conv": ["dynamic_conv", "dynamic_conv_attention_forward"],

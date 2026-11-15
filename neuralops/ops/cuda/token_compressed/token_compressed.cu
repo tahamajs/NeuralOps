@@ -149,6 +149,7 @@ torch::Tensor token_compressed_attention_forward_cuda(
     int H = q.size(1);
     int L = q.size(2);
     int D = q.size(3);
+    TORCH_CHECK(D <= 512, "Head dimension D must be <= 512, got ", D);
     int L_proj = std::min(static_cast<int>(num_projected_tokens), L);
 
     auto k_comp = torch::empty({B, H, L_proj, D}, k.options());

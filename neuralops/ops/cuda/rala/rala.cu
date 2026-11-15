@@ -116,6 +116,7 @@ torch::Tensor rala_attention_forward_cuda(
     int H = q.size(1);
     int L = q.size(2);
     int D = q.size(3);
+    TORCH_CHECK(D <= 512, "Head dimension D must be <= 512, got ", D);
 
     auto out = torch::empty({B, H, L, D}, q.options());
 
