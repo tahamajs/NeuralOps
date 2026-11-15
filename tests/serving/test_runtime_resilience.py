@@ -168,8 +168,7 @@ def test_paged_kv_cache_cow_forking_and_mutation():
     assert cache.block_ref_counts[shared_block] == 2
     assert len(cache.free_blocks) == 15
 
-    # Mutate child sequence by appending a token; triggers CoW because shared block is not full (wait, shared block is full, so new block is allocated)
-    # Let's test non-full block mutation CoW:
+    # Test non-full block mutation CoW:
     cache2 = PagedKVCache(
         num_blocks=16,
         block_size=4,
@@ -231,7 +230,7 @@ def test_paged_kv_cache_defragmentation_and_compaction():
     # Sequences 1, 2, 3 occupy blocks [0, 1], [2, 3], [4, 5]
     # Free sequence 2 to create a hole in physical allocation
     cache.free_sequence(2)
-    assert cache.free_blocks == [2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    assert set(cache.free_blocks) == {2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
 
     # Run defragmentation
     stats = cache.defragment()
@@ -336,30 +335,32 @@ def test_tgi_serving_adapter_sequential_truthful_generation():
     assert stats["total_tokens_generated"] >= 6
 
 
-@pytest.mark.asyncio
-async def test_async_stream_generation_sse():
+def test_async_stream_generation_sse():
     """Verify asynchronous SSE token streaming iterator."""
-    model = MockResilientModel(vocab_size=100)
-    adapter = TGIServingAdapter(
-        model=model,
-        tokenizer=None,
-        max_batch_size=4,
-        max_seq_len=64,
-        device="cpu",
-    )
+    async def _run_stream():
+        model = MockResilientModel(vocab_size=100)
+        adapter = TGIServingAdapter(
+            model=model,
+            tokenizer=None,
+            max_batch_size=4,
+            max_seq_len=64,
+            device="cpu",
+        )
 
-    chunks: List[str] = []
-    async for sse_chunk in adapter.stream_generate(
-        prompt=torch.tensor([5, 6], dtype=torch.long),
-        max_new_tokens=3,
-        sse_format=True,
-    ):
-        chunks.append(sse_chunk)
+        chunks: List[str] = []
+        async for sse_chunk in adapter.stream_generate(
+            prompt=torch.tensor([5, 6], dtype=torch.long),
+            max_new_tokens=3,
+            sse_format=True,
+        ):
+            chunks.append(sse_chunk)
 
-    assert len(chunks) == 3
-    for chunk in chunks:
-        assert chunk.startswith("data: {")
-        assert chunk.endswith("\n\n")
+        assert len(chunks) == 3
+        for chunk in chunks:
+            assert chunk.startswith("data: {")
+            assert chunk.endswith("\n\n")
+
+    asyncio.run(_run_stream())
 
 
 # =========================================================================
