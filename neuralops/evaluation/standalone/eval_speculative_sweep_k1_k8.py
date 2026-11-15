@@ -7,6 +7,10 @@
 #   https://github.com/tahamajs/NeuralOps/graphs/contributors
 """Eval speculative sweep k1 k8 module."""
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def main() -> None:
     """Run this standalone evaluation experiment."""
@@ -27,7 +31,7 @@ def main() -> None:
 
     def print_log(msg):
         """Execute print log routine."""
-        print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
+        logger.info(msg)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print_log(f"Speculative Decoding Empirical Benchmark on: {torch.cuda.get_device_name(0)}")

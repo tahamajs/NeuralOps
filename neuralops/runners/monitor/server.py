@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import http.server
 import json
+import logging
 import os
 import urllib.parse
 from typing import Any
@@ -29,6 +30,8 @@ from neuralops.runners.monitor.endpoints import (
 from neuralops.runners.monitor.rendering import render_csv_export, render_favicon, render_json_export
 from neuralops.runners.monitor.stats import build_aggregated_stats, get_module_doc_index
 from neuralops.runners.monitor.telemetry import get_live_logs
+
+logger = logging.getLogger(__name__)
 
 
 class ComprehensiveStudioHandler(http.server.SimpleHTTPRequestHandler):
@@ -171,11 +174,11 @@ def run_server(
             from neuralops.runners.monitor.fastapi_app import create_app
 
             app = create_app(project_dir=project_dir, docs_dir=docs_dir)
-            print(f"Starting FastAPI + WebSocket Telemetry Server on http://{host}:{port}")
+            logger.info("Starting FastAPI + WebSocket Telemetry Server on http://%s:%s", host, port)
             uvicorn.run(app, host=host, port=port, log_level="info")
             return
         except ImportError as e:
-            print(f"FastAPI or Uvicorn not installed ({e}). Falling back to standard TCPServer.")
+            logger.warning("FastAPI or Uvicorn not installed (%s). Falling back to standard TCPServer.", e)
 
     import socketserver
 
@@ -185,7 +188,7 @@ def run_server(
     ComprehensiveStudioHandler.web_dir = docs_dir or ComprehensiveStudioHandler.web_dir
 
     with socketserver.ThreadingTCPServer((host, port), ComprehensiveStudioHandler) as httpd:
-        print(f"Standard Studio UI active on http://{host}:{port}")
+        logger.info("Standard Studio UI active on http://%s:%s", host, port)
         httpd.serve_forever()
 
 
