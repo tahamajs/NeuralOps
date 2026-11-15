@@ -1,4 +1,7 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> wave5/W5-18
 # NEURALOPS WAVE 7 — DEEP SUBSYSTEM REMEDIATION, REFACTORING & PRODUCTION COMPLETION BLUEPRINT
 
 **Document Version:** 2.0.0 (Exhaustive Directory-by-Directory Audit & Actionable Execution Master)
@@ -2416,6 +2419,7 @@ Before any subagent branch is merged by the orchestrator, the following checks a
 
 ---
 
+<<<<<<< HEAD
 *(End of Wave 7 Master Execution Blueprint)*
 =======
 # NEURALOPS WAVE 7 — DEEP SUBSYSTEM REMEDIATION & COMPLETION ROADMAP
@@ -2553,3 +2557,6 @@ Wave 7 will follow the strict worktree and branch isolation protocol established
 - [ ] `ruff check neuralops/` passes with 0 lint violations.
 - [ ] All commits isolated to `wave7/<AGENT_ID>` branches and merged cleanly by the orchestrator.
 >>>>>>> wave5/W5-13
+=======
+*(End of Wave 7 Master Execution Blueprint)*
+>>>>>>> wave5/W5-18
