@@ -10,7 +10,7 @@
       "worktree": null
     },
     "W5-2": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave5/W5-2",
       "worktree": null
     },
@@ -25,7 +25,7 @@
       "worktree": null
     },
     "W5-5": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave5/W5-5",
       "worktree": null
     },
@@ -80,7 +80,7 @@
       "worktree": null
     },
     "W5-16": {
-      "status": "pending",
+      "status": "complete",
       "branch": "wave5/W5-16",
       "worktree": null
     },

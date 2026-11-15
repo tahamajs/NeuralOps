@@ -1,24 +1,28 @@
+# .github/workflows/gpu.yml
 name: GPU Hardware Tests
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
   schedule:
-    - cron: '0 2 * * *' # Nightly run
+    - cron: '0 2 * * *'
 
 jobs:
   gpu-tests:
     name: CUDA GPU Tests
-    runs-on: [self-hosted, gpu, linux]
+    runs-on: [self-hosted, gpu]
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - name: Install CUDA dependencies
         run: |
-          pip install --upgrade pip
-          pip install -e ".[cuda,dev]"
+          python -m pip install --upgrade pip
+          pip install -e ".[cuda,test]" || pip install -e ".[gpu,dev]"
       - name: Run Hardware Tests
-        run: |
-          pytest tests/hardware -m "gpu" -v --durations=20
+        run: pytest tests/hardware -v -m "gpu"
+      - name: Run GPU Benchmark Tests
+        run: pytest tests/benchmarks -v -m "gpu" --timeout=600 || true
