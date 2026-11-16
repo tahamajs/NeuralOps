@@ -269,6 +269,7 @@ _KERNEL_SYMBOL_MAP: dict[str, tuple[str, str]] = {
     "fused_ce": ["fused_ce", "fused_cross_entropy"],
     "fused_kd": ["fused_kd", "fused_kd_loss"],
     "fused_rope": ["fused_rope", "fused_rotary_emb"],
+    "fused_rope_pytorch_ref": ["fused_rope", "fused_rotary_emb_pytorch_ref"],
     "hadamard_gemm": ["hadamard_gemm", "hadamard_w4a16_gemm"],
     "hgrn2_scan": ["hgrn2_scan", "hgrn2_fused_bwd_scan"],
     "kronecker_gemm": ["kronecker_gemm", "kronecker_matmul"],

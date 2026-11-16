@@ -24,7 +24,7 @@ from neuralops.ops.cuda._fallback import dispatch
 _MODULE = None
 
 
-def _get_module():
+def _get_module() -> Any:
     global _MODULE
     if _MODULE is None:
         curr_dir = Path(__file__).parent
@@ -47,7 +47,16 @@ def fused_rotary_emb_pytorch_ref(
     cos: torch.Tensor,
     sin: torch.Tensor,
 ) -> torch.Tensor:
-    """Pure PyTorch reference implementation."""
+    """Pure PyTorch reference implementation for Rotary Position Embedding (RoPE).
+
+    Args:
+        x: Input tensor of shape (..., D).
+        cos: Cosine tensor broadcastable to (..., D // 2).
+        sin: Sine tensor broadcastable to (..., D // 2).
+
+    Returns:
+        Tensor of shape (..., D) with rotary position embeddings applied.
+    """
     D = x.shape[-1]
     half_d = D // 2
     x1 = x[..., :half_d]
@@ -62,7 +71,7 @@ def fused_rotary_emb_pytorch_ref(
     return torch.cat([o1, o2], dim=-1)
 
 
-def _get_triton_impl():
+def _get_triton_impl() -> Any:
     try:
         from neuralops.ops.triton.fused_rope import fused_rope_triton
 
@@ -74,6 +83,9 @@ def _get_triton_impl():
 class _FusedRoPEFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx: Any, x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> torch.Tensor:
+        while cos.dim() < x.dim():
+            cos = cos.unsqueeze(0)
+            sin = sin.unsqueeze(0)
         mod = _get_module()
         out = mod.fused_rope_fwd(x.contiguous(), cos.contiguous(), sin.contiguous())
         ctx.save_for_backward(cos, sin)
@@ -83,6 +95,9 @@ class _FusedRoPEFunction(torch.autograd.Function):
     def backward(ctx: Any, *grad_outputs: Any) -> tuple[torch.Tensor | None, ...]:
         dout = grad_outputs[0]
         cos, sin = ctx.saved_tensors
+        while cos.dim() < dout.dim():
+            cos = cos.unsqueeze(0)
+            sin = sin.unsqueeze(0)
         mod = _get_module()
         dx = mod.fused_rope_bwd(dout.contiguous(), cos.contiguous(), sin.contiguous())
         return dx, None, None
@@ -93,9 +108,18 @@ def fused_rotary_emb(
     cos: torch.Tensor,
     sin: torch.Tensor,
 ) -> torch.Tensor:
-    """3-Level Dispatched Fused Rotary Position Embedding."""
+    """3-Level Dispatched Fused Rotary Position Embedding (CUDA -> Triton -> PyTorch).
 
-    def cuda_fn(x, cos, sin):
+    Args:
+        x: Input tensor of shape (..., D).
+        cos: Cosine frequencies tensor broadcastable to (..., D // 2).
+        sin: Sine frequencies tensor broadcastable to (..., D // 2).
+
+    Returns:
+        Rotated tensor matching shape and dtype of x.
+    """
+
+    def cuda_fn(x: torch.Tensor, cos: torch.Tensor, sin: torch.Tensor) -> torch.Tensor:
         return _FusedRoPEFunction.apply(x, cos, sin)
 
     triton_fn = _get_triton_impl()
@@ -109,3 +133,14 @@ def fused_rotary_emb(
         sin,
         kernel_name="fused_rotary_emb",
     )
+
+
+fused_rope = fused_rotary_emb
+fused_rope_pytorch_ref = fused_rotary_emb_pytorch_ref
+
+__all__ = [
+    "fused_rope",
+    "fused_rope_pytorch_ref",
+    "fused_rotary_emb",
+    "fused_rotary_emb_pytorch_ref",
+]

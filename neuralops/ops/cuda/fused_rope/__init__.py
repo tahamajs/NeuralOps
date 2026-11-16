@@ -9,9 +9,16 @@
 Fused Rotary Position Embedding Hardware Operators.
 """
 
-from neuralops.ops.cuda.fused_rope.rope_autograd import fused_rotary_emb, fused_rotary_emb_pytorch_ref
+from neuralops.ops.cuda.fused_rope.rope_autograd import (
+    fused_rope,
+    fused_rope_pytorch_ref,
+    fused_rotary_emb,
+    fused_rotary_emb_pytorch_ref,
+)
 
 __all__ = [
+    "fused_rope",
+    "fused_rope_pytorch_ref",
     "fused_rotary_emb",
     "fused_rotary_emb_pytorch_ref",
 ]
