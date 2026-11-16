@@ -100,9 +100,7 @@ class ReplaceAttention(BaseAttention):
         self.rank = int(rank) if rank and rank > 0 else 0
 
         if self.rank > 0:
-            self.q_proj = _FactorizedLinear(
-                self.hidden_size, self.num_heads * self.head_dim, rank=self.rank, bias=True
-            )
+            self.q_proj = _FactorizedLinear(self.hidden_size, self.num_heads * self.head_dim, rank=self.rank, bias=True)
             self.k_proj = _FactorizedLinear(
                 self.hidden_size,
                 self.num_kv_heads * self.head_dim,
@@ -233,7 +231,7 @@ class ReplaceAttention(BaseAttention):
                     W = w.detach().float()
                     if W.shape[0] != target_out or W.shape[1] != target_in:
                         logger.warning(
-                            "Shape mismatch in copy_into: source %s, target (%d, %d). " "Using SVD rank-reduction.",
+                            "Shape mismatch in copy_into: source %s, target (%d, %d). Using SVD rank-reduction.",
                             tuple(W.shape),
                             target_out,
                             target_in,
@@ -263,9 +261,7 @@ class ReplaceAttention(BaseAttention):
                 target_proj.weight.data.copy_(w.to(target_proj.weight.dtype))
                 if b is not None and target_proj.bias is not None:
                     if b.shape != target_proj.bias.shape:
-                        raise ValueError(
-                            f"Bias shape mismatch: {tuple(b.shape)} != " f"{tuple(target_proj.bias.shape)}"
-                        )
+                        raise ValueError(f"Bias shape mismatch: {tuple(b.shape)} != {tuple(target_proj.bias.shape)}")
                     target_proj.bias.data.copy_(b.to(target_proj.bias.dtype))
 
     def copy_weights(self, old_attn: Any) -> None:
@@ -402,18 +398,20 @@ class ReplaceAttention(BaseAttention):
             hidden_states = kwargs.pop("query", kwargs.pop("x", None))
         if hidden_states is None:
             raise ValueError("ReplaceAttention.forward() requires input tensor (hidden_states/query/x)")
-        if encoder_hidden_states is not None:
-            raise NotImplementedError("ReplaceAttention: cross-attention is not supported.")
 
         B, N, _ = hidden_states.shape
         device = hidden_states.device
         dtype = hidden_states.dtype
 
-        Q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
-        K = self.k_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
-        V = self.v_proj(hidden_states).view(B, N, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        is_cross_attention = encoder_hidden_states is not None
+        kv_source = encoder_hidden_states if is_cross_attention else hidden_states
+        B_kv, S_kv, _ = kv_source.shape
 
-        if position_embeddings is not None:
+        Q = self.q_proj(hidden_states).view(B, N, self.num_heads, self.head_dim).transpose(1, 2).contiguous()
+        K = self.k_proj(kv_source).view(B_kv, S_kv, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+        V = self.v_proj(kv_source).view(B_kv, S_kv, self.num_kv_heads, self.head_dim).transpose(1, 2).contiguous()
+
+        if position_embeddings is not None and not is_cross_attention:
             if (
                 not isinstance(position_embeddings, (tuple, list))
                 or len(position_embeddings) != 2
@@ -435,14 +433,15 @@ class ReplaceAttention(BaseAttention):
             K = K.repeat_interleave(repeat, dim=1)
             V = V.repeat_interleave(repeat, dim=1)
 
-        is_causal = self.is_decoder and N > 1
+        is_causal = (self.is_decoder and N > 1) if not is_cross_attention else False
 
+        effective_mask = encoder_attention_mask if is_cross_attention else attention_mask
         attn_mask_sdpa = None
-        if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                attn_mask_sdpa = ((attention_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0).to(Q.dtype)
-            elif attention_mask.dim() == 4:
-                attn_mask_sdpa = attention_mask.to(Q.dtype)
+        if effective_mask is not None:
+            if effective_mask.dim() == 2:
+                attn_mask_sdpa = ((effective_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0).to(Q.dtype)
+            elif effective_mask.dim() == 4:
+                attn_mask_sdpa = effective_mask.to(Q.dtype)
 
         if not output_attentions and head_mask is None:
             try:
@@ -475,7 +474,7 @@ class ReplaceAttention(BaseAttention):
         if is_causal:
             causal = (
                 torch.triu(
-                    torch.full((N, N), float("-inf"), device=device, dtype=torch.float32),
+                    torch.full((N, S_kv), float("-inf"), device=device, dtype=torch.float32),
                     diagonal=1,
                 )
                 .unsqueeze(0)
@@ -483,13 +482,13 @@ class ReplaceAttention(BaseAttention):
             )
             scores = scores + causal
 
-        if attention_mask is not None:
-            if attention_mask.dim() == 2:
-                scores = scores + (attention_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
-            elif attention_mask.dim() == 3:
-                scores = scores + attention_mask.unsqueeze(1).float()
-            elif attention_mask.dim() == 4:
-                scores = scores + attention_mask.float()
+        if effective_mask is not None:
+            if effective_mask.dim() == 2:
+                scores = scores + (effective_mask.unsqueeze(1).unsqueeze(2).float() - 1.0) * 10000.0
+            elif effective_mask.dim() == 3:
+                scores = scores + effective_mask.unsqueeze(1).float()
+            elif effective_mask.dim() == 4:
+                scores = scores + effective_mask.float()
 
         scores = torch.nan_to_num(scores, nan=-1e4, posinf=1e4, neginf=-1e4)
         probs = F.softmax(scores.float(), dim=-1).to(dtype)

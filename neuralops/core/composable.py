@@ -74,31 +74,71 @@ def register_composable_engine(name: str, fn_or_cls: Any = None) -> Any:
 
 
 class BaseProjection(nn.Module):
-    """Abstract base class for input projections."""
+    """Abstract base class for input projections with default identity projection fallback."""
 
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        raise NotImplementedError
+        """Project input tensor into query, key, and value representations.
+
+        Args:
+            x: Input tensor of shape (batch, seq_len, embed_dim).
+
+        Returns:
+            Tuple of (q, k, v) tensors. Default fallback returns identical copies of x.
+        """
+        return x, x, x
 
 
 class BaseFeatureMap(nn.Module):
-    """Abstract base class for positional or non-linear feature maps."""
+    """Abstract base class for positional or non-linear feature maps with identity fallback."""
 
     def forward(self, q: torch.Tensor, k: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        raise NotImplementedError
+        """Apply feature map transformation to query and key tensors.
+
+        Args:
+            q: Query tensor.
+            k: Key tensor.
+
+        Returns:
+            Tuple of transformed (q, k) tensors. Default fallback returns inputs unchanged.
+        """
+        return q, k
 
 
 class BaseMask(nn.Module):
-    """Abstract base class for attention score masks."""
+    """Abstract base class for attention score masks with passthrough fallback."""
 
     def forward(self, scores: torch.Tensor, is_causal: bool = True) -> torch.Tensor:
-        raise NotImplementedError
+        """Apply attention mask to scores matrix.
+
+        Args:
+            scores: Attention score logits tensor.
+            is_causal: Whether causal masking is requested.
+
+        Returns:
+            Masked attention scores tensor. Default fallback passes scores through directly.
+        """
+        return scores
 
 
 class BaseExecutionEngine(nn.Module):
-    """Abstract base class for attention execution engines."""
+    """Abstract base class for attention execution engines with scaled dot-product fallback."""
 
     def forward(self, q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, **kwargs: Any) -> torch.Tensor:
-        raise NotImplementedError
+        """Compute attention output context tensor.
+
+        Args:
+            q: Query tensor of shape (batch, heads, seq_len, head_dim).
+            k: Key tensor of shape (batch, heads, seq_len, head_dim).
+            v: Value tensor of shape (batch, heads, seq_len, head_dim).
+            **kwargs: Extra arguments such as is_causal or attn_mask.
+
+        Returns:
+            Context tensor of shape (batch, heads, seq_len, head_dim).
+        """
+        is_causal = kwargs.get("is_causal", False)
+        attn_mask = kwargs.get("attn_mask", None)
+        dropout_p = kwargs.get("dropout_p", 0.0)
+        return F.scaled_dot_product_attention(q, k, v, attn_mask=attn_mask, dropout_p=dropout_p, is_causal=is_causal)
 
 
 class ComposableAttention(nn.Module):

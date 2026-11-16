@@ -230,13 +230,31 @@ def benchmark_autoregressive_decoding(
     num_heads: int = 12,
     dtype: torch.dtype = torch.float16,
     device: Optional[Union[str, torch.device]] = None,
+    allow_cpu_fallback: bool = False,
 ) -> Dict[str, Any]:
-    """Measure CUDA decode-step latency and report corresponding cache footprints."""
+    """Measure decode-step latency and report corresponding cache footprints."""
     if not torch.cuda.is_available():
-        raise NotImplementedError("benchmark() requires CUDA; cannot fabricate latency")
-    if device is not None and torch.device(device).type != "cuda":
-        raise ValueError("autoregressive latency benchmarking requires a CUDA device")
-    device = torch.device(device or "cuda")
+        if not allow_cpu_fallback:
+            raise NotImplementedError(
+                "benchmark() requires CUDA; cannot fabricate latency. "
+                "Pass allow_cpu_fallback=True to perform CPU fallback estimation."
+            )
+        target_device = torch.device(device or "cpu")
+        target_dtype = torch.float32 if dtype in (torch.float16, torch.bfloat16) else dtype
+        is_cpu_mode = True
+    else:
+        if device is not None and torch.device(device).type != "cuda":
+            if not allow_cpu_fallback:
+                raise ValueError("autoregressive latency benchmarking requires a CUDA device")
+            target_device = torch.device(device)
+            target_dtype = torch.float32 if dtype in (torch.float16, torch.bfloat16) else dtype
+            is_cpu_mode = True
+        else:
+            target_device = torch.device(device or "cuda")
+            target_dtype = dtype
+            is_cpu_mode = False
+    device = target_device
+    dtype = target_dtype
     if embed_dim <= 0 or num_heads <= 0 or embed_dim % num_heads:
         raise ValueError("embed_dim must be positive and divisible by num_heads")
     if batch_size <= 0 or any(int(length) <= 0 for length in seq_lens):
@@ -275,15 +293,24 @@ def benchmark_autoregressive_decoding(
         def measure_ms(fn: Callable[[], torch.Tensor], repeats: int = 10) -> float:
             for _ in range(3):
                 fn()
-            torch.cuda.synchronize(device)
-            start = torch.cuda.Event(enable_timing=True)
-            end = torch.cuda.Event(enable_timing=True)
-            start.record()
-            for _ in range(repeats):
-                fn()
-            end.record()
-            end.synchronize()
-            return float(start.elapsed_time(end) / repeats)
+            if is_cpu_mode:
+                import time
+
+                t0 = time.perf_counter()
+                for _ in range(repeats):
+                    fn()
+                t1 = time.perf_counter()
+                return float(((t1 - t0) * 1000.0) / repeats)
+            else:
+                torch.cuda.synchronize(device)
+                start = torch.cuda.Event(enable_timing=True)
+                end = torch.cuda.Event(enable_timing=True)
+                start.record()
+                for _ in range(repeats):
+                    fn()
+                end.record()
+                end.synchronize()
+                return float(start.elapsed_time(end) / repeats)
 
         std_latency_ms = measure_ms(standard_decode_step)
         neuralops_latency_ms = measure_ms(recurrent_decode_step)
