@@ -9,4 +9,6 @@
 Goldfinch AHN Recurrent Attention Hardware Operators.
 """
 
-from .goldfinch_ahn_autograd import *
+from .goldfinch_ahn_autograd import goldfinch_ahn, goldfinch_ahn_ref
+
+__all__ = ["goldfinch_ahn", "goldfinch_ahn_ref"]
