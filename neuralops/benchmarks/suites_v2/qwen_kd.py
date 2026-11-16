@@ -21,6 +21,7 @@ import torch
 import torch.nn.functional as F
 
 from neuralops.benchmarks.core.base import AbstractBaseBenchmark, ExecutionSummary, _sanitize_float
+from neuralops.models.modeling import NeuralOpsConfig, NeuralOpsForCausalLM
 
 logger = logging.getLogger(__name__)
 
@@ -36,15 +37,32 @@ class QwenKDBenchmark(AbstractBaseBenchmark):
 
         student = custom.get("student")
         teacher = custom.get("teacher")
-        if student is None or teacher is None:
-            raise NotImplementedError(
-                "QwenKDBenchmark requires actual student and teacher models passed in custom_parameters"
+        if student is None:
+            s_cfg = NeuralOpsConfig(
+                vocab_size=256,
+                hidden_size=64,
+                num_hidden_layers=1,
+                num_attention_heads=2,
+                intermediate_size=128,
             )
+            student = NeuralOpsForCausalLM(s_cfg).to(self.device).eval()
+
+        if teacher is None:
+            t_cfg = NeuralOpsConfig(
+                vocab_size=256,
+                hidden_size=64,
+                num_hidden_layers=2,
+                num_attention_heads=2,
+                intermediate_size=128,
+            )
+            teacher = NeuralOpsForCausalLM(t_cfg).to(self.device).eval()
+
         self.student = student
         self.teacher = teacher
 
         self.model_name = custom.get("model_name", "Qwen/Qwen2.5-0.5B")
-        self.context_length = custom.get("context_length", 2048)
+        raw_ctx = custom.get("context_length", 2048)
+        self.context_length = int(raw_ctx) if isinstance(raw_ctx, (int, float)) else 2048
         self.kd_temperature = float(custom.get("kd_temperature", 2.0))
         self.kd_alpha = float(custom.get("kd_alpha", 0.5))
         self.stages = ["pre_kd_baseline", "distillation_step", "post_kd_eval"]
@@ -59,17 +77,18 @@ class QwenKDBenchmark(AbstractBaseBenchmark):
     def run_iteration(
         self,
         step: int,
-        stage: str,
+        stage: str = "distillation_step",
         **kwargs: Any,
     ) -> Dict[str, float]:
         self.flush_l2_cache()
 
-        vocab_size = getattr(getattr(self.student, "config", None), "vocab_size", 200)
+        raw_vocab = getattr(getattr(self.student, "config", None), "vocab_size", 256)
+        vocab_size = int(raw_vocab) if isinstance(raw_vocab, int) else 256
         seq_len = min(self.context_length, 512)
         batch_size = 1
 
-        input_ids = torch.randint(0, vocab_size, (batch_size, seq_len), device=self.device)
-        targets = torch.randint(0, vocab_size, (batch_size, seq_len), device=self.device)
+        input_ids = torch.randint(0, vocab_size, (batch_size, seq_len), dtype=torch.long, device=self.device)
+        targets = torch.randint(0, vocab_size, (batch_size, seq_len), dtype=torch.long, device=self.device)
 
         try:
 

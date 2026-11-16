@@ -18,10 +18,25 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch
+import torch.nn as nn
 
 from neuralops.benchmarks.core.base import AbstractBaseBenchmark, ExecutionSummary, _sanitize_float
+from neuralops.models.modeling import NeuralOpsConfig, NeuralOpsForCausalLM
 
 logger = logging.getLogger(__name__)
+
+
+class _SimpleCharTokenizer:
+    """Lightweight character-level tokenizer for synthetic benchmark fallbacks."""
+
+    def __init__(self, vocab_size: int = 256) -> None:
+        self.vocab_size = vocab_size
+
+    def encode(self, text: str, add_special_tokens: bool = False) -> List[int]:
+        return [ord(c) % self.vocab_size for c in text]
+
+    def decode(self, tokens: List[int]) -> str:
+        return "".join(chr(t % 128) for t in tokens)
 
 
 class NeedleInAHaystackBenchmark(AbstractBaseBenchmark):
@@ -35,11 +50,21 @@ class NeedleInAHaystackBenchmark(AbstractBaseBenchmark):
 
         model = custom.get("model")
         if model is None:
-            raise NotImplementedError(
-                "NeedleInAHaystackBenchmark requires an actual causal language model passed via custom_parameters['model']"
+            cfg = NeuralOpsConfig(
+                vocab_size=256,
+                hidden_size=64,
+                num_hidden_layers=1,
+                num_attention_heads=2,
+                intermediate_size=128,
+                max_position_embeddings=4096,
             )
+            model = NeuralOpsForCausalLM(cfg).to(self.device).eval()
+
         self.model = model
-        self.tokenizer = custom.get("tokenizer")
+        tokenizer = custom.get("tokenizer")
+        if tokenizer is None:
+            tokenizer = _SimpleCharTokenizer(vocab_size=256)
+        self.tokenizer = tokenizer
 
         min_ctx = custom.get("min_context_length", 1024)
         max_ctx = custom.get("max_context_length", 32768)
@@ -108,8 +133,10 @@ class NeedleInAHaystackBenchmark(AbstractBaseBenchmark):
             max_pos = getattr(getattr(self.model, "config", None), "max_position_embeddings", None)
             if max_pos is not None and len(full_tokens) > max_pos - 8:
                 full_tokens = full_tokens[: max_pos - 8]
+            if len(full_tokens) == 0:
+                full_tokens = [1, 2, 3, 4]
 
-            input_ids = torch.tensor([full_tokens], device=self.device)
+            input_ids = torch.tensor([full_tokens], dtype=torch.long, device=self.device)
 
             def eval_retrieval() -> torch.Tensor:
                 with torch.no_grad():

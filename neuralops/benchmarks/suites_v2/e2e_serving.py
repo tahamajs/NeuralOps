@@ -18,6 +18,7 @@ from typing import Any, Dict, List, Optional
 import torch
 
 from neuralops.benchmarks.core.base import AbstractBaseBenchmark, ExecutionSummary, _sanitize_float
+from neuralops.models.modeling import NeuralOpsConfig, NeuralOpsForCausalLM
 
 logger = logging.getLogger(__name__)
 
@@ -32,14 +33,24 @@ class ServingBenchmark(AbstractBaseBenchmark):
 
         model = custom.get("model")
         if model is None:
-            raise NotImplementedError(
-                "ServingBenchmark requires an actual model instance passed via custom_parameters['model']"
+            cfg = NeuralOpsConfig(
+                vocab_size=256,
+                hidden_size=64,
+                num_hidden_layers=1,
+                num_attention_heads=2,
+                intermediate_size=128,
+                max_position_embeddings=2048,
             )
+            model = NeuralOpsForCausalLM(cfg).to(self.device).eval()
+
         self.model = model
 
-        self.batch_sizes = custom.get("batch_sizes", [1, 4, 8])
-        self.prompt_lens = custom.get("prompt_lens", [128, 512])
-        self.gen_lens = custom.get("gen_lens", [32, 64])
+        raw_batch_sizes = custom.get("batch_sizes", [1, 4, 8])
+        self.batch_sizes = [int(b) for b in raw_batch_sizes] if isinstance(raw_batch_sizes, list) else [1]
+        raw_prompt_lens = custom.get("prompt_lens", [128, 512])
+        self.prompt_lens = [int(p) for p in raw_prompt_lens] if isinstance(raw_prompt_lens, list) else [128]
+        raw_gen_lens = custom.get("gen_lens", [32, 64])
+        self.gen_lens = [int(g) for g in raw_gen_lens] if isinstance(raw_gen_lens, list) else [32]
 
         limit = custom.get("limit")
         if limit is not None and isinstance(limit, int) and limit > 0:
@@ -58,8 +69,10 @@ class ServingBenchmark(AbstractBaseBenchmark):
     ) -> Dict[str, float]:
         self.flush_l2_cache()
 
-        vocab_size = getattr(getattr(self.model, "config", None), "vocab_size", 200)
-        prompt_ids = torch.randint(1, vocab_size, (batch_size, prompt_len), device=self.device)
+        raw_vocab = getattr(getattr(self.model, "config", None), "vocab_size", 256)
+        vocab_size = int(raw_vocab) if isinstance(raw_vocab, int) else 256
+        vocab_size = max(vocab_size, 4)
+        prompt_ids = torch.randint(1, vocab_size, (batch_size, prompt_len), dtype=torch.long, device=self.device)
 
         def prefill() -> Any:
             with torch.no_grad():

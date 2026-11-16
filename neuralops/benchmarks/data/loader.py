@@ -42,10 +42,24 @@ def register_dataset_loader(format_name: str) -> Callable[[Type["DatasetLoader"]
 
 
 class DatasetLoader:
-    """Base class for custom dataset loaders."""
+    """Base class for custom dataset loaders. Subclasses must implement load()."""
 
     def load(self, path: Path | str, **kwargs: Any) -> Any:
-        raise NotImplementedError
+        """Load dataset from path or identifier.
+
+        Args:
+            path: Local path or dataset identifier.
+            **kwargs: Extra format-specific loading arguments.
+
+        Returns:
+            Loaded dataset object (e.g. pandas DataFrame or torch Dataset).
+
+        Raises:
+            NotImplementedError: If not implemented by the subclass.
+        """
+        raise NotImplementedError(
+            f"DatasetLoader subclass {self.__class__.__name__} does not implement load()."
+        )
 
 
 @register_dataset_loader("csv")
