@@ -10,11 +10,7 @@ Tests for CHELA-SLAY Wide Head Attention CUDA kernel & CPU fallback (Wave 9 / W9
 
 from __future__ import annotations
 
-<<<<<<< HEAD
-import inspect
-=======
 from pathlib import Path
->>>>>>> wave9/W9-K16
 import pytest
 import torch
 from torch.amp import autocast
@@ -154,18 +150,8 @@ def test_chela_slay_wide_top_level_dispatch() -> None:
 
 def test_chela_slay_wide_no_forbidden_patterns() -> None:
     """Verify absence of torch.cuda.amp, raw time.time(), etc."""
-<<<<<<< HEAD
-    import neuralops.ops.cuda.chela_slay_wide as pkg
-    import neuralops.ops.cuda.chela_slay_wide.chela_slay_wide_autograd as autograd_mod
-
-    for mod in [pkg, autograd_mod]:
-        src = inspect.getsource(mod)
-        assert "torch.cuda.amp" not in src, f"Deprecated torch.cuda.amp found in {mod.__name__}"
-        assert "time.time()" not in src, f"Unsynchronized time.time() found in {mod.__name__}"
-=======
     base_dir = Path(__file__).resolve().parents[3] / "neuralops" / "ops" / "cuda" / "chela_slay_wide"
     for py_file in base_dir.glob("*.py"):
         content = py_file.read_text(encoding="utf-8")
         assert "torch.cuda.amp" not in content, f"Deprecated torch.cuda.amp found in {py_file}"
         assert "time.time()" not in content, f"Unsynchronized time.time() found in {py_file}"
->>>>>>> wave9/W9-K16
