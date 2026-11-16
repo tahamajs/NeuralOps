@@ -1,0 +1,107 @@
+{
+  "wave": 11,
+  "description": "CUDA Kernel Modules Remediation & Verification (Kernels 41-60)",
+  "total_kernels": 20,
+  "kernels": [
+    {
+      "id": "W11-K1",
+      "name": "fused_norm_linear",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W11-K2",
+      "name": "fused_rope",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W11-K3",
+      "name": "fused_svd_projection",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W11-K4",
+      "name": "fwht_transform",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W11-K5",
+      "name": "fwsvd",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W11-K6",
+      "name": "galerkin_attention",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W11-K7",
+      "name": "gated_deltanet",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W11-K8",
+      "name": "gdn_delta_rule",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W11-K9",
+      "name": "gdn_scan",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W11-K10",
+      "name": "gla_chunk_attn",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W11-K11",
+      "name": "gla_scan",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W11-K12",
+      "name": "gla_unnormalized_scan",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W11-K13",
+      "name": "goldfinch_ahn",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W11-K14",
+      "name": "griffin_ssd",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W11-K15",
+      "name": "hadamard_gemm",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W11-K16",
+      "name": "hgrn2_scan",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W11-K17",
+      "name": "hgrn2_spatial_scan",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W11-K18",
+      "name": "hla_attention",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W11-K19",
+      "name": "hnc_svd",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W11-K20",
+      "name": "hstu_attention",
+      "status": "COMPLETED"
+    }
+  ]
+}
