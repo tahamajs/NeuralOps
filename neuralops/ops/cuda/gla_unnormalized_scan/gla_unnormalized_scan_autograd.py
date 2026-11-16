@@ -28,17 +28,20 @@ _MODULE = None
 def _get_module():
     global _MODULE
     if _MODULE is None:
-        curr_dir = Path(__file__).parent
-        with open(curr_dir / "gla_unnormalized_scan_binding.cpp", "r", encoding="utf-8") as f:
-            cpp_src = f.read()
-        with open(curr_dir / "gla_unnormalized_scan.cu", "r", encoding="utf-8") as f:
-            cuda_src = f.read()
-        _MODULE = load_cuda_module(
-            name="cuda_gla_unnormalized_scan",
-            cpp_sources=cpp_src,
-            cuda_sources=cuda_src,
-            functions=["gla_unnormalized_scan_fwd"],
-        )
+        try:
+            curr_dir = Path(__file__).parent
+            with open(curr_dir / "gla_unnormalized_scan_binding.cpp", "r", encoding="utf-8") as f:
+                cpp_src = f.read()
+            with open(curr_dir / "gla_unnormalized_scan.cu", "r", encoding="utf-8") as f:
+                cuda_src = f.read()
+            _MODULE = load_cuda_module(
+                name="cuda_gla_unnormalized_scan",
+                cpp_sources=cpp_src,
+                cuda_sources=cuda_src,
+                functions=["gla_unnormalized_scan_fwd"],
+            )
+        except Exception:
+            return None
     return _MODULE
 
 
@@ -46,7 +49,24 @@ def gla_unnormalized_scan_pytorch_ref(
     q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, decay: torch.Tensor
 ) -> torch.Tensor:
     B, H, N, D = q.shape
-    g = decay.unsqueeze(-1).expand(B, H, N, D) if decay.dim() == 3 else decay
+    if decay.dim() == 3:
+        g = decay.unsqueeze(-1).expand(B, H, N, D)
+    elif decay.dim() == 4:
+        g = decay
+    elif decay.dim() == 2:
+        g = (
+            decay.unsqueeze(-1).unsqueeze(-1).expand(B, H, N, D)
+            if decay.shape == (B, H)
+            else decay.view(1, H, 1, D).expand(B, H, N, D)
+        )
+    elif decay.dim() == 1:
+        g = (
+            decay.view(1, H, 1, 1).expand(B, H, N, D)
+            if decay.shape[0] == H
+            else decay.view(1, 1, 1, -1).expand(B, H, N, D)
+        )
+    else:
+        g = decay
     s = torch.zeros(B, H, D, device=q.device, dtype=torch.float32)
     ys = []
     q_f = q.float()
@@ -74,7 +94,11 @@ def _gla_unnormalized_scan_dispatch(
 ) -> torch.Tensor:
     def cuda_fn(*args, **kwargs):
         mod = _get_module()
-        fn = mod.gla_unnormalized_scan_fwd
+        if mod is None:
+            raise RuntimeError("CUDA module not loaded")
+        fn = getattr(mod, "gla_unnormalized_scan_fwd", getattr(mod, "forward", None))
+        if fn is None:
+            raise RuntimeError("Kernel forward function not found in module")
         return fn(*args, **kwargs)
 
     return dispatch(
