@@ -9,4 +9,6 @@
 HSTU Attention Hardware Operators.
 """
 
-from .hstu_attention_autograd import *
+from .hstu_attention_autograd import hstu_attention, hstu_attention_ref
+
+__all__ = ["hstu_attention", "hstu_attention_ref"]
