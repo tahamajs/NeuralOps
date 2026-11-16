@@ -69,7 +69,10 @@ def fused_svd_projection_pytorch_ref(
         z = z * S.float()
 
     # Up-projection: Out = alpha * (Z @ V_T)
-    out = alpha * torch.matmul(z, V_T.float())
+    if V_T is not None:
+        out = alpha * torch.matmul(z, V_T.float())
+    else:
+        out = alpha * z
 
     if X_res is not None:
         x_res_2d = X_res.reshape(-1, X_res.shape[-1])
@@ -100,12 +103,13 @@ class FusedSVDProjectionFunction(Function):
         orig_shape = x.shape
         x_2d = x.reshape(-1, x.size(-1)).contiguous()
         U_c = U.contiguous()
-        V_T_c = V_T.contiguous()
+        V_T_c = V_T.contiguous() if V_T is not None else None
         S_c = S.contiguous() if (S is not None and S.numel() > 0) else None
         res_2d = X_res.reshape(-1, X_res.size(-1)).contiguous() if (X_res is not None and X_res.numel() > 0) else None
         bias_c = bias.contiguous() if (bias is not None and bias.numel() > 0) else None
 
         ctx.has_s = S_c is not None
+        ctx.has_vt = V_T_c is not None
         ctx.has_res = res_2d is not None
         ctx.has_bias = bias_c is not None
         ctx.alpha = float(alpha)
@@ -115,7 +119,7 @@ class FusedSVDProjectionFunction(Function):
         dispatched = False
         out = None
 
-        if x.is_cuda:
+        if x.is_cuda and ctx.has_vt:
             try:
                 mod = _get_cuda_module()
                 if mod is not None:
@@ -134,13 +138,11 @@ class FusedSVDProjectionFunction(Function):
                 _fallback._DISPATCH_STATS["cuda_failures"] += 1
 
         # Level 2: Triton JIT Kernel
-        if not dispatched and x.is_cuda:
+        if not dispatched and x.is_cuda and ctx.has_vt:
             try:
                 from neuralops.ops.triton.fused_svd_projection_triton import fused_svd_projection_triton
 
-                out = fused_svd_projection_triton(
-                    x_2d, U_c, S_c, V_T_c, res_2d, bias_c, alpha=ctx.alpha, beta=ctx.beta
-                )
+                out = fused_svd_projection_triton(x_2d, U_c, S_c, V_T_c, res_2d, bias_c, alpha=ctx.alpha, beta=ctx.beta)
                 dispatched = True
                 _fallback.set_last_dispatch_backend("fused_svd_projection", "triton")
             except Exception as e:
@@ -200,18 +202,21 @@ class FusedSVDProjectionFunction(Function):
         dout_f = dout.float()
         x_f = x_2d.float()
         U_f = U.float()
-        V_T_f = V_T.float()
+        V_T_f = V_T.float() if ctx.has_vt else None
 
         # Intermediate: Z = X * U, Z_scaled = Z * S
         z = torch.matmul(x_f, U_f)
         z_scaled = z * S.float() if ctx.has_s else z
 
         # Backward for dV_T: dOut^T * Z_scaled
-        if needs_dVT:
+        if needs_dVT and ctx.has_vt:
             dV_T = (ctx.alpha * torch.matmul(z_scaled.t(), dout_f)).to(V_T.dtype)
 
         # dz_scaled = alpha * (dOut * V_T^T)
-        dz_scaled = ctx.alpha * torch.matmul(dout_f, V_T_f.t())
+        if ctx.has_vt:
+            dz_scaled = ctx.alpha * torch.matmul(dout_f, V_T_f.t())
+        else:
+            dz_scaled = ctx.alpha * dout_f
 
         # Backward for dS: sum(dz_scaled * Z) along M
         if needs_dS and ctx.has_s:
