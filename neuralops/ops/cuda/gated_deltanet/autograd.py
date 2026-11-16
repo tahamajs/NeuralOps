@@ -11,9 +11,8 @@ Gated DeltaNet Autograd Interface.
 
 from __future__ import annotations
 
-import math
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import torch
 
@@ -23,7 +22,7 @@ from neuralops.ops.cuda._fallback import dispatch
 _MODULE = None
 
 
-def _get_module():
+def _get_module() -> Any:
     global _MODULE
     if _MODULE is None:
         curr_dir = Path(__file__).parent
@@ -46,8 +45,29 @@ def gated_deltanet_pytorch_ref(
     k: torch.Tensor,
     v: torch.Tensor,
     beta: torch.Tensor,
-    g: Optional[torch.Tensor] = None,
+    g: torch.Tensor | None = None,
 ) -> torch.Tensor:
+    """Vectorized PyTorch reference implementation of Gated DeltaNet.
+
+    Computes recurrent gated delta-rule state updates:
+        S_t = S_{t-1} * g_t + beta_t * (k_t^T * (v_t - S_{t-1} * k_t))
+        y_t = S_t * q_t
+
+    Args:
+        q: Query tensor of shape (B, H, L, D).
+        k: Key tensor of shape (B, H, L, D).
+        v: Value tensor of shape (B, H, L, D).
+        beta: Update gating/scale tensor of shape (B, H, L) or (B, H, L, 1).
+        g: Optional recurrent decay gate tensor of shape (B, H, L) or (B, H, L, 1).
+
+    Returns:
+        Output tensor of shape (B, H, L, D) and matching input dtype.
+    """
+    if beta.ndim == 4 and beta.shape[-1] == 1:
+        beta = beta.squeeze(-1)
+    if g is not None and g.ndim == 4 and g.shape[-1] == 1:
+        g = g.squeeze(-1)
+
     B, H, L, D = q.shape
     S = torch.zeros((B, H, D, D), device=q.device, dtype=torch.float32)
     outs = []
@@ -67,7 +87,13 @@ def gated_deltanet_pytorch_ref(
     return torch.stack(outs, dim=2).to(q.dtype)
 
 
-def _gated_deltanet_dispatch(q, k, v, beta, g=None) -> torch.Tensor:
+def _gated_deltanet_dispatch(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    beta: torch.Tensor,
+    g: torch.Tensor | None = None,
+) -> torch.Tensor:
     """3-Level Dispatched Gated DeltaNet."""
 
     def cuda_fn(q, k, v, beta, g=None, **kwargs):
@@ -123,8 +149,25 @@ class _GatedDeltanetFunction(torch.autograd.Function):
         )
 
 
-def gated_deltanet(q, k, v, beta, g=None) -> torch.Tensor:
-    """Dispatches Gated DeltaNet with autograd support."""
+def gated_deltanet(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    beta: torch.Tensor,
+    g: torch.Tensor | None = None,
+) -> torch.Tensor:
+    """Dispatches Gated DeltaNet forward pass with autograd support.
+
+    Args:
+        q: Query tensor of shape (B, H, L, D).
+        k: Key tensor of shape (B, H, L, D).
+        v: Value tensor of shape (B, H, L, D).
+        beta: Update gating/scale tensor of shape (B, H, L) or (B, H, L, 1).
+        g: Optional recurrent decay gate tensor of shape (B, H, L) or (B, H, L, 1).
+
+    Returns:
+        Output tensor of shape (B, H, L, D) and matching input dtype.
+    """
     args = [q, k, v, beta, g]
     if any(isinstance(t, torch.Tensor) and t.requires_grad for t in args):
         return _GatedDeltanetFunction.apply(*args)
