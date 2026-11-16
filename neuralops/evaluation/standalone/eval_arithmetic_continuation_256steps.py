@@ -29,8 +29,9 @@ def main() -> None:
         """Execute print log routine."""
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    print_log(f"Synthetic arithmetic continuation stress on: {torch.cuda.get_device_name(0)}")
+    device = torch.device(f"cuda:{torch.cuda.current_device()}" if torch.cuda.is_available() else "cpu")
+    dev_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "cpu"
+    print_log(f"Synthetic arithmetic continuation stress on: {dev_name}")
 
     model_path = os.environ.get("NEURALOPS_MODEL_PATH", "gpt2")
     tokenizer = AutoTokenizer.from_pretrained(model_path)

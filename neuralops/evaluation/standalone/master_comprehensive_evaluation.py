@@ -251,7 +251,8 @@ def main():
         type=str,
         default=os.path.join(output_dir, "master_comprehensive_evaluation_matrix.md"),
     )
-    parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu")
+    default_device = f"cuda:{torch.cuda.current_device()}" if torch.cuda.is_available() else "cpu"
+    parser.add_argument("--device", type=str, default=default_device)
     parser.add_argument("--context-lengths", nargs="+", type=int, default=[512, 1024, 2048, 4096])
     args = parser.parse_args()
 

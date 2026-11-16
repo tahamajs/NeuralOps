@@ -29,8 +29,9 @@ def main() -> None:
         """Execute print log routine."""
         print(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {msg}", flush=True)
 
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    print_log(f"Speculative Decoding Empirical Benchmark on: {torch.cuda.get_device_name(0)}")
+    device = torch.device(f"cuda:{torch.cuda.current_device()}" if torch.cuda.is_available() else "cpu")
+    dev_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "cpu"
+    print_log(f"Speculative Decoding Empirical Benchmark on: {dev_name}")
 
     d_mock = torch.tensor([[1, 2, 3, 4]], device=device)
     t_mock = torch.tensor([[1, 2, 5, 4]], device=device)

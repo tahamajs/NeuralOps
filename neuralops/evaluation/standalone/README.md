@@ -8,7 +8,7 @@ model and accelerator state is released when each run exits:
 pip install -e ".[cuda,evaluation-experiments]"
 neuralops-eval list
 neuralops-eval run comprehensive --model-path gpt2 --output-dir results/evaluation
-neuralops-eval run comprehensive --context-lengths 128 512 1024 --device cuda:0
+neuralops-eval run comprehensive --context-lengths 128 512 1024 --device cuda
 neuralops-eval run ultra-long-context --model-path gpt2 --output-dir results/evaluation
 ```
 
