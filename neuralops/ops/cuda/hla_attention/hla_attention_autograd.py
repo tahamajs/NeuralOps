@@ -24,10 +24,10 @@ from neuralops.ops.cuda._fallback import dispatch
 
 logger = logging.getLogger(__name__)
 
-_MODULE = None
+_MODULE: Any = None
 
 
-def _get_module():
+def _get_module() -> Any:
     global _MODULE
     if _MODULE is None:
         curr_dir = Path(__file__).parent
@@ -52,7 +52,19 @@ def hla_attention_ref(
     decay: torch.Tensor,
     eps: float = 1e-5,
 ) -> torch.Tensor:
-    """Pure PyTorch reference implementation."""
+    """Pure PyTorch reference implementation of Hadamard Linear Attention.
+
+    Args:
+        q: Query tensor of shape (B, H, L, D).
+        k: Key tensor of shape (B, H, L, D).
+        v: Value tensor of shape (B, H, L, D).
+        decay: Per-head or per-token decay tensor of shape (B, H, L),
+            (B, H, L, 1), (H, L), (H,), or broadcastable.
+        eps: Small epsilon for numerical stability.
+
+    Returns:
+        Attention output tensor of shape (B, H, L, D) matching q.dtype.
+    """
     B, H, L, D = q.shape
     q_f = q.float()
     k_f = k.float()
@@ -60,8 +72,10 @@ def hla_attention_ref(
     decay_f = decay.float()
     if decay_f.dim() == 4:
         decay_f = decay_f.squeeze(-1)
-    while decay_f.dim() < 3:
-        decay_f = decay_f.unsqueeze(-1)
+    if decay_f.dim() == 1:
+        decay_f = decay_f.unsqueeze(0).unsqueeze(-1)
+    elif decay_f.dim() == 2:
+        decay_f = decay_f.unsqueeze(0)
     decay_f = decay_f.expand(B, H, L)
 
     out = torch.empty_like(q_f)
@@ -91,8 +105,10 @@ def _get_triton_impl():
             dec_expanded = decay.float()
             if dec_expanded.dim() == 4:
                 dec_expanded = dec_expanded.squeeze(-1)
-            while dec_expanded.dim() < 3:
-                dec_expanded = dec_expanded.unsqueeze(-1)
+            if dec_expanded.dim() == 1:
+                dec_expanded = dec_expanded.unsqueeze(0).unsqueeze(-1)
+            elif dec_expanded.dim() == 2:
+                dec_expanded = dec_expanded.unsqueeze(0)
             dec_expanded = dec_expanded.expand(B, H, L).contiguous()
             return fused_svd_linear_chunk_scan_triton(q, k, v, decay=dec_expanded, chunk_size=64, eps=eps)
 
@@ -109,7 +125,18 @@ def hla_attention(
     decay: torch.Tensor,
     eps: float = 1e-5,
 ) -> torch.Tensor:
-    """Dispatches HLA attention across CUDA C++, Triton JIT, and PyTorch fallback."""
+    """Dispatches HLA attention across CUDA C++, Triton JIT, and PyTorch fallback.
+
+    Args:
+        q: Query tensor of shape (B, H, L, D).
+        k: Key tensor of shape (B, H, L, D).
+        v: Value tensor of shape (B, H, L, D).
+        decay: Per-head or per-token decay tensor of shape (B, H, L) or broadcastable.
+        eps: Small epsilon for numerical stability.
+
+    Returns:
+        Attention output tensor of shape (B, H, L, D) matching q.dtype.
+    """
 
     def cuda_fn(q, k, v, decay, eps=1e-5):
         if q.shape[-1] > 64:
@@ -130,3 +157,9 @@ def hla_attention(
         eps=eps,
         kernel_name="hla_attention",
     )
+
+
+# Canonical alias for consistency across NeuralOps CUDA kernel interfaces
+hla_attention_pytorch_ref = hla_attention_ref
+
+__all__ = ["hla_attention", "hla_attention_ref", "hla_attention_pytorch_ref"]
