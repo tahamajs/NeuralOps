@@ -55,8 +55,13 @@ def gla_chunk_attn_pytorch_ref(
     causal_mask = torch.tril(torch.ones(q.shape[-2], k.shape[-2], device=q.device, dtype=torch.bool))
     sim = torch.where(causal_mask, sim, torch.zeros_like(sim))
     if g is not None:
-        sim = sim * g.float()
-    out = torch.matmul(sim, v.float())
+        if g.shape[-1] == v.shape[-1] and g.shape[-1] != sim.shape[-1]:
+            out = torch.matmul(sim, v.float() * g.float())
+        else:
+            sim = sim * g.float()
+            out = torch.matmul(sim, v.float())
+    else:
+        out = torch.matmul(sim, v.float())
     return out.to(q.dtype)
 
 
