@@ -136,6 +136,41 @@ def fused_norm_linear(
     """
     backend = getattr(_fallback, "_FORCED_BACKEND", None)
     backend_val = backend.get() if backend is not None else "auto"
+
+    if backend_val == "cuda":
+        if not x.is_cuda or not torch.cuda.is_available():
+            _fallback.set_last_dispatch_error("fused_norm_linear", "CUDA unavailable")
+            if hasattr(_fallback, "_DISPATCH_STATS") and "cuda_failures" in _fallback._DISPATCH_STATS:
+                _fallback._DISPATCH_STATS["cuda_failures"] += 1
+            raise RuntimeError("[fused_norm_linear] Backend forced to 'cuda', but CUDA device is unavailable.")
+        _fallback.set_last_dispatch_backend("fused_norm_linear", "cuda")
+        if hasattr(_fallback, "_DISPATCH_STATS") and "cuda" in _fallback._DISPATCH_STATS:
+            _fallback._DISPATCH_STATS["cuda"] += 1
+        return _FusedNormLinearFunction.apply(x, weight, bias, eps)
+
+    if backend_val == "triton":
+        triton_fn = _get_triton_impl()
+        if triton_fn is None or not x.is_cuda:
+            _fallback.set_last_dispatch_error("fused_norm_linear", "Triton unavailable or non-CUDA tensor")
+            if hasattr(_fallback, "_DISPATCH_STATS") and "triton_failures" in _fallback._DISPATCH_STATS:
+                _fallback._DISPATCH_STATS["triton_failures"] += 1
+            raise RuntimeError("[fused_norm_linear] Backend forced to 'triton', but Triton implementation is unavailable.")
+        _fallback.set_last_dispatch_backend("fused_norm_linear", "triton")
+        if hasattr(_fallback, "_DISPATCH_STATS") and "triton" in _fallback._DISPATCH_STATS:
+            _fallback._DISPATCH_STATS["triton"] += 1
+        return triton_fn(x, weight, bias=bias, eps=eps)
+
+    if backend_val == "pytorch" or not x.is_cuda or not torch.cuda.is_available():
+        if backend_val == "auto":
+            logger.warning(
+                "fused_norm_linear is 244x slower than PyTorch reference at the tested shape. "
+                "Setting backend='auto' will use PyTorch. To force the custom kernel, use backend='cuda'."
+            )
+        _fallback.set_last_dispatch_backend("fused_norm_linear", "pytorch")
+        if hasattr(_fallback, "_DISPATCH_STATS") and "pytorch" in _fallback._DISPATCH_STATS:
+            _fallback._DISPATCH_STATS["pytorch"] += 1
+        return fused_norm_linear_pytorch_ref(x, weight, bias=bias, eps=eps)
+
     if backend_val == "auto":
         logger.warning(
             "fused_norm_linear is 244x slower than PyTorch reference at the tested shape. "
@@ -144,7 +179,17 @@ def fused_norm_linear(
     triton_fn = _get_triton_impl()
     if triton_fn is not None:
         try:
-            return triton_fn(x, weight, bias=bias, eps=eps)
+            out = triton_fn(x, weight, bias=bias, eps=eps)
+            _fallback.set_last_dispatch_backend("fused_norm_linear", "triton")
+            if hasattr(_fallback, "_DISPATCH_STATS") and "triton" in _fallback._DISPATCH_STATS:
+                _fallback._DISPATCH_STATS["triton"] += 1
+            return out
         except (RuntimeError, MemoryError, AssertionError, ValueError) as exc:
             logger.warning("Triton execution failed for fused_norm_linear, falling back to PyTorch", exc_info=True)
+            if hasattr(_fallback, "_DISPATCH_STATS") and "triton_failures" in _fallback._DISPATCH_STATS:
+                _fallback._DISPATCH_STATS["triton_failures"] += 1
+
+    _fallback.set_last_dispatch_backend("fused_norm_linear", "pytorch")
+    if hasattr(_fallback, "_DISPATCH_STATS") and "pytorch" in _fallback._DISPATCH_STATS:
+        _fallback._DISPATCH_STATS["pytorch"] += 1
     return fused_norm_linear_pytorch_ref(x, weight, bias=bias, eps=eps)

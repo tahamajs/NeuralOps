@@ -61,10 +61,21 @@ def hgrn2_fused_bwd_scan_pytorch_ref(
     x: torch.Tensor,
     g: torch.Tensor,
 ) -> torch.Tensor:
-    """Pure PyTorch reference implementation."""
+    """Pure PyTorch reference implementation of bidirectional HGRN2 scan.
+
+    Args:
+        x: Input activation tensor of shape [B, H, L, D].
+        g: Gate tensor of shape [B, H, L, D].
+
+    Returns:
+        Output tensor of shape [B, H, L, D].
+    """
     from neuralops.ops.triton.hgrn2_scan import triton_hgrn2_fused_bwd_scan_pytorch_ref
 
     return triton_hgrn2_fused_bwd_scan_pytorch_ref(x, g)
+
+
+hgrn2_scan_pytorch_ref = hgrn2_fused_bwd_scan_pytorch_ref
 
 
 def _get_triton_impl():
@@ -99,8 +110,10 @@ def _hgrn2_fused_bwd_scan_dispatch(
 
 
 class _Hgrn2_fused_bwd_scanFunction(torch.autograd.Function):
+    """Autograd function executing forward dispatch with analytical/ref backward."""
+
     @staticmethod
-    def forward(ctx: Any, x, g):
+    def forward(ctx: Any, x: torch.Tensor, g: torch.Tensor) -> torch.Tensor:
         out = _hgrn2_fused_bwd_scan_dispatch(x, g)
         ctx.save_for_backward(*[t for t in (x, g) if isinstance(t, torch.Tensor)])
         ctx.tensors_mask = [isinstance(t, torch.Tensor) for t in (x, g)]
@@ -108,7 +121,7 @@ class _Hgrn2_fused_bwd_scanFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx: Any, *douts):
+    def backward(ctx: Any, *douts: Any) -> tuple[torch.Tensor | None, ...]:
         saved = list(ctx.saved_tensors)
         inputs = []
         for is_t, nt in zip(ctx.tensors_mask, ctx.non_tensors):
@@ -120,19 +133,32 @@ class _Hgrn2_fused_bwd_scanFunction(torch.autograd.Function):
         with torch.enable_grad():
             out_p = hgrn2_fused_bwd_scan_pytorch_ref(*inputs)
         tensor_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if is_t]
+        req_inputs = [inp for inp in tensor_inputs if inp.requires_grad]
         dout_val = douts[0] if len(douts) == 1 else douts
-        grads = torch.autograd.grad(out_p, tensor_inputs, dout_val, allow_unused=True)
-        grad_list: list[Any] = list(grads)
-        res = []
-        for is_t in ctx.tensors_mask:
-            if is_t:
-                res.append(grad_list.pop(0))
-            else:
-                res.append(None)
+        if req_inputs:
+            grads = torch.autograd.grad(out_p, req_inputs, dout_val, allow_unused=True)
+            grad_iter = iter(grads)
+            res = [
+                next(grad_iter) if (is_t and inp.requires_grad) else None for is_t, inp in zip(ctx.tensors_mask, inputs)
+            ]
+        else:
+            res = [None for _ in ctx.tensors_mask]
         return tuple(res)
 
 
-def hgrn2_fused_bwd_scan(x, g):
+def hgrn2_fused_bwd_scan(
+    x: torch.Tensor,
+    g: torch.Tensor,
+) -> torch.Tensor:
+    """Fused bidirectional HGRN2 scan with 3-level fallback and autograd support.
+
+    Args:
+        x: Input activation tensor of shape [B, H, L, D].
+        g: Gate tensor of shape [B, H, L, D].
+
+    Returns:
+        Output tensor of shape [B, H, L, D].
+    """
     if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (x, g)):
         return _Hgrn2_fused_bwd_scanFunction.apply(x, g)
     return _hgrn2_fused_bwd_scan_dispatch(x, g)

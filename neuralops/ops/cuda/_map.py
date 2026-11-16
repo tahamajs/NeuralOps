@@ -34,6 +34,7 @@ _KERNEL_SYMBOL_MAP: dict[str, tuple[str, str]] = {
     "chunked_delta_gate_scan_pytorch_ref": ["gdn_scan", "chunked_delta_gate_scan_pytorch_ref"],
     "hgrn2_fused_bwd_scan": ["hgrn2_scan", "hgrn2_fused_bwd_scan"],
     "hgrn2_fused_bwd_scan_pytorch_ref": ["hgrn2_scan", "hgrn2_fused_bwd_scan_pytorch_ref"],
+    "hgrn2_scan_pytorch_ref": ["hgrn2_scan", "hgrn2_scan_pytorch_ref"],
     "cosformer_linear_attention": ["cosformer", "cosformer_linear_attention"],
     "cosformer_linear_attention_pytorch_ref": ["cosformer", "cosformer_linear_attention_pytorch_ref"],
     "fused_norm_linear": ["fused_norm_linear", "fused_norm_linear"],
