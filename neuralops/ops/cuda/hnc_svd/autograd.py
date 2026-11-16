@@ -12,6 +12,7 @@ Autograd Function for HNC-SVD CUDA Kernel.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import torch
 from torch.autograd import Function
@@ -19,10 +20,13 @@ from torch.autograd import Function
 _OPS = None
 
 
-def _get_hnc_svd_ops():
+def _get_hnc_svd_ops() -> Any:
     global _OPS
     if _OPS is not None:
         return _OPS
+
+    if not torch.cuda.is_available():
+        return None
 
     try:
         import hnc_svd_ops
@@ -51,18 +55,25 @@ class HNCSVDFunction(Function):
     """Autograd Function wrapping CUDA hnc_svd_fwd kernel."""
 
     @staticmethod
-    def forward(ctx, A: torch.Tensor, B: torch.Tensor) -> torch.Tensor:
+    def forward(ctx: Any, A: torch.Tensor, B: torch.Tensor) -> torch.Tensor:
         ctx.save_for_backward(A, B)
 
         ops = _get_hnc_svd_ops()
-        if ops is not None and hasattr(ops, "hnc_svd_fwd"):
+        if (
+            ops is not None
+            and hasattr(ops, "hnc_svd_fwd")
+            and A.is_cuda
+            and B.is_cuda
+            and A.dtype == torch.float32
+            and B.dtype == torch.float32
+        ):
             return ops.hnc_svd_fwd(A.contiguous(), B.contiguous())
 
         # Level 3 PyTorch reference fallback
         return torch.matmul(A, B)
 
     @staticmethod
-    def backward(ctx, grad_output: torch.Tensor):
+    def backward(ctx: Any, grad_output: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         A, B = ctx.saved_tensors
         grad_A = torch.matmul(grad_output, B.t())
         grad_B = torch.matmul(A.t(), grad_output)
