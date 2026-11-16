@@ -142,6 +142,7 @@ _KERNEL_SYMBOL_MAP: dict[str, tuple[str, str]] = {
     "favor_plus": ["favor_plus", "favor_plus"],
     "favor_plus_pytorch_ref": ["favor_plus", "favor_plus_pytorch_ref"],
     "fwht_transform": ["fwht_transform", "fwht_transform"],
+    "fwht_transform_pytorch_ref": ["fwht_transform", "fwht_transform_pytorch_ref"],
     "fast_hadamard_transform": ["fwht_transform", "fast_hadamard_transform"],
     "rms_variance_match": ["rms_variance_match", "rms_variance_match"],
     "fused_rms_variance_match_triton": ["rms_variance_match", "fused_rms_variance_match_triton"],
