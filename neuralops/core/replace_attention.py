@@ -57,14 +57,6 @@ def replace_attention_in_model(
     if attention_params is None:
         attention_params = {}
 
-    model_type = getattr(getattr(model, "config", None), "model_type", None)
-
-    if model_type in ("t5", "mt5", "bart", "mbart", "pegasus", "marian"):
-        raise NotImplementedError(
-            f"replace_attention_in_model does not support encoder-decoder "
-            f"models (model_type={model_type}). Cross-attention is not implemented."
-        )
-
     inject_fn = ATTENTION_REGISTRY.get(attention_name)
     if inject_fn is None:
         raise ValueError(f"Attention '{attention_name}' not registered in ATTENTION_REGISTRY.")
@@ -72,6 +64,43 @@ def replace_attention_in_model(
         raise ValueError(f"Attention '{attention_name}' is not callable.")
 
     cfg = getattr(model, "config", None)
+    model_type = getattr(cfg, "model_type", None)
+
+    if model_type in ("t5", "mt5", "bart", "mbart", "pegasus", "marian"):
+        # Graceful handling for encoder-decoder architectures
+        encoder = getattr(model, "encoder", None)
+        decoder = getattr(model, "decoder", None)
+        replaced_any = False
+
+        if encoder is not None:
+            enc_layers = getattr(encoder, "block", None) or getattr(encoder, "layers", None)
+            if enc_layers is not None:
+                # In T5/BART encoder, self-attention attribute is typically 'layer[0].SelfAttention' or 'self_attn'
+                for block in enc_layers:
+                    if hasattr(block, "layer") and len(block.layer) > 0 and hasattr(block.layer[0], "SelfAttention"):
+                        _replace_layers([block.layer[0]], "SelfAttention", inject_fn, cfg, attention_params, model_type)
+                        replaced_any = True
+                    elif hasattr(block, "self_attn"):
+                        _replace_layers([block], "self_attn", inject_fn, cfg, attention_params, model_type)
+                        replaced_any = True
+
+        if decoder is not None:
+            dec_layers = getattr(decoder, "block", None) or getattr(decoder, "layers", None)
+            if dec_layers is not None:
+                for block in dec_layers:
+                    if hasattr(block, "layer") and len(block.layer) > 0 and hasattr(block.layer[0], "SelfAttention"):
+                        _replace_layers([block.layer[0]], "SelfAttention", inject_fn, cfg, attention_params, model_type)
+                        replaced_any = True
+                    elif hasattr(block, "self_attn"):
+                        _replace_layers([block], "self_attn", inject_fn, cfg, attention_params, model_type)
+                        replaced_any = True
+
+        if not replaced_any:
+            logger.warning(
+                "replace_attention_in_model: Encoder-decoder model_type=%s detected but standard layer hierarchy was not found; skipped.",
+                model_type,
+            )
+        return model
 
     if model_type in ("bert", "roberta", "xlm-roberta", "electra", "deberta"):
         encoder = getattr(getattr(model, model_type.replace("-", "_"), model), "encoder", None) or getattr(
