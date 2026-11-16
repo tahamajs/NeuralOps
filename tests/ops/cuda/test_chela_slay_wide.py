@@ -10,7 +10,6 @@ Tests for CHELA-SLAY Wide Head Attention CUDA kernel & CPU fallback (Wave 9 / W9
 
 from __future__ import annotations
 
-import inspect
 from pathlib import Path
 import pytest
 import torch
