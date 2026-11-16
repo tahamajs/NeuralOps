@@ -21,12 +21,19 @@ import torch
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
+__all__ = [
+    "griffin_ssd",
+    "griffin_ssd_ref",
+]
+
 _MODULE = None
 
 
-def _get_module():
+def _get_module() -> Any:
     global _MODULE
     if _MODULE is None:
+        if not torch.cuda.is_available():
+            return None
         curr_dir = Path(__file__).parent
         with open(curr_dir / "griffin_ssd_binding.cpp", "r", encoding="utf-8") as f:
             cpp_src = f.read()
@@ -37,7 +44,19 @@ def _get_module():
 
 
 def griffin_ssd_ref(x: torch.Tensor, r: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
+    """Vectorized PyTorch CPU reference implementation of Griffin SSD recurrent scan.
+
+    Args:
+        x: Input tensor of shape (B, N, D).
+        r: Recurrent gate tensor of shape (B, N, D).
+        decay: Decay factor tensor of shape (B, N, D).
+
+    Returns:
+        Filtered output tensor of shape (B, N, D) matching x.dtype and device.
+    """
     B, N, D = x.shape
+    if B == 0 or N == 0 or D == 0:
+        return torch.empty_like(x)
     r_gate = torch.sigmoid(r)
     out = torch.empty_like(x)
     s = torch.zeros(B, D, device=x.device, dtype=x.dtype)
@@ -49,8 +68,10 @@ def griffin_ssd_ref(x: torch.Tensor, r: torch.Tensor, decay: torch.Tensor) -> to
 
 
 def _griffin_ssd_dispatch(x: torch.Tensor, r: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
-    def cuda_fn(x, r, decay):
+    def cuda_fn(x: torch.Tensor, r: torch.Tensor, decay: torch.Tensor, **kwargs: Any) -> torch.Tensor:
         mod = _get_module()
+        if mod is None:
+            raise RuntimeError("CUDA module failed to load")
         return mod.griffin_ssd_fwd(x.contiguous(), r.contiguous(), decay.contiguous())
 
     return dispatch(cuda_fn, griffin_ssd_ref, griffin_ssd_ref, x, r=r, decay=decay, kernel_name="griffin_ssd")
@@ -58,7 +79,7 @@ def _griffin_ssd_dispatch(x: torch.Tensor, r: torch.Tensor, decay: torch.Tensor)
 
 class _Griffin_ssdFunction(torch.autograd.Function):
     @staticmethod
-    def forward(ctx: Any, x, r, decay):
+    def forward(ctx: Any, x: torch.Tensor, r: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
         out = _griffin_ssd_dispatch(x, r, decay)
         ctx.save_for_backward(*[t for t in (x, r, decay) if isinstance(t, torch.Tensor)])
         ctx.tensors_mask = [isinstance(t, torch.Tensor) for t in (x, r, decay)]
@@ -66,9 +87,9 @@ class _Griffin_ssdFunction(torch.autograd.Function):
         return out
 
     @staticmethod
-    def backward(ctx: Any, *douts):
+    def backward(ctx: Any, *douts: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
         saved = list(ctx.saved_tensors)
-        inputs = []
+        inputs: list[Any] = []
         for is_t, nt in zip(ctx.tensors_mask, ctx.non_tensors):
             if is_t:
                 t = saved.pop(0)
@@ -80,8 +101,8 @@ class _Griffin_ssdFunction(torch.autograd.Function):
         tensor_inputs = [inp for inp, is_t in zip(inputs, ctx.tensors_mask) if is_t]
         dout_val = douts[0] if len(douts) == 1 else douts
         grads = torch.autograd.grad(out_p, tensor_inputs, dout_val, allow_unused=True)
-        grad_list: list[Any] = list(grads)
-        res = []
+        grad_list: list[torch.Tensor | None] = list(grads)
+        res: list[torch.Tensor | None] = []
         for is_t in ctx.tensors_mask:
             if is_t:
                 res.append(grad_list.pop(0))
@@ -90,7 +111,17 @@ class _Griffin_ssdFunction(torch.autograd.Function):
         return tuple(res)
 
 
-def griffin_ssd(x, r, decay):
+def griffin_ssd(x: torch.Tensor, r: torch.Tensor, decay: torch.Tensor) -> torch.Tensor:
+    """Griffin SSD recurrent operator with 3-level fallback dispatch.
+
+    Args:
+        x: Input tensor of shape (B, N, D).
+        r: Recurrent gate tensor of shape (B, N, D).
+        decay: Decay factor tensor of shape (B, N, D).
+
+    Returns:
+        Filtered output tensor of shape (B, N, D).
+    """
     if any(isinstance(t, torch.Tensor) and t.requires_grad for t in (x, r, decay)):
         return _Griffin_ssdFunction.apply(x, r, decay)
     return _griffin_ssd_dispatch(x, r, decay)

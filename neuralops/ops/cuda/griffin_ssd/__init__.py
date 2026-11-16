@@ -9,4 +9,12 @@
 Griffin SSD Recurrent Operator Hardware Operators.
 """
 
-from .griffin_ssd_autograd import *
+from neuralops.ops.cuda.griffin_ssd.griffin_ssd_autograd import (
+    griffin_ssd,
+    griffin_ssd_ref,
+)
+
+__all__ = [
+    "griffin_ssd",
+    "griffin_ssd_ref",
+]
