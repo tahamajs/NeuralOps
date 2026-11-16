@@ -24,7 +24,20 @@ def hnc_svd_compress(
     rank: int = 32,
     max_error: float = 0.35,
 ) -> torch.Tensor:
-    """HNC-SVD compression using CUDA C++ kernel."""
+    """HNC-SVD compression using CUDA C++ kernel with PyTorch fallback.
+
+    Args:
+        W: 2D weight matrix of shape (M, N).
+        cov: Optional covariance/Hessian matrix of shape (N, N).
+        rank: Target compression rank.
+        max_error: Maximum allowed reconstruction error threshold.
+
+    Returns:
+        Reconstructed compressed tensor with the same shape and dtype as W.
+
+    Raises:
+        ValueError: If W is not a 2D tensor.
+    """
     if W.ndim != 2:
         raise ValueError(f"hnc_svd_compress requires a 2D weight matrix, got shape {W.shape}")
 
@@ -59,4 +72,6 @@ def hnc_svd_compress(
     return out.to(dtype=W.dtype)
 
 
-__all__ = ["hnc_svd_compress", "HNCSVDFunction"]
+hnc_svd = hnc_svd_compress
+
+__all__ = ["hnc_svd", "hnc_svd_compress", "HNCSVDFunction"]
