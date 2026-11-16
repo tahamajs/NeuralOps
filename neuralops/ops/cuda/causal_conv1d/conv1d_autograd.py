@@ -8,13 +8,14 @@
 """
 Causal 1D Convolution Autograd Interface
 
-Hardware-accelerated CUDA C++ autograd implementation with analytical gradients and three-level fallback dispatch.
+Hardware-accelerated CUDA C++ autograd implementation with analytical gradients
+and three-level fallback dispatch (CUDA C++ -> Triton JIT -> Vectorized PyTorch reference).
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
+from typing import Any, Callable, Optional
 
 import torch
 import torch.nn.functional as F
@@ -22,10 +23,11 @@ import torch.nn.functional as F
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
-_MODULE = None
+_MODULE: Any = None
 
 
-def _get_module():
+def _get_module() -> Any:
+    """Lazily load and compile native CUDA module for causal 1D convolution."""
     global _MODULE
     if _MODULE is None:
         curr_dir = Path(__file__).parent
@@ -49,7 +51,17 @@ def causal_conv1d_pytorch_ref(
     bias: Optional[torch.Tensor] = None,
     silu_activation: bool = False,
 ) -> torch.Tensor:
-    """Pure PyTorch reference implementation."""
+    """Pure PyTorch reference implementation for causal 1D depthwise convolution.
+
+    Args:
+        x: Input tensor of shape (B, D, L).
+        weight: Convolution kernel weight of shape (D, Kw) or (D, 1, Kw).
+        bias: Optional bias tensor of shape (D,).
+        silu_activation: Whether to apply SiLU (swish) activation after conv.
+
+    Returns:
+        Output tensor of shape (B, D, L).
+    """
     B, D, L = x.shape
     if weight.dim() == 2:
         Kw = weight.shape[1]
@@ -60,17 +72,37 @@ def causal_conv1d_pytorch_ref(
     else:
         raise ValueError(f"weight must be 2D or 3D, got shape {weight.shape}")
     x_pad = F.pad(x, (Kw - 1, 0))
-    out = F.conv1d(x_pad, w, bias=bias, groups=D)
+    out: torch.Tensor = F.conv1d(x_pad, w, bias=bias, groups=D)
     if silu_activation:
         out = F.silu(out)
     return out
 
 
-def _get_triton_impl():
+def _get_triton_impl() -> Optional[Callable[..., torch.Tensor]]:
+    """Retrieve Triton implementation or sequence-level adapter if available."""
     try:
         from neuralops.ops.triton.state_update import causal_conv1d_step
 
-        return causal_conv1d_step
+        def causal_conv1d_triton(
+            x: torch.Tensor,
+            weight: torch.Tensor,
+            bias: Optional[torch.Tensor] = None,
+            silu_activation: bool = False,
+            **kwargs: Any,
+        ) -> torch.Tensor:
+            B, D, L = x.shape
+            w = weight.squeeze(1) if weight.dim() == 3 else weight
+            Kw = w.shape[-1]
+            conv_state = torch.zeros(B, D, Kw - 1, dtype=x.dtype, device=x.device)
+            outs = []
+            for t in range(L):
+                out_t, conv_state = causal_conv1d_step(x[:, :, t], conv_state, w, bias)
+                if silu_activation:
+                    out_t = F.silu(out_t)
+                outs.append(out_t)
+            return torch.stack(outs, dim=-1)
+
+        return causal_conv1d_triton
     except (ImportError, AttributeError):
         return None
 
@@ -81,20 +113,41 @@ def causal_conv1d(
     bias: Optional[torch.Tensor] = None,
     silu_activation: bool = False,
 ) -> torch.Tensor:
-    """3-Level Dispatched Causal 1D Convolution."""
+    """3-Level Dispatched Causal 1D Convolution.
 
-    def cuda_fn(x, weight, bias=None, silu_activation=False, **kwargs):
+    Routes execution through Level 1 (CUDA C++), Level 2 (Triton sequence step),
+    or Level 3 (Vectorized PyTorch reference) depending on hardware availability
+    and system fallback policies.
+
+    Args:
+        x: Input tensor of shape (B, D, L).
+        weight: Convolution kernel weight of shape (D, Kw) or (D, 1, Kw).
+        bias: Optional bias tensor of shape (D,).
+        silu_activation: Whether to apply SiLU (swish) activation after conv.
+
+    Returns:
+        Output tensor of shape (B, D, L).
+    """
+
+    def cuda_fn(
+        x: torch.Tensor,
+        weight: torch.Tensor,
+        bias: Optional[torch.Tensor] = None,
+        silu_activation: bool = False,
+        **kwargs: Any,
+    ) -> torch.Tensor:
         mod = _get_module()
-        return mod.causal_conv1d_fwd(
+        res: torch.Tensor = mod.causal_conv1d_fwd(
             x.contiguous(),
             weight.contiguous(),
             bias.contiguous() if bias is not None else None,
             silu_activation,
         )
+        return res
 
     triton_fn = _get_triton_impl()
 
-    return dispatch(
+    result: torch.Tensor = dispatch(
         cuda_fn,
         triton_fn,
         causal_conv1d_pytorch_ref,
@@ -104,3 +157,4 @@ def causal_conv1d(
         silu_activation=silu_activation,
         kernel_name="causal_conv1d",
     )
+    return result

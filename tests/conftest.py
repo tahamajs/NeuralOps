@@ -416,6 +416,7 @@ def pytest_collection_modifyitems(config, items):
                 "test_timing_correct",
                 "test_cli_cuda_visible_devices",
                 "test_shared_fixtures",
+                "test_causal_conv1d",
             )
         ) or ("test_notebook_structure_and_syntax" in item_name or "test_notebook_smoke" in item_name)
         if ("cuda" in item_path or "cuda" in item.keywords or "cuda" in item_name) and not is_static_config_test:
