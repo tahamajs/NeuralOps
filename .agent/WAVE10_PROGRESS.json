@@ -1,0 +1,107 @@
+{
+  "wave": 10,
+  "description": "CUDA Kernel Modules Remediation & Verification (Kernels 21-40)",
+  "total_kernels": 20,
+  "kernels": [
+    {
+      "id": "W10-K1",
+      "name": "differential_attention",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W10-K2",
+      "name": "direct_svd",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W10-K3",
+      "name": "dynamic_conv",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W10-K4",
+      "name": "dynamic_conv1d",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W10-K5",
+      "name": "entmax_bisect",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W10-K6",
+      "name": "entropy_gate",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W10-K7",
+      "name": "entropy_pruning",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W10-K8",
+      "name": "fast_attention",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W10-K9",
+      "name": "fast_gelu",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W10-K10",
+      "name": "favor_plus",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W10-K11",
+      "name": "flash_decode_stage2",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W10-K12",
+      "name": "flash_decoding",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W10-K13",
+      "name": "flash_gqa",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W10-K14",
+      "name": "fms_scan",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W10-K15",
+      "name": "fp4_gemm",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W10-K16",
+      "name": "fp8_compressor",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W10-K17",
+      "name": "fp8_gemm",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W10-K18",
+      "name": "fused_ce",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W10-K19",
+      "name": "fused_dropout_add",
+      "status": "COMPLETED"
+    },
+    {
+      "id": "W10-K20",
+      "name": "fused_kd",
+      "status": "COMPLETED"
+    }
+  ]
+}

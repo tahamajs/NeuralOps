@@ -399,7 +399,7 @@ class MoEDeltaKVPagedAttention(BaseAttention):
         return {"orig": self._orig_storage_bytes, "comp": self._comp_storage_bytes}
 
     def copy_weights(self, src: Any) -> None:
-        from ._moe_deltakv_paged_utils import copy_moe_deltakv_weights
+        from neuralops.layers.sparse._moe_deltakv_paged_utils import copy_moe_deltakv_weights
 
         copy_moe_deltakv_weights(self, src)
 
@@ -717,7 +717,7 @@ class MoEDeltaKVPagedAttention(BaseAttention):
         return out, new_state
 
 
-from ._moe_deltakv_paged_utils import inject_moe_deltakv_paged
+from neuralops.layers.sparse._moe_deltakv_paged_utils import inject_moe_deltakv_paged
 
 __all__ = [
     "MoEDeltaKVPagedAttention",

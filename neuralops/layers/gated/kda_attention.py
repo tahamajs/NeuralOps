@@ -343,7 +343,7 @@ class KDAAttention(BaseAttention):
                 mod.freeze_base_weights()
 
     def copy_weights(self, src: Any) -> None:
-        from ._kda_utils import copy_kda_weights
+        from neuralops.layers.gated._kda_utils import copy_kda_weights
 
         copy_kda_weights(self, src)
 
@@ -775,7 +775,7 @@ class KDAAttention(BaseAttention):
         return torch.zeros((), device=dev)
 
 
-from ._kda_utils import inject_kda
+from neuralops.layers.gated._kda_utils import inject_kda
 
 __all__ = [
     "KDAAttention",

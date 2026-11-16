@@ -564,7 +564,7 @@ class BAMUMoEBlock(BaseAttention):
         return self.out_lin
 
     def copy_weights(self, pretrained_attn: nn.Module) -> None:
-        from ._bam_umoe_utils import copy_bam_umoe_weights
+        from neuralops.layers.sparse._bam_umoe_utils import copy_bam_umoe_weights
 
         copy_bam_umoe_weights(self, pretrained_attn)
 
@@ -750,7 +750,7 @@ class BAMUMoEBlock(BaseAttention):
         return out, (probs.to(dtype_in) if output_attentions else None)
 
 
-from ._bam_umoe_utils import inject_bam_umoe
+from neuralops.layers.sparse._bam_umoe_utils import inject_bam_umoe
 
 __all__ = [
     "BAMUMoEBlock",
