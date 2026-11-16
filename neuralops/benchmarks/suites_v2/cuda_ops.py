@@ -12,7 +12,6 @@ CUDA ops benchmark suite evaluating native CUDA C++ kernels and 3-tier fallbacks
 from __future__ import annotations
 
 import logging
-import time
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch
@@ -54,7 +53,8 @@ class CudaOpsBenchmark(AbstractBaseBenchmark):
         self.warmup_iterations = custom.get("warmup_iterations", 2)
         self.benchmark_iterations = custom.get("benchmark_iterations", 5)
 
-        self.start_time = time.time()
+        self.start_event = torch.cuda.Event(enable_timing=True)
+        self.start_event.record()
         self.results_table: List[Dict[str, Any]] = []
 
     @staticmethod
@@ -171,7 +171,7 @@ class CudaOpsBenchmark(AbstractBaseBenchmark):
             step += 1
 
     def generate_summary(self) -> ExecutionSummary:
-        duration = _sanitize_float(time.time() - getattr(self, "start_time", time.time()))
+        duration = _sanitize_float(self.start_event.elapsed_time(torch.cuda.Event(enable_timing=True)))
         total = len(self.results_table)
         passed = sum(1 for r in self.results_table if r.get("status") == "PASS")
         failed_runtime = total - passed
