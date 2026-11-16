@@ -410,15 +410,14 @@ def pytest_collection_modifyitems(config, items):
                 "test_flush_l2_dynamic",
                 "test_memory_fragmentation",
                 "test_cuda_ops_no_fake",
-                "test_adaptive_sparse",
-                "test_bigbird",
+                "test_awq",
+                "test_admm",
                 "test_v2_migration",
                 "test_triton_ops_all_kernels",
                 "test_triton_sample",
                 "test_timing_correct",
                 "test_cli_cuda_visible_devices",
                 "test_shared_fixtures",
-                "test_admm",
             )
         ) or ("test_notebook_structure_and_syntax" in item_name or "test_notebook_smoke" in item_name)
         if ("cuda" in item_path or "cuda" in item.keywords or "cuda" in item_name) and not is_static_config_test:
