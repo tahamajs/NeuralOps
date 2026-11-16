@@ -51,7 +51,7 @@ def test_admm() -> None:
 def test_aegis_gate_norm() -> None:
     b0 = torch.randn(2, 16, 32)
     b1 = torch.randn(2, 16, 32)
-    weights = torch.randn(32)
+    weights = torch.randn(2, 16, 2)
     out = noc.aegis_gate_norm(b0, b1, weights)
     assert out.shape == b0.shape
     assert not torch.isnan(out).any()
