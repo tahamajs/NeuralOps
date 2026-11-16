@@ -294,3 +294,4 @@ results/*.sqlite
 .agents/skills/paper-systems-kernel-architect/SKILL.md
 .agents/skills/paper-triton-kernel-architect/SKILL.md
 .agents/skills/roofline-visualizer-generator/SKILL.md
+_references/
