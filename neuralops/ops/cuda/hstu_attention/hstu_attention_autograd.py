@@ -14,16 +14,17 @@ Hardware-accelerated CUDA C++ autograd implementation with analytical gradients 
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import torch
 
 from neuralops.ops.cuda._bindings import load_cuda_module
 from neuralops.ops.cuda._fallback import dispatch
 
-_MODULE = None
+_MODULE: Any = None
 
 
-def _get_module():
+def _get_module() -> Any:
     global _MODULE
     if _MODULE is None:
         curr_dir = Path(__file__).parent
@@ -35,8 +36,23 @@ def _get_module():
     return _MODULE
 
 
-def hstu_attention_ref(u: torch.Tensor, v: torch.Tensor, decay: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
-    """Pure PyTorch reference implementation with FP32 accumulator precision."""
+def hstu_attention_ref(
+    u: torch.Tensor,
+    v: torch.Tensor,
+    decay: torch.Tensor,
+    eps: float = 1e-6,
+) -> torch.Tensor:
+    """Pure PyTorch reference implementation with FP32 accumulator precision.
+
+    Args:
+        u: Input tensor of shape (B, N, D).
+        v: Input value tensor of shape (B, N, D).
+        decay: Decay factor tensor of shape (B, N, D).
+        eps: Small epsilon for numerical stability in normalization.
+
+    Returns:
+        Output tensor of shape (B, N, D) matching u.dtype and u.device.
+    """
     B, N, D = u.shape
     out = torch.empty_like(u)
     s = torch.zeros(B, D, device=u.device, dtype=torch.float32)
@@ -50,9 +66,43 @@ def hstu_attention_ref(u: torch.Tensor, v: torch.Tensor, decay: torch.Tensor, ep
     return out
 
 
-def hstu_attention(u: torch.Tensor, v: torch.Tensor, decay: torch.Tensor, eps: float = 1e-6) -> torch.Tensor:
-    def cuda_fn(u, v, decay, eps=1e-6, **kwargs):
+def hstu_attention(
+    u: torch.Tensor,
+    v: torch.Tensor,
+    decay: torch.Tensor,
+    eps: float = 1e-6,
+) -> torch.Tensor:
+    """HSTU (Hierarchical Sequential Transduction Unit) attention operator.
+
+    Args:
+        u: Input tensor of shape (B, N, D).
+        v: Value tensor of shape (B, N, D).
+        decay: Decay factor tensor of shape (B, N, D).
+        eps: Epsilon for normalization stability.
+
+    Returns:
+        Output tensor of shape (B, N, D).
+    """
+    def cuda_fn(
+        u: torch.Tensor,
+        v: torch.Tensor,
+        decay: torch.Tensor,
+        eps: float = 1e-6,
+        **kwargs: Any,
+    ) -> torch.Tensor:
         mod = _get_module()
         return mod.hstu_fwd(u.contiguous(), v.contiguous(), decay.contiguous(), float(eps))
 
-    return dispatch(cuda_fn, hstu_attention_ref, hstu_attention_ref, u, v, decay, eps=eps, kernel_name="hstu_attention")
+    return dispatch(
+        cuda_fn,
+        hstu_attention_ref,
+        hstu_attention_ref,
+        u,
+        v,
+        decay,
+        eps=eps,
+        kernel_name="hstu_attention",
+    )
+
+
+__all__ = ["hstu_attention", "hstu_attention_ref"]
