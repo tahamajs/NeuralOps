@@ -42,7 +42,7 @@ except Exception as _e:
     MAX_REGISTER_DIM = 64
 
 
-from ._gated_delta_net_scan import (
+from neuralops.layers.gated._gated_delta_net_scan import (
     HAS_TRITON_GDN,
     MAX_REGISTER_DIM,
     _clamp_fp16_safe_to_dtype,
@@ -455,7 +455,7 @@ class GatedDeltaNet(BaseAttention):
         return None
 
     def copy_weights(self, old_attn: Any) -> None:
-        from ._gated_delta_net_utils import copy_gdn_weights
+        from neuralops.layers.gated._gated_delta_net_utils import copy_gdn_weights
 
         copy_gdn_weights(self, old_attn)
 
@@ -695,7 +695,7 @@ class GatedDeltaNet(BaseAttention):
             return torch.tensor(0.0)
 
 
-from ._gated_delta_net_utils import inject_gated_delta_net
+from neuralops.layers.gated._gated_delta_net_utils import inject_gated_delta_net
 
 __all__ = [
     "GatedDeltaNet",
