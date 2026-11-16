@@ -38,7 +38,7 @@ def test_no_print_in_library() -> None:
 
 
 def test_api_uses_named_logger() -> None:
-    """Verify that neuralops/api.py initializes and uses a dedicated named logger."""
+    """Verify that neuralops/api.py and its modular components initialize and use dedicated named loggers."""
     api_path = REPO_ROOT / "neuralops" / "api.py"
     assert api_path.exists(), "neuralops/api.py missing"
     content = api_path.read_text(encoding="utf-8")
@@ -46,6 +46,13 @@ def test_api_uses_named_logger() -> None:
     assert re.search(r'logging\.getLogger\(["\']NeuralOps\.API["\']\)', content) or "logging.getLogger(__name__)" in content, (
         "neuralops/api.py must initialize a named logger ('NeuralOps.API' or __name__)"
     )
-    # Verify that logger is actively invoked in api.py
-    logger_calls = re.findall(r"logger\.(info|debug|warning|error)\(", content)
-    assert len(logger_calls) >= 10, f"Expected at least 10 logger invocations in api.py, found {len(logger_calls)}"
+
+    # Check logger invocations across api.py and neuralops/api_modules/
+    all_api_content = content
+    api_modules_dir = REPO_ROOT / "neuralops" / "api_modules"
+    if api_modules_dir.exists():
+        for mod_file in api_modules_dir.glob("*.py"):
+            all_api_content += "\n" + mod_file.read_text(encoding="utf-8")
+
+    logger_calls = re.findall(r"logger\.(info|debug|warning|error)\(", all_api_content)
+    assert len(logger_calls) >= 10, f"Expected at least 10 logger invocations across api modules, found {len(logger_calls)}"
