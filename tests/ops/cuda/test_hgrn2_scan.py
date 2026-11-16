@@ -191,7 +191,7 @@ def test_hgrn2_scan_amp_autocast_compliance() -> None:
 
 def test_hgrn2_scan_agents_compliance() -> None:
     """Verify compliance with AGENTS.md rules for code quality and anti-patterns."""
-    base_dir = Path(__file__).resolve().parents[2] / "neuralops" / "ops" / "cuda" / "hgrn2_scan"
+    base_dir = Path(__file__).resolve().parents[3] / "neuralops" / "ops" / "cuda" / "hgrn2_scan"
     assert base_dir.exists() and base_dir.is_dir()
 
     for p in base_dir.iterdir():
