@@ -9,6 +9,10 @@
 Hadamard Linear Attention (HLA) Hardware Operators.
 """
 
-from .hla_attention_autograd import hla_attention, hla_attention_ref
+from .hla_attention_autograd import (
+    hla_attention,
+    hla_attention_pytorch_ref,
+    hla_attention_ref,
+)
 
-__all__ = ["hla_attention", "hla_attention_ref"]
+__all__ = ["hla_attention", "hla_attention_ref", "hla_attention_pytorch_ref"]

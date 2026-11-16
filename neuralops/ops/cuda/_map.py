@@ -215,6 +215,7 @@ _KERNEL_SYMBOL_MAP: dict[str, tuple[str, str]] = {
     "goldfinch_ahn_ref": ["goldfinch_ahn", "goldfinch_ahn_ref"],
     "hla_attention": ["hla_attention", "hla_attention"],
     "hla_attention_ref": ["hla_attention", "hla_attention_ref"],
+    "hla_attention_pytorch_ref": ["hla_attention", "hla_attention_ref"],
     "phantom": ["phantom", "phantom"],
     "phantom_ref": ["phantom", "phantom_ref"],
     "mamba_block": ["mamba_block", "mamba_block"],
