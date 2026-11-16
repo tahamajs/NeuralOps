@@ -304,7 +304,7 @@ def measure_peak_vram_mb(
 ) -> Tuple[Any, Dict[str, float]]:
     """Executes a function while monitoring peak GPU VRAM footprint."""
     if device is None:
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        device = torch.device(f"cuda:{torch.cuda.current_device()}" if torch.cuda.is_available() else "cpu")
     else:
         device = torch.device(device)
 

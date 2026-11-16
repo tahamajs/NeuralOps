@@ -22,7 +22,7 @@ class RuntimeConfig:
     """Immutable runtime configuration specifying hardware devices, precision, and logging.
 
     Attributes:
-        device: Target execution device ("auto", "cuda", "cpu", "mps", or explicit e.g. "cuda:0").
+        device: Target execution device ("auto", "cuda", "cpu", "mps", or explicit e.g. "cuda:N").
         dtype: Numerical precision ("auto", "float16", "bfloat16", "float32").
         seed: Random seed for deterministic weight generation and shuffling.
         deterministic: Whether to enforce deterministic CUDA convolution and algorithms.

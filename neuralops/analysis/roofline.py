@@ -95,7 +95,10 @@ def get_device_roofline_specs(device: Optional[Union[str, torch.device]] = None)
     if not torch.cuda.is_available():
         return "CPU Host", "cpu", 2.0, 50.0
 
-    target_device = torch.device(device if device is not None else "cuda:0")
+    if device is None:
+        target_device = torch.device(f"cuda:{torch.cuda.current_device()}" if torch.cuda.is_available() else "cpu")
+    else:
+        target_device = torch.device(device)
     if target_device.type != "cuda":
         return "CPU Host", "cpu", 2.0, 50.0
 
@@ -291,7 +294,7 @@ def profile_roofline(
         else:
             module_or_name = "gated_delta_net"
     if device is None:
-        target_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        target_device = torch.device(f"cuda:{torch.cuda.current_device()}" if torch.cuda.is_available() else "cpu")
     else:
         target_device = torch.device(device)
 

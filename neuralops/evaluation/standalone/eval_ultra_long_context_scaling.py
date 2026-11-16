@@ -90,13 +90,15 @@ def build_model_for_context(
 
 
 def run_ultra_long_context_scaling(
-    device_name: str = "cuda:0",
+    device_name: str | None = None,
     seq_lengths: list[int] | None = None,
     model_path: str | None = None,
     output_path: str | Path | None = None,
     allow_cpu: bool = False,
 ) -> dict[str, Any]:
     """Execute sequence length scaling sweep and record memory/latency metrics."""
+    if device_name is None:
+        device_name = f"cuda:{torch.cuda.current_device()}" if torch.cuda.is_available() else "cpu"
     if _is_cuda_device(device_name) and not torch.cuda.is_available():
         if not allow_cpu:
             raise RuntimeError("This ultra-long-context experiment requires CUDA.")
@@ -217,8 +219,14 @@ def run_ultra_long_context_scaling(
 
 def main() -> int:
     """Run this standalone evaluation experiment."""
+    default_dev = f"cuda:{torch.cuda.current_device()}" if torch.cuda.is_available() else "cpu"
     parser = argparse.ArgumentParser(description="Ultra-long-context evaluation and memory scaling")
-    parser.add_argument("--device", type=str, default="cuda:0", help="Target device (cuda:0, cuda, cpu)")
+    parser.add_argument(
+        "--device",
+        type=str,
+        default=default_dev,
+        help="Target device (e.g. cuda, cpu, or auto)",
+    )
     parser.add_argument("--seq-lengths", type=int, nargs="+", default=[512, 1024, 2048, 4096, 8192])
     parser.add_argument("--model-path", type=str, default=None, help="HuggingFace model checkpoint or directory")
     parser.add_argument("--output-dir", type=str, default=None, help="Directory to save JSON results")
