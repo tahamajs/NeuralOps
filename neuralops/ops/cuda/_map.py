@@ -311,6 +311,8 @@ _KERNEL_SYMBOL_MAP: dict[str, tuple[str, str]] = {
     "fused_svd_projection_pytorch_ref": ["fused_svd_projection", "fused_svd_projection_pytorch_ref"],
     "fwsvd": ["fwsvd", "fwsvd_compress"],
     "fwsvd_compress": ["fwsvd", "fwsvd_compress"],
+    "fwsvd_pytorch_ref": ["fwsvd", "fwsvd_pytorch_ref"],
+    "fwsvd_compress_pytorch_ref": ["fwsvd", "fwsvd_compress_pytorch_ref"],
     "gated_deltanet": ["gated_deltanet", "gated_deltanet"],
     "gated_deltanet_pytorch_ref": ["gated_deltanet", "gated_deltanet_pytorch_ref"],
     "gla_chunk_attn": ["gla_chunk_attn", "gla_chunk_attn"],
