@@ -285,6 +285,7 @@ _KERNEL_SYMBOL_MAP: dict[str, tuple[str, str]] = {
     "spectraformer_attention": ["spectraformer_attention", "spectraformer"],
     "state_update": ["state_update", "recurrent_linear_step"],
     "gdn_scan": ["gdn_scan", "chunked_delta_gate_scan"],
+    "gdn_scan_pytorch_ref": ["gdn_scan", "chunked_delta_gate_scan_pytorch_ref"],
     "low_rank_svd": ["low_rank_svd", "fused_lowrank_gated_gemm"],
     "paged_kv_cache": ["paged_kv_cache", "copy_blocks_cow"],
     "quantized_gemm": ["quantized_gemm", "w4a16_gemm"],

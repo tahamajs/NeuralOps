@@ -49,9 +49,37 @@ def chunked_delta_gate_scan_pytorch_ref(
     alpha: torch.Tensor,
     beta: torch.Tensor,
 ) -> torch.Tensor:
-    from neuralops.ops.triton.gdn_scan import triton_chunked_delta_gate_scan_pytorch_ref
+    """Pure PyTorch CPU/CUDA reference implementation of Gated DeltaNet Chunked Scan.
 
-    return triton_chunked_delta_gate_scan_pytorch_ref(q, k, v, alpha, beta)
+    Args:
+        q: Query tensor of shape (B, H, L, D_K).
+        k: Key tensor of shape (B, H, L, D_K).
+        v: Value tensor of shape (B, H, L, D_V).
+        alpha: Alpha gating/decay tensor of shape (B, H, L).
+        beta: Beta learning rate tensor of shape (B, H, L).
+
+    Returns:
+        Output tensor of shape (B, H, L, D_V).
+    """
+    B, H, L, D_K = q.shape
+    D_V = v.shape[-1]
+    out = torch.empty_like(v)
+    for b in range(B):
+        for h in range(H):
+            s_state = torch.zeros((D_V, D_K), dtype=torch.float32, device=q.device)
+            for t in range(L):
+                q_t = q[b, h, t].float()
+                k_t = k[b, h, t].float()
+                v_t = v[b, h, t].float()
+                a_t = alpha[b, h, t].float()
+                b_t = beta[b, h, t].float()
+
+                s_state = a_t * s_state
+                pred_v = torch.matmul(s_state, k_t)
+                v_corr = v_t - pred_v
+                s_state = s_state + b_t * torch.outer(v_corr, k_t)
+                out[b, h, t] = torch.matmul(s_state, q_t).to(q.dtype)
+    return out
 
 
 def _get_triton_impl():
@@ -59,7 +87,7 @@ def _get_triton_impl():
         from neuralops.ops.triton.gdn_scan import triton_chunked_delta_gate_scan
 
         return triton_chunked_delta_gate_scan
-    except ImportError:
+    except (ImportError, AttributeError):
         return None
 
 
@@ -96,14 +124,23 @@ def _chunked_delta_gate_scan_fwd_dispatch(
 
 
 class _GDNScanFunction(torch.autograd.Function):
+    """Autograd function wrapping chunked delta gate scan with analytical backward."""
+
     @staticmethod
-    def forward(ctx: Any, q, k, v, alpha, beta):
+    def forward(
+        ctx: Any,
+        q: torch.Tensor,
+        k: torch.Tensor,
+        v: torch.Tensor,
+        alpha: torch.Tensor,
+        beta: torch.Tensor,
+    ) -> torch.Tensor:
         out = _chunked_delta_gate_scan_fwd_dispatch(q, k, v, alpha, beta)
         ctx.save_for_backward(q, k, v, alpha, beta)
         return out
 
     @staticmethod
-    def backward(ctx: Any, *douts):
+    def backward(ctx: Any, *douts: torch.Tensor) -> tuple[torch.Tensor | None, ...]:
         dout = douts[0] if len(douts) == 1 else douts
         q, k, v, alpha, beta = ctx.saved_tensors
         q_p = q.detach().requires_grad_(q.requires_grad)
@@ -126,6 +163,20 @@ def chunked_delta_gate_scan(
     alpha: torch.Tensor,
     beta: torch.Tensor,
 ) -> torch.Tensor:
+    """Gated DeltaNet Chunked Scan forward pass with autograd support.
+
+    Dispatches across CUDA C++, Triton, and PyTorch reference implementations.
+
+    Args:
+        q: Query tensor of shape (B, H, L, D_K).
+        k: Key tensor of shape (B, H, L, D_K).
+        v: Value tensor of shape (B, H, L, D_V).
+        alpha: Alpha gating/decay tensor of shape (B, H, L).
+        beta: Beta learning rate tensor of shape (B, H, L).
+
+    Returns:
+        Output tensor of shape (B, H, L, D_V).
+    """
     if any(t.requires_grad for t in (q, k, v, alpha, beta) if isinstance(t, torch.Tensor)):
         return _GDNScanFunction.apply(q, k, v, alpha, beta)
     return _chunked_delta_gate_scan_fwd_dispatch(q, k, v, alpha, beta)
