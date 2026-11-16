@@ -92,8 +92,21 @@ class BaseBenchmark(ABC):
 
     @abstractmethod
     def run(self, model_adapter: Any, **kwargs: Any) -> Dict[str, Any]:
-        """Execute benchmark against model adapter and return metrics dictionary."""
-        raise NotImplementedError
+        """Execute benchmark against model adapter and return metrics dictionary.
+
+        Args:
+            model_adapter: Model adapter or runner instance to evaluate.
+            **kwargs: Extra execution arguments.
+
+        Returns:
+            Dictionary containing metrics and telemetry recorded during execution.
+
+        Raises:
+            NotImplementedError: If not implemented by concrete benchmark subclass.
+        """
+        raise NotImplementedError(
+            f"Benchmark {self.__class__.__name__} must implement abstract method run()."
+        )
 
 
 _REGISTRY_POPULATED: bool = False
