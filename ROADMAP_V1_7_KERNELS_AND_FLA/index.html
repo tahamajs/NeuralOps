@@ -1,0 +1,4837 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Unified Platform for Subquadratic Attention and Deep Low-Rank Model Compression">
+      
+      
+        <meta name="author" content="Taha Majlesi (Department of Computer Engineering, College of Engineering, University of Tehran)">
+      
+      
+        <link rel="canonical" href="https://tahamajs.github.io/NeuralOps/ROADMAP_V1_7_KERNELS_AND_FLA/">
+      
+      
+        <link rel="prev" href="../ROADMAP/">
+      
+      
+        <link rel="next" href="../ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>High-Throughput FLA Kernels & Microarchitecture - NeuralOps</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#neuralops-v17-architectural-kernel-roadmap-high-throughput-linear-attention-fla-microarchitectural-accelerators" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="NeuralOps" class="md-header__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NeuralOps
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              High-Throughput FLA Kernels & Microarchitecture
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../QUICKSTART/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quickstart
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../TROUBLESHOOTING.md" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Troubleshooting
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../MIGRATION_GUIDE/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Migration Guide
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../guides/getting_started/" class="md-tabs__link">
+          
+  
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../dashboard.html" class="md-tabs__link">
+          
+  
+  
+  Visualizer & Dashboards
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../ARCHITECTURE.md" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../API_REFERENCE.md" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../COMPRESSOR_ZOO_CATALOG/" class="md-tabs__link">
+          
+  
+  
+  Technical Specifications (v2.1.0)
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../tutorials/01_quickstart/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../benchmarks/triton_kernels/" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../upstream/VLLM_RFC/" class="md-tabs__link">
+          
+  
+  
+  Upstream RFCs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../academic_monographs/" class="md-tabs__link">
+          
+  
+  
+  Academic & Theses
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reports/MASTER_PROJECT_RESULTS/" class="md-tabs__link">
+          
+  
+  
+  Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../ROADMAP/" class="md-tabs__link">
+          
+  
+  
+  Roadmap
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../model_zoo/" class="md-tabs__link">
+          
+  
+  
+  Ecosystem
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="NeuralOps" class="md-nav__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NeuralOps
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../QUICKSTART/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TROUBLESHOOTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIGRATION_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/how_neuralops_works/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How NeuralOps Works
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/attention_surgery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attention Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/model_compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Compression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/kernel_dispatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernel Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/production_serving/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Serving
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualizer & Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Visualizer & Dashboards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dashboard.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture & Telemetry Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Attention Lab & Atlas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer/latent_manifold.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Latent Manifold Geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roofline_interactive.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ada Roofline Interactive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ARCHITECTURE.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whole Framework Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/01_REGISTRY_AND_LAZY_DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registry & Lazy Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/02_THREE_LEVEL_DISPATCH_HIERARCHY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3-Level Fallback Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/03_CUDA_CPP_NATIVE_KERNEL_SUITE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA Native Kernel Suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/04_TRITON_JIT_COMPILATION_AND_AUTOTUNING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton JIT & Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/05_MODEL_SURGERY_AND_INPLACE_TRANSPLANT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In-Place Model Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/06_HNC_SVD_AND_STREAMING_WHITENING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD & Streaming Whitening
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/07_SIX_PILLAR_KNOWLEDGE_DISTILLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6-Pillar Knowledge Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/08_REALTIME_SERVING_AND_PAGED_KVCACHE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Realtime Serving & PagedKV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Telemetry & Roofline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Suite & Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_REFERENCE.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/api.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Python API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/attentions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    131 Attention Mechanisms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    82 Compression Engines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernels & 3-Level Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serving Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/results_ledger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results Ledger & Provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/cli_reference.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Technical Specifications (v2.1.0)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Technical Specifications (v2.1.0)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../COMPRESSOR_ZOO_CATALOG/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    82-Compressor Zoo Catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ATTENTION_TAXONOMY_CATALOG.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    115 Attention Mechanisms Taxonomy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MODULAR_SURGICAL_DELTA_SPEC.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modular Surgical Delta Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OFFLINE_TEACHER_CACHING_GUIDE.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Offline Teacher Representation Caching
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BENCHMARK_PERSISTENCE_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5-Format Unified Persistence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KERNEL_SYSTEMS_GUIDE.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA & Triton Systems Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/01_quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/02_roofline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 Roofline Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/03_plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 Serving Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmarks/triton_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmarks/cuda_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Native CUDA Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upstream RFCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Upstream RFCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upstream/VLLM_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vLLM PagedState RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upstream/TGI_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TGI Continuous Batching RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upstream/SGLANG_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SGLang RadixAttention RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic & Theses
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Academic & Theses
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../academic_monographs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manuscripts & PDFs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_14" >
+        
+          
+          <label class="md-nav__link" for="__nav_14" id="__nav_14_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_14">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/MASTER_PROJECT_RESULTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Master Project Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/FULL_BENCHMARK_ANALYSIS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Full Benchmark Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/MASTER_EMPIRICAL_BENCHMARK_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Master Empirical Benchmark Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/PROJECT_INCOMPLETION_AND_GAPS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaps & Incompletion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/PAPER_THESIS_CONSISTENCY_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paper/Thesis Consistency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/BENCHMARK_RECONCILIATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reconciliation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/HNC_SVD_STATUS_DECISION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD Decision
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Historical v1.3.7 Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Roadmap
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strategic Roadmap Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Throughput FLA Kernels & Microarchitecture
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Throughput FLA Kernels & Microarchitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#executive-summary-strategic-rationale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Executive Summary &amp; Strategic Rationale
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-fla-flash-linear-attention-ecosystem-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. FLA (Flash-Linear-Attention) Ecosystem Integration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. FLA (Flash-Linear-Attention) Ecosystem Integration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-mathematical-taxonomy-of-fla-candidate-kernels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 Mathematical Taxonomy of FLA Candidate Kernels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-in-depth-analysis-of-flagship-kernel-candidates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 In-Depth Analysis of Flagship Kernel Candidates
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.2 In-Depth Analysis of Flagship Kernel Candidates">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-chunked-gated-linear-attention-gla" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Chunked Gated Linear Attention (GLA)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-retnet-multi-scale-retention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. RetNet Multi-Scale Retention
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-deltanet-gated-deltanet-householder-associative-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. DeltaNet &amp; Gated DeltaNet (Householder Associative Memory)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-based-taylor-attention-parallel-horner-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Based / Taylor Attention (Parallel Horner Evaluation)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-rwkv-6-eagle-linear-state-transitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. RWKV-6 (Eagle Linear State Transitions)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-hgrn2-hierarchical-gated-recurrent-network-v2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. HGRN2 (Hierarchical Gated Recurrent Network v2)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-lightning-attention-tiled-intra-block-gemm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Lightning Attention (Tiled Intra-Block GEMM)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-next-generation-hardware-microarchitectural-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Next-Generation Hardware Microarchitectural Support
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Next-Generation Hardware Microarchitectural Support">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-nvidia-hopper-sm-90-sm_90a-microarchitectural-acceleration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 NVIDIA Hopper (SM 90 / sm_90a) Microarchitectural Acceleration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.1 NVIDIA Hopper (SM 90 / sm_90a) Microarchitectural Acceleration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#asynchronous-tensor-memory-accelerator-tma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Asynchronous Tensor Memory Accelerator (TMA)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#warpgroup-mma-wgmmamma_async" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Warpgroup MMA (wgmma.mma_async)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-nvidia-blackwell-sm-100-sm-103-readiness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 NVIDIA Blackwell (SM 100 / SM 103) Readiness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-huawei-ascend-910b-cann-80-triton_ascend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Huawei Ascend 910B (CANN 8.0 &amp; triton_ascend)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-fused-double-gemm-thin-bottleneck-acceleration-fused_lowrank_gemm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 Fused Double-GEMM Thin Bottleneck Acceleration (fused_lowrank_gemm)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.4 Fused Double-GEMM Thin Bottleneck Acceleration (fused_lowrank_gemm)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-bottleneck-latency-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Bottleneck Latency Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-fused-double-gemm-solution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Fused Double-GEMM Solution
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-detailed-step-by-step-implementation-sequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Detailed Step-by-Step Implementation Sequence
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Detailed Step-by-Step Implementation Sequence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-licensing-cleanroom-contracts-reference-oracles-weeks-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Licensing Cleanroom, Contracts &amp; Reference Oracles (Weeks 1–2)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-tier-2-triton-fused-chunk-scans-weeks-35" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Tier-2 Triton Fused Chunk Scans (Weeks 3–5)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-tier-1-native-cuda-c-extensions-fused-thin-gemm-weeks-68" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Tier-1 Native CUDA C++ Extensions &amp; Fused Thin GEMM (Weeks 6–8)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-next-gen-microarchitectural-backends-weeks-911" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: Next-Gen Microarchitectural Backends (Weeks 9–11)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-5-layerwise-registry-integration-surgery-validation-weeks-1213" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5: Layerwise Registry Integration &amp; Surgery Validation (Weeks 12–13)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-6-quality-gates-empirical-benchmarking-release-packaging-weeks-1415" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 6: Quality Gates, Empirical Benchmarking &amp; Release Packaging (Weeks 14–15)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-numerical-precision-dtype-guards-verification-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Numerical Precision, Dtype Guards &amp; Verification Contracts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Numerical Precision, Dtype Guards &amp; Verification Contracts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-numerical-budget-accumulator-precision-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Numerical Budget &amp; Accumulator Precision Contracts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-mathematical-gradient-correctness-gate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Mathematical Gradient Correctness Gate
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-summary-table-v17-architectural-deliverables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Summary Table: v1.7 Architectural Deliverables
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems, Surgery & Serving Ergonomics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_16" >
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ecosystem
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model_zoo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Visualizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../COMPARISON.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Framework Comparison
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HUGGINGFACE_UPLOAD.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hugging Face Upload
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RENAME_MAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Legacy Rename Map
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#executive-summary-strategic-rationale" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Executive Summary &amp; Strategic Rationale
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-fla-flash-linear-attention-ecosystem-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. FLA (Flash-Linear-Attention) Ecosystem Integration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1. FLA (Flash-Linear-Attention) Ecosystem Integration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#11-mathematical-taxonomy-of-fla-candidate-kernels" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.1 Mathematical Taxonomy of FLA Candidate Kernels
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#12-in-depth-analysis-of-flagship-kernel-candidates" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1.2 In-Depth Analysis of Flagship Kernel Candidates
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="1.2 In-Depth Analysis of Flagship Kernel Candidates">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-chunked-gated-linear-attention-gla" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Chunked Gated Linear Attention (GLA)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-retnet-multi-scale-retention" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. RetNet Multi-Scale Retention
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-deltanet-gated-deltanet-householder-associative-memory" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. DeltaNet &amp; Gated DeltaNet (Householder Associative Memory)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-based-taylor-attention-parallel-horner-evaluation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Based / Taylor Attention (Parallel Horner Evaluation)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-rwkv-6-eagle-linear-state-transitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. RWKV-6 (Eagle Linear State Transitions)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-hgrn2-hierarchical-gated-recurrent-network-v2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. HGRN2 (Hierarchical Gated Recurrent Network v2)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-lightning-attention-tiled-intra-block-gemm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Lightning Attention (Tiled Intra-Block GEMM)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-next-generation-hardware-microarchitectural-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Next-Generation Hardware Microarchitectural Support
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Next-Generation Hardware Microarchitectural Support">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#21-nvidia-hopper-sm-90-sm_90a-microarchitectural-acceleration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.1 NVIDIA Hopper (SM 90 / sm_90a) Microarchitectural Acceleration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.1 NVIDIA Hopper (SM 90 / sm_90a) Microarchitectural Acceleration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#asynchronous-tensor-memory-accelerator-tma" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Asynchronous Tensor Memory Accelerator (TMA)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#warpgroup-mma-wgmmamma_async" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Warpgroup MMA (wgmma.mma_async)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-nvidia-blackwell-sm-100-sm-103-readiness" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.2 NVIDIA Blackwell (SM 100 / SM 103) Readiness
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-huawei-ascend-910b-cann-80-triton_ascend" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.3 Huawei Ascend 910B (CANN 8.0 &amp; triton_ascend)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-fused-double-gemm-thin-bottleneck-acceleration-fused_lowrank_gemm" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2.4 Fused Double-GEMM Thin Bottleneck Acceleration (fused_lowrank_gemm)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2.4 Fused Double-GEMM Thin Bottleneck Acceleration (fused_lowrank_gemm)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-bottleneck-latency-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Bottleneck Latency Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-fused-double-gemm-solution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Fused Double-GEMM Solution
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-detailed-step-by-step-implementation-sequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Detailed Step-by-Step Implementation Sequence
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3. Detailed Step-by-Step Implementation Sequence">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-licensing-cleanroom-contracts-reference-oracles-weeks-12" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 1: Licensing Cleanroom, Contracts &amp; Reference Oracles (Weeks 1–2)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-tier-2-triton-fused-chunk-scans-weeks-35" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 2: Tier-2 Triton Fused Chunk Scans (Weeks 3–5)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-tier-1-native-cuda-c-extensions-fused-thin-gemm-weeks-68" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 3: Tier-1 Native CUDA C++ Extensions &amp; Fused Thin GEMM (Weeks 6–8)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-next-gen-microarchitectural-backends-weeks-911" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 4: Next-Gen Microarchitectural Backends (Weeks 9–11)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-5-layerwise-registry-integration-surgery-validation-weeks-1213" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 5: Layerwise Registry Integration &amp; Surgery Validation (Weeks 12–13)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-6-quality-gates-empirical-benchmarking-release-packaging-weeks-1415" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Phase 6: Quality Gates, Empirical Benchmarking &amp; Release Packaging (Weeks 14–15)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-numerical-precision-dtype-guards-verification-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Numerical Precision, Dtype Guards &amp; Verification Contracts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Numerical Precision, Dtype Guards &amp; Verification Contracts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-numerical-budget-accumulator-precision-contracts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.1 Numerical Budget &amp; Accumulator Precision Contracts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-mathematical-gradient-correctness-gate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4.2 Mathematical Gradient Correctness Gate
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-summary-table-v17-architectural-deliverables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Summary Table: v1.7 Architectural Deliverables
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<!--
+Copyright (c) 2024-2026, Taha Majlesi
+
+This source code is licensed under the MIT license found in the
+LICENSE file in the root directory of this source tree.
+For a list of all contributors, visit:
+  https://github.com/tahamajs/NeuralOps/graphs/contributors
+-->
+
+<h1 id="neuralops-v17-architectural-kernel-roadmap-high-throughput-linear-attention-fla-microarchitectural-accelerators">NeuralOps v1.7 Architectural &amp; Kernel Roadmap: High-Throughput Linear Attention (FLA) &amp; Microarchitectural Accelerators</h1>
+<p><strong>Target Release Window:</strong> Q1 2027
+<strong>Document Status:</strong> Approved Architectural Specification &amp; Engineering Plan
+<strong>Scope:</strong> Fast Linear Attention (FLA) Integration, Tier-1 CUDA &amp; Tier-2 Triton Kernel Engineering, Next-Gen Hardware Microarchitecture (Hopper SM 90, Blackwell SM 100, Ascend 910B), and Thin-Bottleneck GEMM Fusion.</p>
+<hr />
+<h2 id="executive-summary-strategic-rationale">Executive Summary &amp; Strategic Rationale</h2>
+<p>Modern autoregressive language models demand long-context scaling (<span class="arithmatex">\(N \ge 128\text{k}\)</span>) with sub-quadratic inference complexity <span class="arithmatex">\(\mathcal{O}(1)\)</span> memory per token and <span class="arithmatex">\(\mathcal{O}(N)\)</span> compute per forward sequence. While standard Softmax attention exhibits <span class="arithmatex">\(\mathcal{O}(N^2)\)</span> memory and compute scaling, linear attention and associative recurrent mechanisms reformulate the causal state update into streaming matrix associative memory.</p>
+<p>NeuralOps v1.6.0 stabilized the structural tier migration (131 attention mechanisms, 72 compression engines, 26 Triton kernel modules housing 62 unified operators across 4 tiers, and 112 native CUDA packages housing 114 kernels).</p>
+<p>The primary mission of <strong>NeuralOps v1.7.0</strong> is to bridge the empirical throughput and mathematical capacity gap between theoretical linear attention and production hardware. By deeply integrating state-of-the-art chunk-parallel kernels inspired by the Flash-Linear-Attention (FLA) ecosystem (pioneered by Songlin Yang, Yu Zhang, et al., MIT License) into the NeuralOps 3-Level Fallback Engine, v1.7.0 delivers:
+1. <strong>Hardware-Efficient Fused Chunk Scans</strong>: Chunked associative evaluation partitioning sequences into <span class="arithmatex">\(C=64\)</span> or <span class="arithmatex">\(C=128\)</span> blocks to maximize Tensor Core arithmetic intensity while maintaining exact state propagation across boundaries.
+2. <strong>Next-Generation Microarchitectural Acceleration</strong>:
+   - NVIDIA Hopper (SM 90): Asynchronous Tensor Memory Accelerator (TMA) and Warpgroup MMA (<code>wgmma</code>) asynchronous pipelines.
+   - NVIDIA Blackwell (SM 100 / SM 103): Tensor Memory (<code>tmem</code>) decoupled state staging and asynchronous <code>tcgen05</code> pipelines.
+   - Huawei Ascend 910B: Dual Ping-Pong Unified Buffer (UB) tiling with strict 32-byte alignment and <span class="arithmatex">\(16 \times 16 \times 16\)</span> <code>FRACTAL_NZ</code> cube formats.
+3. <strong>Elimination of Thin-Bottleneck GEMM Fallback Latencies</strong>: Fused Double-GEMM operators (<code>fused_lowrank_gemm</code>) eliminating intermediate DRAM roundtrips for low-rank SVD projections (<span class="arithmatex">\(R \le 64\)</span>).
+4. <strong>Strict Numerical &amp; Regression Rigor</strong>: Universal FP32 accumulation budgets, zero unlogged silent fallbacks, and central finite-difference autograd gradient testing (<span class="arithmatex">\(\text{atol}=10^{-3}, \epsilon=10^{-5}\)</span>).</p>
+<hr />
+<pre class="mermaid"><code>flowchart TD
+    subgraph Level1["Level 1: Native CUDA C++ / HIP (AOT Compiled)"]
+        direction TB
+        C1["Warp Shuffle Intrinsics (__shfl_xor_sync)"]
+        C2["128-bit Vectorized Transactions (float4)"]
+        C3["Hopper TMA (cp.async.bulk) &amp; WGMMA Pipelines"]
+        C4["Padded Shared Memory (Zero Bank Conflicts)"]
+    end
+
+    subgraph Level2["Level 2: Autotuned Triton JIT (PTX Generation)"]
+        direction TB
+        T1["2D Explicit Block Pointer Tiling (No make_block_ptr)"]
+        T2["Chunk-Parallel Scan (Intra-Chunk GEMM + Inter-Chunk Recurrence)"]
+        T3["Autotuned Configs: BLOCK_M, BLOCK_N, num_warps, num_stages"]
+        T4["FP32 Accumulation Guardrails for FP16 / BF16 / FP8"]
+    end
+
+    subgraph Level3["Level 3: Vectorized PyTorch Reference Engine"]
+        direction TB
+        P1["Universal CPU / Apple Silicon MPS Ground Truth"]
+        P2["Vectorized torch.einsum &amp; Associative Prefix Cumsums"]
+        P3["Finite-Difference Autograd Testing Oracle"]
+    end
+
+    UserCall["neuralops.ops.* Dispatcher"] --&gt; Level1
+    Level1 --&gt;|Failure / Unsupported SM| FallbackWarn1["Structured logger.warning"]
+    FallbackWarn1 --&gt; Level2
+    Level2 --&gt;|Driver Error / Headless CPU| FallbackWarn2["Structured logger.warning"]
+    FallbackWarn2 --&gt; Level3</code></pre>
+<hr />
+<h2 id="1-fla-flash-linear-attention-ecosystem-integration">1. FLA (Flash-Linear-Attention) Ecosystem Integration</h2>
+<p>NeuralOps v1.7 incorporates the mathematical breakthroughs and kernel dispatch patterns of the MIT-licensed Flash-Linear-Attention (FLA) framework. The integration is governed by cleanroom architectural porting: algorithms adhere strictly to NeuralOps coding invariants, zero-overhead <code>@lru_cache</code> dynamic dispatch, zero banned block pointers in mainline Triton, and explicit logger warnings on degradation.</p>
+<h3 id="11-mathematical-taxonomy-of-fla-candidate-kernels">1.1 Mathematical Taxonomy of FLA Candidate Kernels</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Attention Mechanism</th>
+<th style="text-align: left;">State Equation <span class="arithmatex">\(\mathbf{S}_t = \mathbf{A}_t \mathbf{S}_{t-1} + \mathbf{B}_t \mathbf{X}_t\)</span></th>
+<th style="text-align: left;">Intra-Chunk Formulation</th>
+<th style="text-align: left;">Inter-Chunk Recurrence</th>
+<th style="text-align: left;">Computational Complexity</th>
+<th style="text-align: left;">Target Tier-2 Triton Module</th>
+<th style="text-align: left;">Target Tier-1 CUDA Package</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>Chunked GLA</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathbf{S}_t = \operatorname{diag}(\boldsymbol{\alpha}_t) \mathbf{S}_{t-1} + \mathbf{k}_t \mathbf{v}_t^\top\)</span></td>
+<td style="text-align: left;"><span class="arithmatex">\((\mathbf{Q}_c \mathbf{K}_c^\top \odot \mathbf{M}_{\text{decay}}) \mathbf{V}_c\)</span></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathbf{S}_c = \boldsymbol{\Lambda}_c \odot \mathbf{S}_{c-1} + \Delta \mathbf{S}_c\)</span></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathcal{O}(N C d + N d^2)\)</span></td>
+<td style="text-align: left;"><code>neuralops.ops.triton.gla_scan</code></td>
+<td style="text-align: left;"><code>neuralops.ops.cuda.gla_chunk_attn</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>RetNet Retention</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathbf{S}_t = \gamma \mathbf{S}_{t-1} + \mathbf{k}_t \mathbf{v}_t^\top, \, \gamma \in (0, 1)\)</span></td>
+<td style="text-align: left;">Toeplitz decay <span class="arithmatex">\((\mathbf{Q}_c \mathbf{K}_c^\top \odot \mathbf{D}) \mathbf{V}_c\)</span></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathbf{S}_c = \gamma^C \mathbf{S}_{c-1} + \mathbf{K}_c^\top (\boldsymbol{\Gamma}_c \odot \mathbf{V}_c)\)</span></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathcal{O}(N C d + N d^2)\)</span></td>
+<td style="text-align: left;"><code>neuralops.ops.triton.retnet_retention</code></td>
+<td style="text-align: left;"><code>neuralops.ops.cuda.retnet_chunk_retention</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Gated DeltaNet (GDN)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathbf{S}_t = \alpha_t (\mathbf{I} - \beta_t \mathbf{k}_t \mathbf{k}_t^\top) \mathbf{S}_{t-1} + \beta_t \mathbf{v}_t \mathbf{k}_t^\top\)</span></td>
+<td style="text-align: left;">Householder error correction <span class="arithmatex">\((\mathbf{I} + \beta \mathbf{K} \mathbf{K}^\top)^{-1}\)</span></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathbf{S}_c = \boldsymbol{\mathcal{W}}_c \mathbf{S}_{c-1} + \Delta \mathbf{S}_c\)</span></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathcal{O}(N C^2 + N C d + N d^2)\)</span></td>
+<td style="text-align: left;"><code>neuralops.ops.triton.gdn_scan</code></td>
+<td style="text-align: left;"><code>neuralops.ops.cuda.gated_deltanet</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Based / Taylor</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathbf{S}_t = \mathbf{S}_{t-1} + \phi(\mathbf{k}_t) \mathbf{v}_t^\top, \, \phi(\mathbf{x}) \approx \sum_{p=0}^2 \frac{(\mathbf{q}^\top \mathbf{k})^p}{p!}\)</span></td>
+<td style="text-align: left;">Horner polynomial evaluation</td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathbf{S}_c = \mathbf{S}_{c-1} + \sum_{i \in c} \phi(\mathbf{k}_i) \mathbf{v}_i^\top\)</span></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathcal{O}(N d^2)\)</span></td>
+<td style="text-align: left;"><code>neuralops.ops.triton.based_scan</code></td>
+<td style="text-align: left;"><code>neuralops.ops.cuda.based_taylor_attention</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>RWKV-6 (Eagle)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathbf{S}_t = \operatorname{diag}(e^{-\mathbf{w}_t}) \mathbf{S}_{t-1} + \mathbf{k}_t \mathbf{v}_t^\top\)</span></td>
+<td style="text-align: left;">Fused WKV triangular chunk scan</td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathbf{S}_c = e^{-\sum_{i \in c} \mathbf{w}_i} \odot \mathbf{S}_{c-1} + \Delta \mathbf{S}_c\)</span></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathcal{O}(N C d + N d^2)\)</span></td>
+<td style="text-align: left;"><code>neuralops.ops.triton.rwkv6_scan</code></td>
+<td style="text-align: left;"><code>neuralops.ops.cuda.rwkv6_state_scan</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>HGRN2</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathbf{h}_t = \mathbf{f}_t \odot \mathbf{h}_{t-1} + (1 - \mathbf{f}_t) \odot (\mathbf{i}_t \odot \mathbf{v}_t)\)</span></td>
+<td style="text-align: left;">Parallel associative gate scan</td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathbf{h}_c = \boldsymbol{\lambda}_c \odot \mathbf{h}_{c-1} + \Delta \mathbf{h}_c\)</span></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathcal{O}(N d)\)</span> (elementwise)</td>
+<td style="text-align: left;"><code>neuralops.ops.triton.hgrn2_scan</code></td>
+<td style="text-align: left;"><code>neuralops.ops.cuda.hgrn2_recurrent</code></td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Lightning Attention</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathbf{S}_t = \lambda \mathbf{S}_{t-1} + \mathbf{k}_t \mathbf{v}_t^\top\)</span> (Linear Decay)</td>
+<td style="text-align: left;">Tiled intra-block GEMM (<span class="arithmatex">\(B_M \times B_N\)</span>)</td>
+<td style="text-align: left;">Inter-block state accumulator transfer</td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathcal{O}(N C d + N d^2)\)</span></td>
+<td style="text-align: left;"><code>neuralops.ops.triton.lightning_scan</code></td>
+<td style="text-align: left;"><code>neuralops.ops.cuda.lightning_attention</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="12-in-depth-analysis-of-flagship-kernel-candidates">1.2 In-Depth Analysis of Flagship Kernel Candidates</h3>
+<h4 id="1-chunked-gated-linear-attention-gla">1. Chunked Gated Linear Attention (GLA)</h4>
+<ul>
+<li><strong>Mathematical Form:</strong>
+  GLA equips linear attention with data-dependent gating vectors <span class="arithmatex">\(\boldsymbol{\alpha}_t \in (0, 1)^d\)</span>:
+  $<span class="arithmatex">\(\mathbf{S}_t = \boldsymbol{\alpha}_t \odot \mathbf{S}_{t-1} + \mathbf{k}_t \mathbf{v}_t^\top, \quad \mathbf{o}_t = \mathbf{q}_t \mathbf{S}_t\)</span>$</li>
+<li><strong>Algorithmic Partitioning:</strong>
+  For chunk size <span class="arithmatex">\(C=64\)</span>, we decompose the global recurrence into two fused phases:</li>
+<li><em>Intra-Chunk Attention:</em> The local interaction within chunk <span class="arithmatex">\(c \in \{1, \dots, \lceil N/C \rceil\}\)</span> is evaluated via Tensor Cores as a masked matrix product:
+     $<span class="arithmatex">\(\mathbf{A}_c^{\text{intra}} = (\mathbf{Q}_c \mathbf{K}_c^\top) \odot \mathbf{M}_c, \quad \text{where } \mathbf{M}_{c}[i, j] = \exp\left(\sum_{k=j+1}^i \log \boldsymbol{\alpha}_k\right) \cdot \mathbb{I}(i \ge j)\)</span>$
+     $<span class="arithmatex">\(\mathbf{O}_c^{\text{intra}} = \mathbf{A}_c^{\text{intra}} \mathbf{V}_c\)</span>$</li>
+<li><em>Inter-Chunk State Recurrence:</em> The chunk-to-chunk state update carries historical context:
+     $<span class="arithmatex">\(\mathbf{S}_c = \left(\prod_{i \in \text{chunk } c} \operatorname{diag}(\boldsymbol{\alpha}_i)\right) \mathbf{S}_{c-1} + \sum_{i \in \text{chunk } c} \left(\prod_{j=i+1}^C \operatorname{diag}(\boldsymbol{\alpha}_j)\right) \mathbf{k}_i \mathbf{v}_i^\top\)</span>$
+     $<span class="arithmatex">\(\mathbf{O}_c^{\text{inter}} = \mathbf{Q}_c \left( \prod_{\tau=1}^i \operatorname{diag}(\boldsymbol{\alpha}_\tau) \right) \mathbf{S}_{c-1}\)</span>$
+     $<span class="arithmatex">\(\mathbf{O}_c = \mathbf{O}_c^{\text{intra}} + \mathbf{O}_c^{\text{inter}}\)</span>$</li>
+<li><strong>Triton Implementation Contract:</strong></li>
+<li>In <code>neuralops.ops.triton.gla_scan</code>, memory reads of <span class="arithmatex">\(\mathbf{Q}, \mathbf{K}, \mathbf{V}\)</span> use explicit 2D pointer arithmetic.</li>
+<li>Intermediate decay logs <span class="arithmatex">\(\log \boldsymbol{\alpha}\)</span> accumulate in FP32 registers to prevent underflow during exponentiation.</li>
+<li>Backward kernel fuses gradient calculation for gating projections directly into the reverse inter-chunk state pass, avoiding materialization of full <span class="arithmatex">\(N \times d \times d\)</span> adjoint tensors.</li>
+</ul>
+<h4 id="2-retnet-multi-scale-retention">2. RetNet Multi-Scale Retention</h4>
+<ul>
+<li><strong>Mathematical Form:</strong>
+  Multi-Scale Retention utilizes head-specific constant decay rates <span class="arithmatex">\(\gamma_h = 1 - 2^{-5 - h}\)</span>:
+  $<span class="arithmatex">\(\mathbf{s}_{t, h} = \gamma_h \mathbf{s}_{t-1, h} + \mathbf{k}_{t, h} \mathbf{v}_{t, h}^\top, \quad \mathbf{o}_{t, h} = \mathbf{q}_{t, h} \mathbf{s}_{t, h}\)</span>$</li>
+<li><strong>Chunkwise Formulation:</strong>
+  Let chunk index be <span class="arithmatex">\(b\)</span>, intra-chunk offset be <span class="arithmatex">\(i \in \{0, \dots, C-1\}\)</span>. The decay factor simplifies to powers of <span class="arithmatex">\(\gamma\)</span>:
+  $<span class="arithmatex">\(\mathbf{D}_{i, j} = \begin{cases} \gamma^{i-j} &amp; i \ge j \\ 0 &amp; i &lt; j \end{cases}, \quad \boldsymbol{\xi}_i = \gamma^{i+1}, \quad \boldsymbol{\zeta}_j = \gamma^{C-1-j}\)</span>$
+  $<span class="arithmatex">\(\mathbf{S}_b = \gamma^C \mathbf{S}_{b-1} + \mathbf{K}_b^\top (\operatorname{diag}(\boldsymbol{\zeta}) \mathbf{V}_b), \quad \mathbf{O}_b = (\mathbf{Q}_b \mathbf{K}_b^\top \odot \mathbf{D}) \mathbf{V}_b + (\mathbf{Q}_b \operatorname{diag}(\boldsymbol{\xi})) \mathbf{S}_{b-1}\)</span>$</li>
+<li><strong>Engineering Strategy for v1.7:</strong></li>
+<li>Modernize <code>neuralops.ops.triton.retnet_retention</code> to replace legacy naive retention loops with fused chunked autotuned kernels.</li>
+<li>Target: <span class="arithmatex">\(3.8\times\)</span> speedup at <span class="arithmatex">\(N=16\text{k}\)</span> over PyTorch Level-3 reference on SM 8.9 / SM 90.</li>
+</ul>
+<h4 id="3-deltanet-gated-deltanet-householder-associative-memory">3. DeltaNet &amp; Gated DeltaNet (Householder Associative Memory)</h4>
+<ul>
+<li><strong>Mathematical Form:</strong>
+  DeltaNet reformulates associative memory via the delta update rule (online gradient descent on associative memory loss):
+  $<span class="arithmatex">\(\mathbf{S}_t = \mathbf{S}_{t-1} + \beta_t (\mathbf{v}_t - \mathbf{S}_{t-1} \mathbf{k}_t) \mathbf{k}_t^\top = \mathbf{S}_{t-1} (\mathbf{I} - \beta_t \mathbf{k}_t \mathbf{k}_t^\top) + \beta_t \mathbf{v}_t \mathbf{k}_t^\top\)</span>$
+  Gated DeltaNet (GDN) adds decay gating <span class="arithmatex">\(\alpha_t\)</span>:
+  $<span class="arithmatex">\(\mathbf{S}_t = \alpha_t \mathbf{S}_{t-1} (\mathbf{I} - \beta_t \mathbf{k}_t \mathbf{k}_t^\top) + \beta_t \mathbf{v}_t \mathbf{k}_t^\top\)</span>$</li>
+<li><strong>Associative Parallelization via Householder Inversion:</strong>
+  The intra-chunk dependency <span class="arithmatex">\((\mathbf{I} - \beta_t \mathbf{k}_t \mathbf{k}_t^\top)\)</span> is non-commutative. Parallelization within a chunk of size <span class="arithmatex">\(C\)</span> requires evaluating the lower-triangular causal inverse matrix:
+  $<span class="arithmatex">\(\mathbf{M} = \left(\mathbf{I} + \operatorname{tril}(\mathbf{K} \mathbf{K}^\top \odot \boldsymbol{\beta}, -1)\right)^{-1}\)</span>$
+  Because <span class="arithmatex">\(\mathbf{M}\)</span> is unit lower-triangular, <span class="arithmatex">\(\mathbf{M}\)</span> is computed using Neumann series expansion or block-triangular inversion in shared memory:
+  $<span class="arithmatex">\(\mathbf{M} \approx \mathbf{I} - \mathbf{L} + \mathbf{L}^2 - \dots\)</span>$
+  For <span class="arithmatex">\(C=32\)</span> or <span class="arithmatex">\(C=64\)</span>, exact triangular solve in SRAM requires only <span class="arithmatex">\(\mathcal{O}(C^3)\)</span> operations, which is completely dominated by Tensor Core GEMMs (<span class="arithmatex">\(\mathcal{O}(C^2 d)\)</span>).</li>
+<li><strong>Deliverables:</strong></li>
+<li><code>neuralops.ops.triton.gdn_scan</code>: Fused chunked Householder solver.</li>
+<li><code>neuralops.ops.cuda.gated_deltanet</code>: Level-1 CUDA kernel with warp-level triangular solve.</li>
+</ul>
+<h4 id="4-based-taylor-attention-parallel-horner-evaluation">4. Based / Taylor Attention (Parallel Horner Evaluation)</h4>
+<ul>
+<li><strong>Mathematical Form:</strong>
+  Based approximates softmax attention via a 2nd-order Taylor series expansion of <span class="arithmatex">\(\exp(\mathbf{q}^\top \mathbf{k} / \sqrt{d})\)</span>:
+  $<span class="arithmatex">\(\phi(\mathbf{x}) = \left[ 1, \, \frac{\mathbf{x}}{\sqrt{d}}, \, \frac{\mathbf{x}^{\otimes 2}}{\sqrt{2} d} \right]^\top \in \mathbb{R}^{1 + d + d(d+1)/2}\)</span>$</li>
+<li><strong>Avoidance of Quadratic Dimension Explosion via Horner's Scheme:</strong>
+  Explicitly materializing <span class="arithmatex">\(\phi(\mathbf{k}) \in \mathbb{R}^{d^2}\)</span> causes massive register pressure and memory footprint.
+  Instead, the fused kernel computes the Taylor terms via parallel Horner evaluation in SRAM without ever storing the Kronecker tensor products <span class="arithmatex">\(\mathbf{k} \otimes \mathbf{k}\)</span>:
+  $<span class="arithmatex">\(\mathbf{o}_t = \sum_{s=1}^t \mathbf{v}_s + \frac{1}{\sqrt{d}} \left( \sum_{s=1}^t \mathbf{v}_s \mathbf{k}_s^\top \right) \mathbf{q}_t + \frac{1}{2 d} \mathbf{q}_t^\top \left( \sum_{s=1}^t \mathbf{v}_s (\mathbf{k}_s \otimes \mathbf{k}_s) \right) \mathbf{q}_t\)</span>$</li>
+<li><strong>Deliverables:</strong></li>
+<li><code>neuralops.ops.triton.based_scan</code>: Parallel Horner prefix scan.</li>
+<li><code>neuralops.ops.cuda.based_taylor_attention</code>: 128-bit vectorized Horner accumulator.</li>
+</ul>
+<h4 id="5-rwkv-6-eagle-linear-state-transitions">5. RWKV-6 (Eagle Linear State Transitions)</h4>
+<ul>
+<li><strong>Mathematical Form:</strong>
+  RWKV-6 features multi-head time-varying decay vectors <span class="arithmatex">\(\mathbf{w}_t \in \mathbb{R}^d\)</span> and token-level key/value scaling:
+  $<span class="arithmatex">\(\mathbf{S}_t = \operatorname{diag}\left(\exp(-\mathbf{w}_t)\right) \mathbf{S}_{t-1} + \mathbf{k}_t \mathbf{v}_t^\top\)</span>$
+  $<span class="arithmatex">\(\mathbf{o}_t = \mathbf{q}_t \left( \mathbf{S}_{t-1} \odot \exp(\mathbf{u}) + \mathbf{k}_t \mathbf{v}_t^\top \right)\)</span>$
+  where <span class="arithmatex">\(\mathbf{u} \in \mathbb{R}^d\)</span> is an in-context attention bonus vector.</li>
+<li><strong>Deliverables:</strong></li>
+<li>Complete forward and fused backward chunk scans in <code>neuralops.ops.triton.rwkv6_scan</code>.</li>
+<li>Replaces external C++ JIT compilation with first-class NeuralOps Triton Tier-2 JIT dispatch.</li>
+</ul>
+<h4 id="6-hgrn2-hierarchical-gated-recurrent-network-v2">6. HGRN2 (Hierarchical Gated Recurrent Network v2)</h4>
+<ul>
+<li><strong>Mathematical Form:</strong>
+  HGRN2 uses an elementwise state vector <span class="arithmatex">\(\mathbf{h}_t \in \mathbb{R}^d\)</span> driven by input projection <span class="arithmatex">\(\mathbf{i}_t\)</span>, candidate value <span class="arithmatex">\(\mathbf{v}_t\)</span>, and forget gate <span class="arithmatex">\(\mathbf{f}_t \in [0, 1]^d\)</span>:
+  $<span class="arithmatex">\(\mathbf{h}_t = \mathbf{f}_t \odot \mathbf{h}_{t-1} + (1 - \mathbf{f}_t) \odot (\mathbf{i}_t \odot \mathbf{v}_t)\)</span>$</li>
+<li><strong>Optimization Strategy:</strong></li>
+<li>HGRN2 has linear memory footprint <span class="arithmatex">\(\mathcal{O}(d)\)</span> per state rather than <span class="arithmatex">\(\mathcal{O}(d^2)\)</span>.</li>
+<li>In v1.7, <code>neuralops.ops.triton.hgrn2_scan</code> is extended with fused backward passes (<code>_hgrn2_bwd_kernel</code>) computing gradients <span class="arithmatex">\(d\mathbf{f}, d\mathbf{i}, d\mathbf{v}\)</span> in a single reverse sweep with zero temporary global memory allocations.</li>
+</ul>
+<h4 id="7-lightning-attention-tiled-intra-block-gemm">7. Lightning Attention (Tiled Intra-Block GEMM)</h4>
+<ul>
+<li><strong>Mathematical Form:</strong>
+  Lightning Attention introduces constant exponential decay with block tiling:
+  $<span class="arithmatex">\(\mathbf{S}_t = \lambda \mathbf{S}_{t-1} + \mathbf{k}_t \mathbf{v}_t^\top\)</span>$
+  It executes strictly through blocked systolic array operations: intra-block causal masked matrix multiplication (<span class="arithmatex">\(B_M \times B_N\)</span>) combined with inter-block running state updates.</li>
+<li><strong>Deliverables:</strong></li>
+<li><code>neuralops.ops.triton.lightning_scan</code> and <code>neuralops.ops.cuda.lightning_attention</code>.</li>
+</ul>
+<hr />
+<h2 id="2-next-generation-hardware-microarchitectural-support">2. Next-Generation Hardware Microarchitectural Support</h2>
+<div class="highlight"><pre><span></span><code>Hardware Architecture Roadmaps (v1.7.0)
+├── NVIDIA Hopper SM 90a
+│   ├── Tensor Memory Accelerator (TMA) Asynchronous Copy
+│   ├── Warpgroup MMA (wgmma.mma_async)
+│   ├── Distributed Shared Memory (DSMEM) Clusters
+│   └── Multi-Stage Asynchronous Pipelines (cuda::barrier)
+├── NVIDIA Blackwell SM 100 / SM 103
+│   ├── Tensor Memory (TMEM) Decoupled Allocation
+│   ├── Asynchronous tcgen05 Execution
+│   ├── NV-MXFP4 / MXFP8 Micro-Scaling Precision
+│   └── 256+ KB Shared Memory Occupancy Profiling
+├── Huawei Ascend 910B
+│   ├── 32-Byte and 512-Byte DMA Alignment Contracts
+│   ├── Fractal NZ / ND 16x16x16 Cube Tiling
+│   ├── Ping-Pong Dual UB Buffer Pipelines
+│   └── tl.dot LHS Isolation (+ 0.0 UB Copy)
+└── Thin-Bottleneck GEMM Fusion
+    ├── Fused Double-GEMM (X @ A @ B + bias)
+    ├── SRAM-Resident Bottleneck Staging (Rank R &lt;= 64)
+    └── Zero Intermediate DRAM Traffic
+</code></pre></div>
+<h3 id="21-nvidia-hopper-sm-90-sm_90a-microarchitectural-acceleration">2.1 NVIDIA Hopper (SM 90 / <code>sm_90a</code>) Microarchitectural Acceleration</h3>
+<h4 id="asynchronous-tensor-memory-accelerator-tma">Asynchronous Tensor Memory Accelerator (TMA)</h4>
+<p>In Ada Lovelace (<code>sm_8.9</code>) and earlier architectures, loading tiles from global memory (HBM) to shared memory (<code>smem</code>) requires explicit thread register routing:
+$<span class="arithmatex">\(\text{Global Memory} \xrightarrow{\text{LDG}} \text{Registers} \xrightarrow{\text{STS}} \text{Shared Memory}\)</span>$
+This consumes thread registers, adds integer index arithmetic overhead, and limits active warps per SM.</p>
+<p>Hopper SM 90 introduces <strong>TMA hardware units</strong> that transfer multidimensional tensors directly from global memory to shared memory via hardware descriptor tables (<code>cuda::memcpy_async</code> / <code>cp.async.bulk.tensor</code>), bypassing registers entirely:
+$<span class="arithmatex">\(\text{Global Memory (HBM3)} \xrightarrow[\text{TMA Hardware Engine}]{\text{Direct DMA}} \text{Shared Memory (SRAM)}\)</span>$</p>
+<ul>
+<li><strong>Implementation in v1.7 CUDA Extensions (<code>neuralops.ops.cuda.*</code>):</strong></li>
+<li>Allocate hardware TMA descriptors using <code>cudaTensorMapEncodeTiled()</code>.</li>
+<li>Issue non-blocking bulk loads initiated by a single leader thread per threadblock:
+    <div class="highlight"><pre><span></span><code><span class="cp">#if __CUDA_ARCH__ &gt;= 900</span>
+<span class="n">cUtensorMap</span><span class="w"> </span><span class="n">tensor_map</span><span class="p">;</span>
+<span class="c1">// Initialize 2D tensor descriptor for Q, K, V tiles</span>
+<span class="kt">uint64_t</span><span class="w"> </span><span class="n">tensor_coords</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">col_idx</span><span class="p">,</span><span class="w"> </span><span class="n">row_idx</span><span class="p">};</span>
+<span class="n">cUtensorMapDataType</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">CU_TENSOR_MAP_DATA_TYPE_FLOAT16</span><span class="p">;</span>
+<span class="c1">// Asynchronous transfer to shared memory via barrier transaction</span>
+<span class="n">cUtensorMapCopyAsync</span><span class="p">(</span><span class="o">&amp;</span><span class="n">tensor_map</span><span class="p">,</span><span class="w"> </span><span class="n">smem_dest</span><span class="p">,</span><span class="w"> </span><span class="n">tensor_coords</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">mbar</span><span class="p">);</span>
+<span class="cp">#endif</span>
+</code></pre></div></li>
+</ul>
+<h4 id="warpgroup-mma-wgmmamma_async">Warpgroup MMA (<code>wgmma.mma_async</code>)</h4>
+<p>Hopper allows 4 contiguous warps (128 threads, a <strong>Warpgroup</strong>) to synchronously invoke Tensor Core operations directly from shared memory:
+- Operands <span class="arithmatex">\(A\)</span> and <span class="arithmatex">\(B\)</span> are read directly from <code>smem</code>, consuming zero register space for inputs.
+- Accumulator registers <span class="arithmatex">\(C\)</span> and <span class="arithmatex">\(D\)</span> remain in FP32 registers.
+- Execution is completely asynchronous: warpgroups issue <code>wgmma.mma_async</code> instructions and wait on transaction barriers (<code>wgmma.wait_group</code>).</p>
+<hr />
+<h3 id="22-nvidia-blackwell-sm-100-sm-103-readiness">2.2 NVIDIA Blackwell (SM 100 / SM 103) Readiness</h3>
+<p>NVIDIA Blackwell introduces <strong>Tensor Memory (TMEM)</strong>:
+- Dedicated physical SRAM separate from L1 cache and the general-purpose register file.
+- Accumulators for matrix operations live in TMEM rather than thread registers, breaking the traditional trade-off between tile size and register spilling.
+- <strong>v1.7 Strategy:</strong> Prepare kernel launch configurations and Triton/CUDA abstractions with compile-time guards (<code>#if __CUDA_ARCH__ &gt;= 1000</code>) for TMEM allocation and <code>tcgen05</code> matrix instructions.</p>
+<hr />
+<h3 id="23-huawei-ascend-910b-cann-80-triton_ascend">2.3 Huawei Ascend 910B (CANN 8.0 &amp; <code>triton_ascend</code>)</h3>
+<p>NeuralOps maintains official support for Huawei Ascend AI Cores. For v1.7:</p>
+<ol>
+<li><strong>Strict 32-Byte and 512-Byte Alignment Standards:</strong></li>
+<li>Every tensor pointer, row stride, and MTE2 DMA transaction must be a multiple of <strong>32 bytes</strong> (16 elements in FP16/BF16, 8 elements in FP32).</li>
+<li>Chunk sizes (<span class="arithmatex">\(B_T\)</span>) and feature strides must align to <strong>512 bytes</strong> for burst DMA transfer efficiency (<span class="arithmatex">\(\ge 90\%\)</span> bus saturation).</li>
+<li><strong>Fractal <span class="arithmatex">\(16 \times 16 \times 16\)</span> Matrix Alignment (<code>FRACTAL_NZ</code>):</strong></li>
+<li>The Ascend Cube unit operates on <span class="arithmatex">\(16 \times 16 \times 16\)</span> sub-matrices. All chunk sizes <span class="arithmatex">\(B_T, B_K, B_V\)</span> are configured as strict multiples of 16.</li>
+<li><strong>Unified Buffer (UB) Capacity Ceilings:</strong></li>
+<li>UB capacity per AI Core is <span class="arithmatex">\(256\text{ KB} - 512\text{ KB}\)</span>.</li>
+<li>Memory consumption per kernel is constrained to <span class="arithmatex">\(\le 80\%\)</span> of UB capacity (<span class="arithmatex">\(S_{\text{UB}} \le 200\text{ KB}\)</span>) to eliminate fatal hardware MMU page faults.</li>
+<li><strong><code>tl.dot</code> LHS Operand UB Isolation:</strong></li>
+<li>Enforce the mandatory <code>k_compute = k_buf + 0.0</code> copy pattern before <code>tl.dot</code> to prevent compiler register reuse from clobbering DMA prefetch stages.</li>
+</ol>
+<hr />
+<h3 id="24-fused-double-gemm-thin-bottleneck-acceleration-fused_lowrank_gemm">2.4 Fused Double-GEMM Thin Bottleneck Acceleration (<code>fused_lowrank_gemm</code>)</h3>
+<p>In compressed LLMs produced by NeuralOps SVD surgery (e.g. <code>SVDLinear</code>, <code>CompressedAttention</code>), dense linear projections <span class="arithmatex">\(Y = X W\)</span> are factorized into low-rank bottleneck pairs:
+$<span class="arithmatex">\(Y = (X A) B + \mathbf{b}, \quad X \in \mathbb{R}^{M \times K}, \, A \in \mathbb{R}^{K \times R}, \, B \in \mathbb{R}^{R \times N}\)</span>$
+where the inner rank <span class="arithmatex">\(R \ll \min(K, N)\)</span> (typically <span class="arithmatex">\(R \in \{16, 32, 64\}\)</span>).</p>
+<h4 id="the-bottleneck-latency-problem">The Bottleneck Latency Problem</h4>
+<p>Executing this as two distinct GEMMs (<span class="arithmatex">\(Z = X A\)</span>, followed by <span class="arithmatex">\(Y = Z B\)</span>) incurs catastrophic overhead for generation phases (<span class="arithmatex">\(M=1\)</span> to <span class="arithmatex">\(M=64\)</span>):
+1. <strong>DRAM Bandwidth Bottleneck:</strong> Intermediate activation <span class="arithmatex">\(Z \in \mathbb{R}^{M \times R}\)</span> is written out to global memory (DRAM), only to be immediately reread by the second kernel launch.
+2. <strong>Launch Latency Overhead:</strong> Two consecutive kernel launches incur driver scheduling overhead (~<span class="arithmatex">\(4\text{--}6\,\mu\text{s}\)</span>), which can exceed the actual compute time of the thin matrices.</p>
+<h4 id="the-fused-double-gemm-solution">The Fused Double-GEMM Solution</h4>
+<p>In v1.7, NeuralOps introduces <code>fused_lowrank_gemm</code>:
+$<span class="arithmatex">\(\text{Input } X_{\text{tile}} \xrightarrow{A} \text{SRAM Buffer } Z_{\text{tile}} \xrightarrow{B} \text{Output } Y_{\text{tile}} + \mathbf{b}\)</span>$
+- <strong>SRAM-Resident Bottleneck:</strong> The intermediate matrix <span class="arithmatex">\(Z_{\text{tile}} \in \mathbb{R}^{B_M \times R}\)</span> is pinned strictly in shared memory (or thread registers for <span class="arithmatex">\(R \le 32\)</span>). It is never written to global DRAM.
+- <strong>Single Global Read &amp; Write:</strong> <span class="arithmatex">\(X_{\text{tile}}\)</span> is read once; <span class="arithmatex">\(Y_{\text{tile}}\)</span> is written once with fused bias and optional activation (GELU/SiLU).
+- <strong>Speedup Target:</strong> <span class="arithmatex">\(2.4\times\text{--}4.1\times\)</span> throughput improvement for token generation steps across batch sizes <span class="arithmatex">\(B \in \{1, 4, 16\}\)</span>.</p>
+<hr />
+<h2 id="3-detailed-step-by-step-implementation-sequence">3. Detailed Step-by-Step Implementation Sequence</h2>
+<p>The roadmap is executed across six chronological phases spanning 15 engineering weeks.</p>
+<pre class="mermaid"><code>gantt
+    title NeuralOps v1.7.0 Engineering Implementation Schedule
+    dateFormat  YYYY-MM-DD
+    section Phase 1: Licensing &amp; Cleanroom
+    Upstream FLA evaluation &amp; cleanroom design     :p1_1, 2026-11-01, 7d
+    Level-3 PyTorch references &amp; autograd harness :p1_2, after p1_1, 7d
+    section Phase 2: Tier-2 Triton Kernels
+    Chunked GLA &amp; RetNet Triton JIT               :p2_1, after p1_2, 7d
+    DeltaNet / GDN &amp; Based/Taylor Scans           :p2_2, after p2_1, 7d
+    RWKV-6 &amp; HGRN2 Fused Backward                 :p2_3, after p2_2, 7d
+    section Phase 3: Tier-1 CUDA &amp; Fused GEMM
+    Level-1 CUDA GLA / RetNet / DeltaNet          :p3_1, after p2_3, 10d
+    Fused Double-GEMM (fused_lowrank_gemm)        :p3_2, after p3_1, 11d
+    section Phase 4: Next-Gen Microarchitecture
+    Hopper SM 90 TMA / WGMMA Integration         :p4_1, after p3_2, 10d
+    Ascend 910B UB Fractal Tiling                 :p4_2, after p4_1, 11d
+    section Phase 5: Layerwise Registry &amp; Surgery
+    Register ModularAttention classes in layers   :p5_1, after p4_2, 7d
+    In-place surgery &amp; post-surgery KD healing    :p5_2, after p5_1, 7d
+    section Phase 6: Quality Gates &amp; Release
+    Exhaustive gradcheck &amp; cold-cache benchmarks  :p6_1, after p5_2, 7d
+    AST audit, sync_version &amp; release tag         :p6_2, after p6_1, 7d</code></pre>
+<hr />
+<h3 id="phase-1-licensing-cleanroom-contracts-reference-oracles-weeks-12">Phase 1: Licensing Cleanroom, Contracts &amp; Reference Oracles (Weeks 1–2)</h3>
+<ul>
+<li><strong>Objective:</strong> Establish the cleanroom mathematical foundation, licensing attribution headers, and IEEE 754 reference oracles for all 7 FLA candidates.</li>
+<li><strong>Deliverables:</strong></li>
+<li><em>License &amp; Attribution Compliance:</em><ul>
+<li>Header block on all new files citing MIT license and acknowledging upstream FLA authorship (Songlin Yang, Yu Zhang, et al.).</li>
+</ul>
+</li>
+<li><em>Level-3 PyTorch Reference Implementations:</em><ul>
+<li>Location: <code>neuralops/layers/reference/</code></li>
+<li>Files to create:</li>
+<li><code>neuralops/layers/reference/ref_chunked_gla.py</code></li>
+<li><code>neuralops/layers/reference/ref_retnet.py</code></li>
+<li><code>neuralops/layers/reference/ref_gated_deltanet.py</code></li>
+<li><code>neuralops/layers/reference/ref_based_taylor.py</code></li>
+<li><code>neuralops/layers/reference/ref_rwkv6.py</code></li>
+<li><code>neuralops/layers/reference/ref_hgrn2.py</code></li>
+<li><code>neuralops/layers/reference/ref_lightning.py</code></li>
+</ul>
+</li>
+<li><em>Finite-Difference Gradient Harness:</em><ul>
+<li>Test harness enforcing <code>torch.autograd.gradcheck(f, inputs, eps=1e-5, atol=1e-3, rtol=1e-3)</code>.</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h3 id="phase-2-tier-2-triton-fused-chunk-scans-weeks-35">Phase 2: Tier-2 Triton Fused Chunk Scans (Weeks 3–5)</h3>
+<ul>
+<li><strong>Objective:</strong> Implement production-grade autotuned Triton JIT kernels for the 7 FLA candidates in <code>neuralops.ops.triton</code>.</li>
+<li><strong>Invariants Enforced:</strong></li>
+<li>Mandatory FP32 accumulation for all state updates (<code>acc += ...</code>).</li>
+<li>Strict prohibition of <code>tl.make_block_ptr</code> / <code>tl.advance</code> in mainline code (guarantees cross-GPU portability).</li>
+<li>Explicit 2D pointer arithmetic.</li>
+<li><strong>Deliverables:</strong></li>
+<li><code>neuralops/ops/triton/gla_scan.py</code>:<ul>
+<li>Functions: <code>chunk_gla_fwd</code>, <code>chunk_gla_bwd</code>, autotuned for chunk sizes <span class="arithmatex">\(C \in \{32, 64, 128\}\)</span>.</li>
+</ul>
+</li>
+<li><code>neuralops/ops/triton/retnet_retention.py</code>:<ul>
+<li>Fused intra-chunk Toeplitz decay multiplication + inter-chunk running state accumulator.</li>
+</ul>
+</li>
+<li><code>neuralops/ops/triton/gdn_scan.py</code>:<ul>
+<li>Intra-chunk triangular Householder solver in SRAM + inter-chunk state propagation.</li>
+</ul>
+</li>
+<li><code>neuralops/ops/triton/based_scan.py</code>:<ul>
+<li>Fused Horner Taylor evaluation.</li>
+</ul>
+</li>
+<li><code>neuralops/ops/triton/rwkv6_scan.py</code>:<ul>
+<li>WKV-6 chunk-parallel forward and fused reverse adjoint backward sweep.</li>
+</ul>
+</li>
+<li><code>neuralops/ops/triton/hgrn2_scan.py</code>:<ul>
+<li>Complete backward scan eliminating intermediate activation recomputation.</li>
+</ul>
+</li>
+<li><code>neuralops/ops/triton/lightning_scan.py</code>:<ul>
+<li>Intra-block causal masked Tensor Core evaluation.</li>
+</ul>
+</li>
+<li>Autotune Configuration Table: Update <code>neuralops/ops/triton/autotuned_configs.json</code>.</li>
+</ul>
+<hr />
+<h3 id="phase-3-tier-1-native-cuda-c-extensions-fused-thin-gemm-weeks-68">Phase 3: Tier-1 Native CUDA C++ Extensions &amp; Fused Thin GEMM (Weeks 6–8)</h3>
+<ul>
+<li><strong>Objective:</strong> Develop high-throughput compiled CUDA C++ extensions with 128-bit memory transactions, warp shuffle reductions, and eliminate thin bottleneck GEMM latency.</li>
+<li><strong>Deliverables:</strong></li>
+<li><em>Level-1 CUDA Linear Attention Extensions:</em><ul>
+<li><code>neuralops/ops/cuda/gla_chunk_attn/</code></li>
+<li><code>neuralops/ops/cuda/retnet_chunk_retention/</code></li>
+<li><code>neuralops/ops/cuda/gated_deltanet/</code></li>
+<li><code>neuralops/ops/cuda/based_taylor_attention/</code></li>
+<li><code>neuralops/ops/cuda/rwkv6_state_scan/</code></li>
+<li><code>neuralops/ops/cuda/lightning_attention/</code></li>
+<li>Each package containing: <code>*.cu</code> kernel, <code>*_binding.cpp</code> PyTorch pybind11 glue, and <code>*_autograd.py</code> autograd Function with zero-overhead dispatch.</li>
+</ul>
+</li>
+<li><em>Fused Low-Rank Double-GEMM (<code>fused_lowrank_gemm</code>):</em><ul>
+<li>File: <code>neuralops/ops/cuda/fused_lowrank_gemm/fused_gemm.cu</code></li>
+<li>File: <code>neuralops/ops/triton/low_rank.py</code> (updated with fused double-GEMM Triton path).</li>
+<li>Signature:
+   <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">fused_lowrank_gemm</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>       <span class="c1"># [B, M, K]</span>
+    <span class="n">weight_a</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="c1"># [K, R]</span>
+    <span class="n">weight_b</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="c1"># [R, N]</span>
+    <span class="n">bias</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="c1"># [N]</span>
+    <span class="n">activation</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>     <span class="c1"># "gelu", "silu", None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span> <span class="o">...</span>
+</code></pre></div></li>
+<li>Keeps <span class="arithmatex">\(Z = X A\)</span> strictly inside shared memory for <span class="arithmatex">\(R \in [8, 64]\)</span>.</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h3 id="phase-4-next-gen-microarchitectural-backends-weeks-911">Phase 4: Next-Gen Microarchitectural Backends (Weeks 9–11)</h3>
+<ul>
+<li><strong>Objective:</strong> Deploy hardware-specialized paths for Hopper SM 90, Blackwell SM 100, and Huawei Ascend 910B.</li>
+<li><strong>Deliverables:</strong></li>
+<li><em>Hopper SM 90 TMA &amp; WGMMA Integration:</em><ul>
+<li>Header: <code>neuralops/ops/cuda/_hopper_tma.cuh</code></li>
+<li>TMA descriptors for asynchronous bulk loading of sequence chunks into shared memory.</li>
+<li>Asynchronous warpgroup matrix operations (<code>wgmma.mma_async</code>).</li>
+</ul>
+</li>
+<li><em>Blackwell SM 100 Readiness:</em><ul>
+<li>Compile guards and configuration probes for TMEM accumulator buffers.</li>
+</ul>
+</li>
+<li><em>Ascend 910B Optimization:</em><ul>
+<li>Enforce 32-byte alignment in <code>neuralops/ops/ascend/</code>.</li>
+<li>Ping-pong double-buffering with <span class="arithmatex">\(16 \times 16 \times 16\)</span> <code>FRACTAL_NZ</code> formatting.</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h3 id="phase-5-layerwise-registry-integration-surgery-validation-weeks-1213">Phase 5: Layerwise Registry Integration &amp; Surgery Validation (Weeks 12–13)</h3>
+<ul>
+<li><strong>Objective:</strong> Expose the accelerated kernels through the canonical <code>neuralops.layers</code> catalog, update registry counts, and enable neural surgery replacement.</li>
+<li><strong>Invariants Maintained:</strong></li>
+<li>Maintain backward compatibility of <code>ATTENTION_REGISTRY</code> and ensure all new modular classes inherit from <code>ModularAttention</code> / <code>BaseAttention</code>.</li>
+<li><strong>Deliverables:</strong></li>
+<li>Update layer modules under <code>neuralops/layers/linear/</code> and <code>neuralops/layers/gated/</code>.</li>
+<li>Register new modular linear attentions in <code>neuralops.core.registry</code>:<ul>
+<li><code>"chunked_gla"</code>, <code>"retnet_retention"</code>, <code>"gated_deltanet_fast"</code>, <code>"based_taylor"</code>, <code>"rwkv6_eagle"</code>, <code>"hgrn2_fast"</code>, <code>"lightning_attention"</code>.</li>
+</ul>
+</li>
+<li>Wire surgical replacement in <code>neuralops.surgery</code>:<ul>
+<li>Enable in-place surgery converting standard Transformer multi-head attention to chunked linear attention.</li>
+<li>Healing recipe: Post-surgery knowledge distillation using Warmup-Stable-Decay (WSD) scheduling.</li>
+</ul>
+</li>
+</ul>
+<hr />
+<h3 id="phase-6-quality-gates-empirical-benchmarking-release-packaging-weeks-1415">Phase 6: Quality Gates, Empirical Benchmarking &amp; Release Packaging (Weeks 14–15)</h3>
+<ul>
+<li><strong>Objective:</strong> Execute exhaustive verification, audit invariants, run cold-cache benchmarks, and package the v1.7.0 release.</li>
+<li><strong>Mandatory Quality Gates:</strong></li>
+<li><code>python3 scripts/utils/audit_dead_code.py</code> <span class="arithmatex">\(\implies\)</span> 0 issues found.</li>
+<li>Finite-difference autograd check passes on CPU and GPU:
+     <div class="highlight"><pre><span></span><code><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">gradcheck</span><span class="p">(</span><span class="n">op</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">)</span>
+</code></pre></div></li>
+<li>Cold-cache microbenchmarking on SM 8.9 (RTX 4070 / RTX 4090) and SM 90 (H100) using the 50MB scratch tensor L2 eviction protocol.</li>
+<li>Version synchronization: Execute <code>python3 scripts/utils/sync_version.py</code> from <code>1.6.0</code> to <code>1.7.0</code>.</li>
+</ul>
+<hr />
+<h2 id="4-numerical-precision-dtype-guards-verification-contracts">4. Numerical Precision, Dtype Guards &amp; Verification Contracts</h2>
+<h3 id="41-numerical-budget-accumulator-precision-contracts">4.1 Numerical Budget &amp; Accumulator Precision Contracts</h3>
+<p>Linear attention state updates are fundamentally prone to catastrophic cancellation, exponential growth, and numerical underflow if low-precision floating point formats are accumulated naively.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Precision Tier</th>
+<th style="text-align: left;">Storage Dtype</th>
+<th style="text-align: left;">Accumulator Dtype</th>
+<th style="text-align: left;">SRAM / Register Storage</th>
+<th style="text-align: left;">Stability Constraint</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>FP32 Native</strong></td>
+<td style="text-align: left;"><code>torch.float32</code></td>
+<td style="text-align: left;">IEEE 754 <code>float32</code></td>
+<td style="text-align: left;"><code>float32</code></td>
+<td style="text-align: left;">Exact baseline.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>BF16 Mixed</strong></td>
+<td style="text-align: left;"><code>torch.bfloat16</code></td>
+<td style="text-align: left;">IEEE 754 <code>float32</code></td>
+<td style="text-align: left;"><code>float32</code> registers</td>
+<td style="text-align: left;">Dynamic range equivalent to FP32 (<span class="arithmatex">\(10^{-38} \dots 10^{38}\)</span>). Accumulator MUST remain in FP32.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>FP16 Mixed</strong></td>
+<td style="text-align: left;"><code>torch.float16</code></td>
+<td style="text-align: left;">IEEE 754 <code>float32</code></td>
+<td style="text-align: left;"><code>float32</code> registers</td>
+<td style="text-align: left;">Limited dynamic range (<span class="arithmatex">\(10^{-4} \dots 65504\)</span>). State and log-decay accumulation MUST be clamped.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>FP8 (Hopper SM 90)</strong></td>
+<td style="text-align: left;"><code>torch.float8_e4m3fn</code></td>
+<td style="text-align: left;">IEEE 754 <code>float32</code></td>
+<td style="text-align: left;"><code>float32</code> registers</td>
+<td style="text-align: left;">Requires per-tensor dynamic scale factor $s_X = \max(</td>
+</tr>
+</tbody>
+</table>
+<h3 id="42-mathematical-gradient-correctness-gate">4.2 Mathematical Gradient Correctness Gate</h3>
+<p>Every new operator <span class="arithmatex">\(f(\mathbf{X}; \boldsymbol{\theta})\)</span> introduced in v1.7 must pass dual forward and backward validation gates before PR approval:</p>
+<ol>
+<li><strong>Forward Parity Gate:</strong>
+   $<span class="arithmatex">\(\max |\mathbf{Y}_{\text{candidate}} - \mathbf{Y}_{\text{reference}}| \le \text{atol} + \text{rtol} \cdot |\mathbf{Y}_{\text{reference}}|\)</span>$</li>
+<li>FP32: <span class="arithmatex">\(\text{atol} = 10^{-5}, \text{rtol} = 10^{-4}\)</span></li>
+<li>
+<p>FP16 / BF16: <span class="arithmatex">\(\text{atol} = 10^{-3}, \text{rtol} = 10^{-2}\)</span></p>
+</li>
+<li>
+<p><strong>Backward Central Finite-Difference Autograd Gate:</strong>
+   Finite-difference perturbation step <span class="arithmatex">\(\epsilon = 10^{-5}\)</span> derived from machine precision <span class="arithmatex">\(\epsilon^* \propto \epsilon_{\text{mach}}^{1/3}\)</span>:
+   $<span class="arithmatex">\(\left[\nabla_{\mathbf{X}} f(\mathbf{X})\right]_{i, j} \approx \frac{f(\mathbf{X} + \epsilon \mathbf{E}_{i, j}) - f(\mathbf{X} - \epsilon \mathbf{E}_{i, j})}{2 \epsilon}\)</span>$
+   Evaluated strictly via:
+   <div class="highlight"><pre><span></span><code><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">gradcheck</span><span class="p">(</span>
+    <span class="n">func</span><span class="p">,</span>
+    <span class="n">inputs</span><span class="p">,</span>
+    <span class="n">eps</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">,</span>
+    <span class="n">atol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+    <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+    <span class="n">nondet_tol</span><span class="o">=</span><span class="mf">0.0</span>
+<span class="p">)</span>
+</code></pre></div></p>
+</li>
+<li>
+<p><strong>Zero Silent Fallback Law:</strong>
+   If a Level-1 CUDA kernel or Level-2 Triton kernel encounters an invalid configuration, out-of-SRAM condition, or unsupported hardware architecture, it <strong>MUST NOT</strong> silently fall back to Level 3. It must emit a structured <code>logger.warning</code> identifying the failing level, device ID, and concrete failure reason before invoking the fallback path.</p>
+</li>
+</ol>
+<hr />
+<h2 id="5-summary-table-v17-architectural-deliverables">5. Summary Table: v1.7 Architectural Deliverables</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Subsystem</th>
+<th style="text-align: left;">Component</th>
+<th style="text-align: left;">Target Path</th>
+<th style="text-align: left;">Key Feature</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>FLA Kernels</strong></td>
+<td style="text-align: left;">Chunked GLA</td>
+<td style="text-align: left;"><code>neuralops/ops/triton/gla_scan.py</code></td>
+<td style="text-align: left;">Intra-chunk Tensor Core GEMM + inter-chunk FP32 scan</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>FLA Kernels</strong></td>
+<td style="text-align: left;">RetNet Retention</td>
+<td style="text-align: left;"><code>neuralops/ops/triton/retnet_retention.py</code></td>
+<td style="text-align: left;">Fused Toeplitz decay intra-chunk GEMM</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>FLA Kernels</strong></td>
+<td style="text-align: left;">Gated DeltaNet</td>
+<td style="text-align: left;"><code>neuralops/ops/triton/gdn_scan.py</code></td>
+<td style="text-align: left;">Fast Householder triangular inverse in SRAM</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>FLA Kernels</strong></td>
+<td style="text-align: left;">Based / Taylor</td>
+<td style="text-align: left;"><code>neuralops/ops/triton/based_scan.py</code></td>
+<td style="text-align: left;">Parallel Horner evaluation without <span class="arithmatex">\(d^2\)</span> tensor expansion</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>FLA Kernels</strong></td>
+<td style="text-align: left;">RWKV-6 Eagle</td>
+<td style="text-align: left;"><code>neuralops/ops/triton/rwkv6_scan.py</code></td>
+<td style="text-align: left;">Time-varying vector decay chunk-parallel scan</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>FLA Kernels</strong></td>
+<td style="text-align: left;">HGRN2 Scan</td>
+<td style="text-align: left;"><code>neuralops/ops/triton/hgrn2_scan.py</code></td>
+<td style="text-align: left;">Fused adjoint backward sweep with zero memory alloc</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>FLA Kernels</strong></td>
+<td style="text-align: left;">Lightning Attention</td>
+<td style="text-align: left;"><code>neuralops/ops/triton/lightning_scan.py</code></td>
+<td style="text-align: left;">Block-tiled systolic linear attention</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>CUDA Extensions</strong></td>
+<td style="text-align: left;">Level-1 Compiled</td>
+<td style="text-align: left;"><code>neuralops/ops/cuda/*</code></td>
+<td style="text-align: left;">128-bit vector loads (<code>float4</code>), warp shuffles, <span class="arithmatex">\(\le 48\)</span> regs</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Thin GEMM</strong></td>
+<td style="text-align: left;">Fused Double-GEMM</td>
+<td style="text-align: left;"><code>neuralops/ops/cuda/fused_lowrank_gemm/</code></td>
+<td style="text-align: left;">Shared memory bottleneck residency (<span class="arithmatex">\(R \le 64\)</span>)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Hardware</strong></td>
+<td style="text-align: left;">Hopper SM 90</td>
+<td style="text-align: left;"><code>neuralops/ops/cuda/_hopper_tma.cuh</code></td>
+<td style="text-align: left;">TMA asynchronous DMA + Warpgroup MMA (<code>wgmma</code>)</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Hardware</strong></td>
+<td style="text-align: left;">Blackwell SM 100</td>
+<td style="text-align: left;"><code>neuralops/ops/cuda/_blackwell_tmem.cuh</code></td>
+<td style="text-align: left;">TMEM accumulator buffers &amp; <code>tcgen05</code> pipelines</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Hardware</strong></td>
+<td style="text-align: left;">Ascend 910B</td>
+<td style="text-align: left;"><code>neuralops/ops/ascend/</code></td>
+<td style="text-align: left;">32B DMA alignment, <span class="arithmatex">\(16 \times 16 \times 16\)</span> fractal layout, <span class="arithmatex">\(\le 80\%\)</span> UB</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>Verification</strong></td>
+<td style="text-align: left;">Regression Suite</td>
+<td style="text-align: left;"><code>tests/ops/test_fla_kernels.py</code></td>
+<td style="text-align: left;">Finite-difference autograd check (<span class="arithmatex">\(\text{atol}=10^{-3}, \epsilon=10^{-5}\)</span>)</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 Taha Majlesi. Department of Computer Engineering, College of Engineering, University of Tehran. Licensed under the MIT License.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/tahamajs/NeuralOps" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results" target="_blank" rel="noopener" title="huggingface.co" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M448 205.8c-14.8 9.8-31.8 17.7-49.5 24-47 16.8-108.7 26.2-174.5 26.2s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V288c0 44.2 100.3 80 224 80s224-35.8 224-80zm0-77.8V80c0-44.2-100.3-80-224-80S0 35.8 0 80v48c0 44.2 100.3 80 224 80s224-35.8 224-80m-49.5 261.8C351.6 406.5 289.9 416 224 416s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V432c0 44.2 100.3 80 224 80s224-35.8 224-80v-66.2c-14.8 9.8-31.8 17.7-49.5 24"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,6 @@
+Topic_ID,Topic_Cluster,Active_Turns,Turns_Elapsed_Since_Switch,Retrieval_Accuracy_Percent,Mean_Signal_to_Interference_Ratio,Catastrophic_Interference_Status
+1,Quantum Electrodynamics,Turn 1–20,80,100.0,167.15,ZERO INTERFERENCE (PASS)
+2,Distributed Consensus Protocols,Turn 21–40,60,100.0,71.13,ZERO INTERFERENCE (PASS)
+3,Synthetic Biology & CRISPR,Turn 41–60,40,100.0,34.68,ZERO INTERFERENCE (PASS)
+4,Algorithmic Game Theory,Turn 61–80,20,100.0,120.47,ZERO INTERFERENCE (PASS)
+5,High-Energy Particle Physics,Turn 81–100,0,100.0,57.16,ZERO INTERFERENCE (PASS)

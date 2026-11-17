@@ -1,0 +1,4 @@
+Kernel,Dimension_N,Dimension_K,Batch_M,Cuda_Total_ms,Ref_Total_ms,Speedup,Peak_VRAM_MB,Grad_Diff,Zero_NaN,Zero_Inf
+fp4_gemm,1024,1024,16,0.6509,0.2132,0.33x,29.06,5.00e-01,PASS,PASS
+fp4_gemm,2048,2048,16,1.3689,0.9765,0.71x,66.87,1.00e+00,PASS,PASS
+fp4_gemm,4096,4096,16,7.9754,6.4045,0.80x,217.49,1.00e+00,PASS,PASS

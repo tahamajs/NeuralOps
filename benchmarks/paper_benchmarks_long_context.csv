@@ -1,0 +1,21 @@
+Model_Architecture,Sequence_Length,Forward_Latency_ms,Peak_VRAM_MB,KV_Cache_Size_MB,Memory_Complexity,Numerical_Pass
+Standard MHA,512,0.15,7.5,3.0,O(L^2) Attn / O(L) KV,PASS
+Block Sparse Attention,512,0.17,7.51,0.5625,O(L * B_w),PASS
+GLA Scan (O(1) Recurrent),512,0.5,9.03,0.1875,O(1) State Cache,PASS
+SVD Linear Attention,512,1.81,9.03,0.1875,O(1) State Cache,PASS
+Standard MHA,1024,0.48,15.0,6.0,O(L^2) Attn / O(L) KV,PASS
+Block Sparse Attention,1024,0.34,15.03,0.5625,O(L * B_w),PASS
+GLA Scan (O(1) Recurrent),1024,0.99,18.06,0.1875,O(1) State Cache,PASS
+SVD Linear Attention,1024,3.62,18.06,0.1875,O(1) State Cache,PASS
+Standard MHA,2048,1.61,30.0,12.0,O(L^2) Attn / O(L) KV,PASS
+Block Sparse Attention,2048,0.65,30.12,0.5625,O(L * B_w),PASS
+GLA Scan (O(1) Recurrent),2048,1.97,36.16,0.1875,O(1) State Cache,PASS
+SVD Linear Attention,2048,7.02,36.16,0.1875,O(1) State Cache,PASS
+Standard MHA,4096,4.8,60.0,24.0,O(L^2) Attn / O(L) KV,PASS
+Block Sparse Attention,4096,1.1,60.5,0.5625,O(L * B_w),PASS
+GLA Scan (O(1) Recurrent),4096,3.97,72.44,0.1875,O(1) State Cache,PASS
+SVD Linear Attention,4096,12.43,72.44,0.1875,O(1) State Cache,PASS
+Standard MHA,8192,18.22,120.0,48.0,O(L^2) Attn / O(L) KV,PASS
+Block Sparse Attention,8192,2.3,122.0,0.5625,O(L * B_w),PASS
+GLA Scan (O(1) Recurrent),8192,7.78,145.38,0.1875,O(1) State Cache,PASS
+SVD Linear Attention,8192,24.82,145.38,0.1875,O(1) State Cache,PASS

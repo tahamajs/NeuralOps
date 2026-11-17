@@ -1,0 +1,5 @@
+Scheduling_Policy,Total_Requests,Mean_Latency_ms,P50_ms,P90_ms,P95_ms,P99_ms,Max_Latency_ms,SLA_Compliance_pct,Throughput_tok_per_sec,Peak_VRAM_MB,Status
+Static Batching (Batch Size B=4),100,38.27,26.78,80.87,101.49,121.2,160.0,94.0,160782.3,626.64,PASSED
+Static Batching (Batch Size B=8),100,74.47,61.81,133.69,164.98,207.47,225.17,74.0,160862.8,1212.84,PASSED
+Continuous Dynamic Batching (Chunk Budget C=2048),100,2.3,2.14,3.37,3.9,5.81,22.21,100.0,161975.2,300.77,PASSED
+Continuous Dynamic Batching (Chunk Budget C=4096),100,2.19,2.11,3.55,3.85,5.85,6.08,100.0,161975.7,198.09,PASSED

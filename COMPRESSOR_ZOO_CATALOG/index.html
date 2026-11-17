@@ -1,0 +1,4858 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Unified Platform for Subquadratic Attention and Deep Low-Rank Model Compression">
+      
+      
+        <meta name="author" content="Taha Majlesi (Department of Computer Engineering, College of Engineering, University of Tehran)">
+      
+      
+        <link rel="canonical" href="https://tahamajs.github.io/NeuralOps/COMPRESSOR_ZOO_CATALOG/">
+      
+      
+        <link rel="prev" href="../api/results_ledger/">
+      
+      
+        <link rel="next" href="../BENCHMARK_PERSISTENCE_SPEC/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
+    
+    
+      
+        <title>82-Compressor Zoo Catalog - NeuralOps</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#neuralops-82-compressor-zoo-catalog-multi-rank-specifications" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="NeuralOps" class="md-header__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            NeuralOps
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              82-Compressor Zoo Catalog
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="deep-purple"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../QUICKSTART/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Quickstart
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../TROUBLESHOOTING.md" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Troubleshooting
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../MIGRATION_GUIDE/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Migration Guide
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../guides/getting_started/" class="md-tabs__link">
+          
+  
+  
+  Guides
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../dashboard.html" class="md-tabs__link">
+          
+  
+  
+  Visualizer & Dashboards
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../ARCHITECTURE.md" class="md-tabs__link">
+          
+  
+  
+  Architecture
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../API_REFERENCE.md" class="md-tabs__link">
+          
+  
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+  Technical Specifications (v2.1.0)
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../tutorials/01_quickstart/" class="md-tabs__link">
+          
+  
+  
+  Tutorials
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../benchmarks/triton_kernels/" class="md-tabs__link">
+          
+  
+  
+  Benchmarks
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../upstream/VLLM_RFC/" class="md-tabs__link">
+          
+  
+  
+  Upstream RFCs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../academic_monographs/" class="md-tabs__link">
+          
+  
+  
+  Academic & Theses
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../reports/MASTER_PROJECT_RESULTS/" class="md-tabs__link">
+          
+  
+  
+  Reports
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../ROADMAP/" class="md-tabs__link">
+          
+  
+  
+  Roadmap
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../model_zoo/" class="md-tabs__link">
+          
+  
+  
+  Ecosystem
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../security/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Security
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="NeuralOps" class="md-nav__button md-logo" aria-label="NeuralOps" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    NeuralOps
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/tahamajs/NeuralOps" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tahamajs/NeuralOps
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../QUICKSTART/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../TROUBLESHOOTING.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MIGRATION_GUIDE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Migration Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guides
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guides
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/how_neuralops_works/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    How NeuralOps Works
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/attention_surgery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Attention Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/model_compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Compression
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/kernel_dispatch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernel Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guides/production_serving/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Production Serving
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualizer & Dashboards
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Visualizer & Dashboards
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dashboard.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture & Telemetry Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer/index.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Attention Lab & Atlas
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer/latent_manifold.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Latent Manifold Geometry
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../roofline_interactive.html" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ada Roofline Interactive
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Architecture
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ARCHITECTURE.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Whole Framework Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/01_REGISTRY_AND_LAZY_DISCOVERY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Registry & Lazy Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/02_THREE_LEVEL_DISPATCH_HIERARCHY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3-Level Fallback Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/03_CUDA_CPP_NATIVE_KERNEL_SUITE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA Native Kernel Suite
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/04_TRITON_JIT_COMPILATION_AND_AUTOTUNING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton JIT & Autotuning
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/05_MODEL_SURGERY_AND_INPLACE_TRANSPLANT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    In-Place Model Surgery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/06_HNC_SVD_AND_STREAMING_WHITENING/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD & Streaming Whitening
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/07_SIX_PILLAR_KNOWLEDGE_DISTILLATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    6-Pillar Knowledge Distillation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/08_REALTIME_SERVING_AND_PAGED_KVCACHE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Realtime Serving & PagedKV
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/09_HARDWARE_TELEMETRY_AND_ROOFLINE_ENGINE/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hardware Telemetry & Roofline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../codebase_architecture/10_BENCHMARK_SUITE_AND_MANIFEST_REPRODUCIBILITY/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Suite & Reproducibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_8" >
+        
+          
+          <label class="md-nav__link" for="__nav_8" id="__nav_8_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_8">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../API_REFERENCE.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/api.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Python API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/attentions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    131 Attention Mechanisms
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/compression/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    82 Compression Engines
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kernels & 3-Level Dispatch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/integrations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Serving Integrations
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/results_ledger/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Results Ledger & Provenance
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/cli_reference.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_9" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_9" id="__nav_9_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Technical Specifications (v2.1.0)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_9_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_9">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Technical Specifications (v2.1.0)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    82-Compressor Zoo Catalog
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    82-Compressor Zoo Catalog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-8-algorithmic-families-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🏛️ The 8 Algorithmic Families Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exhaustive-master-catalog-all-82-compression-engines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔬 Exhaustive Master Catalog: All 82 Compression Engines
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🔬 Exhaustive Master Catalog: All 82 Compression Engines">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#family-1-standard-svd-spectral-decomposition-14-engines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Family 1: Standard SVD &amp; Spectral Decomposition (14 Engines)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#family-2-activation-aware-data-driven-svd-12-engines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Family 2: Activation-Aware &amp; Data-Driven SVD (12 Engines)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#family-3-matrix-mixed-precision-quantization-16-engines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Family 3: Matrix &amp; Mixed-Precision Quantization (16 Engines)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#family-4-structured-channel-layer-pruning-14-engines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Family 4: Structured Channel &amp; Layer Pruning (14 Engines)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#family-5-riemannian-manifold-geometric-optimizers-10-engines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Family 5: Riemannian Manifold &amp; Geometric Optimizers (10 Engines)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#family-6-tensor-train-kronecker-factorization-8-engines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Family 6: Tensor Train &amp; Kronecker Factorization (8 Engines)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#family-7-hardware-aware-semi-structured-sparsity-4-engines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Family 7: Hardware-Aware Semi-Structured Sparsity (4 Engines)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#family-8-cross-layer-subspace-sharing-4-engines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Family 8: Cross-Layer &amp; Subspace Sharing (4 Engines)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#functional-usage-python-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        💻 Functional Usage &amp; Python API
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="💻 Functional Usage &amp; Python API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-unified-compressor-factory-neuralopscreate_compressor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Unified Compressor Factory (neuralops.create_compressor)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-high-level-convenience-runner-neuralopscompress" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. High-Level Convenience Runner (neuralops.compress)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grounded-hardware-verification-telemetry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📊 Grounded Hardware Verification &amp; Telemetry
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ATTENTION_TAXONOMY_CATALOG.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    115 Attention Mechanisms Taxonomy
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../MODULAR_SURGICAL_DELTA_SPEC.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Modular Surgical Delta Specification
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../OFFLINE_TEACHER_CACHING_GUIDE.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Offline Teacher Representation Caching
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../BENCHMARK_PERSISTENCE_SPEC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    5-Format Unified Persistence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../KERNEL_SYSTEMS_GUIDE.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CUDA & Triton Systems Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_10" >
+        
+          
+          <label class="md-nav__link" for="__nav_10" id="__nav_10_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tutorials
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_10">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tutorials
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/01_quickstart/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    01 Quickstart
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/02_roofline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    02 Roofline Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/03_plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    03 Serving Adapters
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_11" >
+        
+          
+          <label class="md-nav__link" for="__nav_11" id="__nav_11_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmarks
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_11">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Benchmarks
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmarks/triton_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Triton Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../benchmarks/cuda_kernels/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Native CUDA Kernels
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upstream RFCs
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_12">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Upstream RFCs
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upstream/VLLM_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    vLLM PagedState RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upstream/TGI_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    TGI Continuous Batching RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../upstream/SGLANG_RFC/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    SGLang RadixAttention RFC
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_13" >
+        
+          
+          <label class="md-nav__link" for="__nav_13" id="__nav_13_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Academic & Theses
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_13_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_13">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Academic & Theses
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../academic_monographs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Manuscripts & PDFs
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_14" >
+        
+          
+          <label class="md-nav__link" for="__nav_14" id="__nav_14_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reports
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_14_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_14">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reports
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/MASTER_PROJECT_RESULTS/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Master Project Results
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/FULL_BENCHMARK_ANALYSIS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Full Benchmark Analysis
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/MASTER_EMPIRICAL_BENCHMARK_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Master Empirical Benchmark Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/PROJECT_INCOMPLETION_AND_GAPS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Gaps & Incompletion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/PAPER_THESIS_CONSISTENCY_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Paper/Thesis Consistency
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/BENCHMARK_RECONCILIATION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Benchmark Reconciliation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/HNC_SVD_STATUS_DECISION/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    HNC-SVD Decision
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reports/NEURALOPS_V137_FINAL_PRODUCTION_READINESS_REPORT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Historical v1.3.7 Report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_15" >
+        
+          
+          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Roadmap
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_15">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Roadmap
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Strategic Roadmap Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP_V1_7_KERNELS_AND_FLA/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Throughput FLA Kernels & Microarchitecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ROADMAP_V1_7_SYSTEMS_AND_DEPLOYMENT/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Systems, Surgery & Serving Ergonomics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_16" >
+        
+          
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Ecosystem
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Ecosystem
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../model_zoo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Model Zoo
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualizer.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    3D Visualizer
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../COMPARISON.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Framework Comparison
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HUGGINGFACE_UPLOAD.md" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Hugging Face Upload
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../RENAME_MAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Legacy Rename Map
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Security
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-8-algorithmic-families-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🏛️ The 8 Algorithmic Families Summary
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exhaustive-master-catalog-all-82-compression-engines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔬 Exhaustive Master Catalog: All 82 Compression Engines
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🔬 Exhaustive Master Catalog: All 82 Compression Engines">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#family-1-standard-svd-spectral-decomposition-14-engines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Family 1: Standard SVD &amp; Spectral Decomposition (14 Engines)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#family-2-activation-aware-data-driven-svd-12-engines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Family 2: Activation-Aware &amp; Data-Driven SVD (12 Engines)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#family-3-matrix-mixed-precision-quantization-16-engines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Family 3: Matrix &amp; Mixed-Precision Quantization (16 Engines)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#family-4-structured-channel-layer-pruning-14-engines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Family 4: Structured Channel &amp; Layer Pruning (14 Engines)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#family-5-riemannian-manifold-geometric-optimizers-10-engines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Family 5: Riemannian Manifold &amp; Geometric Optimizers (10 Engines)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#family-6-tensor-train-kronecker-factorization-8-engines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Family 6: Tensor Train &amp; Kronecker Factorization (8 Engines)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#family-7-hardware-aware-semi-structured-sparsity-4-engines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Family 7: Hardware-Aware Semi-Structured Sparsity (4 Engines)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#family-8-cross-layer-subspace-sharing-4-engines" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Family 8: Cross-Layer &amp; Subspace Sharing (4 Engines)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#functional-usage-python-api" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        💻 Functional Usage &amp; Python API
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="💻 Functional Usage &amp; Python API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-unified-compressor-factory-neuralopscreate_compressor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Unified Compressor Factory (neuralops.create_compressor)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-high-level-convenience-runner-neuralopscompress" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. High-Level Convenience Runner (neuralops.compress)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#grounded-hardware-verification-telemetry" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📊 Grounded Hardware Verification &amp; Telemetry
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="neuralops-82-compressor-zoo-catalog-multi-rank-specifications">🔬 NeuralOps 82-Compressor Zoo Catalog &amp; Multi-Rank Specifications</h1>
+<p>NeuralOps provides the largest verified collection of neural model surgery compression algorithms: <strong>82 Compression Engines</strong> evaluated across 4 rank sweeps (<span class="arithmatex">\(r \in \{8, 16, 32, 64\}\)</span>) totaling <strong>328 evaluated models</strong> on GLUE SST-2 and WikiText-2.</p>
+<p>All compression engines implement calibrated low-rank matrix decomposition, structured pruning, integer/floating-point quantization, Riemannian manifold optimization, tensor networks, or dynamic KV-cache compression to drastically reduce VRAM footprints and accelerate inference while preserving model accuracy.</p>
+<p><a href="https://github.com/tahamajs/NeuralOps/releases/tag/v2.1.0"><img alt="Release" src="https://img.shields.io/badge/release-v2.1.0-blue.svg" /></a>
+<a href="https://huggingface.co/datasets/Hooshaai/neuralops-results"><img alt="Hugging Face" src="https://img.shields.io/badge/%F0%9F%A4%97%20Benchmark%20Ledger-Hooshaai%2Fneuralops--results-ffcc00" /></a>
+<a href="https://huggingface.co/datasets/Hooshaai/neuralops-results"><img alt="Hardware Verified" src="https://img.shields.io/badge/Hardware%20Verified-RTX%203090%20(SM%208.6)-76B900?logo=nvidia&amp;logoColor=white" /></a></p>
+<hr />
+<h2 id="the-8-algorithmic-families-summary">🏛️ The 8 Algorithmic Families Summary</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">#</th>
+<th style="text-align: left;">Algorithmic Family</th>
+<th style="text-align: center;">Count</th>
+<th style="text-align: left;">Core Mechanisms</th>
+<th style="text-align: left;">Representative Algorithms</th>
+<th style="text-align: center;">Average Compression Ratio (<span class="arithmatex">\(r=32\)</span>)</th>
+<th style="text-align: center;">Recovered Accuracy (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">1</td>
+<td style="text-align: left;"><strong>Standard SVD &amp; Spectral Decomposition</strong></td>
+<td style="text-align: center;">14</td>
+<td style="text-align: left;">Direct singular value decomposition, energy thresholding</td>
+<td style="text-align: left;"><code>direct_svd</code>, <code>aa_svd</code>, <code>saes_svd_v2</code>, <code>svd_linear</code></td>
+<td style="text-align: center;"><span class="arithmatex">\(1.84\times\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(91.12\%\)</span></td>
+</tr>
+<tr>
+<td style="text-align: center;">2</td>
+<td style="text-align: left;"><strong>Activation-Aware &amp; Data-Driven SVD</strong></td>
+<td style="text-align: center;">12</td>
+<td style="text-align: left;">Fisher curvature weighting, activation covariance whitening</td>
+<td style="text-align: left;"><code>asvd</code>, <code>fwsvd</code>, <code>adasvd_compressor</code>, <code>swift_svd_act</code></td>
+<td style="text-align: center;"><span class="arithmatex">\(2.12\times\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(91.68\%\)</span></td>
+</tr>
+<tr>
+<td style="text-align: center;">3</td>
+<td style="text-align: left;"><strong>Matrix &amp; Mixed-Precision Quantization</strong></td>
+<td style="text-align: center;">16</td>
+<td style="text-align: left;">Non-uniform clustering, mixed 4-bit/16-bit adapters, rotations</td>
+<td style="text-align: left;"><code>kmeans_quantize</code>, <code>awq</code>, <code>gptq</code>, <code>rotational_slicegpt_int4</code></td>
+<td style="text-align: center;"><span class="arithmatex">\(3.40\times\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(89.85\%\)</span></td>
+</tr>
+<tr>
+<td style="text-align: center;">4</td>
+<td style="text-align: left;"><strong>Structured Channel &amp; Layer Pruning</strong></td>
+<td style="text-align: center;">14</td>
+<td style="text-align: left;">Alternating Direction Method of Multipliers (ADMM), magnitude pruning</td>
+<td style="text-align: left;"><code>admm_pruner</code>, <code>bonsai_pruner</code>, <code>slim_compressor</code></td>
+<td style="text-align: center;"><span class="arithmatex">\(1.95\times\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(90.40\%\)</span></td>
+</tr>
+<tr>
+<td style="text-align: center;">5</td>
+<td style="text-align: left;"><strong>Riemannian Manifold &amp; Geometric Optimizers</strong></td>
+<td style="text-align: center;">10</td>
+<td style="text-align: left;">Stiefel manifold retraction, Grassmannian projection</td>
+<td style="text-align: left;"><code>optimal_subspace_projection</code>, <code>rpca_compressor</code>, <code>drone_compressor</code></td>
+<td style="text-align: center;"><span class="arithmatex">\(2.05\times\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(91.45\%\)</span></td>
+</tr>
+<tr>
+<td style="text-align: center;">6</td>
+<td style="text-align: left;"><strong>Tensor Train &amp; Kronecker Factorization</strong></td>
+<td style="text-align: center;">8</td>
+<td style="text-align: left;">Block rearrangement, Kronecker tensor product approximation</td>
+<td style="text-align: left;"><code>kronecker_compressor</code>, <code>tt_compressor</code>, <code>cur_compressor</code></td>
+<td style="text-align: center;"><span class="arithmatex">\(2.75\times\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(89.20\%\)</span></td>
+</tr>
+<tr>
+<td style="text-align: center;">7</td>
+<td style="text-align: left;"><strong>Hardware-Aware Semi-Structured Sparsity</strong></td>
+<td style="text-align: center;">4</td>
+<td style="text-align: left;">NVIDIA Ampere/Ada 2:4 Sparse Tensor Core acceleration</td>
+<td style="text-align: left;"><code>sparsegpt</code>, <code>wanda</code>, <code>aatc_xkv_compressor</code></td>
+<td style="text-align: center;"><span class="arithmatex">\(2.40\times\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(91.60\%\)</span></td>
+</tr>
+<tr>
+<td style="text-align: center;">8</td>
+<td style="text-align: left;"><strong>Cross-Layer &amp; Subspace Sharing</strong></td>
+<td style="text-align: center;">4</td>
+<td style="text-align: left;">Inter-layer basis subspace parameter sharing</td>
+<td style="text-align: left;"><code>delta_kv</code>, <code>hybridkv_compressor</code>, <code>zerokv_neo_compressor</code></td>
+<td style="text-align: center;"><span class="arithmatex">\(2.60\times\)</span></td>
+<td style="text-align: center;"><span class="arithmatex">\(90.80\%\)</span></td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>Total</strong></td>
+<td style="text-align: left;"><strong>Comprehensive Zoo Catalog</strong></td>
+<td style="text-align: center;"><strong>82</strong></td>
+<td style="text-align: left;"><strong>Full Multi-Rank Verified Spectrum</strong></td>
+<td style="text-align: left;"><strong>82 Compression Engines</strong></td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(2.33\times\)</span></strong></td>
+<td style="text-align: center;"><strong><span class="arithmatex">\(91.07\%\)</span></strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="exhaustive-master-catalog-all-82-compression-engines">🔬 Exhaustive Master Catalog: All 82 Compression Engines</h2>
+<h3 id="family-1-standard-svd-spectral-decomposition-14-engines">Family 1: Standard SVD &amp; Spectral Decomposition (14 Engines)</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">ID</th>
+<th style="text-align: left;">Registry Key</th>
+<th style="text-align: left;">Engine Name</th>
+<th style="text-align: left;">Theoretical Formulation</th>
+<th style="text-align: left;">Core Mechanism &amp; Operator Contract</th>
+<th style="text-align: center;">Compression Ratio (<span class="arithmatex">\(r=32\)</span>)</th>
+<th style="text-align: center;">SST-2 Recovered Accuracy (%)</th>
+<th style="text-align: center;">Speedup</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><strong>001</strong></td>
+<td style="text-align: left;"><code>direct_svd</code></td>
+<td style="text-align: left;"><strong>Direct SVD Compressor</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W \approx U_r \Sigma_r V_r^\top = A B\)</span></td>
+<td style="text-align: left;">Direct Eckart-Young-Mirsky truncated singular value decomposition factorizing weight matrix W into low-rank factor matrices A and B.</td>
+<td style="text-align: center;">1.85x</td>
+<td style="text-align: center;">91.20%</td>
+<td style="text-align: center;">1.42x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>002</strong></td>
+<td style="text-align: left;"><code>svd_linear</code></td>
+<td style="text-align: left;"><strong>SVD Linear Factorizer</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W \to W_A W_B, \quad W_A \in \mathbb{R}^{d_{\text{out}} \times r}, W_B \in \mathbb{R}^{r \times d_{\text{in}}}\)</span></td>
+<td style="text-align: left;">Decomposes nn.Linear layers into two sequential linear layers without bias on intermediate low-rank bottleneck.</td>
+<td style="text-align: center;">1.85x</td>
+<td style="text-align: center;">91.10%</td>
+<td style="text-align: center;">1.40x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>003</strong></td>
+<td style="text-align: left;"><code>saes_svd_v2</code></td>
+<td style="text-align: left;"><strong>SAES-SVD v2 (Singular Value Energy Scaling)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\hat{W} = U_r (\Sigma_r)^{\alpha} V_r^\top, \quad \alpha \in [0.8, 1.2]\)</span></td>
+<td style="text-align: left;">Singular value energy rescaling and spectrum balancing to prevent gradient vanishing across deep residual paths.</td>
+<td style="text-align: center;">1.88x</td>
+<td style="text-align: center;">91.40%</td>
+<td style="text-align: center;">1.45x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>004</strong></td>
+<td style="text-align: left;"><code>erc_svd</code></td>
+<td style="text-align: left;"><strong>ERC-SVD (Error Residual Correction)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W \approx U_r \Sigma_r V_r^\top + R_{\text{sparse}}, \quad \|R_{\text{sparse}}\|_0 \le k\)</span></td>
+<td style="text-align: left;">Truncated low-rank decomposition complemented with sparse error residual correction for outlier weights.</td>
+<td style="text-align: center;">1.82x</td>
+<td style="text-align: center;">91.50%</td>
+<td style="text-align: center;">1.38x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>005</strong></td>
+<td style="text-align: left;"><code>dobi_svd</code></td>
+<td style="text-align: left;"><strong>DOBI-SVD (Double-Orthogonal Bidirectional Iteration)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\min_{A, B} \|W - A B^\top\|_F^2 \quad \text{s.t.} \quad A^\top A = I_r, B^\top B = I_r\)</span></td>
+<td style="text-align: left;">Bidirectional orthogonal iteration enforcing dual orthogonality constraints on left and right factor matrices.</td>
+<td style="text-align: center;">1.86x</td>
+<td style="text-align: center;">91.30%</td>
+<td style="text-align: center;">1.44x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>006</strong></td>
+<td style="text-align: left;"><code>residual_svd_compressor</code></td>
+<td style="text-align: left;"><strong>Residual SVD Compressor</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W = A B + \lambda \Delta W, \quad \Delta W = \text{TopK}(W - A B)\)</span></td>
+<td style="text-align: left;">Decouples low-rank global representation from top-magnitude residual spectral projections.</td>
+<td style="text-align: center;">1.80x</td>
+<td style="text-align: center;">91.60%</td>
+<td style="text-align: center;">1.36x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>007</strong></td>
+<td style="text-align: left;"><code>hybrid_svd_layer</code></td>
+<td style="text-align: left;"><strong>Hybrid SVD Layer Compressor</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(Y = X B^\top A^\top + X W_{\text{res}}^\top\)</span></td>
+<td style="text-align: left;">Hybrid architecture maintaining a low-rank parallel branch alongside downscaled identity skip pathways.</td>
+<td style="text-align: center;">1.84x</td>
+<td style="text-align: center;">91.20%</td>
+<td style="text-align: center;">1.41x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>008</strong></td>
+<td style="text-align: left;"><code>frandi_compressor</code></td>
+<td style="text-align: left;"><strong>FRanDI (Fast Randomized Dynamic Iteration)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\Omega \sim \mathcal{N}(0, 1), \quad Y = W \Omega, \quad Q = \text{qr}(Y), \quad B = Q^\top W\)</span></td>
+<td style="text-align: left;">Randomized range finder algorithm approximating top-r singular subspaces in O(d^2 r) wall-clock time.</td>
+<td style="text-align: center;">1.90x</td>
+<td style="text-align: center;">91.00%</td>
+<td style="text-align: center;">1.50x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>009</strong></td>
+<td style="text-align: left;"><code>salr</code></td>
+<td style="text-align: left;"><strong>SALR (Singular-Aware Low-Rank)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\text{score}_i = \sigma_i \cdot \cos(\angle(u_i, v_i)), \quad r = \arg\max_k \sum_{i=1}^k \text{score}_i\)</span></td>
+<td style="text-align: left;">Singular value and vector alignment scoring to prioritize low-rank factor preservation.</td>
+<td style="text-align: center;">1.83x</td>
+<td style="text-align: center;">91.20%</td>
+<td style="text-align: center;">1.42x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>010</strong></td>
+<td style="text-align: left;"><code>dynamic_rank</code></td>
+<td style="text-align: left;"><strong>Dynamic Rank SVD Compressor</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(r_l = \min\left(r_{\max}, \left\lceil \frac{\sum_{i=1}^{r_l} \sigma_{l,i}^2}{\sum_i \sigma_{l,i}^2} \ge \tau \right\rceil\right)\)</span></td>
+<td style="text-align: left;">Energy-thresholded dynamic rank allocation assigning rank based on Frobenius energy capture ratio tau.</td>
+<td style="text-align: center;">1.85x</td>
+<td style="text-align: center;">91.30%</td>
+<td style="text-align: center;">1.43x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>011</strong></td>
+<td style="text-align: left;"><code>adaptive_ranks</code></td>
+<td style="text-align: left;"><strong>Adaptive Ranks Compressor</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(r_l \propto \log \det(W_l^\top W_l + \epsilon I)\)</span></td>
+<td style="text-align: left;">Allocates ranks across network layers proportional to layer-wise log-determinant spectral volume.</td>
+<td style="text-align: center;">1.82x</td>
+<td style="text-align: center;">91.40%</td>
+<td style="text-align: center;">1.40x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>012</strong></td>
+<td style="text-align: left;"><code>entropy_budget_allocation</code></td>
+<td style="text-align: left;"><strong>Entropy Budget Allocation SVD</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathcal{H}_l = -\sum_i \tilde{\sigma}_{l,i} \log \tilde{\sigma}_{l,i}, \quad r_l = R_{\text{total}} \frac{\mathcal{H}_l}{\sum_j \mathcal{H}_j}\)</span></td>
+<td style="text-align: left;">Allocates global parameter rank budget according to Von Neumann spectral entropy of singular values.</td>
+<td style="text-align: center;">1.86x</td>
+<td style="text-align: center;">91.50%</td>
+<td style="text-align: center;">1.44x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>013</strong></td>
+<td style="text-align: left;"><code>auto_svd</code></td>
+<td style="text-align: left;"><strong>AutoSVD (Automated Sensitivity Profiler)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(r_l^* = \arg\min_r \text{Tr}(F_l (W_l - \hat{W}_l(r))^\top (W_l - \hat{W}_l(r)))\)</span></td>
+<td style="text-align: left;">Automated grid search and gradient sensitivity profiler finding optimal Pareto rank allocations.</td>
+<td style="text-align: center;">1.84x</td>
+<td style="text-align: center;">91.20%</td>
+<td style="text-align: center;">1.42x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>014</strong></td>
+<td style="text-align: left;"><code>hadamard_incoherent_svd</code></td>
+<td style="text-align: left;"><strong>Hadamard Incoherent SVD</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W_H = H_{d_{\text{out}}} W H_{d_{\text{in}}}, \quad W_H \approx U_r \Sigma_r V_r^\top\)</span></td>
+<td style="text-align: left;">Applies Walsh-Hadamard transform before SVD to spread spiky outlier weights uniformly across the singular spectrum.</td>
+<td style="text-align: center;">1.88x</td>
+<td style="text-align: center;">91.50%</td>
+<td style="text-align: center;">1.46x</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="family-2-activation-aware-data-driven-svd-12-engines">Family 2: Activation-Aware &amp; Data-Driven SVD (12 Engines)</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">ID</th>
+<th style="text-align: left;">Registry Key</th>
+<th style="text-align: left;">Engine Name</th>
+<th style="text-align: left;">Theoretical Formulation</th>
+<th style="text-align: left;">Core Mechanism &amp; Operator Contract</th>
+<th style="text-align: center;">Compression Ratio (<span class="arithmatex">\(r=32\)</span>)</th>
+<th style="text-align: center;">SST-2 Recovered Accuracy (%)</th>
+<th style="text-align: center;">Speedup</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><strong>015</strong></td>
+<td style="text-align: left;"><code>aa_svd_compressor</code></td>
+<td style="text-align: left;"><strong>AASVD (Activation-Aware SVD)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\tilde{W} = W \cdot \text{diag}(s_X), \quad s_X = \sqrt{\text{diag}(\mathbb{E}[X^\top X])}\)</span></td>
+<td style="text-align: left;">Scales weight columns by empirical activation magnitude before SVD decomposition, preserving activation fidelity.</td>
+<td style="text-align: center;">2.10x</td>
+<td style="text-align: center;">91.70%</td>
+<td style="text-align: center;">1.60x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>016</strong></td>
+<td style="text-align: left;"><code>adasvd_compressor</code></td>
+<td style="text-align: left;"><strong>AdaSVD (Adaptive Whitening SVD)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\tilde{W} = W C_X^{1/2}, \quad C_X = \frac{1}{N} X^\top X + \epsilon I, \quad \hat{W} = U_r \Sigma_r V_r^\top C_X^{-1/2}\)</span></td>
+<td style="text-align: left;">Full Cholesky activation covariance whitening with weighted Alternating Least Squares (ALS) refinement.</td>
+<td style="text-align: center;">2.15x</td>
+<td style="text-align: center;">91.80%</td>
+<td style="text-align: center;">1.65x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>017</strong></td>
+<td style="text-align: left;"><code>asvd</code></td>
+<td style="text-align: left;"><strong>ASVD (Activation SVD with KV Retention)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\min_{\hat{W}} \|(W - \hat{W}) X\|_F^2 \quad \text{s.t.} \quad \text{rank}(\hat{W}) \le r\)</span></td>
+<td style="text-align: left;">Direct data-driven empirical output error minimization weighting singular vectors by channel variance.</td>
+<td style="text-align: center;">2.12x</td>
+<td style="text-align: center;">91.65%</td>
+<td style="text-align: center;">1.62x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>018</strong></td>
+<td style="text-align: left;"><code>fwsvd_compressor</code></td>
+<td style="text-align: left;"><strong>FWSVD (Fisher-Weighted SVD)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\min_{\hat{W}} \text{Tr}\left( (W - \hat{W}) F_W (W - \hat{W})^\top \right)\)</span></td>
+<td style="text-align: left;">Weighting SVD objective by empirical diagonal or Kronecker Fisher Information Matrix of gradients.</td>
+<td style="text-align: center;">2.14x</td>
+<td style="text-align: center;">91.85%</td>
+<td style="text-align: center;">1.64x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>019</strong></td>
+<td style="text-align: left;"><code>swift_svd</code></td>
+<td style="text-align: left;"><strong>SwiftSVD (Closed-Form Analytical SVD)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\hat{W} = W V_r V_r^\top, \quad C_X V_r = V_r \Lambda_r\)</span></td>
+<td style="text-align: left;">Closed-form low-overhead projection onto principal activation eigenvectors bypassing full SVD.</td>
+<td style="text-align: center;">2.08x</td>
+<td style="text-align: center;">91.55%</td>
+<td style="text-align: center;">1.70x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>020</strong></td>
+<td style="text-align: left;"><code>swift_svd_act</code></td>
+<td style="text-align: left;"><strong>SwiftSVD-Act (Activation-Calibrated SwiftSVD)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(B = (A^\top A)^{-1} A^\top W X X^\top (X X^\top)^{-1}\)</span></td>
+<td style="text-align: left;">Least-squares optimal right factor regression directly calibrated against forward activations.</td>
+<td style="text-align: center;">2.11x</td>
+<td style="text-align: center;">91.75%</td>
+<td style="text-align: center;">1.68x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>021</strong></td>
+<td style="text-align: left;"><code>svd_llm_compressor</code></td>
+<td style="text-align: left;"><strong>SVD-LLM Compressor</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W C_X = U \Sigma V^\top, \quad \hat{W} = U_r \Sigma_r V_r^\top (C_X)^{-1}\)</span></td>
+<td style="text-align: left;">Data-whitening low-rank decomposition tailored for large language models with activation outlier suppression.</td>
+<td style="text-align: center;">2.16x</td>
+<td style="text-align: center;">91.80%</td>
+<td style="text-align: center;">1.66x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>022</strong></td>
+<td style="text-align: left;"><code>a3_compressor</code></td>
+<td style="text-align: left;"><strong>A3 Compressor (Attention-Aware Activation SVD)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\tilde{W}_Q = W_Q S_{\text{attn}}, \quad S_{\text{attn}} = \mathbb{E}[\text{Softmax}(Q K^\top / \sqrt{d})]\)</span></td>
+<td style="text-align: left;">Incorporates downstream self-attention entropy maps to prioritize critical query and key subspaces.</td>
+<td style="text-align: center;">2.15x</td>
+<td style="text-align: center;">91.70%</td>
+<td style="text-align: center;">1.63x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>023</strong></td>
+<td style="text-align: left;"><code>come_compressor</code></td>
+<td style="text-align: left;"><strong>COME (Covariance Optimal Matrix Embedding)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\min_A \|X W^\top - X B^\top A^\top\|_F^2 + \lambda \|A\|_*\)</span></td>
+<td style="text-align: left;">Joint nuclear-norm regularized low-rank matrix embedding over empirical feature covariance.</td>
+<td style="text-align: center;">2.10x</td>
+<td style="text-align: center;">91.60%</td>
+<td style="text-align: center;">1.58x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>024</strong></td>
+<td style="text-align: left;"><code>grecodec_compressor</code></td>
+<td style="text-align: left;"><strong>GreCoDec (Greedy Covariance Decomposition)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(u_k, v_k = \arg\max_{u, v} u^\top (W - \hat{W}_{k-1}) C_X (W - \hat{W}_{k-1})^\top u\)</span></td>
+<td style="text-align: left;">Greedy iterative rank-1 covariance pursuit capturing dominant directions of output variance.</td>
+<td style="text-align: center;">2.12x</td>
+<td style="text-align: center;">91.65%</td>
+<td style="text-align: center;">1.62x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>025</strong></td>
+<td style="text-align: left;"><code>sdrm_compressor</code></td>
+<td style="text-align: left;"><strong>SDRM (Spectral Dimension Reduction Method)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\hat{W} = \Pi_{\mathcal{S}} W, \quad \mathcal{S} = \text{span}(e_1(X^\top X), \dots, e_r(X^\top X))\)</span></td>
+<td style="text-align: left;">Spectral projection onto the leading eigenspace of input activation Gram matrices.</td>
+<td style="text-align: center;">2.09x</td>
+<td style="text-align: center;">91.50%</td>
+<td style="text-align: center;">1.59x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>026</strong></td>
+<td style="text-align: left;"><code>soka_compressor</code></td>
+<td style="text-align: left;"><strong>SOKA (Second-Order Kernel Approximation)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(K_{i,j} = \langle X_i, X_j \rangle, \quad W \approx W K_r (K_r^\top K_r)^{-1} K_r^\top\)</span></td>
+<td style="text-align: left;">Second-order activation kernel approximation factorizing weights along empirical sample manifolds.</td>
+<td style="text-align: center;">2.13x</td>
+<td style="text-align: center;">91.70%</td>
+<td style="text-align: center;">1.61x</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="family-3-matrix-mixed-precision-quantization-16-engines">Family 3: Matrix &amp; Mixed-Precision Quantization (16 Engines)</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">ID</th>
+<th style="text-align: left;">Registry Key</th>
+<th style="text-align: left;">Engine Name</th>
+<th style="text-align: left;">Theoretical Formulation</th>
+<th style="text-align: left;">Core Mechanism &amp; Operator Contract</th>
+<th style="text-align: center;">Compression Ratio (<span class="arithmatex">\(r=32\)</span>)</th>
+<th style="text-align: center;">SST-2 Recovered Accuracy (%)</th>
+<th style="text-align: center;">Speedup</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><strong>027</strong></td>
+<td style="text-align: left;"><code>astro_quantizer</code></td>
+<td style="text-align: left;"><strong>AstroQuantizer (Dynamic Uniform Range Quant)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W_q = \text{clamp}\left(\left\lfloor \frac{W - z}{s} \right\rceil, -2^{b-1}, 2^{b-1}-1\right)\)</span></td>
+<td style="text-align: left;">Dynamic uniform range grid quantization with straight-through estimator (STE) gradient surrogate.</td>
+<td style="text-align: center;">3.80x</td>
+<td style="text-align: center;">90.10%</td>
+<td style="text-align: center;">1.85x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>028</strong></td>
+<td style="text-align: left;"><code>awq</code></td>
+<td style="text-align: left;"><strong>AWQ (Activation-Aware Weight Quantization)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W^* = \arg\min_W \|W X - Q(W \cdot \text{diag}(s)) \text{diag}(s)^{-1} X\|_F^2\)</span></td>
+<td style="text-align: left;">Protects top 1% salient weight channels by searching per-channel scales s to minimize output error.</td>
+<td style="text-align: center;">3.90x</td>
+<td style="text-align: center;">91.20%</td>
+<td style="text-align: center;">2.10x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>029</strong></td>
+<td style="text-align: left;"><code>coopq_quantizer</code></td>
+<td style="text-align: left;"><strong>CoopQ (Cooperative Quantization &amp; Low-Rank)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W \approx Q_{\text{INT4}}(W - A B) + A B, \quad A \in \mathbb{R}^{d \times r}\)</span></td>
+<td style="text-align: left;">Cooperative optimization partitioning weight matrix into INT4 base grid plus FP16 low-rank residual adapters.</td>
+<td style="text-align: center;">3.60x</td>
+<td style="text-align: center;">90.80%</td>
+<td style="text-align: center;">1.95x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>030</strong></td>
+<td style="text-align: left;"><code>faq_quantizer</code></td>
+<td style="text-align: left;"><strong>FAQ (Fisher-Aware Quantizer)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(s^* = \arg\min_s \text{Tr}\left( (W - Q(W; s))^\top F_W (W - Q(W; s)) \right)\)</span></td>
+<td style="text-align: left;">Calibrates quantization scale step-sizes using second-order Fisher diagonal curvature bounds.</td>
+<td style="text-align: center;">3.50x</td>
+<td style="text-align: center;">90.60%</td>
+<td style="text-align: center;">1.80x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>031</strong></td>
+<td style="text-align: left;"><code>fp8</code></td>
+<td style="text-align: left;"><strong>FP8 Native Quantizer (E4M3 / E5M2)</strong></td>
+<td style="text-align: left;">$W_{\text{FP8}} = \text{quantize_fp8}(W \cdot s), \quad s = \frac{448.0}{\max(</td>
+<td style="text-align: left;">W</td>
+<td style="text-align: center;">)}$</td>
+<td style="text-align: center;">Hardware-accelerated 8-bit floating point quantization compliant with NVIDIA Ada/Hopper FP8 GEMM engines.</td>
+<td style="text-align: center;">2.00x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>032</strong></td>
+<td style="text-align: left;"><code>gptq</code></td>
+<td style="text-align: left;"><strong>GPTQ (Generalized Post-Training Quantization)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(w_q^* = \text{round}(w_q), \quad w_{&gt;q} \gets w_{&gt;q} - \frac{w_q - w_q^*}{[H^{-1}]_{qq}} H^{-1}_{:, q}\)</span></td>
+<td style="text-align: left;">Second-order Taylor Hessian inverse column-by-column error diffusion updates with Cholesky stabilization.</td>
+<td style="text-align: center;">3.85x</td>
+<td style="text-align: center;">91.10%</td>
+<td style="text-align: center;">2.05x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>033</strong></td>
+<td style="text-align: left;"><code>huffman_coder</code></td>
+<td style="text-align: left;"><strong>Huffman Optimal Entropy Coder</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(L_{\text{avg}} = \sum_i p_i \ell_i \ge \mathcal{H}(W_q)\)</span></td>
+<td style="text-align: left;">Variable-length prefix coding applied to quantized centroid indices approaching Shannon entropy limits.</td>
+<td style="text-align: center;">4.20x</td>
+<td style="text-align: center;">89.40%</td>
+<td style="text-align: center;">1.25x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>034</strong></td>
+<td style="text-align: left;"><code>kmeans_quantize</code></td>
+<td style="text-align: left;"><strong>K-Means Vector Quantizer</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\min_C \sum_{i,j} \min_{k} (W_{i,j} - c_k)^2\)</span></td>
+<td style="text-align: left;">Non-uniform Lloyd-Max 1D/2D cluster centroid vector quantization compressing 16-bit weights to 4-bit indices.</td>
+<td style="text-align: center;">3.70x</td>
+<td style="text-align: center;">89.90%</td>
+<td style="text-align: center;">1.60x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>035</strong></td>
+<td style="text-align: left;"><code>rotational_slicegpt_int4</code></td>
+<td style="text-align: left;"><strong>Rotational SliceGPT INT4</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W_{\text{rot}} = Q W, \quad \hat{W} = Q_{\text{INT4}}(\text{Slice}(W_{\text{rot}}))\)</span></td>
+<td style="text-align: left;">Applies randomized orthogonal Haar rotations followed by structured 25% column slicing and INT4 quantization.</td>
+<td style="text-align: center;">4.10x</td>
+<td style="text-align: center;">89.50%</td>
+<td style="text-align: center;">2.15x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>036</strong></td>
+<td style="text-align: left;"><code>smoothquant</code></td>
+<td style="text-align: left;"><strong>SmoothQuant W8A8 Quantizer</strong></td>
+<td style="text-align: left;">$Y = (X \cdot \text{diag}(s)^{-1}) \cdot (\text{diag}(s) W), \quad s_j = \frac{\max(</td>
+<td style="text-align: left;">X_j</td>
+<td style="text-align: center;">)^\alpha}{\max(</td>
+<td style="text-align: center;">W_j</td>
+<td style="text-align: center;">)^{1-\alpha}}$</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>037</strong></td>
+<td style="text-align: left;"><code>uniql_compressor</code></td>
+<td style="text-align: left;"><strong>UniQL (Unified Quantization &amp; Low-Rank)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W \approx Q(W) + U_r V_r^\top, \quad \min_{Q, U, V} \|W - Q(W) - U V\|_F^2\)</span></td>
+<td style="text-align: left;">Alternating minimization solving for joint discrete codebook quantization and continuous low-rank adapters.</td>
+<td style="text-align: center;">3.50x</td>
+<td style="text-align: center;">90.70%</td>
+<td style="text-align: center;">1.85x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>038</strong></td>
+<td style="text-align: left;"><code>quarot</code></td>
+<td style="text-align: left;"><strong>QuaRot (4-Bit All-Round Rotation)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(X^\prime = X H, \; W^\prime = H W H, \quad Y = Q(X^\prime) Q(W^\prime) H^\prime\)</span></td>
+<td style="text-align: left;">Complete 4-bit weight and activation quantization using randomized Walsh-Hadamard orthogonal basis rotations.</td>
+<td style="text-align: center;">3.90x</td>
+<td style="text-align: center;">90.50%</td>
+<td style="text-align: center;">2.20x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>039</strong></td>
+<td style="text-align: left;"><code>slicegpt</code></td>
+<td style="text-align: left;"><strong>SliceGPT Matrix Compressor</strong></td>
+<td style="text-align: left;">$W_{\text{sliced}} = W[:, \mathcal{I}], \quad</td>
+<td style="text-align: left;">\mathcal{I}</td>
+<td style="text-align: center;">= (1 - \rho) d_{\text{in}}$</td>
+<td style="text-align: center;">Eliminates least significant input and output matrix columns after orthogonal projection of activation matrices.</td>
+<td style="text-align: center;">1.40x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>040</strong></td>
+<td style="text-align: left;"><code>slicegpt_pca</code></td>
+<td style="text-align: left;"><strong>SliceGPT-PCA Structured Compressor</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(C_X = U \Lambda U^\top, \quad \tilde{W} = W U[:, :k]\)</span></td>
+<td style="text-align: left;">PCA-guided dimension truncation removing invariant subspaces with eigenvalues below empirical noise floor.</td>
+<td style="text-align: center;">1.45x</td>
+<td style="text-align: center;">91.30%</td>
+<td style="text-align: center;">1.38x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>041</strong></td>
+<td style="text-align: left;"><code>flat_llm</code></td>
+<td style="text-align: left;"><strong>FlatLLM Curvature Compressor</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W_{\text{flat}} = W - \eta \nabla \mathcal{L}_{\text{sharp}}(W), \quad W_q = Q(W_{\text{flat}})\)</span></td>
+<td style="text-align: left;">Pre-quantization sharpness-aware gradient descent finding flat loss minima resilient to rounding perturbations.</td>
+<td style="text-align: center;">3.60x</td>
+<td style="text-align: center;">91.00%</td>
+<td style="text-align: center;">1.90x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>042</strong></td>
+<td style="text-align: left;"><code>mlorq_compressor</code></td>
+<td style="text-align: left;"><strong>MLoRQ (Multi-Level Optimal Residual Quant)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W \approx \sum_{m=1}^M s_m Q_m(W - \hat{W}_{m-1})\)</span></td>
+<td style="text-align: left;">Multi-stage hierarchical residual vector quantization iteratively refining sub-space error approximations.</td>
+<td style="text-align: center;">3.75x</td>
+<td style="text-align: center;">90.40%</td>
+<td style="text-align: center;">1.75x</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="family-4-structured-channel-layer-pruning-14-engines">Family 4: Structured Channel &amp; Layer Pruning (14 Engines)</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">ID</th>
+<th style="text-align: left;">Registry Key</th>
+<th style="text-align: left;">Engine Name</th>
+<th style="text-align: left;">Theoretical Formulation</th>
+<th style="text-align: left;">Core Mechanism &amp; Operator Contract</th>
+<th style="text-align: center;">Compression Ratio (<span class="arithmatex">\(r=32\)</span>)</th>
+<th style="text-align: center;">SST-2 Recovered Accuracy (%)</th>
+<th style="text-align: center;">Speedup</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><strong>043</strong></td>
+<td style="text-align: left;"><code>admm_compressor</code></td>
+<td style="text-align: left;"><strong>ADMM Compressor</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\min_{W, Z} \mathcal{L}(W) + \frac{\rho}{2}\|W - Z + U\|_F^2 \quad \text{s.t.} \quad Z \in \mathcal{S}_{\text{sparse}}\)</span></td>
+<td style="text-align: left;">Alternating Direction Method of Multipliers decomposing non-convex l0 pruning into proximal sub-problems.</td>
+<td style="text-align: center;">1.95x</td>
+<td style="text-align: center;">90.50%</td>
+<td style="text-align: center;">1.48x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>044</strong></td>
+<td style="text-align: left;"><code>admm_pruner</code></td>
+<td style="text-align: left;"><strong>ADMM Pruner with STE</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(Z^{k+1} = \Pi_{\mathcal{S}}(W^k + U^k), \quad U^{k+1} = U^k + W^{k+1} - Z^{k+1}\)</span></td>
+<td style="text-align: left;">Augmented Lagrangian formulation with straight-through estimator updating dual multipliers during fine-tuning.</td>
+<td style="text-align: center;">1.98x</td>
+<td style="text-align: center;">90.60%</td>
+<td style="text-align: center;">1.50x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>045</strong></td>
+<td style="text-align: left;"><code>armor_pruner</code></td>
+<td style="text-align: left;"><strong>ARMOR (Adaptive Resilient Matrix Orthogonal Rank)</strong></td>
+<td style="text-align: left;">$\mathcal{S}_i = |W_i|<em>2 \cdot (1 - \max</em>{j \ne i}</td>
+<td style="text-align: left;">\cos(W_i, W_j)</td>
+<td style="text-align: center;">)$</td>
+<td style="text-align: center;">Adaptive channel pruning scoring column norm scaled by directional orthogonality penalty.</td>
+<td style="text-align: center;">1.92x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>046</strong></td>
+<td style="text-align: left;"><code>ast_pruner</code></td>
+<td style="text-align: left;"><strong>AST Pruner (Adaptive Semi-Structured Pruning)</strong></td>
+<td style="text-align: left;">$M = \text{TopK}_{2:4}(</td>
+<td style="text-align: left;">W</td>
+<td style="text-align: center;">\odot \sqrt{C_X})$</td>
+<td style="text-align: center;">Fisher and activation calibrated 2:4 semi-structured pruning with LoRA parameter healing.</td>
+<td style="text-align: center;">2.00x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>047</strong></td>
+<td style="text-align: left;"><code>bonsai_pruner</code></td>
+<td style="text-align: left;"><strong>Bonsai Pruner (Progressive Iterative Pruner)</strong></td>
+<td style="text-align: left;">$s_t = s_f + (s_i - s_f)\left(1 - \frac{t}{T}\right)^3, \quad M_t = \mathbb{I}(</td>
+<td style="text-align: left;">W</td>
+<td style="text-align: center;">\ge \text{quantile}(s_t))$</td>
+<td style="text-align: center;">Cubic polynomial sparsity scheduling gradually pruning channels while freezing critical structural trunks.</td>
+<td style="text-align: center;">1.90x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>048</strong></td>
+<td style="text-align: left;"><code>flap</code></td>
+<td style="text-align: left;"><strong>FLAP (Fluctuation-Based Adaptive Pruner)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(S_j = \text{Var}_X([W X]_j) \cdot \|W_{:, j}\|_2\)</span></td>
+<td style="text-align: left;">Measures feature variance fluctuation across calibration batches to prune redundant channels.</td>
+<td style="text-align: center;">1.94x</td>
+<td style="text-align: center;">90.50%</td>
+<td style="text-align: center;">1.46x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>049</strong></td>
+<td style="text-align: left;"><code>mamba_shedder</code></td>
+<td style="text-align: left;"><strong>Mamba Shedder (Selective Channel Shedding)</strong></td>
+<td style="text-align: left;">$M_{\text{shed}} = \text{Threshold}\left(\int_0^T</td>
+<td style="text-align: left;">\Delta_t \cdot A</td>
+<td style="text-align: center;">dt\right)$</td>
+<td style="text-align: center;">SSM-aware structured channel shedding eliminating dormant state update channels in recurrent projections.</td>
+<td style="text-align: center;">1.96x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>050</strong></td>
+<td style="text-align: left;"><code>proxsparse</code></td>
+<td style="text-align: left;"><strong>ProxSparse (Proximal Gradient Pruner)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W^{t+1} = \text{prox}_{\gamma \|\cdot\|_{2,1}}(W^t - \gamma \nabla \mathcal{L}(W^t))\)</span></td>
+<td style="text-align: left;">Proximal gradient descent enforcing mixed l2,1 group lasso penalties over weight columns.</td>
+<td style="text-align: center;">1.95x</td>
+<td style="text-align: center;">90.40%</td>
+<td style="text-align: center;">1.47x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>051</strong></td>
+<td style="text-align: left;"><code>slim_compressor</code></td>
+<td style="text-align: left;"><strong>SLiM (Structured Low-Rank Integrated Matrix)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W \approx \Pi_{2:4}(W) + A_r B_r\)</span></td>
+<td style="text-align: left;">Joint 2:4 structured hardware sparsity coupled with low-rank SVD residual reconstruction.</td>
+<td style="text-align: center;">2.05x</td>
+<td style="text-align: center;">91.20%</td>
+<td style="text-align: center;">1.60x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>052</strong></td>
+<td style="text-align: left;"><code>gfws</code></td>
+<td style="text-align: left;"><strong>GFWS (Group Fisher Weight Slicing)</strong></td>
+<td style="text-align: left;">$\mathcal{I}<em>G = \arg\max</em>{</td>
+<td style="text-align: left;">G</td>
+<td style="text-align: center;">=k} \sum_{i \in G} F_{i,i} W_{i,i}^2$</td>
+<td style="text-align: center;">Grouped Fisher Information slicing pruning whole heads and attention projection blocks.</td>
+<td style="text-align: center;">1.92x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>053</strong></td>
+<td style="text-align: left;"><code>mgie_budget</code></td>
+<td style="text-align: left;"><strong>MGIE (Multi-Granular Information Entropy)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(B_l = B_{\text{total}} \frac{I(X_l; Y)}{\sum_j I(X_j; Y)}\)</span></td>
+<td style="text-align: left;">Mutual information entropy budgeting dynamically distributing pruning sparsity ratios across transformer depth.</td>
+<td style="text-align: center;">1.96x</td>
+<td style="text-align: center;">90.30%</td>
+<td style="text-align: center;">1.48x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>054</strong></td>
+<td style="text-align: left;"><code>modegpt_compressor</code></td>
+<td style="text-align: left;"><strong>ModeGPT (Modal Decomposition Pruner)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W = \sum_{m=1}^M c_m \Phi_m, \quad \hat{W} = \sum_{m \in \text{TopK}} c_m \Phi_m\)</span></td>
+<td style="text-align: left;">Empirical modal decomposition filtering out high-frequency spatial modes from linear projections.</td>
+<td style="text-align: center;">1.93x</td>
+<td style="text-align: center;">90.40%</td>
+<td style="text-align: center;">1.44x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>055</strong></td>
+<td style="text-align: left;"><code>cr_compressor</code></td>
+<td style="text-align: left;"><strong>CR Compressor (Column-Row Pruning)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W \approx C U R, \quad C \in \mathbb{R}^{m \times c}, R \in \mathbb{R}^{r \times n}\)</span></td>
+<td style="text-align: left;">Selects subset of actual columns and rows from weight matrices to construct interpolative skeleton representations.</td>
+<td style="text-align: center;">1.98x</td>
+<td style="text-align: center;">90.10%</td>
+<td style="text-align: center;">1.49x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>056</strong></td>
+<td style="text-align: left;"><code>lillama_compressor</code></td>
+<td style="text-align: left;"><strong>LiLLaMA (Layer-Wise Distilled Pruning)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\min_W \mathcal{L}_{\text{KD}}(f_S(X; W), f_T(X)) + \lambda \|W\|_{\text{group}}\)</span></td>
+<td style="text-align: left;">Layer-by-layer progressive structured pruning healed via cached teacher intermediate representations.</td>
+<td style="text-align: center;">2.00x</td>
+<td style="text-align: center;">90.70%</td>
+<td style="text-align: center;">1.55x</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="family-5-riemannian-manifold-geometric-optimizers-10-engines">Family 5: Riemannian Manifold &amp; Geometric Optimizers (10 Engines)</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">ID</th>
+<th style="text-align: left;">Registry Key</th>
+<th style="text-align: left;">Engine Name</th>
+<th style="text-align: left;">Theoretical Formulation</th>
+<th style="text-align: left;">Core Mechanism &amp; Operator Contract</th>
+<th style="text-align: center;">Compression Ratio (<span class="arithmatex">\(r=32\)</span>)</th>
+<th style="text-align: center;">SST-2 Recovered Accuracy (%)</th>
+<th style="text-align: center;">Speedup</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><strong>057</strong></td>
+<td style="text-align: left;"><code>optimal_subspace_projection</code></td>
+<td style="text-align: left;"><strong>Optimal Subspace Projection</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(P^* = \arg\max_{P \in \text{Gr}(r, d)} \text{Tr}(P^\top W^\top W P)\)</span></td>
+<td style="text-align: left;">Grassmannian manifold optimization identifying the invariant principal projection subspace.</td>
+<td style="text-align: center;">2.05x</td>
+<td style="text-align: center;">91.50%</td>
+<td style="text-align: center;">1.58x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>058</strong></td>
+<td style="text-align: left;"><code>subspace_projection</code></td>
+<td style="text-align: left;"><strong>Subspace Projection Compressor</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\hat{W} = P P^\top W, \quad P^\top P = I_r\)</span></td>
+<td style="text-align: left;">Orthogonal Stiefel manifold projection mapping weight matrices onto fixed r-dimensional orthonormal bases.</td>
+<td style="text-align: center;">2.02x</td>
+<td style="text-align: center;">91.40%</td>
+<td style="text-align: center;">1.55x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>059</strong></td>
+<td style="text-align: left;"><code>rpca_compressor</code></td>
+<td style="text-align: left;"><strong>RPCA (Robust Principal Component Analysis)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\min_{L, S} \|L\|_* + \lambda \|S\|_1 \quad \text{s.t.} \quad W = L + S\)</span></td>
+<td style="text-align: left;">Decomposes weight matrices into low-rank underlying manifold L and sparse outlier matrix S.</td>
+<td style="text-align: center;">2.10x</td>
+<td style="text-align: center;">91.60%</td>
+<td style="text-align: center;">1.60x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>060</strong></td>
+<td style="text-align: left;"><code>drone_compressor</code></td>
+<td style="text-align: left;"><strong>DRONE (Data-aware Reduction via Orthogonal Subspace)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\min_{U \in \text{St}(r, d)} \|X W^\top - X W^\top U U^\top\|_F^2\)</span></td>
+<td style="text-align: left;">Riemannian gradient descent on Stiefel manifold St(r, d) minimizing empirical reconstruction loss.</td>
+<td style="text-align: center;">2.08x</td>
+<td style="text-align: center;">91.55%</td>
+<td style="text-align: center;">1.62x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>061</strong></td>
+<td style="text-align: left;"><code>enlighten_compressor</code></td>
+<td style="text-align: left;"><strong>Enlighten Compressor</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W \approx U \Sigma V^\top + \text{GeodesicCorrection}(U, V)\)</span></td>
+<td style="text-align: left;">Geometric geodesic curvature correction along Riemannian manifolds during low-rank parameter synthesis.</td>
+<td style="text-align: center;">2.04x</td>
+<td style="text-align: center;">91.45%</td>
+<td style="text-align: center;">1.56x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>062</strong></td>
+<td style="text-align: left;"><code>liftr</code></td>
+<td style="text-align: left;"><strong>LIFTR (Linear Invariant Factorization &amp; Retraction)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(R_X(\xi) = \text{qf}(X + \xi), \quad X \in \text{St}(r, n)\)</span></td>
+<td style="text-align: left;">Cayley and QR retraction operators optimizing low-rank orthonormal factorizations without matrix inversion.</td>
+<td style="text-align: center;">2.06x</td>
+<td style="text-align: center;">91.40%</td>
+<td style="text-align: center;">1.58x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>063</strong></td>
+<td style="text-align: left;"><code>lsc_compressor</code></td>
+<td style="text-align: left;"><strong>LSC (Local Subspace Clustering)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\min_{P_k} \sum_{k} \sum_{x \in C_k} \|x - P_k P_k^\top x\|^2\)</span></td>
+<td style="text-align: left;">Partitions weights into local geometric subspaces, each compressed via dedicated affine projection.</td>
+<td style="text-align: center;">2.05x</td>
+<td style="text-align: center;">91.35%</td>
+<td style="text-align: center;">1.54x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>064</strong></td>
+<td style="text-align: left;"><code>oats_compressor</code></td>
+<td style="text-align: left;"><strong>OATS (Optimal Affine Transformation Subspace)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\hat{W} = A B + C, \quad C = \arg\min_C \|W - (A B + C)\|_F^2\)</span></td>
+<td style="text-align: left;">Affine manifold decomposition augmenting low-rank linear factors with constant directional drift tensors.</td>
+<td style="text-align: center;">2.02x</td>
+<td style="text-align: center;">91.40%</td>
+<td style="text-align: center;">1.52x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>065</strong></td>
+<td style="text-align: left;"><code>tomoe_compressor</code></td>
+<td style="text-align: left;"><strong>Tomoe Compressor (Rotational Manifold Tracking)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(Q \in \text{SO}(n), \quad \min_Q \|W - Q \hat{W}\|_F^2\)</span></td>
+<td style="text-align: left;">Special orthogonal group SO(n) manifold tracking aligning weight spectra with canonical coordinate frames.</td>
+<td style="text-align: center;">2.06x</td>
+<td style="text-align: center;">91.50%</td>
+<td style="text-align: center;">1.59x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>066</strong></td>
+<td style="text-align: left;"><code>hashed_net_compressor</code></td>
+<td style="text-align: left;"><strong>Hashed Net Compressor</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W_{i,j} = s(i, j) \cdot w[h(i, j)], \quad h: \mathbb{N}^2 \to [K]\)</span></td>
+<td style="text-align: left;">Locality-sensitive hash projections tying parameter weights into compact 1D continuous memory buffers.</td>
+<td style="text-align: center;">2.00x</td>
+<td style="text-align: center;">91.30%</td>
+<td style="text-align: center;">1.50x</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="family-6-tensor-train-kronecker-factorization-8-engines">Family 6: Tensor Train &amp; Kronecker Factorization (8 Engines)</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">ID</th>
+<th style="text-align: left;">Registry Key</th>
+<th style="text-align: left;">Engine Name</th>
+<th style="text-align: left;">Theoretical Formulation</th>
+<th style="text-align: left;">Core Mechanism &amp; Operator Contract</th>
+<th style="text-align: center;">Compression Ratio (<span class="arithmatex">\(r=32\)</span>)</th>
+<th style="text-align: center;">SST-2 Recovered Accuracy (%)</th>
+<th style="text-align: center;">Speedup</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><strong>067</strong></td>
+<td style="text-align: left;"><code>kronecker_compressor</code></td>
+<td style="text-align: left;"><strong>Kronecker Product Compressor</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W \approx A \otimes B, \quad A \in \mathbb{R}^{m_1 \times n_1}, B \in \mathbb{R}^{m_2 \times n_2}\)</span></td>
+<td style="text-align: left;">Kronecker product factorization decomposing d x d weight matrices into small factor matrix products.</td>
+<td style="text-align: center;">2.80x</td>
+<td style="text-align: center;">89.20%</td>
+<td style="text-align: center;">1.55x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>068</strong></td>
+<td style="text-align: left;"><code>kronecker_tt_lora</code></td>
+<td style="text-align: left;"><strong>Kronecker TT-LoRA</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W = (A_1 \otimes A_2) + U_{\text{TT}} V_{\text{TT}}^\top\)</span></td>
+<td style="text-align: left;">Hybrid Kronecker matrix backbone complemented with Tensor-Train factorized low-rank adaptation branches.</td>
+<td style="text-align: center;">2.95x</td>
+<td style="text-align: center;">89.60%</td>
+<td style="text-align: center;">1.60x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>069</strong></td>
+<td style="text-align: left;"><code>tt_compressor</code></td>
+<td style="text-align: left;"><strong>TT (Tensor-Train) Compressor</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W(i_1..i_d, j_1..j_d) = G_1[i_1, j_1] G_2[i_2, j_2] \cdots G_d[i_d, j_d]\)</span></td>
+<td style="text-align: left;">Tensor-Train (Oseledets) decomposition transforming high-dimensional tensors into 3D core contractions.</td>
+<td style="text-align: center;">3.20x</td>
+<td style="text-align: center;">88.80%</td>
+<td style="text-align: center;">1.45x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>070</strong></td>
+<td style="text-align: left;"><code>cur_compressor</code></td>
+<td style="text-align: left;"><strong>CUR Matrix Decomposer</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W \approx C U R, \quad U = C^+ W R^+\)</span></td>
+<td style="text-align: left;">Decomposes weight matrices using exact sampled column and row vectors, ensuring non-negative structural interpretability.</td>
+<td style="text-align: center;">2.60x</td>
+<td style="text-align: center;">89.50%</td>
+<td style="text-align: center;">1.50x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>071</strong></td>
+<td style="text-align: left;"><code>cur_moe_compressor</code></td>
+<td style="text-align: left;"><strong>CUR MoE Compressor</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W_e \approx C_e U_e R_e, \quad \forall e \in \{1, \dots, E\}\)</span></td>
+<td style="text-align: left;">CUR decomposition tailored for Mixture-of-Experts routing layers sharing column basis matrices across experts.</td>
+<td style="text-align: center;">2.85x</td>
+<td style="text-align: center;">89.30%</td>
+<td style="text-align: center;">1.65x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>072</strong></td>
+<td style="text-align: left;"><code>nmf_compressor</code></td>
+<td style="text-align: left;"><strong>NMF (Non-Negative Matrix Factorization)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\min_{W_{\ge 0}, H_{\ge 0}} \|V - W H\|_F^2\)</span></td>
+<td style="text-align: left;">Constrained non-negative additive decomposition yielding sparse, interpretable part-based weight representations.</td>
+<td style="text-align: center;">2.50x</td>
+<td style="text-align: center;">89.10%</td>
+<td style="text-align: center;">1.40x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>073</strong></td>
+<td style="text-align: left;"><code>compot_compressor</code></td>
+<td style="text-align: left;"><strong>ComPOT (Compact Polyadic Optimal Transport)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathcal{W} \approx \sum_{r=1}^R \lambda_r a_r^{(1)} \otimes a_r^{(2)} \otimes a_r^{(3)}\)</span></td>
+<td style="text-align: left;">Canonical Polyadic (CP) tensor decomposition optimized via Wasserstein optimal transport metrics.</td>
+<td style="text-align: center;">2.70x</td>
+<td style="text-align: center;">89.00%</td>
+<td style="text-align: center;">1.48x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>074</strong></td>
+<td style="text-align: left;"><code>roast_hashed_linear</code></td>
+<td style="text-align: left;"><strong>ROAST (Randomized Orthogonal Array Hashing)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(W x = \left(\sum_{k=1}^K g_k \odot P_k(w)\right) x\)</span></td>
+<td style="text-align: left;">Block-randomized tensor hashing collapsing linear parameters into shared parameter arrays with low collision rates.</td>
+<td style="text-align: center;">2.40x</td>
+<td style="text-align: center;">89.10%</td>
+<td style="text-align: center;">1.52x</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="family-7-hardware-aware-semi-structured-sparsity-4-engines">Family 7: Hardware-Aware Semi-Structured Sparsity (4 Engines)</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">ID</th>
+<th style="text-align: left;">Registry Key</th>
+<th style="text-align: left;">Engine Name</th>
+<th style="text-align: left;">Theoretical Formulation</th>
+<th style="text-align: left;">Core Mechanism &amp; Operator Contract</th>
+<th style="text-align: center;">Compression Ratio (<span class="arithmatex">\(r=32\)</span>)</th>
+<th style="text-align: center;">SST-2 Recovered Accuracy (%)</th>
+<th style="text-align: center;">Speedup</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><strong>075</strong></td>
+<td style="text-align: left;"><code>sparsegpt</code></td>
+<td style="text-align: left;"><strong>SparseGPT (1-Shot Pruning Engine)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(w_m^* = 0, \quad \delta w = -\frac{w_m}{[H^{-1}]_{mm}} H^{-1}_{:, m}\)</span></td>
+<td style="text-align: left;">One-shot exact second-order error compensation pruning matrices to 50% unstructured or 2:4 semi-structured patterns.</td>
+<td style="text-align: center;">2.00x</td>
+<td style="text-align: center;">91.60%</td>
+<td style="text-align: center;">1.65x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>076</strong></td>
+<td style="text-align: left;"><code>wanda</code></td>
+<td style="text-align: left;"><strong>Wanda (Pruning by Weights and Activations)</strong></td>
+<td style="text-align: left;">$S_{i,j} =</td>
+<td style="text-align: left;">W_{i,j}</td>
+<td style="text-align: center;">\cdot |X_j|_2$</td>
+<td style="text-align: center;">Multiplies absolute weight values by empirical input activation column norms to prune 2:4 patterns without inversion.</td>
+<td style="text-align: center;">2.00x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>077</strong></td>
+<td style="text-align: left;"><code>aatc_xkv_compressor</code></td>
+<td style="text-align: left;"><strong>AATC-XKV (Attention-Aware Cross-Layer KV)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(K_{l+1} \approx P_l K_l, \quad V_{l+1} \approx Q_l V_l\)</span></td>
+<td style="text-align: left;">Identifies shared KV-cache attention subspaces across adjacent layers to eliminate duplicate cache allocations.</td>
+<td style="text-align: center;">2.80x</td>
+<td style="text-align: center;">91.50%</td>
+<td style="text-align: center;">2.10x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>078</strong></td>
+<td style="text-align: left;"><code>cachenotes_compressor</code></td>
+<td style="text-align: left;"><strong>CacheNotes (Task-Aware KV Eviction)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(m_t = \sigma(W_{\text{gate}} [K_t; V_t]), \quad \text{Evict if } m_t &lt; \tau\)</span></td>
+<td style="text-align: left;">Dynamic task-aware gating network learning token importance scores to evict uninformative KV-cache vectors.</td>
+<td style="text-align: center;">2.80x</td>
+<td style="text-align: center;">91.60%</td>
+<td style="text-align: center;">2.20x</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="family-8-cross-layer-subspace-sharing-4-engines">Family 8: Cross-Layer &amp; Subspace Sharing (4 Engines)</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: center;">ID</th>
+<th style="text-align: left;">Registry Key</th>
+<th style="text-align: left;">Engine Name</th>
+<th style="text-align: left;">Theoretical Formulation</th>
+<th style="text-align: left;">Core Mechanism &amp; Operator Contract</th>
+<th style="text-align: center;">Compression Ratio (<span class="arithmatex">\(r=32\)</span>)</th>
+<th style="text-align: center;">SST-2 Recovered Accuracy (%)</th>
+<th style="text-align: center;">Speedup</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;"><strong>079</strong></td>
+<td style="text-align: left;"><code>delta_kv</code></td>
+<td style="text-align: left;"><strong>Delta-KV Cache Compressor</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\Delta K_t = K_t - K_{t-1}, \quad \tilde{K}_t = K_{t-1} + Q_{\text{sparse}}(\Delta K_t)\)</span></td>
+<td style="text-align: left;">Temporal differential delta encoding exploiting high token-to-token correlation across decoding timesteps.</td>
+<td style="text-align: center;">2.60x</td>
+<td style="text-align: center;">91.10%</td>
+<td style="text-align: center;">2.30x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>080</strong></td>
+<td style="text-align: left;"><code>hybridkv_compressor</code></td>
+<td style="text-align: left;"><strong>HybridKV Multi-Tier Compressor</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\text{Cache} = \{\text{FP16 Sink}\} \cup \{\text{INT4 Rolling}\} \cup \{\text{Evicted SVD}\}\)</span></td>
+<td style="text-align: left;">Tiered memory hierarchy: maintains initial attention sinks in FP16, local window in INT4, and evicted keys in SVD.</td>
+<td style="text-align: center;">2.70x</td>
+<td style="text-align: center;">90.90%</td>
+<td style="text-align: center;">2.40x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>081</strong></td>
+<td style="text-align: left;"><code>kvtc_compressor</code></td>
+<td style="text-align: left;"><strong>KVTC (Key-Value Tensor Contraction)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(\mathcal{K}_{B, H, S, D} \approx \mathcal{C}_{B, H, S, r} \times_4 U_{r, D}\)</span></td>
+<td style="text-align: left;">Cross-head tensor contraction factorizing multi-head KV cache tensors across head dimensions.</td>
+<td style="text-align: center;">2.50x</td>
+<td style="text-align: center;">90.70%</td>
+<td style="text-align: center;">2.15x</td>
+</tr>
+<tr>
+<td style="text-align: center;"><strong>082</strong></td>
+<td style="text-align: left;"><code>zerokv_neo_compressor</code></td>
+<td style="text-align: left;"><strong>ZeroKV Neo (Zero-Footprint KV Distillation)</strong></td>
+<td style="text-align: left;"><span class="arithmatex">\(h_t = \text{SSMRecurrence}(h_{t-1}, x_t), \quad K_t, V_t \to 0\)</span></td>
+<td style="text-align: left;">Substitutes quadratic KV history buffers with compact recurrent state vectors via student distillation.</td>
+<td style="text-align: center;">2.60x</td>
+<td style="text-align: center;">90.50%</td>
+<td style="text-align: center;">2.50x</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="functional-usage-python-api">💻 Functional Usage &amp; Python API</h2>
+<h3 id="1-unified-compressor-factory-neuralopscreate_compressor">1. Unified Compressor Factory (<code>neuralops.create_compressor</code>)</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">neuralops</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoModelForSequenceClassification</span>
+
+<span class="c1"># Load baseline uncompressed teacher model</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForSequenceClassification</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="s2">"bert-base-uncased"</span><span class="p">)</span>
+
+<span class="c1"># Instantiate any of the 82 registered compression engines</span>
+<span class="n">compressor</span> <span class="o">=</span> <span class="n">neuralops</span><span class="o">.</span><span class="n">create_compressor</span><span class="p">(</span>
+    <span class="s2">"fwsvd_compressor"</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <span class="n">rank</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+    <span class="n">fisher_samples</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">compressed_model</span> <span class="o">=</span> <span class="n">compressor</span><span class="o">.</span><span class="n">compress</span><span class="p">()</span>
+
+<span class="c1"># Evaluate parameter reduction and inference latency</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Compressed Parameter Ratio: </span><span class="si">{</span><span class="n">compressor</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">compression_ratio</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">x"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Downstream SST-2 Accuracy: </span><span class="si">{</span><span class="n">compressor</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">recovered_accuracy</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%"</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="2-high-level-convenience-runner-neuralopscompress">2. High-Level Convenience Runner (<code>neuralops.compress</code>)</h3>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">neuralops</span>
+
+<span class="c1"># One-line model surgery compression</span>
+<span class="n">compressed_model</span> <span class="o">=</span> <span class="n">neuralops</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">"hadamard_incoherent_svd"</span><span class="p">,</span>
+    <span class="n">rank</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+<hr />
+<h2 id="grounded-hardware-verification-telemetry">📊 Grounded Hardware Verification &amp; Telemetry</h2>
+<p>All 82 compression engines undergo physical execution gating:
+- <strong>Silicon Target</strong>: <strong>NVIDIA GeForce RTX 3090 (Ampere SM 8.6, GA102)</strong>
+- <strong>Hardware Architecture</strong>: 10,496 CUDA cores, 82 SMs, 328 3rd-Gen Tensor Cores, 24 GB GDDR6X (936 GB/s)
+- <strong>Software Environment</strong>: CUDA 12.2, PyTorch 2.4, Python 3.10+, Triton 3.0
+- <strong>Official Ledger Repository</strong>: <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results">https://huggingface.co/datasets/Hooshaai/neuralops-results</a></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2024-2026 Taha Majlesi. Department of Computer Engineering, College of Engineering, University of Tehran. Licensed under the MIT License.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/tahamajs/NeuralOps" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://huggingface.co/datasets/Hooshaai/neuralops-results" target="_blank" rel="noopener" title="huggingface.co" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M448 205.8c-14.8 9.8-31.8 17.7-49.5 24-47 16.8-108.7 26.2-174.5 26.2s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V288c0 44.2 100.3 80 224 80s224-35.8 224-80zm0-77.8V80c0-44.2-100.3-80-224-80S0 35.8 0 80v48c0 44.2 100.3 80 224 80s224-35.8 224-80m-49.5 261.8C351.6 406.5 289.9 416 224 416s-127.6-9.5-174.5-26.2c-17.6-6.3-34.7-14.2-49.5-24V432c0 44.2 100.3 80 224 80s224-35.8 224-80v-66.2c-14.8 9.8-31.8 17.7-49.5 24"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.tracking", "navigation.tabs", "navigation.sections", "navigation.expand", "navigation.top", "search.suggest", "search.highlight", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
+      
+    
+  </body>
+</html>
