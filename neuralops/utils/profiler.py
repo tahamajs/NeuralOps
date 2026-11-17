@@ -8,7 +8,8 @@
 """
 Performance Profiler
 
-Measures execution latency, operation timing, and hardware resource utilization.
+This module provides tools for measuring execution latency, operation timing,
+and hardware resource utilization for deep learning models.
 """
 
 import json
@@ -21,7 +22,24 @@ import torch
 
 
 class ModelProfiler:
-    def __init__(self, model, device=None) -> None:
+    """Profiler for tracking layer-wise performance and memory metrics.
+
+    Attributes:
+        model: The model to profile.
+        device: The device to run profiling on.
+        hooks: List of active forward hooks.
+        timings: Dictionary mapping layer names to lists of execution times (ms).
+        memory_usage: Dictionary mapping layer names to lists of memory usage (MB).
+    """
+
+    def __init__(self, model: torch.nn.Module, device: torch.device | None = None) -> None:
+        """Initializes the ModelProfiler.
+
+        Args:
+            model: The model instance to profile.
+            device: The device to run profiling on. If None, defaults to the
+                device of the first parameter in the model.
+        """
         self.model = model
         self.device = device or next(model.parameters()).device
         self.hooks = []
@@ -30,16 +48,23 @@ class ModelProfiler:
         self._current_timings = {}
 
     def _get_layer_name(self, name: str) -> str:
-        """get layer name."""
+        """Extracts a readable layer name.
+
+        Args:
+            name: The original layer name from the module hierarchy.
+
+        Returns:
+            A simplified name highlighting relevant layer types.
+        """
         parts = name.split(".")
         filtered = [p for p in parts if p.isdigit() or p in ("attention", "ffn", "mlp", "intermediate")]
         return ".".join(filtered) if filtered else name
 
     def start_profiling(self) -> None:
-        """Start profiling."""
+        """Registers hooks to begin capturing performance metrics."""
 
         def pre_hook_fn(module, input, name) -> None:
-            """Pre hook fn."""
+            """Pre-forward hook to record start time and memory."""
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
             self._current_timings[name] = time.perf_counter()
@@ -47,7 +72,7 @@ class ModelProfiler:
                 self.memory_usage[name].append(torch.cuda.memory_allocated() / 1024**2)
 
         def post_hook_fn(module, input, output, name) -> None:
-            """Post hook fn."""
+            """Post-forward hook to calculate duration."""
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
             if name in self._current_timings:
@@ -62,13 +87,18 @@ class ModelProfiler:
                 self.hooks.extend([pre, post])
 
     def stop_profiling(self) -> None:
-        """Stop profiling."""
+        """Removes all registered hooks."""
         for hook in self.hooks:
             hook.remove()
         self.hooks = []
 
     def get_report(self) -> dict[str, dict[str, float]]:
-        """Return the report."""
+        """Generates a summary report of performance metrics.
+
+        Returns:
+            A dictionary containing aggregated statistics (avg, std, min, max)
+            for each profiled layer and for the total execution.
+        """
         report = {}
         for name in self.timings:
             times = self.timings[name]
@@ -89,12 +119,16 @@ class ModelProfiler:
         return report
 
     def save_report(self, path: str) -> None:
-        """Persist report to disk."""
+        """Persists the performance report to a JSON file.
+
+        Args:
+            path: The path where the report should be saved.
+        """
         with open(path, "w") as f:
             json.dump(self.get_report(), f, indent=2)
 
     def print_report(self) -> None:
-        """Print report."""
+        """Prints the performance report to the console."""
         report = self.get_report()
         print("\n" + "=" * 60)
         print("PROFILING REPORT")
@@ -109,8 +143,26 @@ class ModelProfiler:
                     print(f"   Memory: {stats['avg_memory_mb']:.2f} MB")
 
 
-def measure_inference_latency(model, dataloader, device, num_samples: int = 100, warmup: int = 10) -> dict[str, float]:
-    """Measure inference latency."""
+def measure_inference_latency(
+    model: torch.nn.Module,
+    dataloader: torch.utils.data.DataLoader,
+    device: torch.device,
+    num_samples: int = 100,
+    warmup: int = 10,
+) -> dict[str, float]:
+    """Measures inference latency on a given dataloader.
+
+    Args:
+        model: The model to measure.
+        dataloader: The dataloader providing input batches.
+        device: The device to run measurement on.
+        num_samples: Number of samples to use for measurement.
+        warmup: Number of warmup samples to ignore.
+
+    Returns:
+        A dictionary containing latency statistics (mean, std, min, max, p50, p95, p99)
+        and samples per second.
+    """
     model.eval()
     model.to(device)
     latencies = []
@@ -142,8 +194,23 @@ def measure_inference_latency(model, dataloader, device, num_samples: int = 100,
     }
 
 
-def measure_memory_usage(model, dataloader, device, num_samples: int = 10) -> dict[str, float]:
-    """Measure memory usage."""
+def measure_memory_usage(
+    model: torch.nn.Module,
+    dataloader: torch.utils.data.DataLoader,
+    device: torch.device,
+    num_samples: int = 10,
+) -> dict[str, float]:
+    """Measures memory usage on a given dataloader.
+
+    Args:
+        model: The model to measure.
+        dataloader: The dataloader providing input batches.
+        device: The device to run measurement on.
+        num_samples: Number of samples to use for measurement.
+
+    Returns:
+        A dictionary containing peak and average peak memory usage in MB.
+    """
     model.eval()
     model.to(device)
     peak_memory = []
@@ -164,10 +231,17 @@ def measure_memory_usage(model, dataloader, device, num_samples: int = 10) -> di
 
 
 @contextmanager
-def profile_context(model, profiler: ModelProfiler | None = None) -> None:
-    """Profile context."""
+def profile_context(model: torch.nn.Module, profiler: ModelProfiler | None = None) -> None:
+    """Context manager for profiling a model.
+
+    Args:
+        model: The model to profile.
+        profiler: Optional existing ModelProfiler instance.
+    """
     if profiler is None:
         profiler = ModelProfiler(model)
     profiler.start_profiling()
-    yield profiler
-    profiler.stop_profiling()
+    try:
+        yield profiler
+    finally:
+        profiler.stop_profiling()

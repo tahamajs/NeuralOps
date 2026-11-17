@@ -13,13 +13,18 @@ Implements suite runner functionality for NeuralOps.
 
 from __future__ import annotations
 
-import csv
 import os
-import time
+import subprocess
+import uuid
+import datetime
 from typing import Any, Callable
 
 import torch
 import torch.nn.functional as F
+
+from neuralops.benchmarks.utils.timer import benchmark_callable
+from neuralops.benchmarks.results_v2.ledger import BenchmarkLedger
+from neuralops.benchmarks.results_v2.record import CanonicalRecord, BenchmarkStatus
 
 __all__ = [
     "benchmark_attention_speed",
@@ -29,25 +34,23 @@ __all__ = [
     "run_and_save_benchmark_suite",
 ]
 
+def get_git_info():
+    try:
+        commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("utf-8").strip()
+        status = subprocess.check_output(["git", "status", "--porcelain"]).decode("utf-8").strip()
+        return commit, len(status) > 0
+    except:
+        return "unknown", False
 
 def benchmark_attention_speed(
     fn: Callable[[], Any],
-    warmup: int = 3,
-    repeat: int = 10,
+    device: str | torch.device = "cpu",
+    warmup: int = 10,
+    repeat: int = 25,
 ) -> float:
-    """Measures mean execution latency in milliseconds."""
-    for _ in range(warmup):
-        fn()
-    if torch.cuda.is_available():
-        torch.cuda.synchronize()
-
-    start = time.perf_counter()
-    for _ in range(repeat):
-        fn()
-    if torch.cuda.is_available():
-        torch.cuda.synchronize()
-
-    return (time.perf_counter() - start) / repeat * 1000.0
+    """Measures median execution latency in milliseconds."""
+    stats = benchmark_callable(fn, device=device, warmup_iters=warmup, timed_iters=repeat)
+    return stats.median_ms
 
 
 def benchmark_attention_memory(
@@ -84,21 +87,22 @@ def benchmark_scaling_sweep(
     head_dim: int = 32,
 ) -> list[dict[str, Any]]:
     """Runs sequence length scaling sweep on standard SDPA attention."""
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     seq_lens = [128, 256, 512, 1024] if seq_lens is None else seq_lens
     results = []
     scale = 1.0 / (head_dim**0.5)
 
     for N in seq_lens:
-        q = torch.randn(batch_size, num_heads, N, head_dim)
-        k = torch.randn(batch_size, num_heads, N, head_dim)
-        v = torch.randn(batch_size, num_heads, N, head_dim)
+        q = torch.randn(batch_size, num_heads, N, head_dim).to(device)
+        k = torch.randn(batch_size, num_heads, N, head_dim).to(device)
+        v = torch.randn(batch_size, num_heads, N, head_dim).to(device)
 
         def run_sdpa():
             s = torch.matmul(q, k.transpose(-2, -1)) * scale
             w = F.softmax(s, dim=-1)
             return torch.matmul(w, v)
 
-        ms = benchmark_attention_speed(run_sdpa, warmup=2, repeat=5)
+        ms = benchmark_attention_speed(run_sdpa, device=device)
         tokens_per_sec = (batch_size * N) / (ms / 1000.0) if ms > 0 else 0.0
         results.append(
             {
@@ -112,25 +116,33 @@ def benchmark_scaling_sweep(
 
 
 def run_and_save_benchmark_suite(
-    output_dir: str = "benchmarks",
-) -> tuple[str, str]:
-    """Runs the suite and outputs CSV and Markdown summary tables."""
+    output_dir: str = "results",
+) -> None:
+    """Runs the suite and records results through BenchmarkLedger."""
     os.makedirs(output_dir, exist_ok=True)
+    ledger = BenchmarkLedger(storage_dir=output_dir)
     sweep_data = benchmark_scaling_sweep()
+    
+    commit, dirty = get_git_info()
+    run_id = str(uuid.uuid4())
+    timestamp = datetime.datetime.utcnow().isoformat()
+    device = str(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
 
-    csv_path = os.path.join(output_dir, "scaling_results.csv")
-    md_path = os.path.join(output_dir, "scaling_results.md")
-
-    with open(csv_path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["seq_len", "latency_ms", "tokens_per_sec"])
-        writer.writeheader()
-        writer.writerows(sweep_data)
-
-    with open(md_path, "w") as f:
-        f.write("# NeuralOps Attention Scaling Benchmark Results\n\n")
-        f.write("| Sequence Length | Latency (ms) | Throughput (Tokens/sec) |\n")
-        f.write("|:---:|:---:|:---:|\n")
-        for row in sweep_data:
-            f.write(f"| {row['seq_len']} | {row['latency_ms']:.4f} | {row['tokens_per_sec']:.2f} |\n")
-
-    return csv_path, md_path
+    for row in sweep_data:
+        record = CanonicalRecord(
+            run_id=run_id,
+            timestamp=timestamp,
+            git_commit=commit,
+            git_dirty=dirty,
+            suite="attention",
+            module="sdpa",
+            model="sdpa",
+            dataset="synthetic",
+            device=device,
+            status=BenchmarkStatus.SUCCESS,
+            metrics={"latency_ms": row["latency_ms"], "tokens_per_sec": row["tokens_per_sec"]},
+            config={"seq_len": row["seq_len"]},
+            telemetry={"device": device},
+            checksum=str(uuid.uuid4()), # Placeholder
+        )
+        ledger.write(record)

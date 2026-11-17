@@ -29,75 +29,10 @@ from neuralops.core.registry import ATTENTION_REGISTRY
 
 logger = logging.getLogger(__name__)
 
-try:
-    import triton
-    import triton.language as tl
 
-    HAS_TRITON = True
-except (ImportError, ModuleNotFoundError):
-    HAS_TRITON = False
+from .chela_slay.kernels import triton, tl, HAS_TRITON
+from .chela_slay.utils import _safe_getattr, _safe_int, _safe_float
 
-    class _DummyTriton:
-        @staticmethod
-        def jit(*args, **kwargs):
-            def decorator(fn):
-                return fn
-
-            if len(args) == 1 and callable(args[0]):
-                return args[0]
-            return decorator
-
-        @staticmethod
-        def autotune(*args, **kwargs):
-            def decorator(fn):
-                return fn
-
-            if len(args) == 1 and callable(args[0]):
-                return args[0]
-            return decorator
-
-        @staticmethod
-        def Config(*args, **kwargs):
-            return {}
-
-        @staticmethod
-        def cdiv(a, b):
-            return (a + b - 1) // b
-
-        @staticmethod
-        def next_power_of_2(n):
-            return 1 if n == 0 else 2 ** (int(n) - 1).bit_length()
-
-    class _DummyTL:
-        constexpr = Any
-
-    triton = _DummyTriton
-    tl = _DummyTL
-
-
-def _safe_getattr(obj: Any, key: str, default: Any = None) -> Any:
-    if obj is None:
-        return default
-    if isinstance(obj, dict):
-        return obj.get(key, default)
-    return getattr(obj, key, default)
-
-
-def _safe_int(val: Any, default: int = 0) -> int:
-    if val is None:
-        return default
-    try:
-        return int(val)
-    except (TypeError, ValueError):
-        return default
-
-
-def _safe_float(val: Any, default: float = 0.0) -> float:
-    if val is None:
-        return default
-    try:
-        return float(val)
-    except (TypeError, ValueError):
         return default
 
 

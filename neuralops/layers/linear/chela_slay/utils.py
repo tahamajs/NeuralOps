@@ -21,3 +21,4 @@ def _safe_float(val: Any, default: float = 0.0) -> float:
     try:
         return float(val)
     except (TypeError, ValueError):
+        return default

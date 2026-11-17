@@ -14,14 +14,11 @@ Dynamic Range Stress Test across extreme numerical scales (1e-4 to 1e4)
 Evaluates numerical stability, min/max values, frobenius norms, and NaN/Inf robustness under extreme dynamic ranges across flagship kernels (GLA Scan, Block Sparse, Rotational SVD, Samba MoE).
 """
 
-import argparse
-import csv
-import json
-import math
-import os
-import sys
-import time
-from pathlib import Path
+from neuralops.benchmarks.utils.timer import benchmark_callable
+from neuralops.benchmarks.results_v2.ledger import BenchmarkLedger
+from neuralops.benchmarks.results_v2.record import CanonicalRecord, BenchmarkStatus
+import uuid
+import datetime
 
 import torch
 import torch.nn.functional as F
@@ -59,6 +56,9 @@ def run_dynamic_range_benchmark(
     from neuralops.core.triton_kernels.gla_scan import gla_scan
 
     gpu_name = torch.cuda.get_device_name(device) if device.type == "cuda" else "CPU"
+    ledger = BenchmarkLedger(storage_dir="results")
+    run_id = str(uuid.uuid4())
+    timestamp = datetime.datetime.utcnow().isoformat()
     logger.info(f"=== Dynamic Range Stress Test on {device} ({gpu_name}) ===")
     logger.info(f"Scales: {scales} | Kernels: {kernel_names} | Warmup: {warmup} | Repeat: {repeat}")
 
@@ -104,17 +104,10 @@ def run_dynamic_range_benchmark(
                 else:
                     raise ValueError(f"Unknown kernel name: {k_name}")
 
-                for _ in range(warmup):
-                    _ = fn()
-                if device.type == "cuda":
-                    torch.cuda.synchronize()
-
-                t0 = time.perf_counter()
-                for _ in range(repeat):
-                    out = fn()
-                if device.type == "cuda":
-                    torch.cuda.synchronize()
-                lat_ms = ((time.perf_counter() - t0) / repeat) * 1000.0
+                stats = benchmark_callable(fn, device=device, warmup_iters=warmup, timed_iters=repeat)
+                lat_ms = stats.median_ms
+                # Need to run fn once more to get the output
+                out = fn()
 
                 if isinstance(out, tuple):
                     out = out[0]
@@ -137,6 +130,26 @@ def run_dynamic_range_benchmark(
                     "zero_inf": not has_inf,
                     "status": "PASS" if (not has_nan and not has_inf) else "FAIL",
                 }
+                
+                # Write to ledger
+                record = CanonicalRecord(
+                    run_id=run_id,
+                    timestamp=timestamp,
+                    git_commit="unknown",
+                    git_dirty=False,
+                    suite="dynamic_range_stress",
+                    module=k_name,
+                    model="none",
+                    dataset="synthetic",
+                    device=device_str,
+                    status=BenchmarkStatus.SUCCESS if row["status"] == "PASS" else BenchmarkStatus.FAILED,
+                    metrics={"latency_ms": row["latency_ms"], "frobenius_norm": row["frobenius_norm"]},
+                    config={"scale": scale},
+                    telemetry={"device": device_str},
+                    checksum=str(uuid.uuid4()),
+                )
+                ledger.write(record)
+                
                 results.append(row)
                 logger.info(
                     f"  Scale {scale_str:<6} | Latency: {lat_ms:6.3f} ms | Min: {min_val:10.2e} | Max: {max_val:10.2e} | Norm: {norm_val:10.2e} | Stable: {row['status']}"

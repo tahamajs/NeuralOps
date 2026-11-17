@@ -10,7 +10,7 @@ from .testing_utils import MockConfig, DummyDistilBertAttention
 import pytest
 import torch
 import torch.nn as nn
-from neuralops.attentions.chela_slay import (ChelaSlayAttention,
+from neuralops.layers.linear.chela_slay import (ChelaSlayAttention,
                                              inject_chela_slay)
 
 class DummyRobertaSelfAttention(nn.Module):

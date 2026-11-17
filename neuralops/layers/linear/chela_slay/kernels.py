@@ -1,3 +1,4 @@
+from typing import Any
 try:
     import triton
     import triton.language as tl
