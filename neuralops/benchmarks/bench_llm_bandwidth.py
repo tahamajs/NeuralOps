@@ -454,7 +454,7 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: list[str] | None = None) -> int:
+def _legacy_main(argv: list[str] | None = None) -> int:
     warnings.warn(
         "bench_llm_bandwidth CLI/argparse is deprecated and will be removed in v3.0.0. "
         "Please use 'neuralops benchmark' instead.",
@@ -494,4 +494,6 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     sys.exit(main())

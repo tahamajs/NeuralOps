@@ -440,7 +440,7 @@ def benchmark_torch_compile(
     logger.info("=" * 80)
 
 
-def main():
+def _legacy_main():
     parser = argparse.ArgumentParser(description="Strict torch.compile Inductor Benchmark for Attention Mechanisms")
     parser.add_argument(
         "--strict-compile-check", action="store_true", default=True, help="Enforce strict compile validation"
@@ -476,4 +476,6 @@ def main():
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     sys.exit(main())

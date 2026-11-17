@@ -292,7 +292,7 @@ def run_backward_stress_test(
     return results
 
 
-def main():
+def _legacy_main():
     parser = argparse.ArgumentParser(description="Multi-Seed Backward Pass Stress Test")
     parser.add_argument(
         "--output",
@@ -328,4 +328,6 @@ def main():
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     sys.exit(main())

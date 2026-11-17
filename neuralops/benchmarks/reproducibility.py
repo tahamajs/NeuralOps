@@ -61,7 +61,7 @@ def run_reproducibility(config: BenchmarkConfig) -> BenchmarkResult:
     return result
 
 
-def main() -> int:
+def _legacy_main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, required=True)
     args = parser.parse_args()
@@ -70,4 +70,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     raise SystemExit(main())

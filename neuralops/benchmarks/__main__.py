@@ -18,4 +18,6 @@ import sys
 from neuralops.benchmarks.cli import main
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     sys.exit(main())

@@ -256,7 +256,7 @@ def run_dynamic_range_benchmark(
     return results
 
 
-def main():
+def _legacy_main():
     parser = argparse.ArgumentParser(description="Dynamic Range Stress Test Benchmark")
     parser.add_argument(
         "--output",
@@ -304,4 +304,6 @@ def main():
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     sys.exit(main())

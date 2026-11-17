@@ -66,7 +66,7 @@ def compare_results(baseline_path: Path, candidate_path: Path, metric: str, max_
     }
 
 
-def main() -> int:
+def _legacy_main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline", type=Path, required=True)
     parser.add_argument("--candidate", type=Path, required=True)
@@ -81,4 +81,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     raise SystemExit(main())

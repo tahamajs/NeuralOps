@@ -237,6 +237,8 @@ class TrainingThroughputProfiler:
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     parser = argparse.ArgumentParser(description="Run a real forward/backward throughput benchmark")
     parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--seq-len", type=int, default=64)

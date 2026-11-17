@@ -21,7 +21,7 @@ from neuralops.benchmarks.multi_seed_stress_test_131_72 import run_stress_test
 DEFAULT_SEEDS = [100, 200, 300]
 
 
-def main():
+def _legacy_main():
     parser = argparse.ArgumentParser(description="Multi-Seed Stress Test for Seeds 100, 200, 300")
     parser.add_argument(
         "--output",
@@ -63,4 +63,6 @@ def main():
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     sys.exit(main())

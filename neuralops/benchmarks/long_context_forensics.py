@@ -148,7 +148,7 @@ def run_module(name: str, sequence: int, device: str = "cuda") -> dict[str, Any]
     return record
 
 
-def main() -> None:
+def _legacy_main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=Path("results/long_context_forensics.json"))
     parser.add_argument("--device", default="cuda")
@@ -169,4 +169,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     main()

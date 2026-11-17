@@ -2835,7 +2835,7 @@ def _dispatch(args: argparse.Namespace) -> int:
     return 0
 
 
-def main(argv: list[str] | None = None) -> int:
+def _legacy_main(argv: list[str] | None = None) -> int:
     """Canonical CLI main entrypoint and template for NeuralOps command-line tools.
 
     Delegates to NeuralOps CLI v2 (neuralops.benchmarks.cli_v2.main.main) with DeprecationWarning.

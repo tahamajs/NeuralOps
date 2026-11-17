@@ -1436,7 +1436,7 @@ def run_all_26_comprehensive(
     return results
 
 
-def main(argv=None):
+def _legacy_main(argv=None):
     parser = argparse.ArgumentParser(description="Comprehensive 26 Triton Hardware Kernels Benchmark")
     parser.add_argument(
         "--output",
@@ -1528,4 +1528,6 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     sys.exit(main())

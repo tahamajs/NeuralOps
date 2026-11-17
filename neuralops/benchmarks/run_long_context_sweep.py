@@ -313,7 +313,7 @@ def evaluate_long_context(model, dataloader, max_samples=None, device="cuda"):
     }
 
 
-def main():
+def _legacy_main():
     args = parse_args()
     if args.max_length:
         args.seq_len = args.max_length
@@ -481,4 +481,6 @@ def main():
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     main()

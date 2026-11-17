@@ -73,7 +73,7 @@ def run_synthetic_perplexity(
     }
 
 
-def main() -> int:
+def _legacy_main() -> int:
     parser = argparse.ArgumentParser(description="Evaluate perplexity and latency")
     parser.add_argument("--model", default="gpt2")
     parser.add_argument("--dataset", default="wikitext2")
@@ -103,4 +103,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     raise SystemExit(main())

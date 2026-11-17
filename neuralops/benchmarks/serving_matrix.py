@@ -47,7 +47,7 @@ def run_serving_matrix(config: BenchmarkConfig) -> list[BenchmarkResult]:
     return [result]
 
 
-def main() -> int:
+def _legacy_main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, required=True)
     parser.add_argument("--device", choices=["cpu", "cuda"], default=None)
@@ -60,4 +60,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     raise SystemExit(main())

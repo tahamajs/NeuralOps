@@ -386,7 +386,7 @@ def run_stress_test(
     return audit_results
 
 
-def main():
+def _legacy_main():
     parser = argparse.ArgumentParser(description="Multi-Seed Stress Test for Attentions and Compressors")
     parser.add_argument(
         "--output", type=str, default="results/multi_seed_crossval_stress_test.csv", help="Path to save CSV output"
@@ -440,4 +440,6 @@ def main():
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     sys.exit(main())

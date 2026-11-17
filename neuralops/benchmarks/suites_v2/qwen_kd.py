@@ -71,7 +71,7 @@ class QwenKDBenchmark(AbstractBaseBenchmark):
         if limit is not None and isinstance(limit, int) and limit > 0:
             self.stages = self.stages[:limit]
 
-        self.start_time = time.time()
+        self.start_time = torch.cuda.Event(enable_timing=True)
         self.results_table: List[Dict[str, Any]] = []
 
     def run_iteration(
@@ -171,7 +171,7 @@ class QwenKDBenchmark(AbstractBaseBenchmark):
             step += 1
 
     def generate_summary(self) -> ExecutionSummary:
-        duration = _sanitize_float(time.time() - getattr(self, "start_time", time.time()))
+        duration = _sanitize_float(torch.cuda.Event(enable_timing=True) - getattr(self, "start_time", torch.cuda.Event(enable_timing=True)))
         total = len(self.results_table)
         passed = sum(1 for r in self.results_table if r.get("status") == "PASS")
         failed_runtime = total - passed

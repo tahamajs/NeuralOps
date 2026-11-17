@@ -186,7 +186,7 @@ def run_resource_scaling(config: BenchmarkConfig) -> list[BenchmarkResult]:
     return results
 
 
-def main() -> int:
+def _legacy_main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=None)
     parser.add_argument("--device", type=str, default=None, help="Device to execute benchmark (cpu, cuda)")
@@ -236,4 +236,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     raise SystemExit(main())

@@ -341,7 +341,7 @@ def run_extrapolation_benchmark(
     return results
 
 
-def main(argv: list[str] | None = None) -> int:
+def _legacy_main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Long-Horizon Sequence Extrapolation Benchmark")
     parser.add_argument(
         "--output",
@@ -420,4 +420,6 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     sys.exit(main())

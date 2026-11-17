@@ -150,7 +150,7 @@ def plot_scaling_comparison(
     logger.info(f"Saved scaling comparison plot to {output_path}")
 
 
-def main() -> None:
+def _legacy_main() -> None:
     parser = argparse.ArgumentParser(description="NeuralOps Benchmark Visualizer")
     parser.add_argument("--input", type=str, required=True, help="Path to benchmark JSON results")
     parser.add_argument("--output", type=str, default="benchmark_plot.png", help="Output plot destination")
@@ -169,4 +169,6 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     main()

@@ -610,7 +610,7 @@ def run_all_26_kernels(
     return results
 
 
-def main():
+def _legacy_main():
     parser = argparse.ArgumentParser(description="Direct Triton vs PyTorch 26 Kernels Benchmark")
     parser.add_argument(
         "--output", type=str, default="results/triton_all_26_kernels_benchmark.csv", help="Path to save CSV output"
@@ -655,4 +655,6 @@ def main():
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     sys.exit(main())

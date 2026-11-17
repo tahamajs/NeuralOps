@@ -327,7 +327,7 @@ def format_table(results_or_headers: Any, rows: Optional[List[List[Any]]] = None
     return "\n".join(lines)
 
 
-def main() -> None:
+def _legacy_main() -> None:
     parser = argparse.ArgumentParser(description="NeuralOps Unified Operator Benchmark Runner")
     parser.add_argument("--ops", nargs="+", default=list(OP_REGISTRY.keys()), help="Ops to benchmark")
     parser.add_argument("--mode", type=str, default="fwd", choices=["fwd", "fwdbwd"], help="Forward or Fwd+Bwd")
@@ -699,4 +699,6 @@ def _run_registered_op_worker(
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     main()

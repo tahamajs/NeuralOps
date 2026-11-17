@@ -71,7 +71,7 @@ class AttentionBenchmark(AbstractBaseBenchmark):
         else:
             self.dtypes = ["fp32"]
 
-        self.start_time = time.time()
+        self.start_time = torch.cuda.Event(enable_timing=True)
         self.results_table: List[Dict[str, Any]] = []
 
     def _resolve_torch_dtype(self, dtype_str: str) -> torch.dtype:
@@ -254,7 +254,7 @@ class AttentionBenchmark(AbstractBaseBenchmark):
             step += 1
 
     def generate_summary(self) -> ExecutionSummary:
-        duration = _sanitize_float(time.time() - getattr(self, "start_time", time.time()))
+        duration = _sanitize_float(torch.cuda.Event(enable_timing=True) - getattr(self, "start_time", torch.cuda.Event(enable_timing=True)))
         total = len(self.results_table)
         passed = sum(1 for r in self.results_table if r.get("status") == "PASS")
         failed_oom = sum(1 for r in self.results_table if r.get("status") == "FAILED_OOM")

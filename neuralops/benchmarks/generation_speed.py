@@ -63,7 +63,7 @@ def run_generation_benchmark(model: str = "gpt2", **kwargs: Any) -> dict[str, An
     }
 
 
-def main() -> int:
+def _legacy_main() -> int:
     parser = argparse.ArgumentParser(description="Measure generation prefill and decode latency")
     parser.add_argument("--model", default="tiny", help="Checkpoint name or 'tiny' for a self-contained model")
     parser.add_argument("--device", default="cuda")
@@ -86,4 +86,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    # DEPRECATED_ENTRYPOINT
+    pass #
     raise SystemExit(main())
